@@ -638,7 +638,7 @@ function Test-PodeUserServiceCreationPrivilege {
 function Confirm-PodeAdminPrivilege {
     # Check for administrative privileges
     if (! (Test-PodeAdminPrivilege -Elevate)) {
-        if ($IsWindows -and (Test-PodeUserServiceCreationPrivilege)) {
+        if (Test-PodeIsWindows -and (Test-PodeUserServiceCreationPrivilege)) {
             Write-PodeHost "Insufficient privileges. This script requires Administrator access or the 'SERVICE_CHANGE_CONFIG' (SeCreateServicePrivilege) permission to continue." -ForegroundColor Red
             exit
         }
@@ -887,15 +887,15 @@ function Test-PodeServiceIsRegistered {
         [string]
         $Name
     )
+    if (Test-PodeIsWindows) {
+        $service = Get-CimInstance -ClassName Win32_Service -Filter "Name='$Name'"
+        return $null -eq $service
+    }
     if ($IsLinux) {
         return Test-PodeLinuxServiceIsRegistered -Name $Name
     }
     if ($IsMacOS) {
         return Test-PodeMacOsServiceIsRegistered -Name $Name
-    }
-    if ($IsWindows) {
-        $service = Get-CimInstance -ClassName Win32_Service -Filter "Name='$Name'"
-        return $null -eq $service
     }
 }
 
@@ -925,13 +925,7 @@ function Test-PodeServiceIsActive {
         [string]
         $Name
     )
-    if ($IsLinux) {
-        return Test-PodeLinuxServiceIsActive -Name $Name
-    }
-    if ($IsMacOS) {
-        return Test-PodeMacOsServiceIsActive -Name $Name
-    }
-    if ($IsWindows) {
+    if (Test-PodeIsWindows) {
         $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
         if ($service) {
             # Check if the service is already running
@@ -939,6 +933,13 @@ function Test-PodeServiceIsActive {
         }
         return $false
     }
+    if ($IsLinux) {
+        return Test-PodeLinuxServiceIsActive -Name $Name
+    }
+    if ($IsMacOS) {
+        return Test-PodeMacOsServiceIsActive -Name $Name
+    }
+
 }
 
 
@@ -1128,7 +1129,7 @@ function Send-PodeServiceSignal {
         'SIGHUP'  = 1
         'SIGTERM' = 15
     }
-    
+
     $level = $signalMap[$Signal]
     # Check if the service is registered
     if ((Test-PodeServiceIsRegistered -Name $nameService)) {

@@ -4,7 +4,7 @@ param()
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ } 
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 }
 
 
@@ -129,7 +129,7 @@ Describe 'Start-PodeService' {
                 }
                 [pscustomobject]@{ Name = 'TestService'; Status = $status }
             }
-            Mock -CommandName Invoke-PodeWinElevatedCommand -MockWith { $null }
+            Mock -CommandName Invoke-PodeWinElevatedCommand -MockWith { return $true }
 
             # Act
             Start-PodeService -Name 'TestService' | Should -Be $true

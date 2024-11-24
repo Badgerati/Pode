@@ -3802,7 +3802,7 @@ function Test-PodeAdminPrivilege {
     )
     try {
         # Check if the operating system is Windows
-        if ($IsWindows) {
+        if (Test-PodeIsWindows) {
 
             # Retrieve the current Windows identity and token
             $identity = [Security.Principal.WindowsIdentity]::GetCurrent()

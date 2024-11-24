@@ -128,6 +128,54 @@ $Versions = @{
 
 # Helper Functions
 
+<#
+.SYNOPSIS
+    Installs a specified package using the appropriate package manager for the OS.
+
+.DESCRIPTION
+    This function installs a specified package at a given version using platform-specific
+    package managers. For Windows, it uses Chocolatey (`choco`). On Unix-based systems,
+    it checks for `brew`, `apt-get`, and `yum` to handle installations. The function sets
+    the security protocol to TLS 1.2 to ensure secure connections during the installation.
+
+.PARAMETER name
+    The name of the package to install (e.g., 'git').
+
+.PARAMETER version
+    The version of the package to install, required only for Chocolatey on Windows.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Invoke-PodeBuildInstall -Name 'git' -Version '2.30.0'
+    # Installs version 2.30.0 of Git on Windows if Chocolatey is available.
+
+.NOTES
+    - Requires administrator or sudo privileges on Unix-based systems.
+    - This function supports package installation on both Windows and Unix-based systems.
+    - If `choco` is available, it will use `choco` for Windows, and `brew`, `apt-get`, or `yum` for Unix-based systems.
+#>
+function Invoke-PodeBuildInstall($name, $version) {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    if (Test-PodeBuildIsWindows) {
+        if (Test-PodeBuildCommand 'choco') {
+            choco install $name --version $version -y --no-progress
+        }
+    }
+    else {
+        if (Test-PodeBuildCommand 'brew') {
+            brew install $name
+        }
+        elseif (Test-PodeBuildCommand 'apt-get') {
+            sudo apt-get install $name -y
+        }
+        elseif (Test-PodeBuildCommand 'yum') {
+            sudo yum install $name -y
+        }
+    }
+}
 
 <#
 .SYNOPSIS
@@ -226,12 +274,12 @@ function Get-PodeBuildService {
 
 .NOTES
     - This function supports both Windows and Unix-based platforms.
-    - Requires `$IsWindows` to detect the OS type.
+    - Requires `Test-PodeBuildIsWindows` to detect the OS type.
 #>
 function Test-PodeBuildCommand($cmd) {
     $path = $null
 
-    if ($IsWindows) {
+    if (Test-PodeBuildIsWindows) {
         $path = (Get-Command $cmd -ErrorAction Ignore)
     }
     else {
@@ -240,6 +288,33 @@ function Test-PodeBuildCommand($cmd) {
 
     return (![string]::IsNullOrWhiteSpace($path))
 }
+
+<#
+.SYNOPSIS
+    Checks if the current environment is running on Windows.
+
+.DESCRIPTION
+    This function determines if the current PowerShell session is running on Windows.
+    It inspects `$PSVersionTable.Platform` and `$PSVersionTable.PSEdition` to verify the OS,
+    returning `$true` for Windows and `$false` for other platforms.
+
+.OUTPUTS
+    [bool] - Returns `$true` if the current environment is Windows, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildIsWindows) {
+        Write-Host "This script is running on Windows."
+    }
+
+.NOTES
+    - Useful for cross-platform scripts to conditionally execute Windows-specific commands.
+    - The `$PSVersionTable.Platform` variable may be `$null` in certain cases, so `$PSEdition` is used as an additional check.
+#>
+function Test-PodeBuildIsWindows {
+    $v = $PSVersionTable
+    return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
+}
+
 
 <#
 .SYNOPSIS
@@ -264,55 +339,6 @@ function Test-PodeBuildCommand($cmd) {
 #>
 function Get-PodeBuildBranch {
     return ($env:GITHUB_REF -ireplace 'refs\/heads\/', '')
-}
-
-<#
-.SYNOPSIS
-    Installs a specified package using the appropriate package manager for the OS.
-
-.DESCRIPTION
-    This function installs a specified package at a given version using platform-specific
-    package managers. For Windows, it uses Chocolatey (`choco`). On Unix-based systems,
-    it checks for `brew`, `apt-get`, and `yum` to handle installations. The function sets
-    the security protocol to TLS 1.2 to ensure secure connections during the installation.
-
-.PARAMETER name
-    The name of the package to install (e.g., 'git').
-
-.PARAMETER version
-    The version of the package to install, required only for Chocolatey on Windows.
-
-.OUTPUTS
-    None.
-
-.EXAMPLE
-    Invoke-PodeBuildInstall -Name 'git' -Version '2.30.0'
-    # Installs version 2.30.0 of Git on Windows if Chocolatey is available.
-
-.NOTES
-    - Requires administrator or sudo privileges on Unix-based systems.
-    - This function supports package installation on both Windows and Unix-based systems.
-    - If `choco` is available, it will use `choco` for Windows, and `brew`, `apt-get`, or `yum` for Unix-based systems.
-#>
-function Invoke-PodeBuildInstall($name, $version) {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-    if ($IsWindows) {
-        if (Test-PodeBuildCommand 'choco') {
-            choco install $name --version $version -y --no-progress
-        }
-    }
-    else {
-        if (Test-PodeBuildCommand 'brew') {
-            brew install $name
-        }
-        elseif (Test-PodeBuildCommand 'apt-get') {
-            sudo apt-get install $name -y
-        }
-        elseif (Test-PodeBuildCommand 'yum') {
-            sudo yum install $name -y
-        }
-    }
 }
 
 <#
@@ -620,7 +646,7 @@ function Get-PodeBuildPwshEOL {
 
 .DESCRIPTION
     This function detects whether the current operating system is Windows by checking
-    the `$IsWindows` automatic variable, the presence of the `$env:ProgramFiles` variable,
+    the `Test-PodeBuildIsWindows` automatic variable, the presence of the `$env:ProgramFiles` variable,
     and the PowerShell Edition in `$PSVersionTable`. This function returns `$true` if
     any of these indicate Windows.
 
@@ -1024,7 +1050,7 @@ Add-BuildTask PrintChecksum {
 #>
 
 # Synopsis: Installs Chocolatey
-Add-BuildTask ChocoDeps -If ($IsWindows) {
+Add-BuildTask ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
         Invoke-Expression ([System.Net.WebClient]::new().DownloadString('https://chocolatey.org/install.ps1'))
@@ -1034,7 +1060,7 @@ Add-BuildTask ChocoDeps -If ($IsWindows) {
 # Synopsis: Install dependencies for compiling/building
 Add-BuildTask BuildDeps {
     # install dotnet
-    if ($IsWindows) {
+    if (Test-PodeBuildIsWindows) {
         $dotnet = 'dotnet'
     }
     elseif (Test-PodeBuildCommand 'brew') {
@@ -1210,7 +1236,7 @@ Add-BuildTask Compress PackageFolder, StampVersion, DeliverableFolder, {
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
-Add-BuildTask ChocoPack -If ($IsWindows) ChocoDeps, PackageFolder, StampVersion, DeliverableFolder, {
+Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) ChocoDeps, PackageFolder, StampVersion, DeliverableFolder, {
     exec { choco pack ./packers/choco/pode.nuspec }
     Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
@@ -1218,7 +1244,7 @@ Add-BuildTask ChocoPack -If ($IsWindows) ChocoDeps, PackageFolder, StampVersion,
 # Synopsis: Create docker tags
 Add-BuildTask DockerPack PackageFolder, StampVersion, {
     # check if github and windows, and output warning
-    if ((Test-PodeBuildIsGitHub) -and ($IsWindows)) {
+    if ((Test-PodeBuildIsGitHub) -and (Test-PodeBuildIsWindows)) {
         Write-Warning 'Docker images are not built on GitHub Windows runners, and Docker is in Windows container only mode. Exiting task.'
         return
     }
@@ -1295,7 +1321,7 @@ Add-BuildTask TestNoBuild TestDeps, {
     }
     Write-Output ''
     # for windows, output current netsh excluded ports
-    if ($IsWindows) {
+    if (Test-PodeBuildIsWindows) {
         netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
 
         # Retrieve the current Windows identity and token
