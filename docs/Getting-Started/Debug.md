@@ -254,7 +254,6 @@ Add-PodeSchedule -Name 'TestSchedule' -Cron '@hourly' -ScriptBlock {
 
 In this example, the schedule outputs the name of the runspace executing the script block every hour. This can be useful for logging and monitoring purposes when dealing with multiple schedules or tasks.
 
-
 ## Memory Dump for Diagnostics
 
 Pode provides a powerful memory dump feature to capture detailed information during critical failures or fatal exceptions. This feature, triggered by the `Invoke-PodeDump` function, captures the state of your application, including memory usage, runspace details, variables, and stack traces. You can configure the dump format, enable or disable it, and specify the save location. By default, Pode saves the dump in JSON format, but you can also choose from other supported formats.
@@ -308,11 +307,11 @@ In this example:
 - The dump file is saved in the specified directory (`C:\CustomDump`) instead of the default path.
 - The `-Halt` switch will terminate the application after the dump is saved.
 
-### Using the Dump Feature in Pode
+### Using the Dump Feature
 
 To use the dump feature effectively in your Pode server, you may want to include it in specific places within your code to capture state information when critical errors occur.
 
-Example usage in a Pode server:
+Example :
 
 ```powershell
 Start-PodeServer -EnableBreakpoints {

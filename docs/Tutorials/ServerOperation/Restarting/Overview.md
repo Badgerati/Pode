@@ -10,4 +10,4 @@ There are 4 ways to restart a running Pode server:
 
 When the server restarts, it will re-invoke the `-ScriptBlock` supplied to the [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer) function. This means the best approach to reload new modules/scripts it to dot-source/[`Use-PodeScript`](../../../Functions/Utilities/Use-PodeScript) your scripts into your server, as any changes to the main `scriptblock` will **not** take place.
 
-Certainly! Here’s an explanation on how to achieve suspending and resuming a Pode server using `Suspend-PodeServerInternal` and `Resume-PodeServerInternal`.
+Certainly! Here’s an explanation on how to achieve suspending and resuming a Pode server using [`Suspend-PodeServer`](../../../Functions/Core/Resume-PodeServer) and [`Resume-PodeServer`](../../../Functions/Core/Suspend-PodeServer).

@@ -4,19 +4,19 @@ In addition to restarting, Pode provides a way to temporarily **suspend** and **
 
 ## Suspending
 
-To suspend a running Pode server, use the `Suspend-PodeServerInternal` function. This function will pause all active server runspaces, effectively putting the server into a suspended state. Here’s how to do it:
+To suspend a running Pode server, use the `Suspend-PodeServer` function. This function will pause all active server runspaces, effectively putting the server into a suspended state. Here’s how to do it:
 
 1. **Run the Suspension Command**:
-   - Simply call `Suspend-PodeServerInternal` from within your Pode environment or script.
+   - Simply call `Suspend-PodeServer` from within your Pode environment or script.
 
    ```powershell
-   Suspend-PodeServerInternal -Timeout 60
+   Suspend-PodeServer -Timeout 60
    ```
 
    The `-Timeout` parameter specifies how long the function should wait (in seconds) for each runspace to be fully suspended. This is optional, with a default timeout of 30 seconds.
 
 2. **Suspension Process**:
-   - When you run `Suspend-PodeServerInternal`, Pode will:
+   - When you run `Suspend-PodeServer`, Pode will:
      - Pause all runspaces associated with the server, putting them into a debug state.
      - Trigger a "Suspend" event to signify that the server is paused.
      - Update the server’s status to reflect that it is now suspended.
@@ -26,17 +26,17 @@ To suspend a running Pode server, use the `Suspend-PodeServerInternal` function.
 
 ## Resuming
 
-Once you’ve completed any tasks or troubleshooting, you can resume the server using `Resume-PodeServerInternal`. This will restore the Pode server to its normal operational state:
+Once you’ve completed any tasks or troubleshooting, you can resume the server using `Resume-PodeServer`. This will restore the Pode server to its normal operational state:
 
 1. **Run the Resume Command**:
-   - Call `Resume-PodeServerInternal` to bring the server back online.
+   - Call `Resume-PodeServer` to bring the server back online.
 
    ```powershell
-   Resume-PodeServerInternal
+   Resume-PodeServer
    ```
 
 2. **Resumption Process**:
-   - When `Resume-PodeServerInternal` is executed, Pode will:
+   - When `Resume-PodeServer` is executed, Pode will:
      - Restore all paused runspaces back to their active states.
      - Trigger a "Resume" event, marking the server as active again.
      - Clear the console, providing a refreshed view of the server status.
