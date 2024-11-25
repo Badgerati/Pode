@@ -1,48 +1,70 @@
 <#
 .SYNOPSIS
-Sets an object within the shared state.
+    Sets an object within the shared state of Pode.
 
 .DESCRIPTION
-Sets an object within the shared state.
+    Sets an object within the shared state, allowing shared data management across various scopes.
+    Supports thread-safe operations by converting the state to a concurrent dictionary when required.
 
 .PARAMETER Name
-The name of the state object.
+    Specifies the name of the state object, used as the key to identify the object within the shared state.
 
 .PARAMETER Value
-The value to set in the state.
+    Specifies the value to set in the state. This can be any object, such as a string, array, or hash table.
 
 .PARAMETER Scope
-An optional Scope for the state object, used when saving the state.
+    An optional array of scopes to categorize the state object, enabling specific management based on scope.
+
+.PARAMETER Threadsafe
+    Ensures the shared state operates in a thread-safe manner by converting it to a concurrent dictionary.
 
 .EXAMPLE
-Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
+    Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
+    Sets a hash table with a key-value pair in the shared state under the name 'Data'.
 
 .EXAMPLE
-Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
+    Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
+    Sets an array of user names within the shared state under the name 'Users' with specified scopes.
 #>
 function Set-PodeState {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Builtin')]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name,
-
-        [Parameter(ValueFromPipeline = $true, Position = 0)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Builtin')]
         [object]
         $Value,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Builtin')]
+        [string]
+        $Name,
+
+        [Parameter(ParameterSetName = 'Builtin')]
         [string[]]
-        $Scope
+        $Scope,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'ThreadSafe')]
+        [switch]
+        $Threadsafe
     )
 
+    # Check if Pode has been initialized; if not, throw an exception
     begin {
         if ($null -eq $PodeContext.Server.State) {
-            # Pode has not been initialized
             throw ($PodeLocale.podeNotInitializedExceptionMessage)
         }
 
+        # Convert the state to a concurrent dictionary if thread-safe operations are requested
+        if ($Threadsafe.IsPresent) {
+            # If the state is already a concurrent dictionary, no conversion is needed
+            if (Test-PodeStateIsThreadSafe) {
+                return
+            }
+            # Convert the current state to a concurrent dictionary for thread safety
+            $PodeContext.Server.State = ConvertTo-PodeConcurrentStructure -Hashtable $PodeContext.Server.State
+            return
+        }
+
+        # Set the scope to an empty array if none is provided
         if ($null -eq $Scope) {
             $Scope = @()
         }
@@ -62,14 +84,38 @@ function Set-PodeState {
             $Value = $pipelineValue
         }
 
-        $PodeContext.Server.State[$Name] = @{
-            Value = $Value
-            Scope = $Scope
+        # Check if the state is a concurrent dictionary
+        if (Test-PodeStateIsThreadSafe) {
+            # Create a new concurrent dictionary item with case-insensitive keys
+            $item = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase)
+
+            # If the value is an ordered dictionary or hashtable, convert it to a concurrent dictionary
+            if (($Value -is [System.Collections.Specialized.OrderedDictionary]) -or ($Value -is [hashtable])) {
+                $Value = (ConvertTo-PodeConcurrentStructure -Hashtable $Value)
+            }
+
+            # Add the value to the dictionary
+            $item['Value'] = $Value
+
+            # Add the scope to the item
+            $item['Scope'] = $Scope
+
+            # Try to add the new item to the shared state
+            $PodeContext.Server.State[$Name] = $item
+        }
+        else {
+            # If not using a concurrent dictionary, add the item as a regular hashtable
+            $PodeContext.Server.State[$Name] = @{
+                Value = $Value
+                Scope = $Scope
+            }
         }
 
+        # Return the value that was set
         return $Value
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -152,8 +198,14 @@ function Get-PodeStateNames {
         $Scope = @()
     }
 
-    $tempState = $PodeContext.Server.State.Clone()
-    $keys = $tempState.Keys
+    if (Test-PodeStateIsThreadSafe) {
+        $tempState = $PodeContext.Server.State
+        $keys = $tempState.Keys.clone()
+    }
+    else {
+        $tempState = $PodeContext.Server.State.Clone()
+        $keys = $tempState.Keys
+    }
 
     if ($Scope.Length -gt 0) {
         $keys = @(foreach ($key in $keys) {
@@ -199,6 +251,12 @@ function Remove-PodeState {
     if ($null -eq $PodeContext.Server.State) {
         # Pode has not been initialized
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
+    }
+
+    if (Test-PodeStateIsThreadSafe) {
+        $item = ''
+        $null = $PodeContext.Server.State.tryRemove($Name, [ref]$item)
+        return $item.value
     }
 
     $value = $PodeContext.Server.State[$Name].Value
@@ -260,7 +318,8 @@ function Save-PodeState {
         $Include,
 
         [Parameter()]
-        [int16]
+        [ValidateRange(0, 100)]
+        [int]
         $Depth = 10,
 
         [switch]
@@ -277,7 +336,12 @@ function Save-PodeState {
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # contruct the state to save (excludes, etc)
-    $state = $PodeContext.Server.State.Clone()
+    if (Test-PodeStateIsThreadSafe) {
+        $state = ConvertFrom-PodeConcurrentStructure -concurrentDictionary $PodeContext.Server.State
+    }
+    else {
+        $state = $PodeContext.Server.State.Clone()
+    }
 
     # scopes
     if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
@@ -355,10 +419,13 @@ function Restore-PodeState {
         [string]
         $Path,
 
+        [Parameter()]
         [switch]
         $Merge,
 
-        [int16]
+        [Parameter()]
+        [ValidateRange(0, 100)]
+        [int]
         $Depth = 10
     )
 
@@ -387,9 +454,17 @@ function Restore-PodeState {
         }
     }
 
+    # if the file is empty exit
+    if ($state.Count -eq 0) {
+        return
+    }
+
+    # Clone the keys
+    $keys = $state.Keys.clone()
+
     # check for no scopes, and add for backwards compat
     $convert = $false
-    foreach ($_key in $state.Clone().Keys) {
+    foreach ($_key in $keys) {
         if ($null -eq $state[$_key].Scope) {
             $convert = $true
             break
@@ -397,7 +472,7 @@ function Restore-PodeState {
     }
 
     if ($convert) {
-        foreach ($_key in $state.Clone().Keys) {
+        foreach ($_key in $keys) {
             $state[$_key] = @{
                 Value = $state[$_key]
                 Scope = @()
@@ -406,13 +481,18 @@ function Restore-PodeState {
     }
 
     # set the scope to the main context
-    if ($Merge) {
-        foreach ($_key in $state.Clone().Keys) {
-            $PodeContext.Server.State[$_key] = $state[$_key]
-        }
+    if (! $Merge) {
+        $PodeContext.Server.State.clear()
+    }
+
+    #clone the state
+    if (Test-PodeStateIsThreadSafe) {
+        $PodeContext.Server.State = ConvertTo-PodeConcurrentStructure $state
     }
     else {
-        $PodeContext.Server.State = $state.Clone()
+        foreach ($_key in $keys) {
+            $PodeContext.Server.State[$_key] = $state[$_key]
+        }
     }
 }
 
