@@ -124,7 +124,7 @@ namespace PodeMonitor
         /// </summary>
         public void Restart()
         {
-            if ((!_terminating) && _pwshMonitor.State == ServiceState.Running)
+            if ((!_terminating) && _pwshMonitor.State == ServiceState.Running  || _pwshMonitor.State == ServiceState.Suspended)
             {
                 PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service restarting at: {0}", DateTimeOffset.Now);
                 try

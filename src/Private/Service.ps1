@@ -244,7 +244,7 @@ function Register-PodeMacService {
         $Agent
     )
 
-    $nameService = "pode.$Name.service".Replace(' ', '_')
+    $nameService = Get-PodeRealServiceName
 
     # Check if the service is already registered
     if ((Test-PodeMacOsServiceIsRegistered $nameService)) {
@@ -410,7 +410,7 @@ function Register-PodeLinuxService {
         [string]
         $OsArchitecture
     )
-    $nameService = "$Name.service".Replace(' ', '_')
+    $nameService = Get-PodeRealServiceName
     $null = systemctl status $nameService 2>&1
 
     # Check if the service is already registered
@@ -673,7 +673,9 @@ function Test-PodeLinuxServiceIsRegistered {
         [string]
         $Name
     )
-    $systemctlStatus = systemctl status $Name 2>&1
+
+    $nameService = Get-PodeRealServiceName -Name $Name
+    $systemctlStatus = systemctl status $nameService 2>&1
     $isRegistered = ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3)
     Write-Verbose -Message ($systemctlStatus -join '`n')
     return $isRegistered
@@ -703,7 +705,8 @@ function Test-PodeLinuxServiceIsActive {
         [string]
         $Name
     )
-    $systemctlIsActive = systemctl is-active $Name 2>&1
+    $nameService = Get-PodeRealServiceName -Name $Name
+    $systemctlIsActive = systemctl is-active $nameService 2>&1
     $isActive = $systemctlIsActive -eq 'active'
     Write-Verbose -Message ($systemctlIsActive -join '`n')
     return $isActive
@@ -733,7 +736,8 @@ function Disable-PodeLinuxService {
         [string]
         $Name
     )
-    $systemctlDisable = sudo systemctl disable $Name 2>&1
+    $nameService = Get-PodeRealServiceName -Name $Name
+    $systemctlDisable = sudo systemctl disable $nameService 2>&1
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($systemctlDisable -join '`n')
     return $success
@@ -793,9 +797,9 @@ function Stop-PodeLinuxService {
         [string]
         $Name
     )
-
+    $nameService = Get-PodeRealServiceName -Name $Name
     #return (Send-PodeServiceSignal -Name $Name -Signal SIGTERM)
-    $serviceStopInfo = sudo systemctl stop  $("$Name.service".Replace(' ', '_')) 2>&1
+    $serviceStopInfo = sudo systemctl stop  $nameService 2>&1
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($serviceStopInfo -join "`n")
     return $success
@@ -825,7 +829,8 @@ function Start-PodeLinuxService {
         [string]
         $Name
     )
-    $serviceStartInfo = sudo systemctl start $Name 2>&1
+    $nameService = Get-PodeRealServiceName -Name $Name
+    $serviceStartInfo = sudo systemctl start $nameService 2>&1
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($serviceStartInfo -join "`n")
     return $success
@@ -855,7 +860,8 @@ function Test-PodeMacOsServiceIsRegistered {
         [string]
         $Name
     )
-    $systemctlStatus = launchctl list $Name 2>&1
+    $nameService = Get-PodeRealServiceName -Name $Name
+    $systemctlStatus = launchctl list $nameService 2>&1
     $isRegistered = ($LASTEXITCODE -eq 0)
     Write-Verbose -Message ($systemctlStatus -join '`n')
     return $isRegistered
@@ -967,7 +973,8 @@ function Test-PodeMacOsServiceIsActive {
         [string]
         $Name
     )
-    $serviceInfo = launchctl list $name
+    $nameService = Get-PodeRealServiceName -Name $Name
+    $serviceInfo = launchctl list $nameService
     $isActive = $serviceInfo -match '"PID" = (\d+);'
     Write-Verbose -Message ($serviceInfo -join "`n")
     return $isActive.Count -eq 1
@@ -1065,10 +1072,6 @@ function Stop-PodeMacOsService {
     )
 
     return (Send-PodeServiceSignal -Name $Name -Signal SIGTERM)
-    #  $serviceStopInfo = launchctl stop $Name 2>&1
-    # $success = $LASTEXITCODE -eq 0
-    # Write-Verbose -Message ($serviceStopInfo -join "`n")
-    # return $success
 }
 
 <#
@@ -1090,30 +1093,72 @@ function Stop-PodeMacOsService {
     This is an internal function and may change in future releases of Pode.
 #>
 function Start-PodeMacOsService {
+    [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
+    $nameService = Get-PodeRealServiceName -Name $Name
     $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
     if ($sudo) {
-        $serviceStartInfo = sudo launchctl start $Name 2>&1
+        $serviceStartInfo = sudo launchctl start $nameService 2>&1
     }
     else {
-        $serviceStartInfo = launchctl start $Name 2>&1
+        $serviceStartInfo = launchctl start $nameService 2>&1
     }
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($serviceStartInfo -join "`n")
     return $success
 }
 
+<#
+.SYNOPSIS
+	Sends a specified signal to a Pode service on Linux or macOS.
 
+.DESCRIPTION
+	The `Send-PodeServiceSignal` function sends a Unix signal (`SIGTSTP`, `SIGCONT`, `SIGHUP`, or `SIGTERM`) to a specified Pode service. It checks if the service is registered and active before sending the signal. The function supports both standard and elevated privilege operations based on the service's configuration.
+
+.PARAMETER Name
+	The name of the Pode service to signal.
+
+.PARAMETER Signal
+	The Unix signal to send to the service. Supported signals are:
+	- `SIGTSTP`: Stop the service temporarily (20).
+	- `SIGCONT`: Continue the service (18).
+	- `SIGHUP`: Restart the service (1).
+	- `SIGTERM`: Terminate the service gracefully (15).
+
+.OUTPUTS
+	[bool] Returns `$true` if the signal was successfully sent, otherwise `$false`.
+
+.EXAMPLE
+	Send-PodeServiceSignal -Name "MyPodeService" -Signal "SIGHUP"
+
+	Sends the `SIGHUP` signal to the Pode service named "MyPodeService", instructing it to restart.
+
+.EXAMPLE
+	Send-PodeServiceSignal -Name "AnotherService" -Signal "SIGTERM"
+
+	Sends the `SIGTERM` signal to gracefully stop the Pode service named "AnotherService".
+
+.NOTES
+	- This function is intended for use on Linux and macOS only.
+	- Requires administrative/root privileges to send signals to services running with elevated privileges.
+	- Logs verbose output for troubleshooting.
+    - This is an internal function and may change in future releases of Pode.
+#>
 function Send-PodeServiceSignal {
+    [CmdletBinding()]
+    [OutputType([bool])]
     param(
+        # The name of the Pode service to signal
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
+        # The Unix signal to send to the service
         [Parameter(Mandatory = $true)]
         [ValidateSet('SIGTSTP', 'SIGCONT', 'SIGHUP', 'SIGTERM')]
         [string]
@@ -1121,27 +1166,37 @@ function Send-PodeServiceSignal {
     )
 
     # Standardize service naming for Linux/macOS
-    $nameService = $(if ($IsMacOS) { "pode.$Name.service".Replace(' ', '_') }else { "$Name.service".Replace(' ', '_') })
+    $nameService = Get-PodeRealServiceName
 
+    # Map signal names to their corresponding Unix signal numbers
     $signalMap = @{
-        'SIGTSTP' = 20
-        'SIGCONT' = 18
-        'SIGHUP'  = 1
-        'SIGTERM' = 15
+        'SIGTSTP' = 20  # Stop the process
+        'SIGCONT' = 18  # Resume the process
+        'SIGHUP'  = 1   # Restart the process
+        'SIGTERM' = 15  # Gracefully terminate the process
     }
 
+    # Retrieve the signal number from the map
     $level = $signalMap[$Signal]
+
     # Check if the service is registered
     if ((Test-PodeServiceIsRegistered -Name $nameService)) {
+        # Check if the service is currently active
         if ((Test-PodeServiceIsActive -Name $nameService)) {
             Write-Verbose -Message "Service '$Name' is active. Sending $Signal signal."
+
+            # Retrieve service details, including the PID and privilege requirement
             $svc = Get-PodeService -Name $Name
+
+            # Send the signal based on the privilege level
             if ($svc.Sudo) {
                 sudo /bin/kill -$($level) $svc.Pid
             }
             else {
                 /bin/kill -$($level) $svc.Pid
             }
+
+            # Check the exit code to determine if the signal was sent successfully
             $success = $LASTEXITCODE -eq 0
             if ($success) {
                 Write-Verbose -Message "$Signal signal sent to service '$Name'."
@@ -1153,8 +1208,320 @@ function Send-PodeServiceSignal {
         }
     }
     else {
-        # Service is not registered
+        # Throw an exception if the service is not registered
         throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
     }
+
+    # Return false if the signal could not be sent
     return $false
+}
+
+<#
+.SYNOPSIS
+	Waits for a Pode service to reach a specified status within a defined timeout period.
+
+.DESCRIPTION
+	The `Wait-PodeServiceStatus` function continuously checks the status of a specified Pode service and waits for it to reach the desired status (`Running`, `Stopped`, or `Suspended`). If the service does not reach the desired status within the timeout period, the function returns `$false`.
+
+.PARAMETER Name
+	The name of the Pode service to monitor.
+
+.PARAMETER Status
+	The desired status to wait for. Valid values are:
+	- `Running`
+	- `Stopped`
+	- `Suspended`
+
+.PARAMETER Timeout
+	The maximum time, in seconds, to wait for the service to reach the desired status. Defaults to 10 seconds.
+
+.EXAMPLE
+	Wait-PodeServiceStatus -Name "MyPodeService" -Status "Running" -Timeout 15
+
+	Waits up to 15 seconds for the Pode service named "MyPodeService" to reach the `Running` status.
+
+.EXAMPLE
+	Wait-PodeServiceStatus -Name "AnotherService" -Status "Stopped"
+
+	Waits up to 10 seconds (default timeout) for the Pode service named "AnotherService" to reach the `Stopped` status.
+
+.OUTPUTS
+	[bool] Returns `$true` if the service reaches the desired status within the timeout period, otherwise `$false`.
+
+.NOTES
+	- The function checks the service status every second until the desired status is reached or the timeout period expires.
+	- If the service does not reach the desired status within the timeout period, the function returns `$false`.
+    - This is an internal function and may change in future releases of Pode.
+#>
+function Wait-PodeServiceStatus {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Running', 'Stopped', 'Suspended')]
+        [string]
+        $Status,
+
+        [Parameter(Mandatory = $false)]
+        [int]
+        $Timeout = 10
+    )
+
+    # Record the start time for timeout tracking
+    $startTime = Get-Date
+    Write-Verbose "Waiting for service '$Name' to reach status '$Status' with a timeout of $Timeout seconds."
+
+    # Begin an infinite loop to monitor the service status
+    while ($true) {
+        # Retrieve the current status of the specified Pode service
+        $currentStatus = Get-PodeServiceStatus -Name $Name
+
+        # Check if the service has reached the desired status
+        if ($currentStatus.Status -eq $Status) {
+            Write-Verbose "Service '$Name' has reached the desired status '$Status'."
+            return $true
+        }
+
+        # Check if the timeout period has been exceeded
+        if ((Get-Date) -gt $startTime.AddSeconds($Timeout)) {
+            Write-Verbose "Timeout reached. Service '$Name' did not reach the desired status '$Status'."
+            return $false
+        }
+
+        # Pause execution for 1 second before checking again
+        Start-Sleep -Seconds 1
+    }
+}
+
+<#
+.SYNOPSIS
+	Retrieves the status of a Pode service across Windows, Linux, and macOS platforms.
+
+.DESCRIPTION
+	The `Get-PodeServiceStatus` function retrieves detailed information about a specified Pode service, including its current status, process ID (PID), and whether it requires elevated privileges (`Sudo`). The behavior varies based on the platform:
+	- Windows: Uses CIM to query the service status and maps standard states to Pode-specific states.
+	- Linux: Checks service status using `systemctl` and optionally reads additional state information from a custom state file.
+	- macOS: Uses `launchctl` and custom logic to determine the service's status and PID.
+
+.PARAMETER Name
+	The name of the Pode service to query.
+
+.EXAMPLE
+	Get-PodeServiceStatus -Name "MyPodeService"
+
+	Retrieves the status of the Pode service named "MyPodeService".
+
+.OUTPUTS
+	[hashtable] The function returns a hashtable with the following keys:
+		- Name: The service name.
+		- Status: The current status of the service (e.g., Running, Stopped, Suspended).
+		- Pid: The process ID of the service.
+		- Sudo: A boolean indicating whether elevated privileges are required.
+
+.NOTES
+	- Requires administrative/root privileges to access service information on Linux and macOS.
+	- Platform-specific behaviors:
+		- **Windows**: Retrieves service information via the `Win32_Service` class.
+		- **Linux**: Uses `systemctl` to query the service status and retrieves custom Pode state if available.
+		- **macOS**: Uses `launchctl` to query service information and checks for custom Pode state files.
+	- If the service is not found, the function returns `$null`.
+	- Logs errors and warnings for troubleshooting.
+    - This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeServiceStatus {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+
+    if (Test-PodeIsWindows) {
+        # Check if the service exists on Windows
+        $service = Get-CimInstance -ClassName Win32_Service -Filter "Name='$Name'"
+
+        if ($service) {
+            switch ($service.State) {
+                'Running' { $status = 'Running' }
+                'Stopped' { $status = 'Stopped' }
+                'Paused' { $status = 'Suspended' }
+                'StartPending' { $status = 'Starting' }
+                'StopPending' { $status = 'Stopping' }
+                'PausePending' { $status = 'Pausing' }
+                'ContinuePending' { $status = 'Resuming' }
+                default { $status = 'Unknown' }
+            }
+            return @{
+                Name   = $Name
+                Status = $status
+                Pid    = $service.ProcessId
+                Sudo   = $true
+            }
+        }
+        else {
+            Write-Verbose -Message "Service '$Name' not found."
+            return $null
+        }
+    }
+
+    elseif ($IsLinux) {
+        try {
+            $nameService = Get-PodeRealServiceName
+            # Check if the service exists on Linux (systemd)
+            if ((Test-PodeLinuxServiceIsRegistered -Name $nameService)) {
+                $servicePid = 0
+                $status = $(systemctl show -p ActiveState $nameService | awk -F'=' '{print $2}')
+
+                switch ($status) {
+                    'active' {
+                        $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                        $stateFilePath = "/var/run/podemonitor/$servicePid.state"
+                        if (Test-Path -Path $stateFilePath) {
+                            $status = Get-Content -Path $stateFilePath -Raw
+                            $status = $status.Substring(0, 1).ToUpper() + $status.Substring(1)
+                        }
+                    }
+                    'reloading' {
+                        $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                        $status = 'Running'
+                    }
+                    'maintenance' {
+                        $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                        $status = 'Suspended'
+                    }
+                    'inactive' {
+                        $status = 'Stopped'
+                    }
+                    'failed' {
+                        $status = 'Stopped'
+                    }
+                    'activating' {
+                        $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                        $status = 'Starting'
+                    }
+                    'deactivating' {
+                        $status = 'Stopping'
+                    }
+                    default {
+                        $status = 'Stopped'
+                    }
+                }
+                return @{
+                    Name   = $Name
+                    Status = $status
+                    Pid    = $servicePid
+                    Sudo   = $true
+                }
+            }
+            else {
+                Write-Verbose -Message "Service '$nameService' not found."
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            Write-Error -Exception $_.Exception
+            return $null
+        }
+    }
+
+    elseif ($IsMacOS) {
+        try {
+            $nameService = Get-PodeRealServiceName
+            # Check if the service exists on macOS (launchctl)
+            if ((Test-PodeMacOsServiceIsRegistered $nameService )) {
+                $servicePid = Get-PodeMacOsServicePid -Name $nameService # Extract the PID from the match
+
+                $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
+
+                # Check if the service has a PID entry
+                if ($servicePid -ne 0) {
+                    if ($sudo) {
+                        $stateFilePath = "/Library/LaunchDaemons/PodeMonitor/$servicePid.state"
+                    }
+                    else {
+                        $stateFilePath = "$($HOME)/Library/LaunchAgents/PodeMonitor/$servicePid.state"
+                    }
+                    if (Test-Path -Path $stateFilePath) {
+                        $status = Get-Content -Path $stateFilePath
+                    }
+                    return @{
+                        Name   = $Name
+                        Status = $status
+                        Pid    = $servicePid
+                        Sudo   = $sudo
+                    }
+                }
+                else {
+                    return @{
+                        Name   = $Name
+                        Status = 'Stopped'
+                        Pid    = 0
+                        Sudo   = $sudo
+                    }
+                }
+            }
+            else {
+                Write-Verbose -Message "Service '$Name' not found."
+                return $null
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            Write-Error -Exception $_.Exception
+            return $null
+        }
+    }
+
+}
+
+<#
+.SYNOPSIS
+	Returns the standardized service name for a Pode service based on the current platform.
+
+.DESCRIPTION
+	The `Get-PodeRealServiceName` function formats a Pode service name to match platform-specific conventions:
+	- On macOS, the service name is prefixed with `pode.` and suffixed with `.service`, with spaces replaced by underscores.
+	- On Linux, the service name is suffixed with `.service`, with spaces replaced by underscores.
+	- On Windows, the service name is returned as provided.
+
+.PARAMETER Name
+	The name of the Pode service to standardize.
+
+.EXAMPLE
+	Get-PodeRealServiceName -Name "My Pode Service"
+
+	For macOS, returns: `pode.My_Pode_Service.service`.
+	For Linux, returns: `My_Pode_Service.service`.
+	For Windows, returns: `My Pode Service`.
+
+.NOTES
+	This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeRealServiceName {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    # Standardize service naming for macOS
+    if ($IsMacOS) {
+        return "pode.$Name.service".Replace(' ', '_')
+    }
+
+    # Standardize service naming for Linux
+    if ($IsLinux) {
+        return "$Name.service".Replace(' ', '_')
+    }
+
+    # For Windows, return the name as-is
+    return $Name
 }
