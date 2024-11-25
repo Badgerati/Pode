@@ -1334,6 +1334,8 @@ function Get-PodeOABaseObject {
                 'default' = [ordered]@{ description = 'Internal server error' }
             }
             operationId      = @()
+            #Async Route OpenAPI names
+            AsyncRoute       = Get-PodeAsyncRouteOASchemaNameInternal
         }
     }
 }
