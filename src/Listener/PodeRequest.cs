@@ -137,7 +137,7 @@ namespace Pode
                 }
                 else
                 {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                    PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Debug);
                 }
 
                 State = PodeStreamState.Error;
@@ -176,19 +176,19 @@ namespace Pode
                 }
                 catch (Exception ex) when (ex is OperationCanceledException || ex is IOException || ex is ObjectDisposedException)
                 {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                    PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Verbose);
                     State = PodeStreamState.Error;
                     Error = new PodeRequestException(ex, 500);
                 }
                 catch (AuthenticationException ex)
                 {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                    PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Debug);
                     State = PodeStreamState.Error;
                     Error = new PodeRequestException(ex, 400);
                 }
                 catch (Exception ex)
                 {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                    PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Error);
                     State = PodeStreamState.Error;
                     Error = new PodeRequestException(ex, 502);
                 }
@@ -281,20 +281,20 @@ namespace Pode
             }
             catch (OperationCanceledException ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Verbose);
             }
             catch (IOException ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Verbose);
             }
             catch (PodeRequestException ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Error);
                 Error = ex;
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Error);
                 Error = new PodeRequestException(ex, 500);
             }
             finally
@@ -455,7 +455,7 @@ namespace Pode
             }
 
             PartialDispose();
-            PodeHelpers.WriteErrorMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeLogger.LogMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
         }
     }
 }

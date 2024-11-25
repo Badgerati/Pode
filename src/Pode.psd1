@@ -283,17 +283,39 @@
 
         # logging
         'New-PodeLoggingMethod',
+        'New-PodeCustomLoggingMethod',
+        'New-PodeEventViewerLoggingMethod',
+        'New-PodeFileLoggingMethod',
+        'New-PodeSyslogLoggingMethod',
+        'New-PodeTerminalLoggingMethod',
+        'New-PodeAwsLoggingMethod',
+        'New-PodeAzureLoggingMethod',
+        'New-PodeDatadogLoggingMethod',
+        'New-PodeElasticsearchLoggingMethod',
+        'New-PodeGoogleLoggingMethod',
+        'New-PodeGraylogLoggingMethod',
+        'New-PodeLogInsightLoggingMethod',
+        'New-PodeSplunkLoggingMethod',
         'Enable-PodeRequestLogging',
         'Enable-PodeErrorLogging',
+        'Enable-PodeDefaultLogging',
+
         'Disable-PodeRequestLogging',
         'Disable-PodeErrorLogging',
+        'Disable-PodeDefaultLogging',
+        'Add-PodeLoggingMethod',
+        'Remove-PodeLoggingMethod',
         'Add-PodeLogger',
         'Remove-PodeLogger',
-        'Clear-PodeLoggers',
+        'Clear-PodeLogger',
         'Write-PodeErrorLog',
         'Write-PodeLog',
         'Protect-PodeLogItem',
         'Use-PodeLogging',
+        'Enable-PodeLog',
+        'Disable-PodeLog',
+        'Clear-PodeLogging',
+        'Get-PodeLoggingLevel',
 
         # core
         'Start-PodeServer',
@@ -506,7 +528,8 @@
         'Enable-PodeOpenApiViewer',
         'Enable-PodeOA',
         'Get-PodeOpenApiDefinition',
-        'New-PodeOASchemaProperty'
+        'New-PodeOASchemaProperty',
+        'Clear-PodeLoggers'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

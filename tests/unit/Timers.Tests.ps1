@@ -8,6 +8,7 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
+
     $PodeContext = @{ 'Server' = $null; }
 }
 
@@ -71,7 +72,7 @@ Describe 'Add-PodeTimer' {
 
     It 'Adds new timer to session with no limit' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1 
+        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
 
         $timer = $PodeContext.Timers.Items['test']
         $timer | Should -Not -Be $null

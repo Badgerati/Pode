@@ -154,7 +154,7 @@ Request and Error logging are inbuilt logging types that can be enabled using [`
 | [`Disable-PodeRequestLogging`](../../../Functions/Logging/Disable-PodeRequestLogging) |
 | [`Disable-PodeErrorLogging`](../../../Functions/Logging/Disable-PodeErrorLogging) |
 | [`Remove-PodeLogger`](../../../Functions/Logging/Remove-PodeLogger) |
-| [`Clear-PodeLoggers`](../../../Functions/Logging/Clear-PodeLoggers) |
+| [`Clear-PodeLogger`](../../../Functions/Logging/Clear-PodeLogger) |
 
 ### Writing Logs
 
