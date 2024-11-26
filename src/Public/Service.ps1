@@ -604,7 +604,7 @@ function Suspend-PodeService {
                     return $true
                 }
                 else {
-                    return Wait-PodeServiceStatus -Name $Name -Status Paused -Timeout $Timeout
+                    return Wait-PodeServiceStatus -Name $Name -Status Suspended -Timeout $Timeout
                 }
             }
 
@@ -617,7 +617,7 @@ function Suspend-PodeService {
                     return $true
                 }
                 else {
-                    return Wait-PodeServiceStatus -Name $Name -Status Paused -Timeout $Timeout
+                    return Wait-PodeServiceStatus -Name $Name -Status Suspended -Timeout $Timeout
                 }
             }
 
@@ -694,7 +694,7 @@ function Resume-PodeService {
             throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
         }
 
-        if ($service.Status -ne 'Paused') {
+        if ($service.Status -ne 'Suspended') {
             Write-Verbose -Message "Service '$Name' is not Suspended."
             return $false
         }

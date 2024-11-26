@@ -1166,7 +1166,7 @@ function Send-PodeServiceSignal {
     )
 
     # Standardize service naming for Linux/macOS
-    $nameService = Get-PodeRealServiceName -Name $Name 
+    $nameService = Get-PodeRealServiceName -Name $Name
 
     # Map signal names to their corresponding Unix signal numbers
     $signalMap = @{
@@ -1512,16 +1512,20 @@ function Get-PodeRealServiceName {
         $Name
     )
 
-    # Standardize service naming for macOS
+    # If the name already ends with '.service', return it directly
+    if ($Name -like '*.service') {
+        return $Name
+    }
+    
+    # Standardize service naming based on platform
     if ($IsMacOS) {
         return "pode.$Name.service".Replace(' ', '_')
     }
-
-    # Standardize service naming for Linux
-    if ($IsLinux) {
+    elseif ($IsLinux) {
         return "$Name.service".Replace(' ', '_')
     }
-
-    # For Windows, return the name as-is
-    return $Name
+    else {
+        # Assume Windows or unknown platform
+        return $Name
+    }
 }
