@@ -114,7 +114,7 @@ Describe 'Start-PodeService' {
         Mock -CommandName Start-PodeMacOsService
         Mock -CommandName Write-PodeErrorLog
         Mock -CommandName Write-Error
-        Mock -CommandName Get-PodeServiceStatus {return @{Status=''}}
+        Mock -CommandName Get-PodeServiceStatus { return @{Status = '' } }
     }
 
     Context 'On Windows platform' {
@@ -130,7 +130,8 @@ Describe 'Start-PodeService' {
                 }
                 [pscustomobject]@{ Name = 'TestService'; Status = $status }
             }
-            Mock -CommandName Invoke-PodeWinElevatedCommand -MockWith { return $true }
+            Mock -CommandName  Wait-PodeServiceStatus { $true }
+            Mock -CommandName Invoke-PodeWinElevatedCommand -MockWith { $true }
 
             # Act
             Start-PodeService -Name 'TestService' | Should -Be $true
@@ -161,17 +162,17 @@ Describe 'Start-PodeService' {
 
     Context 'On Linux platform' {
         It 'Starts a stopped service successfully' -Skip:(!$IsLinux) {
-            $script:status = $null
-            Mock -CommandName Test-PodeLinuxServiceIsActive -MockWith {
-                if ($null -eq $script:status ) {
-                    $script:status = $false
+            $script:status = 'none'
+            Mock -CommandName Get-PodeServiceStatus -MockWith {
+                if ($script:status -eq 'none') {
+                    $script:status = 'Stopped'
                 }
                 else {
-                    $script:status = $true
+                    $script:status = 'Running'
                 }
-                return  $script:status
+                [pscustomobject]@{ Name = 'TestService'; Status = $status }
             }
-
+            Mock -CommandName  Wait-PodeServiceStatus { $true }
             Mock -CommandName Test-PodeLinuxServiceIsRegistered -MockWith { $true }
             Mock -CommandName Start-PodeLinuxService -MockWith { $true }
 
@@ -183,10 +184,12 @@ Describe 'Start-PodeService' {
         }
 
         It 'Starts a started service ' -Skip:(!$IsLinux) {
-
-            Mock -CommandName Test-PodeLinuxServiceIsActive -MockWith { $true }
-            Mock -CommandName Test-PodeLinuxServiceIsRegistered -MockWith { $true }
+ 
             Mock -CommandName Start-PodeLinuxService -MockWith { $true }
+            Mock -CommandName Get-PodeServiceStatus -MockWith {
+                [pscustomobject]@{ Name = 'TestService'; Status = 'Running' }
+            }
+
 
             # Act
             Start-PodeService -Name 'TestService' | Should -Be $true

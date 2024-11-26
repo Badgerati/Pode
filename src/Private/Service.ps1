@@ -244,7 +244,7 @@ function Register-PodeMacService {
         $Agent
     )
 
-    $nameService = Get-PodeRealServiceName
+    $nameService = Get-PodeRealServiceName -Name $Name
 
     # Check if the service is already registered
     if ((Test-PodeMacOsServiceIsRegistered $nameService)) {
@@ -410,7 +410,7 @@ function Register-PodeLinuxService {
         [string]
         $OsArchitecture
     )
-    $nameService = Get-PodeRealServiceName
+    $nameService = Get-PodeRealServiceName -Name $Name
     $null = systemctl status $nameService 2>&1
 
     # Check if the service is already registered
@@ -1166,7 +1166,7 @@ function Send-PodeServiceSignal {
     )
 
     # Standardize service naming for Linux/macOS
-    $nameService = Get-PodeRealServiceName
+    $nameService = Get-PodeRealServiceName -Name $Name 
 
     # Map signal names to their corresponding Unix signal numbers
     $signalMap = @{
@@ -1372,7 +1372,7 @@ function Get-PodeServiceStatus {
 
     elseif ($IsLinux) {
         try {
-            $nameService = Get-PodeRealServiceName
+            $nameService = Get-PodeRealServiceName -Name $Name
             # Check if the service exists on Linux (systemd)
             if ((Test-PodeLinuxServiceIsRegistered -Name $nameService)) {
                 $servicePid = 0
@@ -1432,7 +1432,7 @@ function Get-PodeServiceStatus {
 
     elseif ($IsMacOS) {
         try {
-            $nameService = Get-PodeRealServiceName
+            $nameService = Get-PodeRealServiceName -Name $Name
             # Check if the service exists on macOS (launchctl)
             if ((Test-PodeMacOsServiceIsRegistered $nameService )) {
                 $servicePid = Get-PodeMacOsServicePid -Name $nameService # Extract the PID from the match
