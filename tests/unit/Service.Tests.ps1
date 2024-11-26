@@ -114,13 +114,14 @@ Describe 'Start-PodeService' {
         Mock -CommandName Start-PodeMacOsService
         Mock -CommandName Write-PodeErrorLog
         Mock -CommandName Write-Error
+        Mock -CommandName Get-PodeServiceStatus {return @{Status=''}}
     }
 
     Context 'On Windows platform' {
         It 'Starts a stopped service successfully' -Skip:(!$IsWindows) {
             # Mock a stopped service and simulate it starting
             $script:status = 'none'
-            Mock -CommandName Get-Service -MockWith {
+            Mock -CommandName Get-PodeServiceStatus -MockWith {
                 if ($script:status -eq 'none') {
                     $script:status = 'Stopped'
                 }
@@ -140,7 +141,7 @@ Describe 'Start-PodeService' {
 
         It 'Starts a started service ' -Skip:(!$IsWindows) {
             Mock -CommandName Invoke-PodeWinElevatedCommand -MockWith { $null }
-            Mock -CommandName Get-Service -MockWith {
+            Mock -CommandName Get-PodeServiceStatus -MockWith {
                 [pscustomobject]@{ Name = 'TestService'; Status = 'Running' }
             }
 
