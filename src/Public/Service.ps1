@@ -957,12 +957,17 @@ function Unregister-PodeService {
 
                         # Extract the second string in the ProgramArguments array (the settings file path)
                         $settingsFile = $plistXml.plist.dict.array.string[1]
-
-                        if ((Test-Path -Path $settingsFile -PathType Leaf)) {
-                            Remove-Item -Path $settingsFile
+                        if ($sudo) {
+                            sudo rm $settingsFile
+                            sudo rm $plistFilePath
                         }
+                        else {
+                            if ((Test-Path -Path $settingsFile -PathType Leaf)) {
+                                Remove-Item -Path $settingsFile
+                            }
 
-                        Remove-Item -Path $plistFilePath -ErrorAction Break
+                            Remove-Item -Path $plistFilePath -ErrorAction Break
+                        }
 
                         Write-Verbose -Message "Service '$Name' unregistered successfully."
                     }

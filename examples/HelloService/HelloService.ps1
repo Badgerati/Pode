@@ -1,11 +1,10 @@
 <#
 .SYNOPSIS
-    PowerShell script to register, start, stop, query, and unregister a Pode service, with a basic server setup.
+    PowerShell script to register, manage, and set up a Pode service named '$ServiceName'.
 
 .DESCRIPTION
-    This script manages a Pode service named 'Hello Service' with commands to register, start, stop, query,
-    and unregister the service. Additionally, it sets up a Pode server that listens on port 8080 and includes
-    a simple GET route that responds with 'Hello, Service!'.
+    This script provides commands to register, start, stop, query, suspend, resume, restart, and unregister a Pode service named '$ServiceName'.
+    It also sets up a Pode server that listens on the specified port (default 8080) and includes a basic GET route that responds with 'Hello, Service!'.
 
     The script checks if the Pode module exists locally and imports it; otherwise, it imports Pode from the system.
 
@@ -13,35 +12,41 @@
         Invoke-RestMethod -Uri http://localhost:8080/ -Method Get
         # Response: 'Hello, Service!'
 
+.PARAMETER ServiceName
+    Name of the service to register (Default 'Hello Service').
+
 .PARAMETER Register
-    Registers the 'Hello Service' with Pode.
+    Registers the $ServiceName with Pode.
 
 .PARAMETER Password
     A secure password for the service account (Windows only). If omitted, the service account will be 'NT AUTHORITY\SYSTEM'.
 
+    .PARAMETER Daemon
+    Defines the service as an Daemon instead of a Agent.(macOS only)
+
 .PARAMETER Unregister
-    Unregisters the 'Hello Service' from Pode. Use with the -Force switch to forcefully unregister the service.
+    Unregisters the $ServiceName from Pode. Use with the -Force switch to forcefully unregister the service.
 
 .PARAMETER Force
     Used with the -Unregister parameter to forcefully unregister the service.
 
 .PARAMETER Start
-    Starts the 'Hello Service'.
+    Starts the $ServiceName.
 
 .PARAMETER Stop
-    Stops the 'Hello Service'.
+    Stops the $ServiceName.
 
 .PARAMETER Query
-    Queries the status of the 'Hello Service'.
+    Queries the status of the $ServiceName.
 
 .PARAMETER Suspend
-    Suspend the 'Hello Service'.
+    Suspends the $ServiceName.
 
 .PARAMETER Resume
-    Resume the 'Hello Service'.
+    Resumes the $ServiceName.
 
 .PARAMETER Restart
-    Restart the 'Hello Service'.
+    Restarts the $ServiceName.
 
 .EXAMPLE
     Register the service:
@@ -64,7 +69,7 @@
         ./HelloService.ps1 -Unregister -Force
 
 .LINK
-      https://github.com/Badgerati/Pode/blob/develop/examples/HelloService/HelloService.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/HelloService/HelloService.ps1
 
 .NOTES
     Author: Pode Team
@@ -77,6 +82,10 @@ param(
     [int]
     $Port = 8080,
 
+    [Parameter(  ParameterSetName = 'Inbuilt')]
+    [string]
+    $ServiceName = 'Hello Service',
+
     [Parameter(Mandatory = $true, ParameterSetName = 'Register')]
     [switch]
     $Register,
@@ -84,6 +93,10 @@ param(
     [Parameter(Mandatory = $false, ParameterSetName = 'Register', ValueFromPipeline = $true )]
     [securestring]
     $Password,
+
+    [Parameter(ParameterSetName = 'Register')]
+    [switch]
+    $Daemon,
 
     [Parameter(Mandatory = $true, ParameterSetName = 'Unregister')]
     [switch]
@@ -116,7 +129,6 @@ param(
     [Parameter(  ParameterSetName = 'Restart')]
     [switch]
     $Restart
-
 )
 try {
     # Get the path of the script being executed
@@ -141,40 +153,40 @@ catch {
 
 
 if ( $Register.IsPresent) {
-    Register-PodeService -Name 'Hello Service' -ParameterString "-Port $Port" -Password $Password -Agent
+    Register-PodeService -Name $ServiceName -ParameterString "-Port $Port" -Password $Password -Agent:!$Daemon
     exit
 }
 if ( $Unregister.IsPresent) {
-    Unregister-PodeService -Name 'Hello Service' -Force:$Force
+    Unregister-PodeService -Name $ServiceName -Force:$Force
     exit
 }
 if ($Start.IsPresent) {
-    Start-PodeService -Name 'Hello Service'
+    Start-PodeService -Name $ServiceName
     exit
 }
 
 if ($Stop.IsPresent) {
-    Stop-PodeService -Name 'Hello Service'
+    Stop-PodeService -Name $ServiceName
     exit
 }
 
 if ($Suspend.IsPresent) {
-    Suspend-PodeService -Name 'Hello Service'
+    Suspend-PodeService -Name $ServiceName
     exit
 }
 
 if ($Resume.IsPresent) {
-    Resume-PodeService -Name 'Hello Service'
+    Resume-PodeService -Name $ServiceName
     exit
 }
 
 if ($Query.IsPresent) {
-    Get-PodeService -Name 'Hello Service'
+    Get-PodeService -Name $ServiceName
     exit
 }
 
 if ($Restart.IsPresent) {
-    Restart-PodeService -Name 'Hello Service'
+    Restart-PodeService -Name $ServiceName
     exit
 }
 

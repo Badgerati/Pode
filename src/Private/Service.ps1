@@ -254,12 +254,11 @@ function Register-PodeMacService {
 
     # Determine whether the service should run at load
     $runAtLoad = if ($Autostart.IsPresent) { '<true/>' } else { '<false/>' }
-    if ($Agent) {
-        $plistPath = "$($HOME)/Library/LaunchAgents/$($nameService).plist"
-    }
-    else {
-        $plistPath = "/Library/LaunchDaemons/$($nameService).plist"
-    }
+
+
+    # Create a temporary file
+    $tempFile = [System.IO.Path]::GetTempFileName()
+
     # Create the plist content
     @"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -299,20 +298,31 @@ function Register-PodeMacService {
     -->
 </dict>
 </plist>
-"@ | Set-Content -Path $plistPath -Encoding UTF8
+"@ | Set-Content -Path $tempFile -Encoding UTF8
 
     Write-Verbose  -Message "Service '$nameService' WorkingDirectory : $($BinPath)."
-
-    chmod +r $plistPath
-
     try {
-        # Load the plist with launchctl
         if ($Agent) {
+            $plistPath = "$($HOME)/Library/LaunchAgents/$($nameService).plist"
+            Copy-Item -Path $tempFile -Destination $plistPath
+            #set rw r r permissions
+            chmod 644 $plistPath
+            # Load the plist with launchctl
             launchctl load $plistPath
         }
         else {
-            sudo launchctl load $plistPat
+            $plistPath = "/Library/LaunchDaemons/$($nameService).plist"
+            sudo cp $tempFile  $plistPath
+            #set rw r r permissions
+            sudo chmod 644 $plistPath
+
+            sudo chown root:wheel $plistPath
+
+            # Load the plist with launchctl
+            sudo launchctl load $plistPath
+
         }
+
         # Verify the service is now registered
         if (! (Test-PodeMacOsServiceIsRegistered $nameService)) {
             # Service registration failed.
@@ -322,7 +332,6 @@ function Register-PodeMacService {
     catch {
         $_ | Write-PodeErrorLog
         throw $_  # Rethrow the error after logging
-        return $false
     }
 
     return $true
@@ -590,7 +599,6 @@ function Register-PodeMonitorWindowsService {
     catch {
         $_ | Write-PodeErrorLog
         throw $_  # Rethrow the error after logging
-        return $false
     }
 
     return $true
@@ -861,7 +869,13 @@ function Test-PodeMacOsServiceIsRegistered {
         $Name
     )
     $nameService = Get-PodeRealServiceName -Name $Name
-    $systemctlStatus = launchctl list $nameService 2>&1
+    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
+    if ($sudo) {
+        $systemctlStatus = sudo launchctl list $nameService 2>&1
+    }
+    else {
+        $systemctlStatus = launchctl list $nameService 2>&1
+    }
     $isRegistered = ($LASTEXITCODE -eq 0)
     Write-Verbose -Message ($systemctlStatus -join '`n')
     return $isRegistered
@@ -974,7 +988,13 @@ function Test-PodeMacOsServiceIsActive {
         $Name
     )
     $nameService = Get-PodeRealServiceName -Name $Name
-    $serviceInfo = launchctl list $nameService
+    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
+    if ($sudo) {
+        $serviceInfo = sudo launchctl list $nameService
+    }
+    else {
+        $serviceInfo = launchctl list $nameService
+    }
     $isActive = $serviceInfo -match '"PID" = (\d+);'
     Write-Verbose -Message ($serviceInfo -join "`n")
     return $isActive.Count -eq 1
@@ -1004,7 +1024,14 @@ function Get-PodeMacOsServicePid {
         [string]
         $Name
     )
-    $serviceInfo = launchctl list $name
+    $nameService = Get-PodeRealServiceName -Name $Name
+    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
+    if ($sudo) {
+        $serviceInfo = sudo launchctl list $nameService
+    }
+    else {
+        $serviceInfo = launchctl list $nameService
+    }
     $pidString = $serviceInfo -match '"PID" = (\d+);'
     Write-Verbose -Message ($serviceInfo -join "`n")
     return $(if ($pidString.Count -eq 1) { ($pidString[0].split('= '))[1].trim(';') } else { 0 })
@@ -1034,12 +1061,14 @@ function Disable-PodeMacOsService {
         [string]
         $Name
     )
-    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($Name).plist" -PathType Leaf)
+    # Standardize service naming for Linux/macOS
+    $nameService = Get-PodeRealServiceName -Name $Name
+    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
     if ($sudo) {
-        $systemctlDisable = sudo launchctl unload "/Library/LaunchDaemons/$Name.plist" 2>&1
+        $systemctlDisable = sudo launchctl unload "/Library/LaunchDaemons/$nameService.plist" 2>&1
     }
     else {
-        $systemctlDisable = launchctl unload "$HOME/Library/LaunchAgents/$Name.plist" 2>&1
+        $systemctlDisable = launchctl unload "$HOME/Library/LaunchAgents/$nameService.plist" 2>&1
     }
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($systemctlDisable -join '`n')
@@ -1516,7 +1545,7 @@ function Get-PodeRealServiceName {
     if ($Name -like '*.service') {
         return $Name
     }
-    
+
     # Standardize service naming based on platform
     if ($IsMacOS) {
         return "pode.$Name.service".Replace(' ', '_')
