@@ -153,41 +153,33 @@ catch {
 
 
 if ( $Register.IsPresent) {
-    Register-PodeService -Name $ServiceName -ParameterString "-Port $Port" -Password $Password -Agent:(!$Daemon.IsPresent)
-    exit
+    return Register-PodeService -Name $ServiceName -ParameterString "-Port $Port" -Password $Password -Agent:(!$Daemon.IsPresent)
 }
 if ( $Unregister.IsPresent) {
-    Unregister-PodeService -Name $ServiceName -Force:$Force
-    exit
+    return Unregister-PodeService -Name $ServiceName -Force:$Force
 }
 if ($Start.IsPresent) {
-    Start-PodeService -Name $ServiceName
-    exit
+    return Start-PodeService -Name $ServiceName
 }
 
 if ($Stop.IsPresent) {
-    Stop-PodeService -Name $ServiceName
-    exit
+    return Stop-PodeService -Name $ServiceName
 }
 
 if ($Suspend.IsPresent) {
-    Suspend-PodeService -Name $ServiceName
-    exit
+    return Suspend-PodeService -Name $ServiceName
 }
 
 if ($Resume.IsPresent) {
-    Resume-PodeService -Name $ServiceName
-    exit
+    return Resume-PodeService -Name $ServiceName
 }
 
 if ($Query.IsPresent) {
-    Get-PodeService -Name $ServiceName
-    exit
+    return Get-PodeService -Name $ServiceName
 }
 
 if ($Restart.IsPresent) {
-    Restart-PodeService -Name $ServiceName
-    exit
+    return Restart-PodeService -Name $ServiceName
 }
 
 # Start the Pode server

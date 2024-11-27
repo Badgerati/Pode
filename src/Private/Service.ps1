@@ -312,14 +312,14 @@ function Register-PodeMacService {
         }
         else {
             $plistPath = "/Library/LaunchDaemons/$($nameService).plist"
-            sudo cp $tempFile  $plistPath
+            & sudo cp $tempFile  $plistPath
             #set rw r r permissions
-            sudo chmod 644 $plistPath
+            & sudo chmod 644 $plistPath
 
-            sudo chown root:wheel $plistPath
+            & sudo chown root:wheel $plistPath
 
             # Load the plist with launchctl
-            sudo launchctl load $plistPath
+            & sudo launchctl load $plistPath
 
         }
 
@@ -455,7 +455,7 @@ WantedBy=multi-user.target
 
     Write-Verbose  -Message "Service '$nameService' ExecStart : $execStart)."
 
-    sudo cp $tempFile "/etc/systemd/system/$nameService"
+    & sudo cp $tempFile "/etc/systemd/system/$nameService"
 
     Remove-Item -path $tempFile -ErrorAction SilentlyContinue
 
@@ -652,7 +652,7 @@ function Confirm-PodeAdminPrivilege {
         }
 
         # Message for non-Windows (Linux/macOS)
-        Write-PodeHost 'Insufficient privileges. This script must be run as root or with sudo permissions to continue.' -ForegroundColor Red
+        Write-PodeHost "Insufficient privileges. This script must be run as root or with 'sudo' permissions to continue." -ForegroundColor Red
         exit
     }
 }
@@ -745,7 +745,7 @@ function Disable-PodeLinuxService {
         $Name
     )
     $nameService = Get-PodeRealServiceName -Name $Name
-    $systemctlDisable = sudo systemctl disable $nameService 2>&1
+    $systemctlDisable = & sudo systemctl disable $nameService 2>&1
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($systemctlDisable -join '`n')
     return $success
@@ -775,7 +775,7 @@ function Enable-PodeLinuxService {
         [string]
         $Name
     )
-    $systemctlEnable = sudo systemctl enable $Name 2>&1
+    $systemctlEnable = & sudo systemctl enable $Name 2>&1
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($systemctlEnable -join '`n')
     return $success
@@ -807,7 +807,7 @@ function Stop-PodeLinuxService {
     )
     $nameService = Get-PodeRealServiceName -Name $Name
     #return (Send-PodeServiceSignal -Name $Name -Signal SIGTERM)
-    $serviceStopInfo = sudo systemctl stop  $nameService 2>&1
+    $serviceStopInfo = & sudo systemctl stop  $nameService 2>&1
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($serviceStopInfo -join "`n")
     return $success
@@ -838,7 +838,7 @@ function Start-PodeLinuxService {
         $Name
     )
     $nameService = Get-PodeRealServiceName -Name $Name
-    $serviceStartInfo = sudo systemctl start $nameService 2>&1
+    $serviceStartInfo = & sudo systemctl start $nameService 2>&1
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($serviceStartInfo -join "`n")
     return $success
@@ -879,10 +879,10 @@ function Test-PodeMacOsServiceIsRegistered {
         $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
     }
     if ($sudo) {
-        $systemctlStatus = sudo launchctl list $nameService 2>&1
+        $systemctlStatus = & sudo launchctl list $nameService 2>&1
     }
     else {
-        $systemctlStatus = launchctl list $nameService 2>&1
+        $systemctlStatus = & launchctl list $nameService 2>&1
     }
     $isRegistered = ($LASTEXITCODE -eq 0)
     Write-Verbose -Message ($systemctlStatus -join '`n')
@@ -998,10 +998,10 @@ function Test-PodeMacOsServiceIsActive {
     $nameService = Get-PodeRealServiceName -Name $Name
     $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
     if ($sudo) {
-        $serviceInfo = sudo launchctl list $nameService
+        $serviceInfo = & sudo launchctl list $nameService
     }
     else {
-        $serviceInfo = launchctl list $nameService
+        $serviceInfo = & launchctl list $nameService
     }
     $isActive = $serviceInfo -match '"PID" = (\d+);'
     Write-Verbose -Message ($serviceInfo -join "`n")
@@ -1035,10 +1035,10 @@ function Get-PodeMacOsServicePid {
     $nameService = Get-PodeRealServiceName -Name $Name
     $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
     if ($sudo) {
-        $serviceInfo = sudo launchctl list $nameService
+        $serviceInfo = & sudo launchctl list $nameService
     }
     else {
-        $serviceInfo = launchctl list $nameService
+        $serviceInfo = & launchctl list $nameService
     }
     $pidString = $serviceInfo -match '"PID" = (\d+);'
     Write-Verbose -Message ($serviceInfo -join "`n")
@@ -1073,10 +1073,10 @@ function Disable-PodeMacOsService {
     $nameService = Get-PodeRealServiceName -Name $Name
     $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
     if ($sudo) {
-        $systemctlDisable = sudo launchctl unload "/Library/LaunchDaemons/$nameService.plist" 2>&1
+        $systemctlDisable = & sudo launchctl unload "/Library/LaunchDaemons/$nameService.plist" 2>&1
     }
     else {
-        $systemctlDisable = launchctl unload "$HOME/Library/LaunchAgents/$nameService.plist" 2>&1
+        $systemctlDisable = & launchctl unload "$HOME/Library/LaunchAgents/$nameService.plist" 2>&1
     }
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($systemctlDisable -join '`n')
@@ -1140,10 +1140,10 @@ function Start-PodeMacOsService {
     $nameService = Get-PodeRealServiceName -Name $Name
     $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
     if ($sudo) {
-        $serviceStartInfo = sudo launchctl start $nameService 2>&1
+        $serviceStartInfo = & sudo launchctl start $nameService 2>&1
     }
     else {
-        $serviceStartInfo = launchctl start $nameService 2>&1
+        $serviceStartInfo = & launchctl start $nameService 2>&1
     }
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($serviceStartInfo -join "`n")
@@ -1227,10 +1227,10 @@ function Send-PodeServiceSignal {
 
             # Send the signal based on the privilege level
             if ($svc.Sudo) {
-                sudo /bin/kill -$($level) $svc.Pid
+                & sudo /bin/kill -$($level) $svc.Pid
             }
             else {
-                /bin/kill -$($level) $svc.Pid
+                & /bin/kill -$($level) $svc.Pid
             }
 
             # Check the exit code to determine if the signal was sent successfully
@@ -1360,6 +1360,7 @@ function Wait-PodeServiceStatus {
 		- Sudo: A boolean indicating whether elevated privileges are required.
 
 .NOTES
+    - Possible states: Running,Stopped,Suspended,Starting,Stopping,Pausing,Resuming,Unknown
 	- Requires administrative/root privileges to access service information on Linux and macOS.
 	- Platform-specific behaviors:
 		- **Windows**: Retrieves service information via the `Win32_Service` class.
@@ -1394,12 +1395,15 @@ function Get-PodeServiceStatus {
                 'ContinuePending' { $status = 'Resuming' }
                 default { $status = 'Unknown' }
             }
-            return @{
-                Name   = $Name
-                Status = $status
-                Pid    = $service.ProcessId
-                Sudo   = $true
+            return [PSCustomObject]@{
+                PsTypeName = 'PodeService'
+                Name       = $Name
+                Status     = $status
+                Pid        = $service.ProcessId
+                Sudo       = $true
+                PathName   = $service.PathName
             }
+
         }
         else {
             Write-Verbose -Message "Service '$Name' not found."
@@ -1449,11 +1453,13 @@ function Get-PodeServiceStatus {
                         $status = 'Stopped'
                     }
                 }
-                return @{
-                    Name   = $Name
-                    Status = $status
-                    Pid    = $servicePid
-                    Sudo   = $true
+                return [PSCustomObject]@{
+                    PsTypeName = 'PodeService'
+                    Name       = $Name
+                    Status     = $status
+                    Pid        = $servicePid
+                    Sudo       = $true
+                    PathName   = "/etc/systemd/system/$nameService"
                 }
             }
             else {
@@ -1476,32 +1482,29 @@ function Get-PodeServiceStatus {
 
                 $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
 
-                # Check if the service has a PID entry
-                if ($servicePid -ne 0) {
-                    if ($sudo) {
-                        $stateFilePath = "/Library/LaunchDaemons/PodeMonitor/$servicePid.state"
-                    }
-                    else {
-                        $stateFilePath = "$($HOME)/Library/LaunchAgents/PodeMonitor/$servicePid.state"
-                    }
-                    if (Test-Path -Path $stateFilePath) {
-                        $status = Get-Content -Path $stateFilePath -Raw
-                        $status = $status.Substring(0, 1).ToUpper() + $status.Substring(1)
-                    }
-                    return @{
-                        Name   = $Name
-                        Status = $status
-                        Pid    = $servicePid
-                        Sudo   = $sudo
-                    }
+                if ($sudo) {
+                    $stateFilePath = "/Library/LaunchDaemons/PodeMonitor/$servicePid.state"
+                    $plistPath="/Library/LaunchDaemons/$($nameService).plist"
                 }
                 else {
-                    return @{
-                        Name   = $Name
-                        Status = 'Stopped'
-                        Pid    = 0
-                        Sudo   = $sudo
-                    }
+                    $stateFilePath = "$($HOME)/Library/LaunchAgents/PodeMonitor/$servicePid.state"
+                    $plistPath="$($HOME)/Library/LaunchAgents/$($nameService).plist"
+                }
+                if (Test-Path -Path $stateFilePath) {
+                    $status = Get-Content -Path $stateFilePath -Raw
+                    $status = $status.Substring(0, 1).ToUpper() + $status.Substring(1)
+                }
+                else {
+                    $status = 'Stopped'
+                }
+
+                return [PSCustomObject]@{
+                    PsTypeName = 'PodeService'
+                    Name       = $Name
+                    Status     = $status
+                    Pid        = $servicePid
+                    Sudo       = $true
+                    PathName   = $plistPath
                 }
             }
             else {
