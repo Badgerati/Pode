@@ -35,17 +35,17 @@ namespace PodeMonitor
         /// <param name="args">Command-line arguments passed to the service.</param>
         protected override void OnStart(string[] args)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service starting...");
+            PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service starting...");
             try
             {
                 base.OnStart(args); // Call the base implementation
                 _host.StartAsync().Wait(); // Start the Pode host asynchronously and wait for it to complete
-                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service started successfully.");
+                PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service started successfully.");
             }
             catch (Exception ex)
             {
                 // Log the exception to the custom log
-                PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Service startup failed.");
+                PodeMonitorLogger.Log(PodeLogLevel.ERROR, ex, "Service startup failed.");
 
                 // Write critical errors to the Windows Event Log
                 EventLog.WriteEntry(ServiceName, $"Critical failure during service startup: {ex.Message}\n{ex.StackTrace}",
@@ -70,19 +70,19 @@ namespace PodeMonitor
         /// </summary>
         protected override void OnPause()
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service pausing...");
+            PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service pausing...");
             base.OnPause(); // Call the base implementation
 
             // Retrieve the IPausableHostedService instance from the service container
             var service = _host.Services.GetService(typeof(IPausableHostedService));
             if (service != null)
             {
-                PodeMonitorLogger.Log(LogLevel.DEBUG, "PodeMonitor", Environment.ProcessId, $"Resolved IPausableHostedService: {service.GetType().FullName}");
+                PodeMonitorLogger.Log(PodeLogLevel.DEBUG, "PodeMonitor", Environment.ProcessId, $"Resolved IPausableHostedService: {service.GetType().FullName}");
                 ((IPausableHostedService)service).OnPause(); // Invoke the pause operation
             }
             else
             {
-                PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Error: Failed to resolve IPausableHostedService.");
+                PodeMonitorLogger.Log(PodeLogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Error: Failed to resolve IPausableHostedService.");
             }
         }
 
@@ -91,19 +91,19 @@ namespace PodeMonitor
         /// </summary>
         protected override void OnContinue()
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service resuming...");
+            PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service resuming...");
             base.OnContinue(); // Call the base implementation
 
             // Retrieve the IPausableHostedService instance from the service container
             var service = _host.Services.GetService(typeof(IPausableHostedService));
             if (service != null)
             {
-                PodeMonitorLogger.Log(LogLevel.DEBUG, "PodeMonitor", Environment.ProcessId, $"Resolved IPausableHostedService: {service.GetType().FullName}");
+                PodeMonitorLogger.Log(PodeLogLevel.DEBUG, "PodeMonitor", Environment.ProcessId, $"Resolved IPausableHostedService: {service.GetType().FullName}");
                 ((IPausableHostedService)service).OnContinue(); // Invoke the resume operation
             }
             else
             {
-                PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Error: Failed to resolve IPausableHostedService.");
+                PodeMonitorLogger.Log(PodeLogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Error: Failed to resolve IPausableHostedService.");
             }
         }
 
@@ -115,7 +115,7 @@ namespace PodeMonitor
         {
             if (command == CustomCommandRestart)
             {
-                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Custom restart command received. Restarting service...");
+                PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Custom restart command received. Restarting service...");
                 var service = _host.Services.GetService(typeof(IPausableHostedService));
                 if (service != null)
                 {
@@ -123,7 +123,7 @@ namespace PodeMonitor
                 }
                 else
                 {
-                    PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Error: Failed to resolve IPausableHostedService for restart.");
+                    PodeMonitorLogger.Log(PodeLogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Error: Failed to resolve IPausableHostedService for restart.");
                 }
             }
             else

@@ -63,7 +63,9 @@ function Start-PodeServiceHearthbeat {
                 Write-PodeHost -Message "Initialize Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
                 Write-PodeHost -Message "Service State: $serviceState" -Force
                 Write-PodeHost -Message "Total Uptime: $(Get-PodeServerUptime -Total -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
-                Write-PodeHost -Message "Uptime Since Last Restart: $(Get-PodeServerUptime -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
+                if ((Get-PodeServerUptime) -gt 1000) {
+                    Write-PodeHost -Message "Uptime Since Last Restart: $(Get-PodeServerUptime -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
+                }
                 Write-PodeHost -Message "Total Number of Restart: $(Get-PodeServerRestartCount)" -Force
                 try {
                     Start-Sleep -Milliseconds 100
@@ -1484,11 +1486,11 @@ function Get-PodeServiceStatus {
 
                 if ($sudo) {
                     $stateFilePath = "/Library/LaunchDaemons/PodeMonitor/$servicePid.state"
-                    $plistPath="/Library/LaunchDaemons/$($nameService).plist"
+                    $plistPath = "/Library/LaunchDaemons/$($nameService).plist"
                 }
                 else {
                     $stateFilePath = "$($HOME)/Library/LaunchAgents/PodeMonitor/$servicePid.state"
-                    $plistPath="$($HOME)/Library/LaunchAgents/$($nameService).plist"
+                    $plistPath = "$($HOME)/Library/LaunchAgents/$($nameService).plist"
                 }
                 if (Test-Path -Path $stateFilePath) {
                     $status = Get-Content -Path $stateFilePath -Raw

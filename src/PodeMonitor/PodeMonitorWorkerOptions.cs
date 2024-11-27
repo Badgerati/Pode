@@ -8,7 +8,6 @@ namespace PodeMonitor
     /// </summary>
     public class PodeMonitorWorkerOptions
     {
-
         /// <summary>
         /// The name of the service.
         /// </summary>
@@ -35,6 +34,18 @@ namespace PodeMonitor
         /// Default is an empty string (no logging).
         /// </summary>
         public string LogFilePath { get; set; } = "";
+
+        /// <summary>
+        /// The logging level for the service (e.g., DEBUG, INFO, WARN, ERROR, CRITICAL).
+        /// Default is INFO.
+        /// </summary>
+        public PodeLogLevel LogLevel { get; set; } = PodeLogLevel.INFO;
+
+        /// <summary>
+        /// The maximum size (in bytes) of the log file before it is rotated.
+        /// Default is 10 MB (10 * 1024 * 1024 bytes).
+        /// </summary>
+        public long LogMaxFileSize { get; set; } = 10 * 1024 * 1024;
 
         /// <summary>
         /// Indicates whether the PowerShell process should run in quiet mode, suppressing output.
@@ -73,9 +84,10 @@ namespace PodeMonitor
         public override string ToString()
         {
             return $"Name: {Name}, ScriptPath: {ScriptPath}, PwshPath: {PwshPath}, ParameterString: {ParameterString}, " +
-                    $"LogFilePath: {LogFilePath}, Quiet: {Quiet}, DisableTermination: {DisableTermination}, " +
-                    $"ShutdownWaitTimeMs: {ShutdownWaitTimeMs}, StartMaxRetryCount: {StartMaxRetryCount}, " +
-                    $"StartRetryDelayMs: {StartRetryDelayMs}";
+                    $"LogFilePath: {LogFilePath}, LogLevel: {LogLevel}, LogMaxFileSize: {LogMaxFileSize}, Quiet: {Quiet}, " +
+                    $"DisableTermination: {DisableTermination}, ShutdownWaitTimeMs: {ShutdownWaitTimeMs}, " +
+                    $"StartMaxRetryCount: {StartMaxRetryCount}, StartRetryDelayMs: {StartRetryDelayMs}";
         }
     }
+
 }

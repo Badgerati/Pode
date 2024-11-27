@@ -4013,7 +4013,7 @@ function Convert-PodeMillisecondsToReadable {
         # Join with ":" and return
         return $components -join ':'
     }
-
+    
     # Default or verbose format
     if ($VerboseOutput) {
         $verboseParts = @()
@@ -4041,50 +4041,71 @@ function Convert-PodeMillisecondsToReadable {
     return $parts -join ':'
 }
 
-
 <#
 .SYNOPSIS
     Determines the OS architecture for the current system.
 
 .DESCRIPTION
-    This function detects the operating system's architecture and converts it into a format
-    compatible with PowerShell installation requirements. It handles both Windows and Unix-based
-    systems and maps various architecture identifiers to PowerShell-supported names (e.g., 'x64', 'arm64').
+    This function detects the operating system's architecture and maps it to a format compatible with
+    PowerShell installation requirements. It works on both Windows and Unix-based systems, translating
+    various architecture identifiers (e.g., 'amd64', 'x86_64') into standardized PowerShell-supported names
+    like 'x64', 'x86', 'arm64', and 'arm32'. On Linux, the function also checks for musl libc to provide
+    an architecture-specific identifier.
 
 .OUTPUTS
-    [string] - The architecture string, such as 'x64', 'x86', 'arm64', or 'arm32'.
+    [string] - The architecture string, such as 'x64', 'x86', 'arm64', 'arm32', or 'musl-x64'.
 
 .EXAMPLE
     $arch = Get-PodeOSPwshArchitecture
     Write-Host "Current architecture: $arch"
 
 .NOTES
-    - For Windows, the architecture is derived from the `PROCESSOR_ARCHITECTURE` environment variable.
-    - For Unix-based systems, the architecture is determined using the `uname -m` command.
-    - If the architecture is not supported, the function throws an exception.
+    - For Windows, architecture is derived from the `PROCESSOR_ARCHITECTURE` environment variable.
+    - For Unix-based systems, architecture is determined using the `uname -m` command.
+    - The function adds support for identifying musl libc on Linux, returning 'musl-x64' if detected.
+    - If the architecture is not supported, the function returns an empty string.
 #>
 function Get-PodeOSPwshArchitecture {
-    # Initialize architecture variable
+    # Initialize an empty variable for storing the detected architecture
     $arch = [string]::Empty
 
     # Detect architecture on Unix-based systems (Linux/macOS)
     if ($IsLinux -or $IsMacOS) {
+        # Use the 'uname -m' command to determine the system architecture
         $arch = uname -m
-    }else{
-        # Architecture on Windows
+    }
+    else {
+        # For Windows, use the environment variable 'PROCESSOR_ARCHITECTURE'
         $arch = $env:PROCESSOR_ARCHITECTURE
     }
 
-    # Convert detected architecture to a PowerShell-compatible format
+    # Map the detected architecture to PowerShell-compatible formats
     switch ($arch.ToLowerInvariant()) {
-        'amd64' { return 'x64' }          # 64-bit architecture (AMD64)
-        'x86' { return 'x86' }            # 32-bit architecture
-        'x86_64' { return 'x64' }         # 64-bit architecture (x86_64)
-        'armv7*' { return 'arm32' }       # 32-bit ARM architecture
-        'aarch64*' { return 'arm64' }     # 64-bit ARM architecture
-        'arm64' { return 'arm64' }        # Explicit ARM64
-        'arm64*' { return 'arm64' }       # Pattern matching for ARM64
-        'armv8*' { return 'arm64' }       # ARM v8 series
-        default { throw "Unsupported architecture: $($arch)" } # Throw exception for unsupported architectures
+        'amd64' { $arch = 'x64' }          # 64-bit AMD architecture
+        'x86' { $arch = 'x86' }            # 32-bit Intel architecture
+        'x86_64' { $arch = 'x64' }         # 64-bit Intel architecture
+        'armv7*' { $arch = 'arm32' }       # 32-bit ARM architecture (v7 series)
+        'aarch64*' { $arch = 'arm64' }     # 64-bit ARM architecture (aarch64 series)
+        'arm64' { $arch = 'arm64' }        # Explicit ARM64
+        'arm64*' { $arch = 'arm64' }       # Pattern matching for ARM64
+        'armv8*' { $arch = 'arm64' }       # ARM v8 series
+        default { return '' }              # Unsupported architectures, return empty string
     }
+
+    # Additional check for musl libc on Linux systems
+    if ($IsLinux) {
+        if ($arch -eq 'x64') {
+            # Check if musl libc is present
+            if (Get-Command ldd -ErrorAction SilentlyContinue) {
+                $lddOutput = ldd --version 2>&1
+                if ($lddOutput -match 'musl') {
+                    # Append 'musl-' prefix to architecture
+                    $arch = 'musl-x64'
+                }
+            }
+        }
+    }
+
+    # Return the final architecture string
+    return $arch
 }

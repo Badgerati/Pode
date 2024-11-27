@@ -31,7 +31,7 @@ namespace PodeMonitor
         private const int SIGTERM = 15; // Signal for gracefully terminate a process.
 
         private static PodeMonitorWorker _workerInstance; // Global instance for managing worker operations
-        
+
         /// <summary>
         /// Entry point for the Pode service.
         /// </summary>
@@ -40,16 +40,42 @@ namespace PodeMonitor
         {
             string customConfigFile = args.Length > 0 ? args[0] : "srvsettings.json"; // Default config file
             string serviceName = "PodeService";
+
+            // Check if the custom configuration file exists
+            if (!File.Exists(customConfigFile))
+            {
+                Console.WriteLine($"Configuration file '{customConfigFile}' not found. Please provide a valid configuration file.");
+                Environment.Exit(1); // Exit with a non-zero code to indicate failure
+            }
+
             // Load configuration
             IConfigurationRoot config = new ConfigurationBuilder()
                 .AddJsonFile(customConfigFile, optional: false, reloadOnChange: true)
                 .Build();
 
             serviceName = config.GetSection("PodeMonitorWorker:Name").Value ?? serviceName;
+
             string logFilePath = config.GetSection("PodeMonitorWorker:logFilePath").Value ?? "PodeMonitorService.log";
 
+            // Parse log level
+            string logLevelString = config.GetSection("PodeMonitorWorker:PodeLogLevel").Value;
+            if (!Enum.TryParse(logLevelString, true, out PodeLogLevel logLevel))
+            {
+                Console.WriteLine($"Invalid or missing log level '{logLevelString}'. Defaulting to INFO.");
+                logLevel = PodeLogLevel.INFO; // Default log level
+            }
+
+            // Parse log max file size
+            string logMaxFileSizeString = config.GetSection("PodeMonitorWorker:LogMaxFileSize").Value;
+            if (!long.TryParse(logMaxFileSizeString, out long logMaxFileSize))
+            {
+                Console.WriteLine($"Invalid or missing log max file size '{logMaxFileSizeString}'. Defaulting to 10 MB.");
+                logMaxFileSize = 10 * 1024 * 1024; // Default to 10 MB
+            }
+
             // Initialize logger
-            PodeMonitorLogger.Initialize(logFilePath, LogLevel.INFO);
+            PodeMonitorLogger.Initialize(logFilePath, logLevel, logMaxFileSize);
+
 
             // Configure host builder
             var builder = CreateHostBuilder(args, customConfigFile);
@@ -69,7 +95,7 @@ namespace PodeMonitor
             }
             else
             {
-                PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, "Unsupported platform. Exiting.");
+                PodeMonitorLogger.Log(PodeLogLevel.WARN, "PodeMonitor", Environment.ProcessId, "Unsupported platform. Exiting.");
             }
         }
 
@@ -94,7 +120,7 @@ namespace PodeMonitor
                     services.AddSingleton<PodeMonitor>(serviceProvider =>
                     {
                         var options = serviceProvider.GetRequiredService<IOptions<PodeMonitorWorkerOptions>>().Value;
-                        PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Initializing PodeMonitor with options: {0}", JsonSerializer.Serialize(options));
+                        PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Initializing PodeMonitor with options: {0}", JsonSerializer.Serialize(options));
                         return new PodeMonitor(options);
                     });
 
@@ -162,25 +188,25 @@ namespace PodeMonitor
 
         private static void HandleSignalStop(int signum)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTSTP received.");
+            PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTSTP received.");
             HandlePause();
         }
 
         private static void HandleSignalTerminate(int signum)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTERM received.");
+            PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTERM received.");
             HandleStop();
         }
 
         private static void HandleSignalContinue(int signum)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGCONT received.");
+            PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGCONT received.");
             HandleContinue();
         }
 
         private static void HandleSignalRestart(int signum)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGHUP received.");
+            PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGHUP received.");
             HandleRestart();
         }
 

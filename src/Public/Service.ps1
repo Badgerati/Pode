@@ -5,10 +5,10 @@
 .DESCRIPTION
     The `Register-PodeService` function configures and registers a Pode-based service that runs a PowerShell worker across multiple platforms
     (Windows, Linux, macOS). It creates the service with parameters such as paths to the worker script, log files, and service-specific settings.
-    A `srvsettings.json` configuration file is generated and the service can be optionally started after registration.
+    A `srvsettings.json` configuration file is generated, and the service can be optionally started after registration.
 
 .PARAMETER Name
-    Specifies the name of the service to be registered.
+    Specifies the name of the service to be registered. This is a required parameter.
 
 .PARAMETER Description
     A brief description of the service. Defaults to "This is a Pode service."
@@ -23,31 +23,31 @@
     Any additional parameters to pass to the worker script when the service is run. Defaults to an empty string.
 
 .PARAMETER LogServicePodeHost
-    Enables logging for the Pode service host.
+    Enables logging for the Pode service host. If not provided, the service runs in quiet mode.
 
 .PARAMETER ShutdownWaitTimeMs
-    Maximum time in milliseconds to wait for the service to shut down gracefully before forcing termination. Defaults to 30,000 milliseconds.
+    Maximum time in milliseconds to wait for the service to shut down gracefully before forcing termination. Defaults to 30,000 milliseconds (30 seconds).
 
 .PARAMETER StartMaxRetryCount
-    The maximum number of retries to start the PowerShell process before giving up.  Default is 3 retries.
+    The maximum number of retries to start the PowerShell process before giving up. Default is 3 retries.
 
 .PARAMETER StartRetryDelayMs
     The delay (in milliseconds) between retry attempts to start the PowerShell process. Default is 5,000 milliseconds (5 seconds).
 
 .PARAMETER WindowsUser
-    Specifies the username under which the service will run by default is the current user (Windows only).
+    Specifies the username under which the service will run on Windows. Defaults to the current user if not provided.
 
 .PARAMETER LinuxUser
-    Specifies the username under which the service will run by default is the current user (Linux Only).
+    Specifies the username under which the service will run on Linux. Defaults to the current user if not provided.
 
 .PARAMETER Agent
-    A switch to create an Agent instead of a Daemon in MacOS (MacOS Only).
+    A switch to create an Agent instead of a Daemon on macOS (macOS only).
 
 .PARAMETER Start
     A switch to start the service immediately after registration.
 
 .PARAMETER Password
-    A secure password for the service account (Windows only). If omitted, the service account will be 'NT AUTHORITY\SYSTEM'.
+    A secure password for the service account (Windows only). If omitted, the service account defaults to 'NT AUTHORITY\SYSTEM'.
 
 .PARAMETER SecurityDescriptorSddl
     A security descriptor in SDDL format, specifying the permissions for the service (Windows only).
@@ -57,6 +57,12 @@
 
 .PARAMETER LogPath
     Specifies the path for the service log files. If not provided, a default log directory is used.
+
+.PARAMETER LogLevel
+    Specifies the log verbosity level. Valid values are 'Debug', 'Info', 'Warn', 'Error', or 'Critical'. Defaults to 'Info'.
+
+.PARAMETER LogMaxFileSize
+    Specifies the maximum size of the log file in bytes. Defaults to 10 MB (10,485,760 bytes).
 
 .EXAMPLE
     Register-PodeService -Name "PodeExampleService" -Description "Example Pode Service" -ParameterString "-Verbose"
@@ -75,54 +81,79 @@ function Register-PodeService {
         [string]
         $Name,
 
+        [Parameter()]
         [string]
         $Description = 'This is a Pode service.',
 
+        [Parameter()]
         [string]
         $DisplayName = "Pode Service($Name)",
 
+        [Parameter()]
         [string]
         [validateset('Manual', 'Automatic')]
         $StartupType = 'Automatic',
 
+        [Parameter()]
         [string]
         $SecurityDescriptorSddl,
 
+        [Parameter()]
         [string]
         $ParameterString = '',
 
+        [Parameter()]
         [switch]
         $LogServicePodeHost,
 
+        [Parameter()]
         [int]
         $ShutdownWaitTimeMs = 30000,
 
+        [Parameter()]
         [int]
         $StartMaxRetryCount = 3,
 
+        [Parameter()]
         [int]
         $StartRetryDelayMs = 5000,
 
+        [Parameter()]
         [string]
         $WindowsUser,
 
+        [Parameter()]
         [string]
         $LinuxUser,
 
+        [Parameter()]
         [switch]
         $Start,
 
+        [Parameter()]
         [switch]
         $Agent,
 
+        [Parameter()]
         [securestring]
         $Password,
 
+        [Parameter()]
         [string]
         $SettingsPath,
 
+        [Parameter()]
         [string]
-        $LogPath
+        $LogPath,
+
+        [Parameter()]
+        [string]
+        [validateset('Debug', 'Info', 'Warn', 'Error', 'Critical')]
+        $LogLevel = 'Info',
+
+        [Parameter()]
+        [Int64]
+        $LogMaxFileSize = 10 * 1024 * 1024
     )
 
     # Ensure the script is running with the necessary administrative/root privileges.
@@ -199,6 +230,8 @@ function Register-PodeService {
                 Name               = $Name
                 StartMaxRetryCount = $StartMaxRetryCount
                 StartRetryDelayMs  = $StartRetryDelayMs
+                LogLevel           = $LogLevel.ToUpper()
+                LogMaxFileSize     = $LogMaxFileSize
             }
         }
 
@@ -207,6 +240,11 @@ function Register-PodeService {
 
         # Determine OS architecture and call platform-specific registration functions
         $osArchitecture = Get-PodeOSPwshArchitecture
+
+        if ([string]::IsNullOrEmpty($osArchitecture)) {
+            Write-Verbose 'Unsupported Architecture'
+            return $false
+        }
 
         # Get the directory path where the Pode module is installed and store it in $binPath
         $binPath = Join-Path -Path ((Get-Module -Name Pode).ModuleBase) -ChildPath 'Bin'
@@ -226,17 +264,6 @@ function Register-PodeService {
             $operation = Register-PodeMonitorWindowsService @param
         }
         elseif ($IsLinux) {
-            $musl = ''
-            if ($osArchitecture -eq 'x64') {
-                # Check for musl libc
-                if (Get-Command ldd -ErrorAction SilentlyContinue) {
-                    $lddOutput = ldd --version 2>&1
-                    if ($lddOutput -match 'musl') {
-                        $musl = 'musl-'
-                    }
-                }
-            }
-            
             $param = @{
                 Name           = $Name
                 Description    = $Description
@@ -245,7 +272,7 @@ function Register-PodeService {
                 User           = $User
                 Group          = $Group
                 Start          = $Start
-                OsArchitecture = "linux-$($musl)$($osArchitecture)"
+                OsArchitecture = "linux-$osArchitecture"
             }
             $operation = Register-PodeLinuxService @param
         }
