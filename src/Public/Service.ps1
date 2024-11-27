@@ -829,8 +829,8 @@ function Unregister-PodeService {
     }
 
     elseif ($IsLinux) {
-        $null = Disable-PodeLinuxService -Name $Name
-        if (Get-PodeService -Name $Name -ErrorAction SilentlyContinue) {
+        if (! (Disable-PodeLinuxService -Name $Name)) {
+            # if (Get-PodeService -Name $Name -ErrorAction SilentlyContinue) {
             Write-Verbose -Message "Service '$Name' unregistered failed."
             throw ($PodeLocale.serviceUnRegistrationException -f $Name)
         }
@@ -839,23 +839,23 @@ function Unregister-PodeService {
 
         # Read the content of the service file
         if ((Test-path -path $service.PathName -PathType Leaf)) {
-            $serviceFileContent = & sudo  cat $service.PathName
+            $serviceFileContent = & sudo cat $service.PathName
             # Extract the SettingsFile from the ExecStart line using regex
             $execStart = ($serviceFileContent | Select-String -Pattern 'ExecStart=.*\s+(.*)').ToString()
             # Find the index of '/PodeMonitor ' in the string
             $index = $execStart.IndexOf('/PodeMonitor ') + ('/PodeMonitor '.Length)
             # Extract everything after '/PodeMonitor '
-            $settingsFile = $execStart.Substring($index)
+            $settingsFile = $execStart.Substring($index).trim('"')
 
-            & sudo  rm $settingsFile
+            & sudo rm $settingsFile
             Write-Verbose -Message "Settings file '$settingsFile' removed."
 
-            & sudo  rm $service.PathName
+            & sudo rm $service.PathName
             Write-Verbose -Message "Service file '$($service.PathName)' removed."
         }
 
         # Reload systemd to apply changes
-        & sudo  systemctl daemon-reload
+        & sudo systemctl daemon-reload
         Write-Verbose -Message 'Systemd daemon reloaded.'
         return $true
     }
@@ -878,10 +878,10 @@ function Unregister-PodeService {
                 # Extract the second string in the ProgramArguments array (the settings file path)
                 $settingsFile = $plistXml.plist.dict.array.string[1]
                 if ($service.Sudo) {
-                    & sudo  rm $settingsFile
+                    & sudo rm $settingsFile
                     Write-Verbose -Message "Settings file '$settingsFile' removed."
 
-                    & sudo  rm $service.PathName
+                    & sudo rm $service.PathName
                     Write-Verbose -Message "Service file '$($service.PathName)' removed."
                 }
                 else {
