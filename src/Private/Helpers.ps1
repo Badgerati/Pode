@@ -4040,3 +4040,51 @@ function Convert-PodeMillisecondsToReadable {
 
     return $parts -join ':'
 }
+
+
+<#
+.SYNOPSIS
+    Determines the OS architecture for the current system.
+
+.DESCRIPTION
+    This function detects the operating system's architecture and converts it into a format
+    compatible with PowerShell installation requirements. It handles both Windows and Unix-based
+    systems and maps various architecture identifiers to PowerShell-supported names (e.g., 'x64', 'arm64').
+
+.OUTPUTS
+    [string] - The architecture string, such as 'x64', 'x86', 'arm64', or 'arm32'.
+
+.EXAMPLE
+    $arch = Get-PodeOSPwshArchitecture
+    Write-Host "Current architecture: $arch"
+
+.NOTES
+    - For Windows, the architecture is derived from the `PROCESSOR_ARCHITECTURE` environment variable.
+    - For Unix-based systems, the architecture is determined using the `uname -m` command.
+    - If the architecture is not supported, the function throws an exception.
+#>
+function Get-PodeOSPwshArchitecture {
+    # Initialize architecture variable
+    $arch = [string]::Empty
+
+    # Detect architecture on Unix-based systems (Linux/macOS)
+    if ($IsLinux -or $IsMacOS) {
+        $arch = uname -m
+    }else{
+        # Architecture on Windows
+        $arch = $env:PROCESSOR_ARCHITECTURE
+    }
+
+    # Convert detected architecture to a PowerShell-compatible format
+    switch ($arch.ToLowerInvariant()) {
+        'amd64' { return 'x64' }          # 64-bit architecture (AMD64)
+        'x86' { return 'x86' }            # 32-bit architecture
+        'x86_64' { return 'x64' }         # 64-bit architecture (x86_64)
+        'armv7*' { return 'arm32' }       # 32-bit ARM architecture
+        'aarch64*' { return 'arm64' }     # 64-bit ARM architecture
+        'arm64' { return 'arm64' }        # Explicit ARM64
+        'arm64*' { return 'arm64' }       # Pattern matching for ARM64
+        'armv8*' { return 'arm64' }       # ARM v8 series
+        default { throw "Unsupported architecture: $($arch)" } # Throw exception for unsupported architectures
+    }
+}

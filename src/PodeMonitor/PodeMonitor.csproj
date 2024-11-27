@@ -8,7 +8,7 @@
     <PublishSingleFile>true</PublishSingleFile> <!-- Generate a single-file executable -->
     <SelfContained>true</SelfContained> <!-- Bundle .NET runtime -->
     <PublishTrimmed>false</PublishTrimmed> <!-- Disabled trimming for now -->
-    <RuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers> <!-- Target multiple platforms -->
+    <RuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64;linux-arm;win-x86;linux-musl-x64</RuntimeIdentifiers> <!-- Target multiple platforms -->
   </PropertyGroup>
 
   <ItemGroup>

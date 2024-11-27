@@ -160,6 +160,7 @@ function Register-PodeService {
         if (! (Test-Path -Path $SettingsPath -PathType Container)) {
             $null = New-Item -Path $settingsPath -ItemType Directory
         }
+
         if (Test-PodeIsWindows) {
             if ([string]::IsNullOrEmpty($WindowsUser)) {
                 if ( ($null -ne $Password)) {
@@ -205,7 +206,7 @@ function Register-PodeService {
         $jsonContent | ConvertTo-Json | Set-Content -Path $settingsFile -Encoding UTF8
 
         # Determine OS architecture and call platform-specific registration functions
-        $osArchitecture = ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture).ToString().ToLower()
+        $osArchitecture = Get-PodeOSPwshArchitecture
 
         # Get the directory path where the Pode module is installed and store it in $binPath
         $binPath = Join-Path -Path ((Get-Module -Name Pode).ModuleBase) -ChildPath 'Bin'
@@ -222,9 +223,20 @@ function Register-PodeService {
                 SecurityDescriptorSddl = $SecurityDescriptorSddl
                 OsArchitecture         = "win-$osArchitecture"
             }
-            $operation = Register-PodeMonitorWindowsService  @param
+            $operation = Register-PodeMonitorWindowsService @param
         }
         elseif ($IsLinux) {
+            $musl = ''
+            if ($osArchitecture -eq 'x64') {
+                # Check for musl libc
+                if (Get-Command ldd -ErrorAction SilentlyContinue) {
+                    $lddOutput = ldd --version 2>&1
+                    if ($lddOutput -match 'musl') {
+                        $musl = 'musl-'
+                    }
+                }
+            }
+            
             $param = @{
                 Name           = $Name
                 Description    = $Description
@@ -233,7 +245,7 @@ function Register-PodeService {
                 User           = $User
                 Group          = $Group
                 Start          = $Start
-                OsArchitecture = "linux-$osArchitecture"
+                OsArchitecture = "linux-$($musl)$($osArchitecture)"
             }
             $operation = Register-PodeLinuxService @param
         }
@@ -818,10 +830,10 @@ function Unregister-PodeService {
         Write-Verbose -Message "Service '$Name' unregistered successfully."
 
         # Remove the service configuration
-        if ($service.PathName) {
-            $binaryPath = $service.PathName.trim('"').split('" "')
-            if ($binaryPath.Count -gt 1 -and (Test-Path -Path ($binaryPath[1]) -PathType Leaf)) {
-                Remove-Item -Path ($binaryPath[1]) -ErrorAction Break
+        if ($service.PathName -match '"([^"]+)" "([^"]+)"') {
+            $argument = $Matches[2]
+            if ( (Test-Path -Path ($argument) -PathType Leaf)) {
+                Remove-Item -Path ($argument) -ErrorAction SilentlyContinue
             }
         }
         return $true
@@ -830,7 +842,6 @@ function Unregister-PodeService {
 
     elseif ($IsLinux) {
         if (! (Disable-PodeLinuxService -Name $Name)) {
-            # if (Get-PodeService -Name $Name -ErrorAction SilentlyContinue) {
             Write-Verbose -Message "Service '$Name' unregistered failed."
             throw ($PodeLocale.serviceUnRegistrationException -f $Name)
         }
@@ -862,8 +873,7 @@ function Unregister-PodeService {
 
     elseif ($IsMacOS) {
         # Disable and unregister the service
-        Disable-PodeMacOsService -Name $Name
-        if (Get-PodeService -Name $Name -ErrorAction SilentlyContinue) {
+        if (!(Disable-PodeMacOsService -Name $Name)) {
             Write-Verbose -Message "Service '$Name' unregistered failed."
             throw ($PodeLocale.serviceUnRegistrationException -f $Name)
         }
@@ -1020,8 +1030,8 @@ function Restart-PodeService {
             throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
         }
 
-        if (@('Running', 'Suspended' ) -inotcontains $service.Status ) {
-            Write-Verbose -Message "Service '$Name' is not Running or Suspended."
+        if ('Running' -ne $service.Status ) {
+            Write-Verbose -Message "Service '$Name' is not Running."
             return $false
         }
         if (Test-PodeIsWindows) {
