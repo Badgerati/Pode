@@ -1485,7 +1485,8 @@ function Get-PodeServiceStatus {
                         $stateFilePath = "$($HOME)/Library/LaunchAgents/PodeMonitor/$servicePid.state"
                     }
                     if (Test-Path -Path $stateFilePath) {
-                        $status = Get-Content -Path $stateFilePath
+                        $status = Get-Content -Path $stateFilePath -Raw
+                        $status = $status.Substring(0, 1).ToUpper() + $status.Substring(1)
                     }
                     return @{
                         Name   = $Name

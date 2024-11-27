@@ -804,12 +804,8 @@ function Unregister-PodeService {
             # Check if the service is running before attempting to stop it
             if ($service.Status -eq 'Running') {
                 if ($Force.IsPresent) {
-                    $null = Invoke-PodeWinElevatedCommand -Command 'Stop-Service' -Arguments "-Name '$Name'"
-                    $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
-                    if ($service.Status -eq 'Stopped') {
-                        Write-Verbose -Message "Service '$Name' stopped forcefully."
-                    }
-                    else {
+                    $null = Invoke-PodeWinElevatedCommand -Command 'sc' -Arguments "stop '$Name'"
+                    if (!( Stop-PodeService -Name $Name)) {
                         # Service command '{0}' failed on service '{1}'.
                         throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
                     }
@@ -854,17 +850,7 @@ function Unregister-PodeService {
                 if ((Test-PodeLinuxServiceIsActive -Name  $Name)) {
                     if ($Force.IsPresent) {
                         #Stop the service
-                        if (( Stop-PodeLinuxService -Name $Name)) {
-                            # Check if the service is active
-                            if (!(Test-PodeLinuxServiceIsActive -Name  $Name)) {
-                                Write-Verbose -Message "Service '$Name' stopped successfully."
-                            }
-                            else {
-                                # Service command '{0}' failed on service '{1}'.
-                                throw ($PodeLocale.serviceCommandFailedException -f 'sudo systemctl stop', $Name)
-                            }
-                        }
-                        else {
+                        if (!( Stop-PodeService -Name $Name)) {
                             # Service command '{0}' failed on service '{1}'.
                             throw ($PodeLocale.serviceCommandFailedException -f 'sudo systemctl stop', $Name)
                         }
@@ -921,17 +907,7 @@ function Unregister-PodeService {
                 if ((Test-PodeMacOsServiceIsActive -Name  $Name)) {
                     if ($Force.IsPresent) {
                         #Stop the service
-                        if (( Stop-PodeMacOsService -Name $Name)) {
-                            # Check if the service is active
-                            if (!(Test-PodeMacOsServiceIsActive -Name  $Name)) {
-                                Write-Verbose -Message "Service '$Name' stopped successfully."
-                            }
-                            else {
-                                # Service command '{0}' failed on service '{1}'.
-                                throw ($PodeLocale.serviceCommandFailedException -f 'launchctl stop', $Name)
-                            }
-                        }
-                        else {
+                        if (!( Stop-PodeService -Name $Name)) {
                             # Service command '{0}' failed on service '{1}'.
                             throw ($PodeLocale.serviceCommandFailedException -f 'launchctl stop', $Name)
                         }
@@ -948,7 +924,7 @@ function Unregister-PodeService {
                         $plistFilePath = "/Library/LaunchDaemons/$(Get-PodeRealServiceName -Name $Name).plist"
                     }
                     else {
-                        $plistFilePath = "$HOME/Library/LaunchAgents/$(Get-PodeRealServiceName -Name $Name).plist"
+                        $plistFilePath = "$($HOME)/Library/LaunchAgents/$(Get-PodeRealServiceName -Name $Name).plist"
                     }
                     #Check if the plist file exists
                     if (Test-Path -Path $plistFilePath) {

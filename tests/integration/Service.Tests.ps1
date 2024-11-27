@@ -8,7 +8,7 @@ Describe 'Service Lifecycle' {
 
     it 'register' {
         . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Register
-        Start-Sleep 2
+        Start-Sleep 10
         $status = . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
         if ($IsMacOS) {
             $status.Status | Should -Be 'Running'
