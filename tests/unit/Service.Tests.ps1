@@ -184,7 +184,7 @@ Describe 'Start-PodeService' {
         }
 
         It 'Starts a started service ' -Skip:(!$IsLinux) {
- 
+
             Mock -CommandName Start-PodeLinuxService -MockWith { $true }
             Mock -CommandName Get-PodeServiceStatus -MockWith {
                 [pscustomobject]@{ Name = 'TestService'; Status = 'Running' }
@@ -206,19 +206,19 @@ Describe 'Start-PodeService' {
 
     Context 'On macOS platform' {
         It 'Starts a stopped service successfully' -Skip:(!$IsMacOS) {
-            Mock -CommandName Test-PodeMacOsServiceIsRegistered -MockWith { $true }
-            Mock -CommandName Start-PodeMacOsService -MockWith { $true }
-
-            $script:status = $null
-            Mock -CommandName Test-PodeMacOsServiceIsActive -MockWith {
-                if ($null -eq $script:status ) {
-                    $script:status = $false
+            $script:status = 'none'
+            Mock -CommandName Get-PodeServiceStatus -MockWith {
+                if ($script:status -eq 'none') {
+                    $script:status = 'Stopped'
                 }
                 else {
-                    $script:status = $true
+                    $script:status = 'Running'
                 }
-                return  $script:status
+                [pscustomobject]@{ Name = 'TestService'; Status = $status }
             }
+            Mock -CommandName  Wait-PodeServiceStatus { $true }
+            Mock -CommandName Test-PodeMacOsServiceIsRegistered -MockWith { $true }
+            Mock -CommandName Start-PodeMacOsService -MockWith { $true }
 
             # Act
             Start-PodeService -Name 'MacService' | Should -Be $true
