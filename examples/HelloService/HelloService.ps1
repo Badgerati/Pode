@@ -153,7 +153,7 @@ catch {
 
 
 if ( $Register.IsPresent) {
-    Register-PodeService -Name $ServiceName -ParameterString "-Port $Port" -Password $Password -Agent:!$Daemon
+    Register-PodeService -Name $ServiceName -ParameterString "-Port $Port" -Password $Password -Agent:(!$Daemon.IsPresent)
     exit
 }
 if ( $Unregister.IsPresent) {

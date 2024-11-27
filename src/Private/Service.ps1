@@ -247,7 +247,7 @@ function Register-PodeMacService {
     $nameService = Get-PodeRealServiceName -Name $Name
 
     # Check if the service is already registered
-    if ((Test-PodeMacOsServiceIsRegistered $nameService)) {
+    if ((Test-PodeMacOsServiceIsRegistered $nameService -Agent:$Agent)) {
         # Service is already registered.
         throw ($PodeLocale.serviceAlreadyRegisteredException -f $nameService)
     }
@@ -324,7 +324,7 @@ function Register-PodeMacService {
         }
 
         # Verify the service is now registered
-        if (! (Test-PodeMacOsServiceIsRegistered $nameService)) {
+        if (! (Test-PodeMacOsServiceIsRegistered $nameService -Agent:$Agent)) {
             # Service registration failed.
             throw ($PodeLocale.serviceRegistrationException -f $nameService)
         }
@@ -866,10 +866,18 @@ function Test-PodeMacOsServiceIsRegistered {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $Agent
     )
     $nameService = Get-PodeRealServiceName -Name $Name
-    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
+    if ($Agent) {
+        $sudo = $false
+    }
+    else {
+        $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
+    }
     if ($sudo) {
         $systemctlStatus = sudo launchctl list $nameService 2>&1
     }
