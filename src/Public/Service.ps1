@@ -324,6 +324,9 @@ function Register-PodeService {
 .PARAMETER Timeout
 	The maximum time, in seconds, to wait for the service to reach the 'Running' state when not using `-Async`. Defaults to 10 seconds.
 
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
+
 .EXAMPLE
 	Start-PodeService -Name 'MyService'
 
@@ -358,14 +361,17 @@ function Start-PodeService {
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Async')]
         [ValidateRange(1, 300)]
-        [int] $Timeout = 10
+        [int] $Timeout = 10,
+
+        [switch]
+        $Agent
     )
     try {
         # Ensure administrative/root privileges
         Confirm-PodeAdminPrivilege
 
         # Get the service status
-        $service = Get-PodeServiceStatus -Name $Name
+        $service = Get-PodeServiceStatus -Name $Name -Agent:$Agent
         if (!$service) {
             throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
         }
@@ -404,7 +410,7 @@ function Start-PodeService {
             $serviceStarted = Start-PodeLinuxService -Name $Name
         }
         elseif ($IsMacOS) {
-            $serviceStarted = Start-PodeMacOsService -Name $Name
+            $serviceStarted = Start-PodeMacOsService -Name $Name -Agent:$Agent
         }
 
         # Check if the service start command failed
@@ -448,6 +454,9 @@ function Start-PodeService {
 .PARAMETER Timeout
 	The maximum time, in seconds, to wait for the service to reach the 'Stopped' state when not using `-Async`. Defaults to 10 seconds.
 
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
+
 .EXAMPLE
 	Stop-PodeService -Name 'MyService'
 
@@ -486,14 +495,17 @@ function Stop-PodeService {
         [Parameter(Mandatory = $false, ParameterSetName = 'Async')]
         [ValidateRange(1, 300)]
         [int]
-        $Timeout = 10
+        $Timeout = 10,
+
+        [switch]
+        $Agent
     )
     try {
         # Ensure administrative/root privileges
         Confirm-PodeAdminPrivilege
 
         # Get the service status
-        $service = Get-PodeServiceStatus -Name $Name
+        $service = Get-PodeServiceStatus -Name $Name -Agent:$Agent
         if (!$service) {
             throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
         }
@@ -528,7 +540,7 @@ function Stop-PodeService {
             $serviceStopped = Stop-PodeLinuxService -Name $Name
         }
         elseif ($IsMacOS) {
-            $serviceStopped = Stop-PodeMacOsService -Name $Name
+            $serviceStopped = Stop-PodeMacOsService -Name $Name -Agent:$Agent
         }
 
         if (!$serviceStopped) {
@@ -569,6 +581,9 @@ function Stop-PodeService {
 .PARAMETER Timeout
 	The maximum time, in seconds, to wait for the service to reach the 'Suspended' state when not using `-Async`. Defaults to 10 seconds.
 
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
+
 .EXAMPLE
 	Suspend-PodeService -Name 'MyService'
 
@@ -597,14 +612,17 @@ function Suspend-PodeService {
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Async')]
         [ValidateRange(1, 300)]
-        [int] $Timeout = 10
+        [int] $Timeout = 10,
+
+        [switch]
+        $Agent
     )
     try {
         # Ensure administrative/root privileges
         Confirm-PodeAdminPrivilege
 
         # Get the service status
-        $service = Get-PodeServiceStatus -Name $Name
+        $service = Get-PodeServiceStatus -Name $Name -Agent:$Agent
         if (!$service) {
             throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
         }
@@ -639,8 +657,11 @@ function Suspend-PodeService {
         if (Test-PodeIsWindows) {
             $serviceSuspended = Invoke-PodeWinElevatedCommand -Command 'sc.exe' -Arguments "pause '$Name'"
         }
-        elseif ($IsLinux -or $IsMacOS) {
+        elseif ($IsLinux ) {
             $serviceSuspended = ( Send-PodeServiceSignal -Name $Name -Signal 'SIGTSTP')
+        }
+        elseif ( $IsMacOS) {
+            $serviceSuspended = ( Send-PodeServiceSignal -Name $Name -Signal 'SIGTSTP' -Agent:$Agent)
         }
 
         # Check if the service suspend command failed
@@ -682,6 +703,9 @@ function Suspend-PodeService {
 .PARAMETER Timeout
 	The maximum time, in seconds, to wait for the service to reach the 'Running' state when not using `-Async`. Defaults to 10 seconds.
 
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
+
 .EXAMPLE
 	Resume-PodeService -Name 'MyService'
 
@@ -710,14 +734,17 @@ function Resume-PodeService {
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Async')]
         [ValidateRange(1, 300)]
-        [int] $Timeout = 10
+        [int] $Timeout = 10,
+
+        [switch]
+        $Agent
     )
     try {
         # Ensure administrative/root privileges
         Confirm-PodeAdminPrivilege
 
         # Get the service status
-        $service = Get-PodeServiceStatus -Name $Name
+        $service = Get-PodeServiceStatus -Name $Name -Agent:$Agent
         if (!$service) {
             throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
         }
@@ -752,8 +779,11 @@ function Resume-PodeService {
         if (Test-PodeIsWindows) {
             $serviceResumed = Invoke-PodeWinElevatedCommand -Command 'sc.exe' -Arguments "continue '$Name'"
         }
-        elseif ($IsLinux -or $IsMacOS) {
+        elseif ($IsLinux) {
             $serviceResumed = Send-PodeServiceSignal -Name $Name -Signal 'SIGCONT'
+        }
+        elseif ($IsMacOS) {
+            $serviceResumed = Send-PodeServiceSignal -Name $Name -Signal 'SIGCONT' -Agent:$Agent
         }
 
         # Check if the service resume command failed
@@ -794,6 +824,9 @@ function Resume-PodeService {
 .PARAMETER Name
     The name of the service.
 
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
+
 .EXAMPLE
     Unregister-PodeService -Force
 
@@ -818,14 +851,17 @@ function Unregister-PodeService {
 
         [Parameter()]
         [switch]
-        $Force
+        $Force,
+
+        [switch]
+        $Agent
     )
 
     # Ensure administrative/root privileges
     Confirm-PodeAdminPrivilege
 
     # Get the service status
-    $service = Get-PodeServiceStatus -Name $Name
+    $service = Get-PodeServiceStatus -Name $Name -Agent:$Agent
     if (!$service) {
         throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
     }
@@ -836,7 +872,10 @@ function Unregister-PodeService {
     if ($service.Status -ne 'Stopped') {
         if ($Force) {
             Write-Verbose -Message "Service '$Name' is not stopped. Stopping the service due to -Force parameter."
-            Stop-PodeService -Name $Name
+            if (!(Stop-PodeService -Name $Name)) {
+                Write-Verbose -Message "Service '$Name' is not stopped."
+                return $false
+            }
             Write-Verbose -Message "Service '$Name' has been stopped."
         }
         else {
@@ -900,7 +939,7 @@ function Unregister-PodeService {
 
     elseif ($IsMacOS) {
         # Disable and unregister the service
-        if (!(Disable-PodeMacOsService -Name $Name)) {
+        if (!(Disable-PodeMacOsService -Name $Name -Agent:$Agent)) {
             Write-Verbose -Message "Service '$Name' unregistered failed."
             throw ($PodeLocale.serviceUnRegistrationException -f $Name)
         }
@@ -930,6 +969,7 @@ function Unregister-PodeService {
                 }
             }
         }
+        return $true
     }
 }
 
@@ -946,6 +986,9 @@ function Unregister-PodeService {
 
 .PARAMETER Name
     The name of the service.
+
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
 
 .OUTPUTS
     Hashtable
@@ -981,12 +1024,15 @@ function Get-PodeService {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $Agent
     )
     # Ensure the script is running with the necessary administrative/root privileges.
     # Exits the script if the current user lacks the required privileges.
     Confirm-PodeAdminPrivilege
-    return Get-PodeServiceStatus -Name $Name
+    return Get-PodeServiceStatus -Name $Name -Agent:$Agent
 }
 
 <#
@@ -1006,6 +1052,9 @@ function Get-PodeService {
 
 .PARAMETER Timeout
 	The maximum time, in seconds, to wait for the service to reach the 'Running' state when not using `-Async`. Defaults to 10 seconds.
+
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
 
 .EXAMPLE
 	Restart-PodeService -Name "MyPodeService"
@@ -1041,7 +1090,10 @@ function Restart-PodeService {
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Async')]
         [int]
-        $Timeout = 10
+        $Timeout = 10,
+
+        [switch]
+        $Agent
     )
     Write-Verbose -Message "Attempting to restart service '$Name' on platform $([System.Environment]::OSVersion.Platform)..."
 
@@ -1051,7 +1103,7 @@ function Restart-PodeService {
 
     try {
 
-        $service = Get-PodeServiceStatus -Name $Name
+        $service = Get-PodeServiceStatus -Name $Name -Agent:$Agent
         if (!$service) {
             # Service is not registered
             throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
@@ -1091,7 +1143,7 @@ function Restart-PodeService {
         }
         elseif ($IsMacOS) {
             # Start the service
-            if (((Send-PodeServiceSignal -Name $Name -Signal 'SIGHUP'))) {
+            if (((Send-PodeServiceSignal -Name $Name -Signal 'SIGHUP' -Agent:$Agent))) {
                 if ($Async) {
                     return $true
                 }

@@ -857,6 +857,9 @@ function Start-PodeLinuxService {
 .PARAMETER Name
     The name of the macOS service to test.
 
+.PARAMETER Agent
+    Return only Agent type services.
+
 .OUTPUTS
     [bool]
     Returns `$true` if the service is registered; otherwise, `$false`.
@@ -880,6 +883,7 @@ function Test-PodeMacOsServiceIsRegistered {
     else {
         $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
     }
+
     if ($sudo) {
         $systemctlStatus = & sudo launchctl list $nameService 2>&1
     }
@@ -1058,6 +1062,9 @@ function Get-PodeMacOsServicePid {
 .PARAMETER Name
     The name of the macOS service to disable.
 
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
+
 .OUTPUTS
     [bool]
     Returns `$true` if the service is successfully disabled; otherwise, `$false`.
@@ -1069,11 +1076,21 @@ function Disable-PodeMacOsService {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $Agent
     )
     # Standardize service naming for Linux/macOS
     $nameService = Get-PodeRealServiceName -Name $Name
-    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
+
+    if ($Agent) {
+        $sudo = $false
+    }
+    else {
+        $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
+    }
+
     if ($sudo) {
         $systemctlDisable = & sudo launchctl unload "/Library/LaunchDaemons/$nameService.plist" 2>&1
     }
@@ -1096,6 +1113,9 @@ function Disable-PodeMacOsService {
 .PARAMETER Name
     The name of the macOS service to stop.
 
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
+
 .OUTPUTS
     [bool]
     Returns `$true` if the service is successfully stopped; otherwise, `$false`.
@@ -1107,10 +1127,13 @@ function Stop-PodeMacOsService {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $Agent
     )
 
-    return (Send-PodeServiceSignal -Name $Name -Signal SIGTERM)
+    return (Send-PodeServiceSignal -Name $Name -Signal SIGTERM -Agent:$Agent)
 }
 
 <#
@@ -1123,6 +1146,9 @@ function Stop-PodeMacOsService {
 
 .PARAMETER Name
     The name of the macOS service to start.
+
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned.
 
 .OUTPUTS
     [bool]
@@ -1137,10 +1163,20 @@ function Start-PodeMacOsService {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $Agent
     )
     $nameService = Get-PodeRealServiceName -Name $Name
-    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
+
+    if ($Agent) {
+        $sudo = $false
+    }
+    else {
+        $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
+    }
+
     if ($sudo) {
         $serviceStartInfo = & sudo launchctl start $nameService 2>&1
     }
@@ -1168,6 +1204,9 @@ function Start-PodeMacOsService {
 	- `SIGCONT`: Continue the service (18).
 	- `SIGHUP`: Restart the service (1).
 	- `SIGTERM`: Terminate the service gracefully (15).
+
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
 
 .OUTPUTS
 	[bool] Returns `$true` if the signal was successfully sent, otherwise `$false`.
@@ -1201,7 +1240,10 @@ function Send-PodeServiceSignal {
         [Parameter(Mandatory = $true)]
         [ValidateSet('SIGTSTP', 'SIGCONT', 'SIGHUP', 'SIGTERM')]
         [string]
-        $Signal
+        $Signal,
+
+        [switch]
+        $Agent
     )
 
     # Standardize service naming for Linux/macOS
@@ -1225,7 +1267,7 @@ function Send-PodeServiceSignal {
             Write-Verbose -Message "Service '$Name' is active. Sending $Signal signal."
 
             # Retrieve service details, including the PID and privilege requirement
-            $svc = Get-PodeService -Name $Name
+            $svc = Get-PodeService -Name $Name -Agent:$Agent
 
             # Send the signal based on the privilege level
             if ($svc.Sudo) {
@@ -1338,39 +1380,50 @@ function Wait-PodeServiceStatus {
 
 <#
 .SYNOPSIS
-	Retrieves the status of a Pode service across Windows, Linux, and macOS platforms.
+    Retrieves the status of a Pode service on Windows, Linux, and macOS.
 
 .DESCRIPTION
-	The `Get-PodeServiceStatus` function retrieves detailed information about a specified Pode service, including its current status, process ID (PID), and whether it requires elevated privileges (`Sudo`). The behavior varies based on the platform:
-	- Windows: Uses CIM to query the service status and maps standard states to Pode-specific states.
-	- Linux: Checks service status using `systemctl` and optionally reads additional state information from a custom state file.
-	- macOS: Uses `launchctl` and custom logic to determine the service's status and PID.
+    The `Get-PodeServiceStatus` function provides detailed information about the status of a Pode service.
+    It queries the service's current state, process ID (PID), and whether elevated privileges (Sudo) are required,
+    adapting its behavior to the platform it runs on:
+
+    - **Windows**: Retrieves service information using the `Win32_Service` class and maps common states to Pode-specific ones.
+    - **Linux**: Uses `systemctl` to determine the service status and reads additional state information from custom Pode state files if available.
+    - **macOS**: Checks service status via `launchctl` and processes custom Pode state files when applicable.
 
 .PARAMETER Name
-	The name of the Pode service to query.
+    Specifies the name of the Pode service to query.
+
+.PARAMETER Agent
+    Specifies that only agent-type services should be returned. This parameter is applicable to macOS only.
 
 .EXAMPLE
-	Get-PodeServiceStatus -Name "MyPodeService"
+    Get-PodeServiceStatus -Name "MyPodeService"
+    Retrieves the status of the Pode service named "MyPodeService".
 
-	Retrieves the status of the Pode service named "MyPodeService".
+.EXAMPLE
+    Get-PodeServiceStatus -Name "MyPodeService" -Agent
+    Retrieves the status of the agent-type Pode service named "MyPodeService" (macOS only).
 
 .OUTPUTS
-	[hashtable] The function returns a hashtable with the following keys:
-		- Name: The service name.
-		- Status: The current status of the service (e.g., Running, Stopped, Suspended).
-		- Pid: The process ID of the service.
-		- Sudo: A boolean indicating whether elevated privileges are required.
+    [PSCustomObject] The function returns a custom object with the following properties:
+        - **Name**: The name of the service.
+        - **Status**: The current status of the service (e.g., Running, Stopped, Suspended).
+        - **Pid**: The process ID of the service.
+        - **Sudo**: A boolean indicating whether elevated privileges are required.
+        - **PathName**: The path to the service's configuration or executable.
+        - **Type**: The type of the service (e.g., Service, Daemon, Agent).
 
 .NOTES
-    - Possible states: Running,Stopped,Suspended,Starting,Stopping,Pausing,Resuming,Unknown
-	- Requires administrative/root privileges to access service information on Linux and macOS.
-	- Platform-specific behaviors:
-		- **Windows**: Retrieves service information via the `Win32_Service` class.
-		- **Linux**: Uses `systemctl` to query the service status and retrieves custom Pode state if available.
-		- **macOS**: Uses `launchctl` to query service information and checks for custom Pode state files.
-	- If the service is not found, the function returns `$null`.
-	- Logs errors and warnings for troubleshooting.
-    - This is an internal function and may change in future releases of Pode.
+    - **Supported Status States**: Running, Stopped, Suspended, Starting, Stopping, Pausing, Resuming, Unknown.
+    - Requires administrative/root privileges for accessing service information on Linux and macOS.
+    - **Platform-specific Behaviors**:
+        - **Windows**: Leverages CIM to query service information and map states.
+        - **Linux**: Relies on `systemctl` and custom Pode state files for service details.
+        - **macOS**: Uses `launchctl` and Pode state files to assess service status.
+    - If the specified service is not found, the function returns `$null`.
+    - Logs errors and warnings to assist in troubleshooting.
+    - This function is internal to Pode and subject to changes in future releases.
 #>
 function Get-PodeServiceStatus {
     [CmdletBinding()]
@@ -1378,7 +1431,10 @@ function Get-PodeServiceStatus {
     param (
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $Agent
     )
 
 
@@ -1404,6 +1460,7 @@ function Get-PodeServiceStatus {
                 Pid        = $service.ProcessId
                 Sudo       = $true
                 PathName   = $service.PathName
+                Type       = 'Service'
             }
 
         }
@@ -1462,6 +1519,7 @@ function Get-PodeServiceStatus {
                     Pid        = $servicePid
                     Sudo       = $true
                     PathName   = "/etc/systemd/system/$nameService"
+                    Type       = 'Service'
                 }
             }
             else {
@@ -1479,19 +1537,27 @@ function Get-PodeServiceStatus {
         try {
             $nameService = Get-PodeRealServiceName -Name $Name
             # Check if the service exists on macOS (launchctl)
-            if ((Test-PodeMacOsServiceIsRegistered $nameService )) {
+            if ((Test-PodeMacOsServiceIsRegistered $nameService -Agent:$Agent)) {
                 $servicePid = Get-PodeMacOsServicePid -Name $nameService # Extract the PID from the match
 
-                $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
+                if ($Agent) {
+                    $sudo = $false
+                }
+                else {
+                    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$nameService.plist" -PathType Leaf)
+                }
 
                 if ($sudo) {
                     $stateFilePath = "/Library/LaunchDaemons/PodeMonitor/$servicePid.state"
                     $plistPath = "/Library/LaunchDaemons/$($nameService).plist"
+                    $serviceType = 'Daemon'
                 }
                 else {
                     $stateFilePath = "$($HOME)/Library/LaunchAgents/PodeMonitor/$servicePid.state"
                     $plistPath = "$($HOME)/Library/LaunchAgents/$($nameService).plist"
+                    $serviceType = 'Agent'
                 }
+
                 if (Test-Path -Path $stateFilePath) {
                     $status = Get-Content -Path $stateFilePath -Raw
                     $status = $status.Substring(0, 1).ToUpper() + $status.Substring(1)
@@ -1505,8 +1571,9 @@ function Get-PodeServiceStatus {
                     Name       = $Name
                     Status     = $status
                     Pid        = $servicePid
-                    Sudo       = $true
+                    Sudo       = $sudo
                     PathName   = $plistPath
+                    Type       = $serviceType
                 }
             }
             else {

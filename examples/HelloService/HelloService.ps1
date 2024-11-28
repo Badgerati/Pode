@@ -21,8 +21,8 @@
 .PARAMETER Password
     A secure password for the service account (Windows only). If omitted, the service account will be 'NT AUTHORITY\SYSTEM'.
 
-    .PARAMETER Daemon
-    Defines the service as an Daemon instead of a Agent.(macOS only)
+.PARAMETER Agent
+    Defines the service as an Agent instead of a Daemon.(macOS only)
 
 .PARAMETER Unregister
     Unregisters the $ServiceName from Pode. Use with the -Force switch to forcefully unregister the service.
@@ -94,9 +94,9 @@ param(
     [securestring]
     $Password,
 
-    [Parameter(ParameterSetName = 'Register')]
+
     [switch]
-    $Daemon,
+    $Agent,
 
     [Parameter(Mandatory = $true, ParameterSetName = 'Unregister')]
     [switch]
@@ -153,33 +153,33 @@ catch {
 
 
 if ( $Register.IsPresent) {
-    return Register-PodeService -Name $ServiceName -ParameterString "-Port $Port" -Password $Password -Agent:(!$Daemon.IsPresent)
+    return Register-PodeService -Name $ServiceName -ParameterString "-Port $Port" -Password $Password -Agent:($Agent.IsPresent)
 }
 if ( $Unregister.IsPresent) {
-    return Unregister-PodeService -Name $ServiceName -Force:$Force
+    return Unregister-PodeService -Name $ServiceName -Force:$Force -Agent:($Agent.IsPresent)
 }
 if ($Start.IsPresent) {
-    return Start-PodeService -Name $ServiceName
+    return Start-PodeService -Name $ServiceName -Agent:($Agent.IsPresent)
 }
 
 if ($Stop.IsPresent) {
-    return Stop-PodeService -Name $ServiceName
+    return Stop-PodeService -Name $ServiceName -Agent:($Agent.IsPresent)
 }
 
 if ($Suspend.IsPresent) {
-    return Suspend-PodeService -Name $ServiceName
+    return Suspend-PodeService -Name $ServiceName -Agent:($Agent.IsPresent)
 }
 
 if ($Resume.IsPresent) {
-    return Resume-PodeService -Name $ServiceName
+    return Resume-PodeService -Name $ServiceName -Agent:($Agent.IsPresent)
 }
 
 if ($Query.IsPresent) {
-    return Get-PodeService -Name $ServiceName
+    return Get-PodeService -Name $ServiceName -Agent:($Agent.IsPresent)
 }
 
 if ($Restart.IsPresent) {
-    return Restart-PodeService -Name $ServiceName
+    return Restart-PodeService -Name $ServiceName -Agent:($Agent.IsPresent)
 }
 
 # Start the Pode server

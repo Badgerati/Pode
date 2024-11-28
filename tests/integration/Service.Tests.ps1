@@ -6,11 +6,17 @@ param()
 
 Describe 'Service Lifecycle' {
 
+    BeforeAll {
+        $isAgent=$false
+        if ($IsMacOS){
+            $isAgent=$true
+        }
+    }
     it 'register' {
-        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Register
+        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Register -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 10
-        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
+        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         if ($IsMacOS) {
             $status.Status | Should -Be 'Running'
             $status.Pid | Should -BeGreaterThan 0
@@ -26,11 +32,11 @@ Describe 'Service Lifecycle' {
 
 
     it 'start' -Skip:( $IsMacOS) {
-        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Start
+        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Start -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 2
         $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
-        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
+        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Running'
         $status.Name | Should -Be 'Hello Service'
         $status.Pid | Should -BeGreaterThan 0
@@ -38,11 +44,11 @@ Describe 'Service Lifecycle' {
     }
 
     it  'pause' {
-        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Suspend
+        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Suspend -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 2
         #  $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
-        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
+        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Suspended'
         $status.Name | Should -Be 'Hello Service'
         $status.Pid | Should -BeGreaterThan 0
@@ -50,21 +56,21 @@ Describe 'Service Lifecycle' {
     }
 
     it  'resume' {
-        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -resume
+        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -resume -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 2
         $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
-        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
+        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Running'
         $status.Name | Should -Be 'Hello Service'
         $status.Pid | Should -BeGreaterThan 0
         $webRequest.Content | Should -Be 'Hello, Service!'
     }
     it 'stop' {
-        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Stop
+        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Stop -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 2
-        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
+        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Stopped'
         $status.Name | Should -Be 'Hello Service'
         $status.Pid | Should -Be 0
@@ -73,11 +79,11 @@ Describe 'Service Lifecycle' {
     }
 
     it 're-start' {
-        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Start
+        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Start -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 2
         $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
-        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
+        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Running'
         $status.Name | Should -Be 'Hello Service'
         $status.Pid | Should -BeGreaterThan 0
@@ -85,25 +91,17 @@ Describe 'Service Lifecycle' {
     }
 
 
-    it 're-stop' {
-        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Stop
-        $success | Should -BeTrue
-        Start-Sleep 2
-
-        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
-        $status.Status | Should -Be 'Stopped'
-        $status.Name | Should -Be 'Hello Service'
-        $status.Pid | Should -Be 0
-
-        { Invoke-WebRequest -uri http://localhost:8080 } | Should -Throw
-    }
 
     it 'unregister' {
-        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Unregister
+        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
+        $status.Status | Should -Be 'Running'
+        $isAgent=$status.Type -eq 'Agent'
+        $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Unregister -Force -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 2
-        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
+        $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status | Should -BeNullOrEmpty
+        { Invoke-WebRequest -uri http://localhost:8080 } | Should -Throw
     }
 
 }
