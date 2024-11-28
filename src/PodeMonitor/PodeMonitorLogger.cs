@@ -95,7 +95,9 @@ namespace PodeMonitor
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to log to file: {ex.Message}");
+                Console.WriteLine($"Failed to log to file:");
+                Console.WriteLine($"{context} - {message}");
+                Console.WriteLine($"Error: {ex.Message}");
             }
         }
 

@@ -58,11 +58,16 @@ namespace PodeMonitor
             string logFilePath = config.GetSection("PodeMonitorWorker:logFilePath").Value ?? "PodeMonitorService.log";
 
             // Parse log level
-            string logLevelString = config.GetSection("PodeMonitorWorker:PodeLogLevel").Value;
+            string logLevelString = config.GetSection("PodeMonitorWorker:LogLevel").Value;
+
             if (!Enum.TryParse(logLevelString, true, out PodeLogLevel logLevel))
             {
                 Console.WriteLine($"Invalid or missing log level '{logLevelString}'. Defaulting to INFO.");
                 logLevel = PodeLogLevel.INFO; // Default log level
+            }
+            else
+            {
+                Console.WriteLine($"Log level set to '{logLevelString}'.");
             }
 
             // Parse log max file size
@@ -72,10 +77,8 @@ namespace PodeMonitor
                 Console.WriteLine($"Invalid or missing log max file size '{logMaxFileSizeString}'. Defaulting to 10 MB.");
                 logMaxFileSize = 10 * 1024 * 1024; // Default to 10 MB
             }
-
             // Initialize logger
             PodeMonitorLogger.Initialize(logFilePath, logLevel, logMaxFileSize);
-
 
             // Configure host builder
             var builder = CreateHostBuilder(args, customConfigFile);

@@ -71,7 +71,7 @@ namespace PodeMonitor
 
             // Generate a unique pipe name
             _pipeName = PipeNameGenerator.GeneratePipeName();
-            PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Initialized PodeMonitor with pipe name: {_pipeName}");
+            
             // Define the state file path only for Linux/macOS
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
@@ -100,7 +100,7 @@ namespace PodeMonitor
                 _stateFilePath = Path.Combine(stateDirectory, $"{Environment.ProcessId}.state");
 
 
-                PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Initialized PodeMonitor with pipe name: {_pipeName} and state file: {_stateFilePath}");
+                PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Initialized PodeMonitor with pipe name: {0} and state file: {1}",_pipeName,_stateFilePath);
             }
         }
 

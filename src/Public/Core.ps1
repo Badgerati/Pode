@@ -164,6 +164,7 @@ function Start-PodeServer {
                     Quiet              = $PodeService.Quiet
                     PipeName           = $PodeService.PipeName
                 }
+                write-podehost $PodeService -Explode -Force
             }
         }
 
