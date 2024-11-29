@@ -41,7 +41,7 @@
     Specifies the username under which the service will run on Linux. Defaults to the current user if not provided.
 
 .PARAMETER Agent
-    A switch to create an Agent instead of a Daemon on macOS (macOS only).
+    Create an Agent instead of a Daemon on macOS (macOS only).
 
 .PARAMETER Start
     A switch to start the service immediately after registration.

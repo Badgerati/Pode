@@ -13,7 +13,10 @@
 
 .PARAMETER Password
     A secure password for the service account (Windows only). If omitted, the service account will be 'NT AUTHORITY\SYSTEM'.
-    
+
+.PARAMETER Agent
+    Defines the service as an Agent instead of a Daemon.(macOS only)
+
 .PARAMETER Unregister
     Unregisters all services specified in the hashtable. Use with -Force to force unregistration.
 
@@ -81,6 +84,9 @@ param(
     [securestring]
     $Password,
 
+    [switch]
+    $Agent,
+
     [Parameter(Mandatory = $true, ParameterSetName = 'Unregister')]
     [switch]
     $Unregister,
@@ -133,53 +139,46 @@ catch {
     # If there is any error during the module import, throw the error
     throw
 }
-$services=@{
-    'HelloService1'=8081
-    'HelloService2'=8082
-    'HelloService3'=8083
+$services = @{
+    'HelloService1' = 8081
+    'HelloService2' = 8082
+    'HelloService3' = 8083
 }
 
 if ( $Register.IsPresent) {
-    $services.GetEnumerator() | ForEach-Object { Register-PodeService -Name $($_.Key) -ParameterString "-Port $($_.Value)" -Password $Password }
-    exit
+    return  $services.GetEnumerator() | ForEach-Object { Register-PodeService -Name $($_.Key) -Agent:($Agent.IsPresent) -ParameterString "-Port $($_.Value)" -Password $Password  }
 }
 if ( $Unregister.IsPresent) {
-    $services.GetEnumerator() | ForEach-Object { try{Unregister-PodeService -Name $($_.Key) -Force:$Force }catch{Write-Error -Exception $_.Exception}}
-    exit
+    return $services.GetEnumerator() | ForEach-Object { try { Unregister-PodeService -Name $($_.Key) -Agent:($Agent.IsPresent) -Force:$Force }catch { Write-Error -Exception $_.Exception } }
+
 }
 if ($Start.IsPresent) {
-    $services.GetEnumerator() | ForEach-Object { Start-PodeService -Name $($_.Key) }
-    exit
+    return $services.GetEnumerator() | ForEach-Object { Start-PodeService -Name $($_.Key) -Agent:($Agent.IsPresent) }
 }
 
 if ($Stop.IsPresent) {
-    $services.GetEnumerator() | ForEach-Object { Stop-PodeService -Name $($_.Key) }
-    exit
+    return $services.GetEnumerator() | ForEach-Object { Stop-PodeService -Name $($_.Key) -Agent:($Agent.IsPresent) }
 }
 
 if ($Query.IsPresent) {
-    $services.GetEnumerator() | ForEach-Object { Get-PodeService -Name $($_.Key) }
-    exit
+    return  $services.GetEnumerator() | ForEach-Object { Get-PodeService -Name $($_.Key) -Agent:($Agent.IsPresent) }
 }
 
 if ($Resume.IsPresent) {
-    $services.GetEnumerator() | ForEach-Object { Resume-PodeService -Name $($_.Key) }
-    exit
+    return $services.GetEnumerator() | ForEach-Object { Resume-PodeService -Name $($_.Key) -Agent:($Agent.IsPresent) }
 }
 
 if ($Query.IsPresent) {
-    $services.GetEnumerator() | ForEach-Object { Get-PodeService -Name $($_.Key) }
-    exit
+    return $services.GetEnumerator() | ForEach-Object { Get-PodeService -Name $($_.Key) -Agent:($Agent.IsPresent) }
 }
 
 if ($Restart.IsPresent) {
-    $services.GetEnumerator() | ForEach-Object { Restart-PodeService -Name $($_.Key) }
-    exit
+    return $services.GetEnumerator() | ForEach-Object { Restart-PodeService -Name $($_.Key) -Agent:($Agent.IsPresent) }
 }
 
 # Start the Pode server
 Start-PodeServer {
-    New-PodeLoggingMethod -File -Name "errors-$port" -MaxDays 4 -Path './logs' | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -File -Name "errors-$port" -MaxDays 4 -Path './logs' | Enable-PodeErrorLogging -Levels Informational
 
     # Add an HTTP endpoint listening on localhost at port 8080
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
