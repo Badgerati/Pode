@@ -1,34 +1,103 @@
 <#
 .SYNOPSIS
-Returns the uptime of the server in milliseconds.
+    Returns the uptime of the server in milliseconds or in a human-readable format.
 
 .DESCRIPTION
-Returns the uptime of the server in milliseconds. You can optionally return the total uptime regardless of server restarts.
+    Returns the uptime of the server in milliseconds by default. You can optionally return the total uptime regardless of server restarts or convert the uptime to a human-readable format with selectable output styles (e.g., Verbose, Compact).
+    Additionally, milliseconds can be excluded from the output if desired.
 
 .PARAMETER Total
-If supplied, the total uptime of the server will be returned, regardless of restarts.
+    If supplied, the total uptime of the server will be returned, regardless of restarts.
+
+.PARAMETER Readable
+    If supplied, the uptime will be returned in a human-readable format instead of milliseconds.
+
+.PARAMETER OutputType
+    Specifies the format for the human-readable output. Valid options are:
+    - 'Verbose' for detailed descriptions (e.g., "1 day, 2 hours, 3 minutes").
+    - 'Compact' for a compact format (e.g., "dd:hh:mm:ss").
+    - Default is concise format (e.g., "1d 2h 3m").
+
+.PARAMETER ExcludeMilliseconds
+    If supplied, milliseconds will be excluded from the human-readable output.
 
 .EXAMPLE
-$currentUptime = Get-PodeServerUptime
+    $currentUptime = Get-PodeServerUptime
+    # Output: 123456789 (milliseconds)
 
 .EXAMPLE
-$totalUptime = Get-PodeServerUptime -Total
+    $totalUptime = Get-PodeServerUptime -Total
+    # Output: 987654321 (milliseconds)
+
+.EXAMPLE
+    $readableUptime = Get-PodeServerUptime -Readable
+    # Output: "1d 10h 17m 36s"
+
+.EXAMPLE
+    $verboseUptime = Get-PodeServerUptime -Readable -OutputType Verbose
+    # Output: "1 day, 10 hours, 17 minutes, 36 seconds, 789 milliseconds"
+
+.EXAMPLE
+    $compactUptime = Get-PodeServerUptime -Readable -OutputType Compact
+    # Output: "01:10:17:36"
+
+.EXAMPLE
+    $compactUptimeNoMs = Get-PodeServerUptime -Readable -OutputType Compact -ExcludeMilliseconds
+    # Output: "01:10:17:36"
 #>
 function Get-PodeServerUptime {
-    [CmdletBinding()]
-    [OutputType([long])]
+    [CmdletBinding(DefaultParameterSetName = 'Milliseconds')]
+    [OutputType([long], [string])]
     param(
+        # Common to all parameter sets
         [switch]
-        $Total
+        $Total,
+
+        # Default set: Milliseconds output
+        [Parameter(ParameterSetName = 'Readable')]
+        [switch]
+        $Readable,
+
+        # Available only when -Readable is specified
+        [Parameter(ParameterSetName = 'Readable')]
+        [ValidateSet("Verbose", "Compact", "Default")]
+        [string]
+        $OutputType = "Default",
+
+        # Available only when -Readable is specified
+        [Parameter(ParameterSetName = 'Readable')]
+        [switch]
+        $ExcludeMilliseconds
     )
 
+    # Determine the appropriate start time
     $time = $PodeContext.Metrics.Server.StartTime
     if ($Total) {
         $time = $PodeContext.Metrics.Server.InitialLoadTime
     }
 
-    return [long]([datetime]::UtcNow - $time).TotalMilliseconds
+    # Calculate uptime in milliseconds
+    $uptimeMilliseconds = [long]([datetime]::UtcNow - $time).TotalMilliseconds
+
+    # Handle readable output
+    if ($PSCmdlet.ParameterSetName -eq 'Readable') {
+        switch ($OutputType) {
+            "Verbose" {
+                return Convert-PodeMillisecondsToReadable -Milliseconds $uptimeMilliseconds -VerboseOutput -ExcludeMilliseconds:$ExcludeMilliseconds
+            }
+            "Compact" {
+                return Convert-PodeMillisecondsToReadable -Milliseconds $uptimeMilliseconds -CompactOutput -ExcludeMilliseconds:$ExcludeMilliseconds
+            }
+            "Default" {
+                return Convert-PodeMillisecondsToReadable -Milliseconds $uptimeMilliseconds -ExcludeMilliseconds:$ExcludeMilliseconds
+            }
+        }
+    }
+
+    # Default to milliseconds if no readable output is requested
+    return $uptimeMilliseconds
 }
+
 
 <#
 .SYNOPSIS

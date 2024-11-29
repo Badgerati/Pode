@@ -207,6 +207,8 @@ function Start-PodeInternalServer {
                 }
             }
         }
+        # Start Service Monitor
+        Start-PodeServiceHearthbeat
     }
     catch {
         throw
@@ -332,8 +334,8 @@ function Restart-PodeInternalServer {
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
         $PodeContext.Tokens.Cancellation = [System.Threading.CancellationTokenSource]::new()
 
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
+   #     Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
+   #     $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
@@ -344,6 +346,11 @@ function Restart-PodeInternalServer {
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
         Start-PodeInternalServer
+
+        # recreate the session tokens
+
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
+        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
     }
     catch {
         $_ | Write-PodeErrorLog

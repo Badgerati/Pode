@@ -7,6 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{41F81369-868
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pode", "src\Listener\Pode.csproj", "{772D5C9F-1B25-46A7-8977-412A5F7F77D1}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PodeMonitor", "src\PodeMonitor\PodeMonitor.csproj", "{A927D6A5-A2AC-471A-9ABA-45916B597EB6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
