@@ -1,4 +1,4 @@
-name: Pode CI - pwsh 7.2
+name: Pode CI - pwsh 7.5
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     - 'src/**'
     - 'tests/**'
     - 'pode.build.ps1'
-    - '.github/workflows/ci-pwsh7_2.yml'
+    - '.github/workflows/ci-pwsh7_5.yml'
     - 'Dockerfile'
     - '*.dockerfile'
   pull_request:
@@ -19,13 +19,14 @@ on:
     - 'src/**'
     - 'tests/**'
     - 'pode.build.ps1'
-    - '.github/workflows/ci-pwsh7_2.yml'
+    - '.github/workflows/ci-pwsh7_5.yml'
     - 'Dockerfile'
     - '*.dockerfile'
 
 env:
-  INVOKE_BUILD_VERSION: '5.11.1'
-  POWERSHELL_VERSION: '7.2.24'
+  INVOKE_BUILD_VERSION: '5.12.0'
+  POWERSHELL_VERSION: '7.5.0-rc.1'
+
 
 jobs:
   build:
@@ -42,7 +43,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 9.x
 
     - name: Setup Powershell - Unix
       shell: pwsh
