@@ -516,20 +516,47 @@ namespace Pode
             }
         }
 
-        public override void Dispose()
-        {
-            RawBody = default;
-            Body = string.Empty;
-
-            if (Attachments != default(List<PodeSmtpAttachment>))
+        /*    public override void Dispose()
             {
-                foreach (var attachment in Attachments)
+                RawBody = default;
+                Body = string.Empty;
+
+                if (Attachments != default(List<PodeSmtpAttachment>))
                 {
-                    attachment.Dispose();
+                    foreach (var attachment in Attachments)
+                    {
+                        attachment.Dispose();
+                    }
+                }
+
+                base.Dispose();
+            }*/
+
+        /// <summary>
+        /// Dispose managed and unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">Indicates if the method is called explicitly or by garbage collection.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                // Custom cleanup logic for PodeSmtpRequest
+                RawBody = default;
+                Body = string.Empty;
+
+                if (Attachments != null)
+                {
+                    foreach (var attachment in Attachments)
+                    {
+                        attachment.Dispose();
+                    }
+
+                    Attachments = null;
                 }
             }
 
-            base.Dispose();
+            // Call the base Dispose to clean up other resources
+            base.Dispose(disposing);
         }
     }
 }

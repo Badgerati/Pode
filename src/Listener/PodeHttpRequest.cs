@@ -412,22 +412,51 @@ namespace Pode
             base.PartialDispose();
         }
 
-        public override void Dispose()
+        /*   public override void Dispose()
+           {
+               RawBody = default;
+               _body = string.Empty;
+
+               if (BodyStream != default(MemoryStream))
+               {
+                   BodyStream.Dispose();
+               }
+
+               if (Form != default(PodeForm))
+               {
+                   Form.Dispose();
+               }
+
+               base.Dispose();
+           }*/
+
+        /// <summary>
+        /// Dispose managed and unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">Indicates whether the method is called explicitly or by garbage collection.</param>
+        protected override void Dispose(bool disposing)
         {
-            RawBody = default;
-            _body = string.Empty;
-
-            if (BodyStream != default(MemoryStream))
+            if (disposing)
             {
-                BodyStream.Dispose();
+                // Custom cleanup logic for PodeHttpRequest
+                RawBody = default;
+                _body = string.Empty;
+
+                if (BodyStream != null)
+                {
+                    BodyStream.Dispose();
+                    BodyStream = null;
+                }
+
+                if (Form != null)
+                {
+                    Form.Dispose();
+                    Form = null;
+                }
             }
 
-            if (Form != default(PodeForm))
-            {
-                Form.Dispose();
-            }
-
-            base.Dispose();
+            // Call the base Dispose to clean up shared resources
+            base.Dispose(disposing);
         }
     }
 }
