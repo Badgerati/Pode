@@ -1,69 +1,75 @@
 <#
 .SYNOPSIS
-Starts a Pode Server with the supplied ScriptBlock.
+    Starts a Pode Server with the supplied ScriptBlock.
 
 .DESCRIPTION
-Starts a Pode Server with the supplied ScriptBlock.
+    Starts a Pode Server with the supplied ScriptBlock.
 
 .PARAMETER ScriptBlock
-The main logic for the Server.
+    The main logic for the Server.
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Server's logic.
-The directory of this file will be used as the Server's root path - unless a specific -RootPath is supplied.
+    A literal, or relative, path to a file containing a ScriptBlock for the Server's logic.
+    The directory of this file will be used as the Server's root path - unless a specific -RootPath is supplied.
 
 .PARAMETER Interval
-For 'Service' type Servers, will invoke the ScriptBlock every X seconds.
+    For 'Service' type Servers, will invoke the ScriptBlock every X seconds.
 
 .PARAMETER Name
-An optional name for the Server (intended for future ideas).
+    An optional name for the Server (intended for future ideas).
 
 .PARAMETER Threads
-The numbers of threads to use for Web, SMTP, and TCP servers.
+    The numbers of threads to use for Web, SMTP, and TCP servers.
 
 .PARAMETER RootPath
-An override for the Server's root path.
+    An override for the Server's root path.
 
 .PARAMETER Request
-Intended for Serverless environments, this is Requests details that Pode can parse and use.
+    Intended for Serverless environments, this is Requests details that Pode can parse and use.
 
 .PARAMETER ServerlessType
-Optional, this is the serverless type, to define how Pode should run and deal with incoming Requests.
+    Optional, this is the serverless type, to define how Pode should run and deal with incoming Requests.
 
 .PARAMETER StatusPageExceptions
-An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
-If supplied this value will override the ShowExceptions setting in the server.psd1 file.
+    An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
+    If supplied this value will override the ShowExceptions setting in the server.psd1 file.
 
 .PARAMETER ListenerType
-An optional value to use a custom Socket Listener. The default is Pode's inbuilt listener.
-There's the Pode.Kestrel module, so the value here should be "Kestrel" if using that.
+    An optional value to use a custom Socket Listener. The default is Pode's inbuilt listener.
+    There's the Pode.Kestrel module, so the value here should be "Kestrel" if using that.
 
 .PARAMETER DisableTermination
-Disables the ability to terminate the Server.
+    Disables the ability to terminate and suspend/resume the Server.
+
+.PARAMETER DisableConsoleInput
+    Disables any console keyboard interaction
+
+.PARAMETER ClearHost
+    Clears the console screen before displaying server information.
 
 .PARAMETER Quiet
-Disables any output from the Server.
+    Disables any output from the Server.
 
 .PARAMETER Browse
-Open the web Server's default endpoint in your default browser.
+    Open the web Server's default endpoint in your default browser.
 
 .PARAMETER CurrentPath
-Sets the Server's root path to be the current working path - for -FilePath only.
+    Sets the Server's root path to be the current working path - for -FilePath only.
 
 .PARAMETER EnablePool
-Tells Pode to configure certain RunspacePools when they're being used adhoc, such as Timers or Schedules.
+    Tells Pode to configure certain RunspacePools when they're being used adhoc, such as Timers or Schedules.
 
 .PARAMETER EnableBreakpoints
-If supplied, any breakpoints created by using Wait-PodeDebugger will be enabled - or disabled if false passed explicitly, or not supplied.
+    If supplied, any breakpoints created by using Wait-PodeDebugger will be enabled - or disabled if false passed explicitly, or not supplied.
 
 .EXAMPLE
-Start-PodeServer { /* logic */ }
+    Start-PodeServer { /* logic */ }
 
 .EXAMPLE
-Start-PodeServer -Interval 10 { /* logic */ }
+    Start-PodeServer -Interval 10 { /* logic */ }
 
 .EXAMPLE
-Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda { /* logic */ }
+    Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda { /* logic */ }
 #>
 function Start-PodeServer {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -118,6 +124,12 @@ function Start-PodeServer {
         $DisableTermination,
 
         [switch]
+        $DisableConsoleInput,
+
+        [switch]
+        $ClearHost,
+
+        [switch]
         $Quiet,
 
         [switch]
@@ -146,9 +158,6 @@ function Start-PodeServer {
         # Sets the name of the current runspace
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
-        # Compile the Debug Handler
-        Initialize-PodeDebugHandler
-
         # ensure the session is clean
         $Script:PodeContext = $null
         $ShowDoneMessage = $true
@@ -174,23 +183,39 @@ function Start-PodeServer {
                 $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
             }
 
-            # create main context object
-            $PodeContext = New-PodeContext `
-                -ScriptBlock $ScriptBlock `
-                -FilePath $FilePath `
-                -Threads $Threads `
-                -Interval $Interval `
-                -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-                -ServerlessType $ServerlessType `
-                -ListenerType $ListenerType `
-                -EnablePool $EnablePool `
-                -StatusPageExceptions $StatusPageExceptions `
-                -DisableTermination:$DisableTermination `
-                -Quiet:$Quiet `
-                -EnableBreakpoints:$EnableBreakpoints
+
+            # Define parameters for the context creation
+            $ContextParams = @{
+                ScriptBlock          = $ScriptBlock
+                FilePath             = $FilePath
+                Threads              = $Threads
+                Interval             = $Interval
+                ServerRoot           = Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot
+                ServerlessType       = $ServerlessType
+                ListenerType         = $ListenerType
+                EnablePool           = $EnablePool
+                StatusPageExceptions = $StatusPageExceptions
+                Console              = @{
+                    DisableTermination  = $DisableTermination.IsPresent
+                    DisableConsoleInput = $DisableConsoleInput.IsPresent
+                    Quiet               = $Quiet.IsPresent
+                    ClearHost           = $ClearHost.IsPresent
+                    ShowOpenAPI         = $true
+                    ShowEndpoints       = $true
+                    ShowHelp            = $false
+
+                }
+                EnableBreakpoints    = $EnableBreakpoints
+            }
+
+            # Create main context object
+            $PodeContext = New-PodeContext @ContextParams
+
+            # Compile the Debug Handler
+            Initialize-PodeDebugHandler
 
             # set it so ctrl-c can terminate, unless serverless/iis, or disabled
-            if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {
+            if (!$PodeContext.Server.Console.DisableTermination -and ($null -eq $psISE)) {
                 [Console]::TreatControlCAsInput = $true
             }
 
@@ -209,7 +234,7 @@ function Start-PodeServer {
             while (  !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
                 Start-Sleep -Seconds 1
 
-                if (!$PodeContext.Server.DisableTermination) {
+                if (!$PodeContext.Server.Console.DisableConsoleInput) {
                     # get the next key presses
                     $key = Get-PodeConsoleKey
                 }
@@ -222,7 +247,7 @@ function Start-PodeServer {
 
                 if (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
                     Clear-PodeKeyPressed
-                    Invoke-PodeDumpInternal
+                    Invoke-PodeDumpInternal -Format $PodeContext.Server.Debug.Dump.Format -Path $PodeContext.Server.Debug.Dump.Path  -MaxDepth $PodeContext.Server.Debug.Dump.MaxDepth
                     if ($PodeContext.Server.Debug.Dump.Param.Halt) {
                         Write-PodeHost -ForegroundColor Red 'Halt switch detected. Closing the application.'
                         break
@@ -243,13 +268,43 @@ function Start-PodeServer {
                 if (Test-PodeOpenBrowserPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $url = Get-PodeEndpointUrl
-                    if ($null -ne $url) {
+                    if (![string]::IsNullOrWhitespace($url)) {
                         Invoke-PodeEvent -Type Browser
                         Start-Process $url
                     }
                 }
 
-                if (Test-PodeTerminationPressed -Key $key) {
+                if ( Test-PodeHelpPressed -Key $key) {
+                    Clear-PodeKeyPressed
+                    $PodeContext.Server.Console.ShowHelp = !$PodeContext.Server.Console.ShowHelp
+                    Show-PodeConsoleInfo -ShowHeader -ClearHost
+                }
+
+                if ( Test-PodeOpenAPIPressed -Key $key) {
+                    Clear-PodeKeyPressed
+                    $PodeContext.Server.Console.ShowOpenAPI = !$PodeContext.Server.Console.ShowOpenAPI
+                    Show-PodeConsoleInfo -ShowHeader -ClearHost
+                }
+
+                if ( Test-PodeEndpointsPressed -Key $key) {
+                    Clear-PodeKeyPressed
+                    $PodeContext.Server.Console.ShowEndpoints = !$PodeContext.Server.Console.ShowEndpoints
+                    Show-PodeConsoleInfo -ShowHeader -ClearHost
+                }
+
+                if ( Test-PodeClearPressed -Key $key) {
+                    Clear-PodeKeyPressed
+                    Show-PodeConsoleInfo -ShowHeader -ClearHost
+                }
+
+                if ( Test-PodeQuietPressed -Key $key) {
+                    Clear-PodeKeyPressed
+                    $PodeContext.Server.Console.Quiet = !$PodeContext.Server.Console.Quiet
+                    Show-PodeConsoleInfo -ShowHeader -ClearHost -Force
+                }
+
+                if ( Test-PodeTerminationPressed -Key $key) {
+                    Clear-PodeKeyPressed
                     break
                 }
             }
@@ -259,7 +314,7 @@ function Start-PodeServer {
                 Write-PodeHost $PodeLocale.iisShutdownMessage -NoNewLine -ForegroundColor Yellow
                 Write-PodeHost ' ' -NoNewLine
             }
-            
+
             # Terminating...
             Write-PodeHost $PodeLocale.terminatingMessage -NoNewLine -ForegroundColor Yellow
             Invoke-PodeEvent -Type Terminate
@@ -269,7 +324,8 @@ function Start-PodeServer {
             $_ | Write-PodeErrorLog
 
             if ($PodeContext.Server.Debug.Dump.Enable) {
-                Invoke-PodeDumpInternal -ErrorRecord $_
+                Invoke-PodeDumpInternal -ErrorRecord $_ -Format $PodeContext.Server.Debug.Dump.Format `
+                    -Path $PodeContext.Server.Debug.Dump.Path  -MaxDepth $PodeContext.Server.Debug.Dump.MaxDepth
             }
 
             Invoke-PodeEvent -Type Crash
@@ -362,11 +418,8 @@ function Resume-PodeServer {
     This function suspends the Pode server by pausing all associated runspaces and ensuring they enter a debug state.
     It triggers the 'Suspend' event, updates the server's suspended status, and provides feedback during the suspension process.
 
-.PARAMETER Timeout
-    The maximum time, in seconds, to wait for each runspace to be suspended before timing out. Default is 30 seconds.
-
 .EXAMPLE
-    Suspend-PodeServerInternal -Timeout 60
+    Suspend-PodeServer
     # Suspends the Pode server with a timeout of 60 seconds.
 
 #>

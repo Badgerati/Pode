@@ -182,8 +182,6 @@ The steps to attach to the Pode process are as follows:
 
 6. When you are done debugging the current request, hit the `d` key.
 
-
-
 ## Managing Runspace Names
 
 ### Internal Runspace Naming
@@ -266,9 +264,6 @@ To set up default options for the memory dump feature in Pode, you can configure
 @{
     Server = @{
         Debug = @{
-            Breakpoints = @{
-                Enable = $true
-            }
             Dump = @{
                 Enable = $true
                 Format = 'Yaml'  # Options: 'json', 'clixml', 'txt', 'bin', 'yaml'
@@ -284,7 +279,6 @@ To set up default options for the memory dump feature in Pode, you can configure
 - **Format**: Specifies the default format for the dump file. Supported formats are `json`, `clixml`, `txt`, `bin`, and `yaml`.
 - **Path**: Specifies the directory where the dump file will be saved. If the directory does not exist, it will be created.
 - **MaxDepth**: Specifies the maximum depth to traverse when collecting information.
-
 
 ### Overriding Default Settings at Runtime
 
@@ -343,3 +337,4 @@ In this setup, if an error occurs in the route, `Invoke-PodeDump` is called, cap
 - **Setting the Path**: Use a dedicated folder for dump files (e.g., `./Dump`) to keep diagnostic files organized. The default path in the configuration can be overridden at runtime if needed.
 
 With these configurations and usage practices, the memory dump feature in Pode can provide a powerful tool for diagnostics and debugging, capturing critical state information at the time of failure.
+ 

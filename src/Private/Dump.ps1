@@ -116,9 +116,7 @@ function Invoke-PodeDumpInternal {
     # Process block to handle each pipeline input
     process {
         # Ensure Dump directory exists in the specified path
-        if ( $Path -match '^\.{1,2}([\\\/]|$)') {
-            $Path = [System.IO.Path]::Combine($PodeContext.Server.Root, $Path.Substring(2))
-        }
+        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
         if (!(Test-Path -Path $Path)) {
             New-Item -ItemType Directory -Path $Path | Out-Null
@@ -128,22 +126,22 @@ function Invoke-PodeDumpInternal {
         $process = Get-Process -Id $PID
         $memoryDetails = @(
             [Ordered]@{
-                ProcessId     = $process.Id
-                ProcessName   = $process.ProcessName
-                WorkingSet    = [math]::Round($process.WorkingSet64 / 1MB, 2)
-                PrivateMemory = [math]::Round($process.PrivateMemorySize64 / 1MB, 2)
-                VirtualMemory = [math]::Round($process.VirtualMemorySize64 / 1MB, 2)
+                ProcessId       = $process.Id
+                ProcessName     = $process.ProcessName
+                WorkingSetMB    = [math]::Round($process.WorkingSet64 / 1MB, 2)
+                PrivateMemoryMB = [math]::Round($process.PrivateMemorySize64 / 1MB, 2)
+                VirtualMemoryMB = [math]::Round($process.VirtualMemorySize64 / 1MB, 2)
             }
         )
 
         # Capture the code causing the exception
-        $scriptContext = @()
-        $exceptionDetails = @()
+        $scriptContext = $null
+        $exceptionDetails = $null
         $stackTrace = ''
 
         if ($null -ne $ErrorRecord) {
 
-            $scriptContext += [Ordered]@{
+            $scriptContext = [Ordered]@{
                 ScriptName      = $ErrorRecord.InvocationInfo.ScriptName
                 Line            = $ErrorRecord.InvocationInfo.Line
                 PositionMessage = $ErrorRecord.InvocationInfo.PositionMessage
@@ -151,14 +149,14 @@ function Invoke-PodeDumpInternal {
 
             # Capture stack trace information if available
             $stackTrace = if ($ErrorRecord.Exception.StackTrace) {
-                $ErrorRecord.Exception.StackTrace -split "`n"
+                $ErrorRecord.Exception.StackTrace
             }
             else {
                 'No stack trace available'
             }
 
             # Capture exception details
-            $exceptionDetails += [Ordered]@{
+            $exceptionDetails = [Ordered]@{
                 ExceptionType  = $ErrorRecord.Exception.GetType().FullName
                 Message        = $ErrorRecord.Exception.Message
                 InnerException = if ($ErrorRecord.Exception.InnerException) { $ErrorRecord.Exception.InnerException.Message } else { $null }
@@ -171,18 +169,21 @@ function Invoke-PodeDumpInternal {
         # Check if RunspacePools is not null before iterating
         $runspacePoolDetails = @()
 
-        # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
+        # Retrieve all runspaces related to Pode ordered by name
         $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' } | Sort-Object Name
 
         $runspaceDetails = @{}
         foreach ($r in $runspaces) {
             $runspaceDetails[$r.Name] = @{
                 Id                  = $r.Id
-                Name                = $r.Name
+                Name                = @{
+                    $r.Name = @{
+                        ScopedVariables = Get-PodeRunspaceVariablesViaDebugger -Runspace $r
+                    }
+                }
                 InitialSessionState = $r.InitialSessionState
                 RunspaceStateInfo   = $r.RunspaceStateInfo
             }
-            $runspaceDetails[$r.Name].ScopedVariables = Get-PodeRunspaceVariablesViaDebugger -Runspace $r
         }
 
         if ($null -ne $PodeContext.RunspacePools) {
@@ -219,31 +220,26 @@ function Invoke-PodeDumpInternal {
             RunspacePools    = $runspacePoolDetails
             Runspace         = $runspaceDetails
         }
-
+        $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').$($Format.ToLower())"
         # Determine file extension and save format based on selected Format
         switch ($Format) {
             'json' {
-                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
                 $dumpInfo | ConvertTo-Json -Depth $MaxDepth -WarningAction SilentlyContinue | Out-File -FilePath $dumpFilePath
                 break
             }
             'clixml' {
-                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').clixml"
                 $dumpInfo | Export-Clixml -Path $dumpFilePath
                 break
             }
             'txt' {
-                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
                 $dumpInfo | Out-String | Out-File -FilePath $dumpFilePath
                 break
             }
             'bin' {
-                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').bin"
                 [System.IO.File]::WriteAllBytes($dumpFilePath, [System.Text.Encoding]::UTF8.GetBytes([System.Management.Automation.PSSerializer]::Serialize($dumpInfo, $MaxDepth )))
                 break
             }
             'yaml' {
-                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').yaml"
                 $dumpInfo | ConvertTo-PodeYaml -Depth $MaxDepth | Out-File -FilePath $dumpFilePath
                 break
             }
@@ -252,8 +248,8 @@ function Invoke-PodeDumpInternal {
         Write-PodeHost -ForegroundColor Yellow "Memory dump saved to $dumpFilePath"
     }
     end {
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Dump
-        $PodeContext.Tokens.Dump = [System.Threading.CancellationTokenSource]::new()
+
+        Reset-PodeCancellationToken -Type 'Dump'
     }
 }
 
@@ -288,6 +284,61 @@ function Invoke-PodeDumpInternal {
     Pode
 
 #>
+function Get-PodeRunspaceVariablesViaDebuggerNew {
+    param (
+        [Parameter(Mandatory)]
+        [System.Management.Automation.Runspaces.Runspace]$Runspace,
+
+        [Parameter()]
+        [int]$Timeout = 60
+    )
+
+    # Initialize variables collection
+    $variables = @()
+    try {
+
+        # Attach the debugger and break all
+        $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
+        Enable-RunspaceDebug -BreakAll -Runspace $Runspace
+
+        # Wait for the event to be triggered or timeout
+        $startTime = [DateTime]::UtcNow
+        Write-PodeHost "Waiting for $($Runspace.Name) to enter in debug ." -NoNewLine
+
+        while (!$debugger.IsEventTriggered) {
+            Start-Sleep -Milliseconds 500
+            Write-PodeHost '.' -NoNewLine
+
+            if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
+                Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
+                return @{}
+            }
+        }
+
+        Write-PodeHost 'Done'
+
+        # Retrieve and output the collected variables from the embedded C# code
+        $variables = $debugger.Variables
+    }
+    catch {
+        # Log the error details using Write-PodeErrorLog.
+        # This ensures that any exceptions thrown during the execution are logged appropriately.
+        $_ | Write-PodeErrorLog
+    }
+    finally {
+        # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
+        if ($null -ne $debugger) {
+            $debugger.Dispose()
+        }
+
+        # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
+        Disable-RunspaceDebug -Runspace $Runspace
+    }
+
+    return $variables[0]
+}
+
+
 function Get-PodeRunspaceVariablesViaDebugger {
     param (
         [Parameter(Mandatory)]
@@ -343,6 +394,7 @@ function Get-PodeRunspaceVariablesViaDebugger {
 
     return $variables[0]
 }
+
 
 <#
 .SYNOPSIS
@@ -452,11 +504,13 @@ function ConvertTo-PodeSerializableObject {
                 }
                 catch {
                     Write-PodeHost $_ -ForegroundColor Red
+                    $_ | Write-PodeErrorLog
                 }
             }
         }
         catch {
             Write-PodeHost $_ -ForegroundColor Red
+            $_ | Write-PodeErrorLog
         }
         return $result
     }
@@ -471,11 +525,13 @@ function ConvertTo-PodeSerializableObject {
                 }
                 catch {
                     Write-PodeHost $_ -ForegroundColor Red
+                    $_ | Write-PodeErrorLog
                 }
             }
         }
         catch {
             Write-PodeHost $_ -ForegroundColor Red
+            $_ | Write-PodeErrorLog
         }
         return $result
     }
@@ -491,116 +547,8 @@ function ConvertTo-PodeSerializableObject {
 }
 
 function Initialize-PodeDebugHandler {
-    # Embed C# code to handle the DebuggerStop event
-    Add-Type @'
-using System;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
-using System.Collections.ObjectModel;
-
-namespace Pode.Embedded
-{
-    public class DebuggerHandler
-    {
-        // Collection to store variables collected during the debugging session
-        private static PSDataCollection<PSObject> variables = new PSDataCollection<PSObject>();
-
-        // Event handler for the DebuggerStop event
-        private static EventHandler<DebuggerStopEventArgs> debuggerStopHandler;
-
-        // Flag to indicate whether the DebuggerStop event has been triggered
-        private static bool eventTriggered = false;
-
-        // Flag to control whether variables should be collected during the DebuggerStop event
-        private static bool shouldCollectVariables = true;
-
-        // Method to attach the DebuggerStop event handler to the runspace's debugger
-        public static void AttachDebugger(Runspace runspace, bool collectVariables = true)
-        {
-            // Set the collection flag based on the parameter
-            shouldCollectVariables = collectVariables;
-
-            // Initialize the event handler with the OnDebuggerStop method
-            debuggerStopHandler = new EventHandler<DebuggerStopEventArgs>(OnDebuggerStop);
-
-            // Attach the event handler to the DebuggerStop event of the runspace's debugger
-            runspace.Debugger.DebuggerStop += debuggerStopHandler;
-        }
-
-        // Method to detach the DebuggerStop event handler from the runspace's debugger
-        public static void DetachDebugger(Runspace runspace)
-        {
-            if (debuggerStopHandler != null)
-            {
-                // Remove the event handler to prevent further event handling
-                runspace.Debugger.DebuggerStop -= debuggerStopHandler;
-
-                // Set the handler to null to clean up
-                debuggerStopHandler = null;
-            }
-        }
-
-        // Event handler method that gets called when the debugger stops
-        private static void OnDebuggerStop(object sender, DebuggerStopEventArgs args)
-        {
-            // Set the eventTriggered flag to true
-            eventTriggered = true;
-
-            // Cast the sender to a Debugger object
-            var debugger = sender as Debugger;
-            if (debugger != null)
-            {
-                // Enable step mode to allow for command execution during the debug stop
-                debugger.SetDebuggerStepMode(true);
-
-                PSCommand command = new PSCommand();
-
-                if (shouldCollectVariables)
-                {
-                    // Collect variables
-                    command.AddCommand("Get-PodeDumpScopedVariable");
-                }
-                else
-                {
-                    // Execute a break
-                    command.AddCommand( "while( $PodeContext.Server.Suspended){ Start-sleep 1}");
-                }
-
-                // Create a collection to store the command output
-                PSDataCollection<PSObject> outputCollection = new PSDataCollection<PSObject>();
-
-                // Execute the command within the debugger
-                debugger.ProcessCommand(command, outputCollection);
-
-                // Add results to the variables collection if collecting variables
-                if (shouldCollectVariables)
-                {
-                    foreach (var output in outputCollection)
-                    {
-                        variables.Add(output);
-                    }
-                }
-                else
-                {
-                    // Ensure the debugger remains ready for further interaction
-                    debugger.SetDebuggerStepMode(true);
-                }
-            }
-        }
-
-
-        // Method to check if the DebuggerStop event has been triggered
-        public static bool IsEventTriggered()
-        {
-            return eventTriggered;
-        }
-
-        // Method to retrieve the collected variables
-        public static PSDataCollection<PSObject> GetVariables()
-        {
-            return variables;
-        }
+    if ($PodeContext.Server.Debug.Dump) {
+        # Embed C# code to handle the DebuggerStop event
+        Add-Type -LiteralPath ([System.IO.Path]::Combine((Get-PodeModuleRootPath), 'Embedded', 'DebuggerHandler.cs')) -ErrorAction Stop
     }
-}
-'@
 }

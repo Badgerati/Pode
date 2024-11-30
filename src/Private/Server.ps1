@@ -12,10 +12,10 @@ function Start-PodeInternalServer {
         Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID)) " -ForegroundColor Cyan -NoNewline
 
         if ($PodeContext.Metrics.Server.RestartCount -gt 0) {
-            Write-PodeHost "[$( $PodeLocale.restartingMessage)]" -ForegroundColor Cyan
+            Write-PodeHost "[$( $PodeLocale.restartingMessage)]" -ForegroundColor Cyan -NoNewline
         }
         else {
-            Write-PodeHost "[$($PodeLocale.initializingMessage)]" -ForegroundColor Cyan
+            Write-PodeHost "[$($PodeLocale.initializingMessage)]" -ForegroundColor Cyan -NoNewline
         }
 
         $null = Test-PodeVersionPwshEOL -ReportUntested
@@ -155,7 +155,7 @@ function Start-PodeInternalServer {
         # run running event hooks
         Invoke-PodeEvent -Type Running
 
-        Show-PodeConsoleInfo -ClearHost -ShowHeader
+        Show-PodeConsoleInfo -ShowHeader
 
     }
     catch {
@@ -188,14 +188,17 @@ function Show-PodeConsoleInfo {
         $ClearHost,
 
         [switch]
-        $ShowHeader
+        $ShowHeader,
+
+        [switch]
+        $Force
     )
 
-    if ($PodeContext.Server.Quiet) {
+    if ($PodeContext.Server.Console.Quiet -and !$Force) {
         return
     }
 
-    if ($ClearHost) {
+    if ($ClearHost -or $PodeContext.Server.Console.ClearHost) {
         Clear-Host
     }
 
@@ -207,32 +210,50 @@ function Show-PodeConsoleInfo {
         else {
             $status = $Podelocale.runningMessage # Running
         }
-        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID)) [$status]" -ForegroundColor Cyan
+
+        Write-PodeHost "`rPode $(Get-PodeVersion) (PID: $($PID)) [$status]  " -ForegroundColor Cyan -Force:$Force -NoNewLine
+        if ($PodeContext.Server.Console.ShowHelp -or $Force) {
+            Write-PodeHost -Force:$Force
+        }else{
+            Write-PodeHost '- Ctrl+H for the Command List'  -ForegroundColor Cyan
+        }
     }
 
     if (!$PodeContext.Server.Suspended) {
-        # state what endpoints are being listened on
-        Show-PodeEndPointConsoleInfo
-
-        # state the OpenAPI endpoints for each definition
-        Show-PodeOAConsoleInfo
+        if ($PodeContext.Server.Console.ShowEndpoints) {
+            # state what endpoints are being listened on
+            Show-PodeEndPointConsoleInfo -Force:$Force
+        }
+        if ($PodeContext.Server.Console.ShowOpenAPI) {
+            # state the OpenAPI endpoints for each definition
+            Show-PodeOAConsoleInfo -Force:$Force
+        }
     }
 
-    if (!$PodeContext.Server.DisableTermination) {
+    if (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp) {
         $resumeOrSuspend = $(if ($PodeContext.Server.Suspended) { $Podelocale.ResumeServerMessage } else { $Podelocale.SuspendServerMessage })
-        Write-PodeHost
-        Write-PodeHost $Podelocale.ServerControlCommandsTitle -ForegroundColor Green
-        Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor Cyan
-        Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor Cyan
-        Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor Cyan
+        Write-PodeHost -Force:$Force
+        Write-PodeHost $Podelocale.ServerControlCommandsTitle -ForegroundColor Green -Force:$Force
+        Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor Cyan -Force:$Force
+        Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor Cyan -Force:$Force
+        Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor Cyan -Force:$Force
 
         if ((Get-PodeEndpointUrl) -and !($PodeContext.Server.Suspended)) {
-            Write-PodeHost "    Ctrl+B   : $($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor Cyan
+            Write-PodeHost "    Ctrl+B   : $($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor Cyan -Force:$Force
         }
 
         if ($PodeContext.Server.Debug.Dump.Enabled) {
-            Write-PodeHost "    Ctrl+D   : $($Podelocale.GenerateDiagnosticDumpMessage)" -ForegroundColor Cyan
+            Write-PodeHost "    Ctrl+D   : $($Podelocale.GenerateDiagnosticDumpMessage)" -ForegroundColor Cyan -Force:$Force
         }
+        Write-PodeHost '    ----' -ForegroundColor Cyan -Force:$Force
+        Write-PodeHost '    Ctrl+H   : Hide this help' -ForegroundColor Cyan -Force:$Force
+        Write-PodeHost "    Ctrl+E   : $(if($PodeContext.Server.Console.ShowEndpoints){'Hide'}else{'Show'}) Endpoints" -ForegroundColor Cyan -Force:$Force
+        if (Test-PodeOAEnabled) {
+            Write-PodeHost "    Ctrl+O   : $(if($PodeContext.Server.Console.ShowOpenAPI){'Hide'}else{'Show'}) OpenAPI" -ForegroundColor Cyan -Force:$Force
+        }
+        Write-PodeHost '    Ctrl+L   : Clear the Console' -ForegroundColor Cyan -Force:$Force
+
+        Write-PodeHost "    Ctrl+T   : $(if($PodeContext.Server.Console.Quiet){'Disable'}else{'Enable'}) Quiet Mode" -ForegroundColor Cyan -Force:$Force
     }
 }
 
@@ -352,14 +373,9 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Types = @()
 
         # recreate the session tokens
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        $PodeContext.Tokens.Cancellation = [System.Threading.CancellationTokenSource]::new()
-
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
-
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Dump
-        $PodeContext.Tokens.Dump = [System.Threading.CancellationTokenSource]::new()
+        Reset-PodeCancellationToken -Type Cancellation
+        Reset-PodeCancellationToken -Type Restart
+        Reset-PodeCancellationToken -Type Dump
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
@@ -379,6 +395,72 @@ function Restart-PodeInternalServer {
         throw $_.Exception
     }
 }
+
+
+<#
+.SYNOPSIS
+    Resets the cancellation token for a specific type in Pode.
+
+.DESCRIPTION
+    The `Reset-PodeCancellationToken` function disposes of the existing cancellation token
+    for the specified type and reinitializes it with a new token. This ensures proper cleanup
+    of disposable resources associated with the cancellation token.
+
+.PARAMETER Type
+    The type of cancellation token to reset. This is a mandatory parameter and must be
+    provided as a string.
+
+.EXAMPLES
+    # Reset the cancellation token for the 'Cancellation' type
+    Reset-PodeCancellationToken -Type Cancellation
+
+    # Reset the cancellation token for the 'Restart' type
+    Reset-PodeCancellationToken -Type Restart
+
+    # Reset the cancellation token for the 'Dump' type
+    Reset-PodeCancellationToken -Type Dump
+
+    # Reset the cancellation token for the 'SuspendResume' type
+    Reset-PodeCancellationToken -Type SuspendResume
+
+.NOTES
+    This function is used to manage cancellation tokens in Pode's internal context.
+
+#>
+function Reset-PodeCancellationToken {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Type
+    )
+    # Ensure cleanup of disposable tokens
+    Close-PodeDisposable -Disposable $PodeContext.Tokens[$Type]
+
+    # Reinitialize the Token
+    $PodeContext.Tokens[$Type] = [System.Threading.CancellationTokenSource]::new()
+}
+
+
+<#
+.SYNOPSIS
+    Determines whether the Pode server should remain open based on its configuration and active components.
+
+.DESCRIPTION
+    The `Test-PodeServerKeepOpen` function evaluates the current server state and configuration
+    to decide whether to keep the Pode server running. It considers the existence of timers,
+    schedules, file watchers, service mode, and server types to make this determination.
+
+    - If any timers, schedules, or file watchers are active, the server remains open.
+    - If the server is not running as a service and is either serverless or has no types defined,
+      the server will close.
+    - In other cases, the server will stay open.
+
+ .NOTES
+    This function is primarily used internally by Pode to manage the server lifecycle.
+    It helps ensure the server remains active only when necessary based on its current state.
+
+
+#>
 
 function Test-PodeServerKeepOpen {
     # if we have any timers/schedules/fim - keep open
@@ -406,13 +488,13 @@ function Test-PodeServerKeepOpen {
 .PARAMETER Timeout
     The maximum time, in seconds, to wait for each runspace to be suspended before timing out. Default is 30 seconds.
 
-.NOTES
-    This is an internal function used within the Pode framework.
-    It may change in future releases.
-
 .EXAMPLE
     Suspend-PodeServerInternal -Timeout 60
     # Suspends the Pode server with a timeout of 60 seconds.
+
+.NOTES
+    This is an internal function used within the Pode framework.
+    It may change in future releases.
 
 #>
 function Suspend-PodeServerInternal {
@@ -472,18 +554,14 @@ function Suspend-PodeServerInternal {
         Start-Sleep -Seconds 5
 
         # Clear the host and display header information
-        Show-PodeConsoleInfo -ClearHost -ShowHeader
+        Show-PodeConsoleInfo -ShowHeader
     }
     catch {
         # Log any errors that occur
         $_ | Write-PodeErrorLog
     }
     finally {
-        # Ensure cleanup of disposable tokens
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.SuspendResume
-
-        # Reinitialize the CancellationTokenSource for future suspension/resumption
-        $PodeContext.Tokens.SuspendResume = [System.Threading.CancellationTokenSource]::new()
+        Reset-PodeCancellationToken -Type SuspendResume
     }
 }
 
@@ -533,17 +611,14 @@ function Resume-PodeServerInternal {
         Start-Sleep 1
 
         # Clear the host and display header information
-        Show-PodeConsoleInfo -ClearHost -ShowHeader
+        Show-PodeConsoleInfo -ShowHeader
     }
     catch {
         # Log any errors that occur
         $_ | Write-PodeErrorLog
     }
     finally {
-        # Ensure cleanup of disposable tokens
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.SuspendResume
-
         # Reinitialize the CancellationTokenSource for future suspension/resumption
-        $PodeContext.Tokens.SuspendResume = [System.Threading.CancellationTokenSource]::new()
+        Reset-PodeCancellationToken -Type SuspendResume
     }
 }

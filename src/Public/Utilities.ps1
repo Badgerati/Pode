@@ -814,7 +814,7 @@ function Out-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet) {
             return
         }
         # Set InputObject to the array of values
@@ -855,6 +855,9 @@ Show the Object Type
 .PARAMETER Label
 Show a label for the object
 
+.PARAMETER Force
+Overrides the -Quiet flag of the server.
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
@@ -883,7 +886,10 @@ function Write-PodeHost {
 
         [Parameter( Mandatory = $false, ParameterSetName = 'object')]
         [string]
-        $Label
+        $Label,
+
+        [switch]
+        $Force
     )
     begin {
         # Initialize an array to hold piped-in values
@@ -896,7 +902,7 @@ function Write-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet -and !($Force.IsPresent)) {
             return
         }
         # Set Object to the array of values
@@ -1549,7 +1555,7 @@ function Invoke-PodeDump {
         $ErrorRecord,
 
         [Parameter()]
-        [ValidateSet('json', 'clixml', 'txt', 'bin', 'yaml')]
+        [ValidateSet('JSON', 'CLIXML', 'TXT', 'BIN',  'YAML')]
         [string]
         $Format,
 

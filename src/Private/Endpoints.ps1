@@ -398,6 +398,9 @@ function Get-PodeEndpointByName {
     such as `DualMode`. It provides a summary of the total number of endpoints and the
     number of general threads handling them.
 
+.PARAMETER Force
+    Overrides the -Quiet flag of the server.
+
 .EXAMPLE
     Show-PodeEndPointConsoleInfo
 
@@ -410,24 +413,29 @@ function Get-PodeEndpointByName {
     enhancing visibility of specific configurations like `DualMode`.
 #>
 function Show-PodeEndPointConsoleInfo {
-    if ($PodeContext.Server.EndpointsInfo.Length -gt 0) {
+    param(
+        [switch]
+        $Force
+    )
+    if ($PodeContext.Server.EndpointsInfo.Length -eq 0) {
+        return
+    }
 
-        # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
-        Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $PodeContext.Server.EndpointsInfo.Length, $PodeContext.Threads.General) -ForegroundColor Yellow
-        $PodeContext.Server.EndpointsInfo | ForEach-Object {
-            $flags = @()
-            if ($_.DualMode) {
-                $flags += 'DualMode'
-            }
-
-            if ($flags.Length -eq 0) {
-                $flags = [string]::Empty
-            }
-            else {
-                $flags = "[$($flags -join ',')]"
-            }
-
-            Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
+    # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
+    Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $PodeContext.Server.EndpointsInfo.Length, $PodeContext.Threads.General) -ForegroundColor Yellow -Force:$Force
+    $PodeContext.Server.EndpointsInfo | ForEach-Object {
+        $flags = @()
+        if ($_.DualMode) {
+            $flags += 'DualMode'
         }
+
+        if ($flags.Length -eq 0) {
+            $flags = [string]::Empty
+        }
+        else {
+            $flags = "[$($flags -join ',')]"
+        }
+
+        Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow -Force:$Force
     }
 }

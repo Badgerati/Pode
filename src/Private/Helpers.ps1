@@ -566,7 +566,7 @@ function Test-PodeTerminationPressed {
         $Key = $null
     )
 
-    if ($PodeContext.Server.DisableTermination) {
+    if ($PodeContext.Server.Console.DisableConsoleInput -or $PodeContext.Server.Console.DisableTermination) {
         return $false
     }
 
@@ -579,7 +579,7 @@ function Test-PodeRestartPressed {
         $Key = $null
     )
 
-    if ($PodeContext.Server.DisableTermination) {
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
         return $false
     }
 
@@ -592,11 +592,76 @@ function Test-PodeOpenBrowserPressed {
         $Key = $null
     )
 
-    if ($PodeContext.Server.DisableTermination) {
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
         return $false
     }
 
     return (Test-PodeKeyPressed -Key $Key -Character 'b')
+}
+
+function Test-PodeHelpPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'h')
+}
+
+function Test-PodeOpenAPIPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'o')
+}
+
+function Test-PodeEndpointsPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'e')
+}
+
+function Test-PodeClearPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'l')
+}
+
+function Test-PodeQuietPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 't')
 }
 
 function Test-PodeDumpPressed {
@@ -605,7 +670,7 @@ function Test-PodeDumpPressed {
         $Key = $null
     )
 
-    if ($PodeContext.Server.DisableTermination) {
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
         return $false
     }
     return (Test-PodeKeyPressed -Key $Key -Character 'd')
@@ -617,7 +682,7 @@ function Test-PodeSuspendPressed {
         $Key = $null
     )
 
-    if ($PodeContext.Server.DisableTermination) {
+    if ($PodeContext.Server.Console.DisableConsoleInput -or $PodeContext.Server.Console.DisableTermination) {
         return $false
     }
 
@@ -646,14 +711,13 @@ function Test-PodeSuspendPressed {
 
 #>
 function Clear-PodeKeyPressed {
-    if ($PodeContext.Server.DisableTermination) {
-        return $false
-    }
+    if (!$PodeContext.Server.Console.DisableConsoleInput) {
 
-    # Clear any remaining keys in the input buffer
-    while ([Console]::KeyAvailable) {
+        # Clear any remaining keys in the input buffer
+        while ([Console]::KeyAvailable) {
 
-        [Console]::ReadKey($true) | Out-Null
+            [Console]::ReadKey($true) | Out-Null
+        }
     }
 }
 
@@ -2558,7 +2622,7 @@ function Get-PodeRelativePath {
             $RootPath = $PodeContext.Server.Root
         }
 
-        $Path = [System.IO.Path]::Combine($RootPath, $Path)
+        $Path = [System.IO.Path]::Combine($RootPath, $Path.Substring(2))
     }
 
     # if flagged, resolve the path

@@ -43,11 +43,8 @@ function New-PodeContext {
         [string[]]
         $EnablePool,
 
-        [switch]
-        $DisableTermination,
-
-        [switch]
-        $Quiet,
+        [hashtable]
+        $Console,
 
         [switch]
         $EnableBreakpoints
@@ -92,8 +89,7 @@ function New-PodeContext {
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
-    $ctx.Server.DisableTermination = $DisableTermination.IsPresent
-    $ctx.Server.Quiet = $Quiet.IsPresent
+    $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
 
     # list of created listeners/receivers
@@ -192,7 +188,7 @@ function New-PodeContext {
 
     $ctx.Server.Debug = @{
         Breakpoints = @{
-            Debug = $false
+            Enabled = $false
         }
         Dump        = @{
             Enabled  = $true
@@ -237,7 +233,7 @@ function New-PodeContext {
     $ctx.Server.ServerlessType = $ServerlessType
     $ctx.Server.IsServerless = $isServerless
     if ($isServerless) {
-        $ctx.Server.DisableTermination = $true
+        $ctx.Server.Console.DisableTermination = $true
     }
 
     # set the server types
@@ -247,11 +243,11 @@ function New-PodeContext {
     # is the server running under IIS? (also, disable termination)
     $ctx.Server.IsIIS = (!$isServerless -and (!(Test-PodeIsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-PodeIsEmpty $env:ASPNETCORE_TOKEN)))
     if ($ctx.Server.IsIIS) {
-        $ctx.Server.DisableTermination = $true
+        $ctx.Server.Console.DisableTermination = $true
 
         # if under IIS and Azure Web App, force quiet
         if (!(Test-PodeIsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
-            $ctx.Server.Quiet = $true
+            $ctx.Server.Console.Quiet = $true
         }
 
         # set iis token/settings
@@ -278,7 +274,7 @@ function New-PodeContext {
 
     # if we're inside a remote host, stop termination
     if ($Host.Name -ieq 'ServerRemoteHost') {
-        $ctx.Server.DisableTermination = $true
+        $ctx.Server.Console.DisableTermination = $true
     }
 
     # set the IP address details

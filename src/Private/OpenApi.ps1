@@ -2384,6 +2384,9 @@ function Test-PodeRouteOADefinitionTag {
     documentation endpoints in the console. The information includes protocol, address,
     and paths for specification and documentation endpoints.
 
+.PARAMETER Force
+    Overrides the -Quiet flag of the server.
+
 .EXAMPLE
     Show-PodeOAConsoleInfo
 
@@ -2394,47 +2397,63 @@ function Test-PodeRouteOADefinitionTag {
     This is an internal function and may change in future releases of Pode.
 #>
 function Show-PodeOAConsoleInfo {
+    param(
+        [switch]
+        $Force
+    )
     # state the OpenAPI endpoints for each definition
     foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
         $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
-        if ( $bookmarks) {
-            Write-PodeHost
-            if (!$OpenAPIHeader) {
-                # OpenAPI Info
-                Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor Green
-                $OpenAPIHeader = $true
-            }
-            Write-PodeHost " '$key':" -ForegroundColor Yellow
+        if ( !$bookmarks) {
+            continue
+        }
 
-            if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
-                # Specification
-                Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
-                foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                    Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor White
-                }
-                # Documentation
-                Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
-                foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                    Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor White
+        Write-PodeHost -Force:$Force
+        if (!$OpenAPIHeader) {
+            # OpenAPI Info
+            Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor Green -Force:$Force
+            $OpenAPIHeader = $true
+        }
+        Write-PodeHost " '$key':" -ForegroundColor Yellow -Force:$Force
+
+        if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
+            # Specification
+            Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow -Force:$Force
+            foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor White -Force:$Force
+            }
+            # Documentation
+            Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow -Force:$Force
+            foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor White -Force:$Force
+            }
+        }
+        else {
+            # Specification
+            Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow -Force:$Force
+            $PodeContext.Server.EndpointsInfo | ForEach-Object {
+                if ($_.Pool -eq 'web') {
+                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
+                    Write-PodeHost "     . $url" -ForegroundColor White -Force:$Force
                 }
             }
-            else {
-                # Specification
-                Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
-                $PodeContext.Server.EndpointsInfo | ForEach-Object {
-                    if ($_.Pool -eq 'web') {
-                        $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
-                        Write-PodeHost "     . $url" -ForegroundColor White
-                    }
-                }
-                Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
-                $PodeContext.Server.EndpointsInfo | ForEach-Object {
-                    if ($_.Pool -eq 'web') {
-                        $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
-                        Write-PodeHost "     . $url" -ForegroundColor White
-                    }
+            Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow -Force:$Force
+            $PodeContext.Server.EndpointsInfo | ForEach-Object {
+                if ($_.Pool -eq 'web') {
+                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
+                    Write-PodeHost "     . $url" -ForegroundColor White -Force:$Force
                 }
             }
         }
     }
+}
+
+function Test-PodeOAEnabled {
+    foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
+        $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
+        if (  $bookmarks) {
+            return $true
+        }
+    }
+    return $false
 }

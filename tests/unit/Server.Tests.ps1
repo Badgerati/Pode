@@ -55,7 +55,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls smtp server logic' {
-        $PodeContext.Server = @{ Types = 'SMTP'; Logic = {}; Quiet = $true  }
+        $PodeContext.Server = @{ Types = 'SMTP'; Logic = {}; Quiet = $true }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -69,7 +69,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls tcp server logic' {
-        $PodeContext.Server = @{ Types = 'TCP'; Logic = {}; Quiet = $true  }
+        $PodeContext.Server = @{ Types = 'TCP'; Logic = {}; Quiet = $true }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -83,7 +83,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls http web server logic' {
-        $PodeContext.Server = @{ Types = 'HTTP'; Logic = {}; Quiet = $true  }
+        $PodeContext.Server = @{ Types = 'HTTP'; Logic = {}; Quiet = $true }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -112,8 +112,10 @@ Describe 'Restart-PodeInternalServer' {
     It 'Resetting the server values' {
         $PodeContext = @{
             Tokens    = @{
-                Cancellation = [System.Threading.CancellationTokenSource]::new()
-                Restart      = [System.Threading.CancellationTokenSource]::new()
+                Cancellation  = [System.Threading.CancellationTokenSource]::new()
+                Restart       = [System.Threading.CancellationTokenSource]::new()
+                Dump          = [System.Threading.CancellationTokenSource]::new()
+                SuspendResume = [System.Threading.CancellationTokenSource]::new()
             }
             Server    = @{
                 Routes          = @{
@@ -203,7 +205,7 @@ Describe 'Restart-PodeInternalServer' {
                     Storage = @{}
                 }
                 ScopedVariables = @{}
-                Quiet = $true
+                Quiet           = $true
             }
             Metrics   = @{
                 Server = @{
