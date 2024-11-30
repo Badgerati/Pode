@@ -127,20 +127,6 @@ namespace Pode
             return true;
         }
 
-        /*   public override void Dispose()
-           {
-               // send close frame
-               if (!IsDisposed)
-               {
-                   PodeHelpers.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
-                   Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close).Wait();
-               }
-
-               // remove client, and dispose
-               Context.Listener.Signals.Remove(Signal.ClientId);
-               base.Dispose();
-           }*/
-           
         /// <summary>
         /// Dispose managed and unmanaged resources.
         /// </summary>

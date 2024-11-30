@@ -412,24 +412,6 @@ namespace Pode
             base.PartialDispose();
         }
 
-        /*   public override void Dispose()
-           {
-               RawBody = default;
-               _body = string.Empty;
-
-               if (BodyStream != default(MemoryStream))
-               {
-                   BodyStream.Dispose();
-               }
-
-               if (Form != default(PodeForm))
-               {
-                   Form.Dispose();
-               }
-
-               base.Dispose();
-           }*/
-
         /// <summary>
         /// Dispose managed and unmanaged resources.
         /// </summary>

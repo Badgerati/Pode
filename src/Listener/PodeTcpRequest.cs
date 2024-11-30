@@ -76,13 +76,6 @@ namespace Pode
             Context.Dispose(true);
         }
 
-        /*     public override void Dispose()
-             {
-                 RawBody = default;
-                 _body = string.Empty;
-                 base.Dispose();
-             }*/
-             
         /// <summary>
         /// Dispose managed and unmanaged resources.
         /// </summary>
