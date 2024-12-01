@@ -248,10 +248,6 @@ function Start-PodeServer {
                 if (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
                     Clear-PodeKeyPressed
                     Invoke-PodeDumpInternal -Format $PodeContext.Server.Debug.Dump.Format -Path $PodeContext.Server.Debug.Dump.Path  -MaxDepth $PodeContext.Server.Debug.Dump.MaxDepth
-                    if ($PodeContext.Server.Debug.Dump.Param.Halt) {
-                        Write-PodeHost -ForegroundColor Red 'Halt switch detected. Closing the application.'
-                        break
-                    }
                 }
 
                 if (($PodeContext.Tokens.Suspend.SuspendResume) -or (Test-PodeSuspendPressed -Key $key)) {

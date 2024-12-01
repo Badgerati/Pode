@@ -2622,7 +2622,7 @@ function Get-PodeRelativePath {
             $RootPath = $PodeContext.Server.Root
         }
 
-        $Path = [System.IO.Path]::Combine($RootPath, $Path.Substring(2))
+        $Path = [System.IO.Path]::Combine($RootPath, ($Path -replace '^\.{1,2}([\\\/])?', ''))
     }
 
     # if flagged, resolve the path

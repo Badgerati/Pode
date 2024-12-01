@@ -1,13 +1,11 @@
 <#
 .SYNOPSIS
-    Captures a memory dump with runspace and exception details when a fatal exception occurs, with an optional halt switch to close the application.
+    Captures a memory dump with runspace and exception details when a fatal exception occurs.
 
 .DESCRIPTION
     The Invoke-PodeDump function gathers diagnostic information, including process memory usage, exception details, runspace information, and
     variables from active runspaces. It saves this data in the specified format (JSON, CLIXML, Plain Text, Binary, or YAML) in a "Dump" folder within
-    the current directory. If the folder does not exist, it will be created. An optional `-Halt` switch is available to terminate the PowerShell process
-    after saving the dump.
-
+    the current directory. If the folder does not exist, it will be created.
 .PARAMETER ErrorRecord
     The ErrorRecord object representing the fatal exception that triggered the memory dump. This provides details on the error, such as message and stack trace.
     Accepts input from the pipeline.
@@ -15,8 +13,6 @@
 .PARAMETER Format
     Specifies the format for saving the dump file. Supported formats are 'json', 'clixml', 'txt', 'bin', and 'yaml'.
 
-.PARAMETER Halt
-    Switch to specify whether to terminate the application after saving the memory dump. If set, the function will close the PowerShell process.
 
 .PARAMETER Path
     Specifies the directory where the dump file will be saved. If the directory does not exist, it will be created. Defaults to a "Dump" folder.
@@ -27,26 +23,14 @@
 .EXAMPLE
     try {
         # Simulate a critical error
-        throw [System.OutOfMemoryException] "Simulated out of memory error"
-    }
-    catch {
-        # Capture the dump in JSON format and halt the application
-        $_ | Invoke-PodeDump -Format 'json' -Halt
-    }
-
-    This example catches a simulated OutOfMemoryException and pipes it to Invoke-PodeDump to capture the error in JSON format and halt the application.
-
-.EXAMPLE
-    try {
-        # Simulate a critical error
         throw [System.AccessViolationException] "Simulated access violation error"
     }
     catch {
-        # Capture the dump in YAML format without halting
+        # Capture the dump in YAML
         $_ | Invoke-PodeDump -Format 'yaml'
     }
 
-    This example catches a simulated AccessViolationException and pipes it to Invoke-PodeDump to capture the error in YAML format without halting the application.
+    This example catches a simulated AccessViolationException and pipes it to Invoke-PodeDump to capture the error in YAML format.
 
 .NOTES
     This function is designed to assist with post-mortem analysis by capturing critical application state information when a fatal error occurs.
@@ -284,7 +268,7 @@ function Invoke-PodeDumpInternal {
     Pode
 
 #>
-function Get-PodeRunspaceVariablesViaDebuggerNew {
+function Get-PodeRunspaceVariablesViaDebugger {
     param (
         [Parameter(Mandatory)]
         [System.Management.Automation.Runspaces.Runspace]$Runspace,
@@ -330,63 +314,6 @@ function Get-PodeRunspaceVariablesViaDebuggerNew {
         if ($null -ne $debugger) {
             $debugger.Dispose()
         }
-
-        # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
-        Disable-RunspaceDebug -Runspace $Runspace
-    }
-
-    return $variables[0]
-}
-
-
-function Get-PodeRunspaceVariablesViaDebugger {
-    param (
-        [Parameter(Mandatory)]
-        [System.Management.Automation.Runspaces.Runspace]$Runspace,
-
-        [Parameter()]
-        [int]$Timeout = 60
-    )
-
-    # Initialize variables collection
-    $variables = @()
-    try {
-
-        # Attach the debugger using the embedded C# method
-        [Pode.Embedded.DebuggerHandler]::AttachDebugger($Runspace, $true)
-
-        # Enable debugging and break all
-        Enable-RunspaceDebug -BreakAll -Runspace $Runspace
-
-        Write-PodeHost "Waiting for $($Runspace.Name) to enter in debug ." -NoNewLine
-
-        # Initialize the timer
-        $startTime = [DateTime]::UtcNow
-
-        # Wait for the event to be triggered or timeout
-        while (! [Pode.Embedded.DebuggerHandler]::IsEventTriggered()) {
-            Start-Sleep -Milliseconds 1000
-            Write-PodeHost '.' -NoNewLine
-
-            if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
-                Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
-                return @{}
-            }
-        }
-
-        Write-PodeHost 'Done'
-
-        # Retrieve and output the collected variables from the embedded C# code
-        $variables = [Pode.Embedded.DebuggerHandler]::GetVariables()
-    }
-    catch {
-        # Log the error details using Write-PodeErrorLog.
-        # This ensures that any exceptions thrown during the execution are logged appropriately.
-        $_ | Write-PodeErrorLog
-    }
-    finally {
-        # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
-        [Pode.Embedded.DebuggerHandler]::DetachDebugger($Runspace)
 
         # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
         Disable-RunspaceDebug -Runspace $Runspace

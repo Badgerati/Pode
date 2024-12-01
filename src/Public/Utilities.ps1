@@ -1495,13 +1495,12 @@ function Invoke-PodeGC {
 
 <#
 .SYNOPSIS
-    Captures a memory dump with runspace and exception details when a fatal exception occurs, with an optional halt switch to close the application.
+    Captures a memory dump with runspace and exception details when a fatal exception occurs.
 
 .DESCRIPTION
     The Invoke-PodeDump function gathers diagnostic information, including process memory usage, exception details, runspace information, and
     variables from active runspaces. It saves this data in the specified format (JSON, CLIXML, Plain Text, Binary, or YAML) in a "Dump" folder within
-    the current directory. If the folder does not exist, it will be created. An optional `-Halt` switch is available to terminate the PowerShell process
-    after saving the dump.
+    the current directory. If the folder does not exist, it will be created.
 
 .PARAMETER ErrorRecord
     The ErrorRecord object representing the fatal exception that triggered the memory dump. This provides details on the error, such as message and stack trace.
@@ -1510,8 +1509,6 @@ function Invoke-PodeGC {
 .PARAMETER Format
     Specifies the format for saving the dump file. Supported formats are 'json', 'clixml', 'txt', 'bin', and 'yaml'.
 
-.PARAMETER Halt
-    Switch to specify whether to terminate the application after saving the memory dump. If set, the function will close the PowerShell process.
 
 .PARAMETER Path
     Specifies the directory where the dump file will be saved. If the directory does not exist, it will be created. Defaults to a "Dump" folder.
@@ -1519,17 +1516,6 @@ function Invoke-PodeGC {
 .PARAMETER MaxDepth
     Specifies the maximum depth of objects to serialize when saving the dump in JSON or YAML
 
-.EXAMPLE
-    try {
-        # Simulate a critical error
-        throw [System.OutOfMemoryException] "Simulated out of memory error"
-    }
-    catch {
-        # Capture the dump in JSON format and halt the application
-        $_ | Invoke-PodeDump -Format 'json' -Halt
-    }
-
-    This example catches a simulated OutOfMemoryException and pipes it to Invoke-PodeDump to capture the error in JSON format and halt the application.
 
 .EXAMPLE
     try {
@@ -1537,11 +1523,11 @@ function Invoke-PodeGC {
         throw [System.AccessViolationException] "Simulated access violation error"
     }
     catch {
-        # Capture the dump in YAML format without halting
+        # Capture the dump in YAML format
         $_ | Invoke-PodeDump -Format 'yaml'
     }
 
-    This example catches a simulated AccessViolationException and pipes it to Invoke-PodeDump to capture the error in YAML format without halting the application.
+    This example catches a simulated AccessViolationException and pipes it to Invoke-PodeDump to capture the error in YAML format.
 
 .NOTES
     This function is designed to assist with post-mortem analysis by capturing critical application state information when a fatal error occurs.
@@ -1561,9 +1547,6 @@ function Invoke-PodeDump {
 
         [string]
         $Path,
-
-        [switch]
-        $Halt,
 
         [int]
         $MaxDepth
