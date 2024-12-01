@@ -154,7 +154,9 @@ function Invoke-PodeDumpInternal {
         $runspacePoolDetails = @()
 
         # Retrieve all runspaces related to Pode ordered by name
-        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' } | Sort-Object Name
+        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' -and `
+                $_.Name -notlike '*__pode_session_inmem_cleanup__*' } | Sort-Object Name
+
 
         $runspaceDetails = @{}
         foreach ($r in $runspaces) {
@@ -263,10 +265,6 @@ function Invoke-PodeDumpInternal {
 .NOTES
     The function uses an embedded C# class to handle the `DebuggerStop` event. This class attaches and detaches the debugger and processes commands in the stopped state.
     The collected variables are returned as a `PSObject`.
-
-.COMPONENT
-    Pode
-
 #>
 function Get-PodeRunspaceVariablesViaDebugger {
     param (
@@ -292,7 +290,58 @@ function Get-PodeRunspaceVariablesViaDebugger {
         while (!$debugger.IsEventTriggered) {
             Start-Sleep -Milliseconds 500
             Write-PodeHost '.' -NoNewLine
+            if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge 1) {
+                if ($Runspace.Name.StartsWith('Pode_Web_Listener')) {
+                    $uris = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Web' -and !$_.Url.StartsWith('https') }).Url
+                    if ($uris) {
+                        if (  $uri -is [array]) {
+                            $uri = $uri[0]
+                        }
+                        try {
+                            Invoke-WebRequest -Uri $uris -ErrorAction SilentlyContinue > $null 2>&1
+                        }
+                        catch {
+                            # Suppress any exceptions
+                            Write-Verbose -Message $_
+                        }
+                    }
+                    $uris = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Web' -and $_.Url.StartsWith('https') }).Url
+                    if ($uris) {
+                        if (  $uri -is [array]) {
+                            $uri = $uri[0]
+                        }
+                        try {
+                            Invoke-WebRequest -Uri $uris -SkipCertificateCheck -ErrorAction SilentlyContinue > $null 2>&1
+                        }
+                        catch {
+                            # Suppress any exceptions
+                            Write-Verbose -Message $_
+                        }
+                    }
 
+                }
+                elseif ($Runspace.Name.StartsWith('Pode_Smtp_Listener')) {
+                    $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Smtp' }).Url
+
+                    if ($uri) {
+                        if (  $uri -is [array]) {
+                            $uri = $uri[0]
+                        }
+                        Send-PodeTelnetCommand -ServerUri  $uri -command   "HELO domain.com"
+                    }
+                }elseif ($Runspace.Name.StartsWith('Pode_Tcp_Listener')) {
+                    $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Tcp' }).Url
+                    if ($uri) {
+                        if (  $uri -is [array]) {
+                            $uri = $uri[0]
+                        }
+                        Send-PodeTelnetCommand -ServerUri  $uri -command 'aaa'
+                    }
+
+                }
+
+
+            }
             if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
                 Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
                 return @{}
@@ -477,5 +526,70 @@ function Initialize-PodeDebugHandler {
     if ($PodeContext.Server.Debug.Dump) {
         # Embed C# code to handle the DebuggerStop event
         Add-Type -LiteralPath ([System.IO.Path]::Combine((Get-PodeModuleRootPath), 'Embedded', 'DebuggerHandler.cs')) -ErrorAction Stop
+    }
+}
+ 
+function Send-PodeTelnetCommand {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ServerUri,       # Server URI in the format tcp://hostname:port or tcps://hostname:port
+
+        [Parameter(Mandatory = $true)]
+        [string]$Command,         # The string command to send (e.g., "HELO domain.com")
+
+        [int]$Timeout = 2000      # Timeout in milliseconds
+    )
+
+    try {
+        # Parse the ServerUri to extract the host and port
+        $uri = [System.Uri]::new($ServerUri)
+        if ($uri.Scheme -notin @("tcp", "tcps")) {
+            throw "Invalid URI scheme. Expected 'tcp://' or 'tcps://', but got '$($uri.Scheme)://'."
+        }
+        $server = $uri.Host
+        $port = $uri.Port
+
+        # Create a TCP client and connect to the server
+        $tcpClient = [System.Net.Sockets.TcpClient]::new()
+        $tcpClient.Connect($server, $port)
+        $tcpClient.ReceiveTimeout = $Timeout
+        $tcpClient.SendTimeout = $Timeout
+
+        # Get the network stream
+        $stream = $tcpClient.GetStream()
+
+        # Wrap the stream in SslStream for TCPS connections
+        if ($uri.Scheme -eq "tcps") {
+            $sslStream = [System.Net.Security.SslStream]::new($stream, $false, { $true }) # Simple certificate validation
+            $sslStream.AuthenticateAsClient($server)
+            $stream = $sslStream
+        }
+
+        # Create a stream writer and reader for the connection
+        $writer = [System.IO.StreamWriter]::new($stream)
+        $reader = [System.IO.StreamReader]::new($stream)
+
+        # Send the command
+        Write-Verbose "Sending command: $Command"
+        $writer.WriteLine($Command)
+        $writer.Flush()
+
+        # Read the response
+        $response = @()
+        while ($reader.Peek() -ge 0) {
+            $response += $reader.ReadLine()
+        }
+
+        # Close the connection
+        $writer.Close()
+        $reader.Close()
+        $stream.Close()
+        $tcpClient.Close()
+
+        # Return the response
+        return $response -join "`n"
+    } catch {
+        Write-Verbose "An error occurred: $_"
     }
 }

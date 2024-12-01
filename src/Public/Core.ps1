@@ -1218,8 +1218,12 @@ function Add-PodeEndpoint {
     }
 
     # set the url of this endpoint
-    $obj.Url = "$($obj.Protocol)://$($obj.FriendlyName):$($obj.Port)/"
-
+    if (($obj.Protocol -eq 'http') -or ($obj.Protocol -eq 'https')) {
+        $obj.Url = "$($obj.Protocol)://$($obj.FriendlyName):$($obj.Port)/"
+    }
+    else {
+        $obj.Url = "$($obj.Protocol)://$($obj.FriendlyName):$($obj.Port)"
+    }
     # if the address is non-local, then check admin privileges
     if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeIsAdminUser)) {
         # Must be running with administrator privileges to listen on non-localhost addresses

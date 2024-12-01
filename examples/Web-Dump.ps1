@@ -43,13 +43,13 @@ Start-PodeServer -Threads 4  -ScriptBlock {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Https -SelfSigned
     Add-PodeEndpoint -Address localhost -Port 8083 -Protocol Http
-    Add-PodeEndpoint -Address localhost -Port 8025 -Protocol Smtp
-    Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws -Name 'WS1'
-    Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Http -Name 'WS'
+    #Add-PodeEndpoint -Address localhost -Port 8025 -Protocol Smtp
+    #  Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws -Name 'WS1'
+    # Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Http -Name 'WS'
     Add-PodeEndpoint -Address localhost -Port 8100 -Protocol Tcp
-
+    Add-PodeEndpoint -Address localhost -Port 9002 -Protocol Tcps -SelfSigned
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Html
@@ -102,7 +102,7 @@ Start-PodeServer -Threads 4  -ScriptBlock {
     }
 
     # setup an smtp handler
-    Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
+  <#   Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
         Write-PodeHost '- - - - - - - - - - - - - - - - - -'
         Write-PodeHost $SmtpEvent.Email.From
         Write-PodeHost $SmtpEvent.Email.To
@@ -136,5 +136,16 @@ Start-PodeServer -Threads 4  -ScriptBlock {
         }
 
         Send-PodeSignal -Value @{ message = $msg }
+    }#>
+
+    Add-PodeVerb -Verb 'QUIT' -ScriptBlock {
+        Write-PodeTcpClient -Message 'Bye!'
+        Close-PodeTcpClient
+    }
+
+    Add-PodeVerb -Verb 'HELLO3' -ScriptBlock {
+        Write-PodeTcpClient -Message "Hi! What's your name?"
+        $name = Read-PodeTcpClient -CRLFMessageEnd
+        Write-PodeTcpClient -Message "Hi, $($name)!"
     }
 }

@@ -88,9 +88,16 @@ function Start-PodeScheduleRunspace {
 
                     # complete any schedules
                     Complete-PodeInternalSchedule -Now $_now
+ 
+                    # Calculate the remaining seconds to sleep until the next minute
+                    $remainingSeconds = 60 - [DateTime]::Now.Second
 
-                    # cron expression only goes down to the minute, so sleep for 1min
-                    Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
+                    # Loop in 5-second intervals until the remaining seconds are covered
+                    while ($remainingSeconds -gt 0) {
+                        $sleepTime = [math]::Min(5, $remainingSeconds) # Sleep for 5 seconds or remaining time
+                        Start-Sleep -Seconds $sleepTime
+                        $remainingSeconds -= $sleepTime
+                    }
                 }
                 catch {
                     $_ | Write-PodeErrorLog

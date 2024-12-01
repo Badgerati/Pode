@@ -595,7 +595,7 @@ function Resume-PodeServerInternal {
         $PodeContext.Server.Suspended = $false
 
         # Pause briefly to ensure any required internal processes have time to stabilize
-        Start-Sleep 5
+        Start-Sleep -Seconds 5
 
         # Retrieve all runspaces related to Pode
         $runspaces = Get-Runspace -name 'Pode_*'
