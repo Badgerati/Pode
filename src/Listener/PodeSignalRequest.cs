@@ -133,7 +133,9 @@ namespace Pode
         /// <param name="disposing">Indicates if the method is called explicitly or by garbage collection.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && !IsDisposed)
+            if (IsDisposed) return;
+            
+            if (disposing)
             {
                 // Send close frame
                 PodeHelpers.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);

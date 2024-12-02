@@ -236,8 +236,7 @@ namespace Pode
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the async operation, with a boolean indicating whether the connection should be closed.</returns>
         public async Task<bool> Receive(CancellationToken cancellationToken)
-        {
-            await StreamLock.WaitAsync(cancellationToken);
+        { 
             try
             {
                 if (State != PodeStreamState.Open || InputStream == null)
@@ -316,10 +315,6 @@ namespace Pode
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
                 Error = ex;
             }
-            catch (ObjectDisposedException ex)
-            {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
-            }
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
@@ -331,6 +326,96 @@ namespace Pode
                 PartialDispose();
             }
             return false;
+        }
+
+
+         /// <summary>
+        /// Reads data from the input stream until the specified bytes are found.
+        /// </summary>
+        /// <param name="checkBytes">The bytes to check for in the input stream.</param>
+        /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the async operation, with a string containing the data read.</returns>
+        public async Task<string> Read(byte[] checkBytes, CancellationToken cancellationToken)
+        {
+            // Check if the stream is open
+            if (State != PodeStreamState.Open)
+            {
+                return string.Empty;
+            }
+
+            // Read data from the input stream until the check bytes are found
+            var buffer = new byte[BufferSize];
+            using (var bufferStream = new MemoryStream())
+            {
+                while (true)
+                {
+#if NETCOREAPP2_1_OR_GREATER
+                    // Read data from the input stream
+                    var read = await InputStream.ReadAsync(buffer.AsMemory(0, BufferSize), cancellationToken).ConfigureAwait(false);
+                    if (read <= 0)
+                    {
+                        break;
+                    }
+
+                    // Write the data to the buffer stream
+                    await bufferStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+#else
+                    // Read data from the input stream
+                    var read = await InputStream.ReadAsync(buffer, 0, BufferSize, cancellationToken).ConfigureAwait(false);
+                    if (read <= 0)
+                    {
+                        break;
+                    }
+
+                    // Write the data to the buffer stream
+                    await bufferStream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+#endif
+                    // Validate the input data
+                    if (Socket.Available > 0 || !ValidateInputInternal(bufferStream.ToArray(), checkBytes))
+                    {
+                        continue;
+                    }
+
+                    break;
+                }
+
+                return Encoding.GetString(bufferStream.ToArray()).Trim();
+            }
+        }
+
+        /// <summary>
+        /// Validates the input bytes against the specified check bytes.
+        /// </summary>
+        /// <param name="bytes">The bytes to validate.</param>
+        /// <param name="checkBytes">The bytes to check against.</param>
+        /// <returns>True if validation is successful, otherwise false.</returns>
+        private static bool ValidateInputInternal(byte[] bytes, byte[] checkBytes)
+        {
+            if (bytes.Length == 0)
+            {
+                return false; // Need more bytes
+            }
+
+            if (checkBytes == default(byte[]) || checkBytes.Length == 0)
+            {
+                return true; // No specific bytes to check
+            }
+
+            if (bytes.Length < checkBytes.Length)
+            {
+                return false; // Not enough bytes
+            }
+
+            // Check if the input ends with checkBytes
+            for (var i = 0; i < checkBytes.Length; i++)
+            {
+                if (bytes[bytes.Length - (checkBytes.Length - i)] != checkBytes[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -387,32 +472,26 @@ namespace Pode
         /// <param name="disposing">Indicates if disposing is called manually or by garbage collection.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!IsDisposed)
+            if (IsDisposed) return;
+
+            IsDisposed = true;
+
+            if (disposing)
             {
-                if (disposing)
+                if (InputStream != default(Stream))
                 {
-                    // Dispose managed resources
-                    if (InputStream != default(Stream))
-                    {
-                        State = PodeStreamState.Closed;
-                        InputStream.Dispose();
-                        InputStream = default;
-                    }
-
-                    if (Socket != default(Socket))
-                    {
-                        PodeSocket.CloseSocket(Socket);
-                        Socket = default;
-                    }
-
-                    PartialDispose();
-
-                    // Dispose SemaphoreSlim
-                    StreamLock.Dispose();
+                    InputStream.Dispose();
+                    InputStream = default;
                 }
 
-                // Dispose unmanaged resources if any
-                IsDisposed = true;
+                if (Socket != default(Socket))
+                {
+                    PodeSocket.CloseSocket(Socket);
+                    Socket = default;
+                }
+
+                PartialDispose();
+                StreamLock.Dispose();
             }
         }
 
@@ -424,14 +503,5 @@ namespace Pode
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-
-        /// <summary>
-        /// Finalizer to release unmanaged resources.
-        /// </summary>
-        ~PodeRequest()
-        {
-            Dispose(false);
-        }
-
     }
 }

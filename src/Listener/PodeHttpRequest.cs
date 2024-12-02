@@ -418,22 +418,24 @@ namespace Pode
         /// <param name="disposing">Indicates whether the method is called explicitly or by garbage collection.</param>
         protected override void Dispose(bool disposing)
         {
+            if (IsDisposed) return;
+
             if (disposing)
             {
                 // Custom cleanup logic for PodeHttpRequest
                 RawBody = default;
                 _body = string.Empty;
 
-                if (BodyStream != null)
+                if (BodyStream != default(MemoryStream))
                 {
                     BodyStream.Dispose();
-                    BodyStream = null;
+                    BodyStream = default;
                 }
 
-                if (Form != null)
+                if (Form != default(PodeForm))
                 {
                     Form.Dispose();
-                    Form = null;
+                    Form = default;
                 }
             }
 

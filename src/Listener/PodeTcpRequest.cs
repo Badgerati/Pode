@@ -82,6 +82,7 @@ namespace Pode
         /// <param name="disposing">Indicates if the method is called explicitly or by garbage collection.</param>
         protected override void Dispose(bool disposing)
         {
+            if (IsDisposed) return;
             if (disposing)
             {
                 // Custom cleanup logic for PodeTcpRequest
