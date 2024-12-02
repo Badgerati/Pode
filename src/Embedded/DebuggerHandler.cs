@@ -8,70 +8,76 @@ namespace Pode.Embedded
     public class DebuggerHandler : IDisposable
     {
         // Collection to store variables collected during the debugging session
-        public PSDataCollection<PSObject> Variables { get; private set; } = new PSDataCollection<PSObject>();
+        public PSDataCollection<PSObject> Variables { get; private set; }
 
         // Event handler for the DebuggerStop event
-        private EventHandler<DebuggerStopEventArgs> DebuggerStopHandler;
+        private EventHandler<DebuggerStopEventArgs> _debuggerStopHandler;
 
         // Flag to indicate whether the DebuggerStop event has been triggered
-        public bool IsEventTriggered { get; private set; } = false;
+        public bool IsEventTriggered { get; private set; }
 
         // Flag to control whether variables should be collected during the DebuggerStop event
-        private bool CollectVariables = true;
+        private bool _collectVariables = true;
 
         // Runspace object to store the runspace that the debugger is attached to
-        private Runspace Runspace;
+        private readonly Runspace _runspace;
 
         public DebuggerHandler(Runspace runspace, bool collectVariables = true)
         {
-            // Set the collection flag and Runspace object
-            CollectVariables = collectVariables;
-            Runspace = runspace;
-
-            // Initialize the event handler with the OnDebuggerStop method
-            DebuggerStopHandler = new EventHandler<DebuggerStopEventArgs>(OnDebuggerStop);
-            Runspace.Debugger.DebuggerStop += DebuggerStopHandler;
-        }
-
-        // Method to detach the DebuggerStop event handler from the runspace's debugger, and general clean-up
-        public void Dispose()
-        {
-            IsEventTriggered = false;
-
-            // Remove the event handler to prevent further event handling
-            if (DebuggerStopHandler != default(EventHandler<DebuggerStopEventArgs>))
+            // Ensure the runspace is not null
+            if (runspace == null)
             {
-                Runspace.Debugger.DebuggerStop -= DebuggerStopHandler;
-                DebuggerStopHandler = null;
+                throw new ArgumentNullException("runspace"); // Use string literal for older C# compatibility
             }
 
-            // Clean-up variables
-            Runspace = default(Runspace);
-            Variables.Clear();
+            _runspace = runspace;
+            _collectVariables = collectVariables;
 
-            // Garbage collection
+            // Initialize the event handler
+            _debuggerStopHandler = OnDebuggerStop;
+            _runspace.Debugger.DebuggerStop += _debuggerStopHandler;
+
+            // Initialize variables collection
+            Variables = new PSDataCollection<PSObject>();
+            IsEventTriggered = false;
+        }
+
+        /// <summary>
+        /// Detaches the DebuggerStop event handler and releases resources.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_debuggerStopHandler != null)
+            {
+                _runspace.Debugger.DebuggerStop -= _debuggerStopHandler;
+                _debuggerStopHandler = null;
+            }
+
+            // Clear variables and release the runspace
+            Variables.Clear();
             GC.SuppressFinalize(this);
         }
 
-        // Event handler method that gets called when the debugger stops
+        /// <summary>
+        /// Event handler for the DebuggerStop event.
+        /// </summary>
         private void OnDebuggerStop(object sender, DebuggerStopEventArgs args)
         {
-            // Set the eventTriggered flag to true
             IsEventTriggered = true;
 
             // Cast the sender to a Debugger object
             var debugger = sender as Debugger;
-            if (debugger == default(Debugger))
+            if (debugger == null)
             {
                 return;
             }
 
-            // Enable step mode to allow for command execution during the debug stop
+            // Enable step mode for command execution
             debugger.SetDebuggerStepMode(true);
 
-            // Collect variables or hang the debugger
+            // Create the command to execute
             var command = new PSCommand();
-            command.AddCommand(CollectVariables
+            command.AddCommand(_collectVariables
                 ? "Get-PodeDumpScopedVariable"
                 : "while($PodeContext.Server.Suspended) { Start-Sleep -Milliseconds 500 }");
 
@@ -79,18 +85,13 @@ namespace Pode.Embedded
             var outputCollection = new PSDataCollection<PSObject>();
             debugger.ProcessCommand(command, outputCollection);
 
-            // Add results to the variables collection if collecting variables
-            if (CollectVariables)
+            // Collect the variables if required
+            if (_collectVariables)
             {
                 foreach (var output in outputCollection)
                 {
                     Variables.Add(output);
                 }
-            }
-            else
-            {
-                // Ensure the debugger remains ready for further interaction
-                debugger.SetDebuggerStepMode(true);
             }
         }
     }
