@@ -2595,7 +2595,50 @@ function Find-PodeFileForContentType {
     # no file was found
     return $null
 }
+<#
+.SYNOPSIS
+	Resolves and processes a relative or absolute file system path based on the specified parameters.
 
+.DESCRIPTION
+	This function processes a given path and applies various transformations and checks based on the provided parameters. It supports resolving relative paths, joining them with a root path, normalizing relative paths, and verifying path existence.
+
+.PARAMETER Path
+	The file system path to be processed. This can be relative or absolute.
+
+.PARAMETER RootPath
+	(Optional) The root path to join with if the provided path is relative and the -JoinRoot switch is enabled.
+
+.PARAMETER JoinRoot
+	Indicates that the relative path should be joined to the specified root path. If no RootPath is provided, the Pode context server root will be used.
+
+.PARAMETER Resolve
+	Resolves the path to its absolute, full path.
+
+.PARAMETER TestPath
+	Verifies if the resolved path exists. Throws an exception if the path does not exist.
+
+.PARAMETER NormalizeRelativePath
+	(Optional) Removes any leading './' or '../' segments from the relative path when used with -JoinRoot. This ensures that the path is normalized before being joined with the root path.
+
+.OUTPUTS
+	System.String
+	Returns the resolved and processed path as a string.
+
+.EXAMPLE
+	# Example 1: Resolve a relative path and join it with a root path
+	Get-PodeRelativePath -Path './example' -RootPath 'C:\Root' -JoinRoot
+
+.EXAMPLE
+	# Example 2: Resolve and normalize a relative path
+	Get-PodeRelativePath -Path '../example' -RootPath 'C:\Root' -JoinRoot -NormalizeRelativePath
+
+.EXAMPLE
+	# Example 3: Test if a path exists
+	Get-PodeRelativePath -Path 'C:\Root\example.txt' -TestPath
+
+.NOTES
+	This is an internal function and may change in future releases of Pode
+#>
 function Get-PodeRelativePath {
     param(
         [Parameter(Mandatory = $true)]
@@ -2613,7 +2656,11 @@ function Get-PodeRelativePath {
         $Resolve,
 
         [switch]
-        $TestPath
+        $TestPath,
+
+        [switch]
+        $NormalizeRelativePath
+
     )
 
     # if the path is relative, join to root if flagged
@@ -2622,7 +2669,12 @@ function Get-PodeRelativePath {
             $RootPath = $PodeContext.Server.Root
         }
 
-        $Path = [System.IO.Path]::Combine($RootPath, ($Path -replace '^\.{1,2}([\\\/])?', ''))
+        if ($NormalizeRelativePath) {
+            $Path = [System.IO.Path]::Combine($RootPath, ($Path -replace '^\.{1,2}([\\\/])?', ''))
+        }
+        else {
+            $Path = [System.IO.Path]::Combine($RootPath, $Path)
+        }
     }
 
     # if flagged, resolve the path

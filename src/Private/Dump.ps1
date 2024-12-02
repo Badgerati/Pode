@@ -100,7 +100,7 @@ function Invoke-PodeDumpInternal {
     # Process block to handle each pipeline input
     process {
         # Ensure Dump directory exists in the specified path
-        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+        $Path = Get-PodeRelativePath -Path $Path -JoinRoot -NormalizeRelativePath
 
         if (!(Test-Path -Path $Path)) {
             New-Item -ItemType Directory -Path $Path | Out-Null
@@ -327,7 +327,7 @@ function Get-PodeRunspaceVariablesViaDebugger {
                         if (  $uri -is [array]) {
                             $uri = $uri[0]
                         }
-                        Send-PodeTelnetCommand -ServerUri  $uri -command   "HELO domain.com"
+                        Send-PodeTelnetCommand -ServerUri  $uri -command   "HELO domain.com`n"
                     }
                 }elseif ($Runspace.Name.StartsWith('Pode_Tcp_Listener')) {
                     $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Tcp' }).Url
@@ -335,7 +335,7 @@ function Get-PodeRunspaceVariablesViaDebugger {
                         if (  $uri -is [array]) {
                             $uri = $uri[0]
                         }
-                        Send-PodeTelnetCommand -ServerUri  $uri -command 'aaa'
+                        Send-PodeTelnetCommand -ServerUri  $uri -command "`n"
                     }
 
                 }
@@ -528,7 +528,7 @@ function Initialize-PodeDebugHandler {
         Add-Type -LiteralPath ([System.IO.Path]::Combine((Get-PodeModuleRootPath), 'Embedded', 'DebuggerHandler.cs')) -ErrorAction Stop
     }
 }
- 
+
 function Send-PodeTelnetCommand {
     [CmdletBinding()]
     param (
@@ -545,7 +545,8 @@ function Send-PodeTelnetCommand {
         # Parse the ServerUri to extract the host and port
         $uri = [System.Uri]::new($ServerUri)
         if ($uri.Scheme -notin @("tcp", "tcps")) {
-            throw "Invalid URI scheme. Expected 'tcp://' or 'tcps://', but got '$($uri.Scheme)://'."
+            Write-Verbose "Invalid URI scheme. Expected 'tcp://' or 'tcps://', but got '$($uri.Scheme)://'."
+            return
         }
         $server = $uri.Host
         $port = $uri.Port
