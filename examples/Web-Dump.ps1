@@ -46,8 +46,8 @@ Start-PodeServer -Threads 4  -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Https -SelfSigned
     Add-PodeEndpoint -Address localhost -Port 8083 -Protocol Http
     #Add-PodeEndpoint -Address localhost -Port 8025 -Protocol Smtp
-    #  Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws -Name 'WS1'
-    # Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Http -Name 'WS'
+    Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws -Name 'WS1'
+    Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Http -Name 'WS'
     Add-PodeEndpoint -Address localhost -Port 8100 -Protocol Tcp
     Add-PodeEndpoint -Address localhost -Port 9002 -Protocol Tcps -SelfSigned
 
@@ -102,7 +102,7 @@ Start-PodeServer -Threads 4  -ScriptBlock {
     }
 
     # setup an smtp handler
-  <#   Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
+    <#   Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
         Write-PodeHost '- - - - - - - - - - - - - - - - - -'
         Write-PodeHost $SmtpEvent.Email.From
         Write-PodeHost $SmtpEvent.Email.To
@@ -121,7 +121,7 @@ Start-PodeServer -Threads 4  -ScriptBlock {
         $SmtpEvent.Email.Headers | out-default
         Write-PodeHost '- - - - - - - - - - - - - - - - - -'
     }
-
+#>
     # GET request for web page
     Add-PodeRoute -Method Get -Path '/' -EndpointName 'WS' -ScriptBlock {
         Write-PodeViewResponse -Path 'websockets'
@@ -136,7 +136,7 @@ Start-PodeServer -Threads 4  -ScriptBlock {
         }
 
         Send-PodeSignal -Value @{ message = $msg }
-    }#>
+    }
 
     Add-PodeVerb -Verb 'QUIT' -ScriptBlock {
         Write-PodeTcpClient -Message 'Bye!'

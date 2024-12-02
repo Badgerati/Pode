@@ -44,7 +44,7 @@ function Invoke-PodeDumpInternal {
         $ErrorRecord,
 
         [Parameter()]
-        [ValidateSet('json', 'clixml', 'txt', 'bin', 'yaml')]
+        [ValidateSet('JSON', 'CLIXML', 'TXT', 'BIN', 'YAML')]
         [string]
         $Format,
 
@@ -208,7 +208,7 @@ function Invoke-PodeDumpInternal {
         }
         $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').$($Format.ToLower())"
         # Determine file extension and save format based on selected Format
-        switch ($Format) {
+        switch ($Format.ToLower()) {
             'json' {
                 $dumpInfo | ConvertTo-Json -Depth $MaxDepth -WarningAction SilentlyContinue | Out-File -FilePath $dumpFilePath
                 break
@@ -286,61 +286,22 @@ function Get-PodeRunspaceVariablesViaDebugger {
         # Wait for the event to be triggered or timeout
         $startTime = [DateTime]::UtcNow
         Write-PodeHost "Waiting for $($Runspace.Name) to enter in debug ." -NoNewLine
+        Start-Sleep -Milliseconds 1000
+        Write-PodeHost '..' -NoNewLine
+
+        Send-PodeInterrupt -Name $Runspace.Name
+
+
+
+
+        Write-PodeHost '.' -NoNewLine
 
         while (!$debugger.IsEventTriggered) {
             Start-Sleep -Milliseconds 500
             Write-PodeHost '.' -NoNewLine
-            if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge 1) {
-                if ($Runspace.Name.StartsWith('Pode_Web_Listener')) {
-                    $uris = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Web' -and !$_.Url.StartsWith('https') }).Url
-                    if ($uris) {
-                        if (  $uri -is [array]) {
-                            $uri = $uri[0]
-                        }
-                        try {
-                            Invoke-WebRequest -Uri $uris -ErrorAction SilentlyContinue > $null 2>&1
-                        }
-                        catch {
-                            # Suppress any exceptions
-                            Write-Verbose -Message $_
-                        }
-                    }
-                    $uris = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Web' -and $_.Url.StartsWith('https') }).Url
-                    if ($uris) {
-                        if (  $uri -is [array]) {
-                            $uri = $uri[0]
-                        }
-                        try {
-                            Invoke-WebRequest -Uri $uris -SkipCertificateCheck -ErrorAction SilentlyContinue > $null 2>&1
-                        }
-                        catch {
-                            # Suppress any exceptions
-                            Write-Verbose -Message $_
-                        }
-                    }
 
-                }
-                elseif ($Runspace.Name.StartsWith('Pode_Smtp_Listener')) {
-                    $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Smtp' }).Url
-
-                    if ($uri) {
-                        if (  $uri -is [array]) {
-                            $uri = $uri[0]
-                        }
-                        Send-PodeTelnetCommand -ServerUri  $uri -command   "HELO domain.com`n"
-                    }
-                }elseif ($Runspace.Name.StartsWith('Pode_Tcp_Listener')) {
-                    $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Tcp' }).Url
-                    if ($uri) {
-                        if (  $uri -is [array]) {
-                            $uri = $uri[0]
-                        }
-                        Send-PodeTelnetCommand -ServerUri  $uri -command "`n"
-                    }
-
-                }
-
-
+            if (([DateTime]::UtcNow - $startTime).TotalSeconds % 5 -eq 0) {
+                Send-PodeInterrupt -Name $Runspace.Name
             }
             if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
                 Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
@@ -533,10 +494,10 @@ function Send-PodeTelnetCommand {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
-        [string]$ServerUri,       # Server URI in the format tcp://hostname:port or tcps://hostname:port
+        [string]$ServerUri, # Server URI in the format tcp://hostname:port or tcps://hostname:port
 
         [Parameter(Mandatory = $true)]
-        [string]$Command,         # The string command to send (e.g., "HELO domain.com")
+        [string]$Command, # The string command to send (e.g., "HELO domain.com")
 
         [int]$Timeout = 2000      # Timeout in milliseconds
     )
@@ -544,7 +505,7 @@ function Send-PodeTelnetCommand {
     try {
         # Parse the ServerUri to extract the host and port
         $uri = [System.Uri]::new($ServerUri)
-        if ($uri.Scheme -notin @("tcp", "tcps")) {
+        if ($uri.Scheme -notin @('tcp', 'tcps')) {
             Write-Verbose "Invalid URI scheme. Expected 'tcp://' or 'tcps://', but got '$($uri.Scheme)://'."
             return
         }
@@ -561,7 +522,7 @@ function Send-PodeTelnetCommand {
         $stream = $tcpClient.GetStream()
 
         # Wrap the stream in SslStream for TCPS connections
-        if ($uri.Scheme -eq "tcps") {
+        if ($uri.Scheme -eq 'tcps') {
             $sslStream = [System.Net.Security.SslStream]::new($stream, $false, { $true }) # Simple certificate validation
             $sslStream.AuthenticateAsClient($server)
             $stream = $sslStream
@@ -590,7 +551,158 @@ function Send-PodeTelnetCommand {
 
         # Return the response
         return $response -join "`n"
-    } catch {
+    }
+    catch {
         Write-Verbose "An error occurred: $_"
     }
+}
+
+
+
+function Send-PodeWebSocketMessage {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Message,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ServerUri
+    )
+
+    # Load the WebSocket Client
+    # Add-Type -AssemblyName System.Net.Http
+
+    # Initialize the WebSocket client
+    $clientWebSocket = [System.Net.WebSockets.ClientWebSocket]::new()
+
+    try {
+        # Connect to the WebSocket server
+        Write-Verbose "Connecting to WebSocket server at $ServerUri..."
+        $clientWebSocket.ConnectAsync([uri]::new($ServerUri), [System.Threading.CancellationToken]::None).Wait()
+        Write-Verbose 'Connected to WebSocket server.'
+
+        # Convert the message to bytes
+        $buffer = [System.Text.Encoding]::UTF8.GetBytes($Message)
+        $segment = [System.ArraySegment[byte]]::new($buffer)
+
+        # Send the message
+        Write-Verbose "Sending message: $Message"
+        $clientWebSocket.SendAsync($segment, [System.Net.WebSockets.WebSocketMessageType]::Text, $true, [System.Threading.CancellationToken]::None).Wait()
+        Write-Verbose 'Message sent successfully.'
+
+        # Optional: Receive a response (if expected)
+        $responseBuffer = [byte[]]::new( 1024)
+        $responseSegment = [System.ArraySegment[byte]]::new($responseBuffer)
+        $result = $clientWebSocket.ReceiveAsync($responseSegment, [System.Threading.CancellationToken]::None).Result
+
+        # Decode and display the response message
+        $responseMessage = [System.Text.Encoding]::UTF8.GetString($responseBuffer, 0, $result.Count)
+        Write-Verbose "Received response: $responseMessage"
+
+    }
+    catch {
+        Write-Error "An error occurred: $_"
+    }
+    finally {
+        # Close the WebSocket connection
+        try {
+            $clientWebSocket.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, 'Closing', [System.Threading.CancellationToken]::None).Wait()
+            Write-Verbose 'WebSocket connection closed.'
+        }
+        catch {
+            Write-Verbose "Failed to close WebSocket connection: $_"
+        }
+
+        # Dispose of the WebSocket client
+        $clientWebSocket.Dispose()
+    }
+}
+
+function  Send-PodeInterrupt {
+    param (
+        [string]
+        $Name
+    )
+
+    if ($Name.StartsWith('Pode_Web_Listener') ) {
+        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Web' -and !$_.Url.StartsWith('https') }).Url
+        if ($uri) {
+            if (  $uri -is [array]) {
+                $uri = $uri[0]
+            }
+            try {
+                Invoke-WebRequest -Uri $uri -ErrorAction SilentlyContinue > $null 2>&1
+            }
+            catch {
+                # Suppress any exceptions
+                Write-Verbose -Message $_
+            }
+        }
+        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Web' -and $_.Url.StartsWith('https') }).Url
+        if ($uri) {
+            if (  $uri -is [array]) {
+                $uri = $uri[0]
+            }
+            try {
+                Invoke-WebRequest -Uri $uri -SkipCertificateCheck -ErrorAction SilentlyContinue > $null 2>&1
+            }
+            catch {
+                # Suppress any exceptions
+                Write-Verbose -Message $_
+            }
+        }
+    }
+    elseif ($Name.StartsWith('Pode_Smtp_Listener')) {
+        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Smtp' }).Url
+
+        if ($uri) {
+            if (  $uri -is [array]) {
+                $uri = $uri[0]
+            }
+            Send-PodeTelnetCommand -ServerUri  $uri -command   "HELO domain.com`n"
+        }
+    }
+    elseif ($Name.StartsWith('Pode_Tcp_Listener')) {
+        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Tcp' }).Url
+        if ($uri) {
+            if (  $uri -is [array]) {
+                $uri = $uri[0]
+            }
+            Send-PodeTelnetCommand -ServerUri  $uri -command "`n"
+        }
+
+    }
+    elseif ($Name.StartsWith('Pode_Signals_Broadcaster')) {
+        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Signals' }).Url
+        if ($uri) {
+            if (  $uri -is [array]) {
+                $uri = $uri[0]
+            }
+
+            Send-PodeWebSocketMessage -ServerUri  $uri  -Message '{"message":"Broadcast from PowerShell!"}'
+        }
+
+    }
+    elseif ( $Name.StartsWith('Pode_Signals_Listener')) {
+        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Signals' }).Url
+        if ($uri) {
+            if (  $uri -is [array]) {
+                $uri = $uri[0]
+            }
+            #  $newuri = 'http' + $uri.Substring(2) #deal with both http and https
+            try {
+                #    Invoke-WebRequest -Uri $newuri  -ErrorAction SilentlyContinue -SkipCertificateCheck > $null 2>&1
+
+
+                Send-PodeWebSocketMessage -ServerUri  $uri  -Message '{"message":"Broadcast from PowerShell!"}'
+            }
+            catch {
+                # Suppress any exceptions
+                Write-Verbose -Message $_
+            }
+        }
+
+    }
+
 }
