@@ -164,7 +164,7 @@ function Invoke-PodeDumpInternal {
                 Id                  = $r.Id
                 Name                = @{
                     $r.Name = @{
-                        ScopedVariables = Get-PodeRunspaceVariablesViaDebugger -Runspace $r
+                        ScopedVariables = Get-PodeRunspaceVariablesViaDebugger -Runspace $r -NumberOfRunspaces $runspaces.Count
                     }
                 }
                 InitialSessionState = $r.InitialSessionState
@@ -254,6 +254,9 @@ function Invoke-PodeDumpInternal {
 .PARAMETER Timeout
     The maximum time (in seconds) to wait for the debugger stop event to be triggered. Defaults to 60 seconds.
 
+.PARAMETER NumberOfRunspaces
+    The total numebr of Runspaces to collect.
+
 .EXAMPLE
     $runspace = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace()
     $runspace.Open()
@@ -268,65 +271,56 @@ function Invoke-PodeDumpInternal {
 #>
 function Get-PodeRunspaceVariablesViaDebugger {
     param (
-        [Parameter(Mandatory)]
-        [System.Management.Automation.Runspaces.Runspace]$Runspace,
+        [Parameter(Mandatory = $true)]
+        [System.Management.Automation.Runspaces.Runspace]
+        $Runspace,
 
         [Parameter()]
-        [int]$Timeout = 60
+        [int]
+        $Timeout = 60,
+
+        [Parameter(Mandatory = $true)]
+        [int]
+        $NumberOfRunspaces
+
     )
 
     # Initialize variables collection
-    $variables = @()
-    try {
+    $variables = @(@{})
+    for ($i = 0; $i -le 3; $i++) {
 
-        # Attach the debugger and break all
-        $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
-        Enable-RunspaceDebug -BreakAll -Runspace $Runspace
+        try {
 
-        # Wait for the event to be triggered or timeout
-        $startTime = [DateTime]::UtcNow
-        Write-PodeHost "Waiting for $($Runspace.Name) to enter in debug ." -NoNewLine
-        Start-Sleep -Milliseconds 1000
-        Write-PodeHost '..' -NoNewLine
+            # Attach the debugger and break all
+            $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
+            Enable-RunspaceDebug -BreakAll -Runspace $Runspace
 
-        Send-PodeInterrupt -Name $Runspace.Name
+            # Wait for the event to be triggered or timeout
 
+            Write-PodeHost "Waiting for $($Runspace.Name) to enter in debug ." -NoNewLine
 
-
-
-        Write-PodeHost '.' -NoNewLine
-
-        while (!$debugger.IsEventTriggered) {
-            Start-Sleep -Milliseconds 500
-            Write-PodeHost '.' -NoNewLine
-
-            if (([DateTime]::UtcNow - $startTime).TotalSeconds % 5 -eq 0) {
-                Send-PodeInterrupt -Name $Runspace.Name
+            # Suspend the runspace
+            if (Suspend-PodeRunspace -Runspace $Runspace) {
+                # Retrieve and output the collected variables from the embedded C# code
+                $variables = $debugger.Variables
+                break
             }
-            if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
-                Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
-                return @{}
+
+        }
+        catch {
+            # Log the error details using Write-PodeErrorLog.
+            # This ensures that any exceptions thrown during the execution are logged appropriately.
+            $_ | Write-PodeErrorLog
+        }
+        finally {
+            # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
+            if ($null -ne $debugger) {
+                $debugger.Dispose()
             }
+
+            # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
+            Disable-RunspaceDebug -Runspace $Runspace
         }
-
-        Write-PodeHost 'Done'
-
-        # Retrieve and output the collected variables from the embedded C# code
-        $variables = $debugger.Variables
-    }
-    catch {
-        # Log the error details using Write-PodeErrorLog.
-        # This ensures that any exceptions thrown during the execution are logged appropriately.
-        $_ | Write-PodeErrorLog
-    }
-    finally {
-        # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
-        if ($null -ne $debugger) {
-            $debugger.Dispose()
-        }
-
-        # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
-        Disable-RunspaceDebug -Runspace $Runspace
     }
 
     return $variables[0]
@@ -704,5 +698,51 @@ function  Send-PodeInterrupt {
         }
 
     }
+    else {
+        return $false
+    }
 
+    Return $true
+}
+
+
+function Suspend-PodeRunspace {
+    param (
+        $Runspace
+    )
+    # Attach the debugger and break all
+    $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
+    Enable-RunspaceDebug -BreakAll -Runspace $Runspace
+
+    # Wait for the event to be triggered or timeout
+    $startTime = [DateTime]::UtcNow
+    Start-Sleep -Milliseconds 1000
+    #  Write-PodeHost '..' -NoNewLine
+
+    #  Send-PodeInterrupt -Name $Runspace.Name
+
+    Write-PodeHost '.' -NoNewLine
+
+    while (!$debugger.IsEventTriggered) {
+        Start-Sleep -Milliseconds 1000
+
+        if (([int]([DateTime]::UtcNow - $startTime).TotalSeconds) % 5 -eq 0) {
+            if (Send-PodeInterrupt -Name $Runspace.Name) {
+                Write-PodeHost '*' -NoNewLine
+            }
+            else {
+                Write-PodeHost '.' -NoNewLine
+            }
+        }
+        else {
+            Write-PodeHost '.' -NoNewLine
+        }
+        if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
+            Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
+            return $false
+        }
+    }
+
+    Write-PodeHost 'Done'
+    return $true
 }

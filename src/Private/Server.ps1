@@ -214,7 +214,8 @@ function Show-PodeConsoleInfo {
         Write-PodeHost "`rPode $(Get-PodeVersion) (PID: $($PID)) [$status]  " -ForegroundColor Cyan -Force:$Force -NoNewLine
         if ($PodeContext.Server.Console.ShowHelp -or $Force) {
             Write-PodeHost -Force:$Force
-        }else{
+        }
+        else {
             Write-PodeHost '- Ctrl+H for the Command List'  -ForegroundColor Cyan
         }
     }
@@ -513,12 +514,13 @@ function Suspend-PodeServerInternal {
         $PodeContext.Server.Suspended = $true
 
         # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
-        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' } | Sort-Object Name
+        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' -and `
+        $_.Name -notlike '*__pode_session_inmem_cleanup__*' } | Sort-Object Name
 
         foreach ($runspace in $runspaces) {
             try {
                 # Attach debugger to the runspace
-                [Pode.Embedded.DebuggerHandler]::AttachDebugger($runspace, $false)
+                $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
 
                 # Enable debugging and pause execution
                 Enable-RunspaceDebug -BreakAll -Runspace $runspace
@@ -526,27 +528,14 @@ function Suspend-PodeServerInternal {
                 # Inform user about the suspension process for the current runspace
                 Write-PodeHost "Waiting for $($runspace.Name) to be suspended." -NoNewLine -ForegroundColor Yellow
 
-                # Initialize the timer
-                $startTime = [DateTime]::UtcNow
-
-                # Wait for the suspension event or until timeout
-                while (! [Pode.Embedded.DebuggerHandler]::IsEventTriggered()) {
-                    Start-Sleep -Milliseconds 1000
-                    Write-PodeHost '.' -NoNewLine
-
-                    # Check for timeout
-                    if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
-                        Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)" -ForegroundColor Red
-                        return
-                    }
-                }
-
-                # Inform user that the suspension is complete
-                Write-PodeHost 'Done' -ForegroundColor Green
+                # Suspend the runspace
+                Suspend-PodeRunspace -Runspace $Runspace
             }
             finally {
-                # Detach the debugger from the runspace
-                [Pode.Embedded.DebuggerHandler]::DetachDebugger($runspace)
+                # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
+                if ($null -ne $debugger) {
+                    $debugger.Dispose()
+                }
             }
         }
 
@@ -562,6 +551,7 @@ function Suspend-PodeServerInternal {
     }
     finally {
         Reset-PodeCancellationToken -Type SuspendResume
+
     }
 }
 
