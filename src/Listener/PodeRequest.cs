@@ -236,7 +236,8 @@ namespace Pode
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the async operation, with a boolean indicating whether the connection should be closed.</returns>
         public async Task<bool> Receive(CancellationToken cancellationToken)
-        { 
+        {
+            await StreamLock.WaitAsync(cancellationToken);
             try
             {
                 if (State != PodeStreamState.Open || InputStream == null)
