@@ -377,6 +377,8 @@ function Restart-PodeInternalServer {
         Reset-PodeCancellationToken -Type Cancellation
         Reset-PodeCancellationToken -Type Restart
         Reset-PodeCancellationToken -Type Dump
+        Reset-PodeCancellationToken -Type Pause
+        Reset-PodeCancellationToken -Type Resume
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
@@ -401,36 +403,37 @@ function Restart-PodeInternalServer {
 <#
 .SYNOPSIS
     Resets the cancellation token for a specific type in Pode.
-
 .DESCRIPTION
     The `Reset-PodeCancellationToken` function disposes of the existing cancellation token
     for the specified type and reinitializes it with a new token. This ensures proper cleanup
     of disposable resources associated with the cancellation token.
-
 .PARAMETER Type
     The type of cancellation token to reset. This is a mandatory parameter and must be
     provided as a string.
 
-.EXAMPLES
+.EXAMPLE
     # Reset the cancellation token for the 'Cancellation' type
     Reset-PodeCancellationToken -Type Cancellation
 
+.EXAMPLE
     # Reset the cancellation token for the 'Restart' type
     Reset-PodeCancellationToken -Type Restart
 
+.EXAMPLE
     # Reset the cancellation token for the 'Dump' type
     Reset-PodeCancellationToken -Type Dump
 
-    # Reset the cancellation token for the 'SuspendResume' type
-    Reset-PodeCancellationToken -Type SuspendResume
+.EXAMPLE
+    # Reset the cancellation token for the 'Pause' type
+    Reset-PodeCancellationToken -Type Pause
 
 .NOTES
     This function is used to manage cancellation tokens in Pode's internal context.
-
 #>
 function Reset-PodeCancellationToken {
     param(
         [Parameter(Mandatory = $true)]
+        [validateset( 'Cancellation' , 'Restart', 'Dump', 'Pause', 'Resume' )]
         [string]
         $Type
     )
@@ -515,7 +518,7 @@ function Suspend-PodeServerInternal {
 
         # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
         $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' -and `
-        $_.Name -notlike '*__pode_session_inmem_cleanup__*' } | Sort-Object Name
+                $_.Name -notlike '*__pode_session_inmem_cleanup__*' } | Sort-Object Name
 
         foreach ($runspace in $runspaces) {
             try {
@@ -550,7 +553,7 @@ function Suspend-PodeServerInternal {
         $_ | Write-PodeErrorLog
     }
     finally {
-        Reset-PodeCancellationToken -Type SuspendResume
+        Reset-PodeCancellationToken -Type Pause
 
     }
 }
@@ -609,6 +612,6 @@ function Resume-PodeServerInternal {
     }
     finally {
         # Reinitialize the CancellationTokenSource for future suspension/resumption
-        Reset-PodeCancellationToken -Type SuspendResume
+        Reset-PodeCancellationToken -Type Resume
     }
 }

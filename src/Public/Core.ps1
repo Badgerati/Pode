@@ -250,12 +250,14 @@ function Start-PodeServer {
                     Invoke-PodeDumpInternal -Format $PodeContext.Server.Debug.Dump.Format -Path $PodeContext.Server.Debug.Dump.Path  -MaxDepth $PodeContext.Server.Debug.Dump.MaxDepth
                 }
 
-                if (($PodeContext.Tokens.Suspend.SuspendResume) -or (Test-PodeSuspendPressed -Key $key)) {
+                if (($PodeContext.Tokens.Suspend.IsCancellationRequested) -or ($PodeContext.Tokens.Resume.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
                     Clear-PodeKeyPressed
                     if ( $PodeContext.Server.Suspended) {
+                        $PodeContext.Tokens.Resume.Cancel()
                         Resume-PodeServerInternal
                     }
                     else {
+                        $PodeContext.Tokens.Pause.Cancel()
                         Suspend-PodeServerInternal
                     }
                 }
@@ -401,7 +403,7 @@ function Resume-PodeServer {
     [CmdletBinding()]
     param()
     if ( $PodeContext.Server.Suspended) {
-        $PodeContext.Tokens.SuspendResume.Cancel()
+        $PodeContext.Tokens.Resume.Cancel()
     }
 }
 
@@ -423,7 +425,7 @@ function Suspend-PodeServer {
     [CmdletBinding()]
     param()
     if (! $PodeContext.Server.Suspended) {
-        $PodeContext.Tokens.SuspendResume.Cancel()
+        $PodeContext.Tokens.Pause.Cancel()
     }
 }
 

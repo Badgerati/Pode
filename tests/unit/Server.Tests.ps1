@@ -112,10 +112,11 @@ Describe 'Restart-PodeInternalServer' {
     It 'Resetting the server values' {
         $PodeContext = @{
             Tokens    = @{
-                Cancellation  = [System.Threading.CancellationTokenSource]::new()
-                Restart       = [System.Threading.CancellationTokenSource]::new()
-                Dump          = [System.Threading.CancellationTokenSource]::new()
-                SuspendResume = [System.Threading.CancellationTokenSource]::new()
+                Cancellation = [System.Threading.CancellationTokenSource]::new()
+                Restart      = [System.Threading.CancellationTokenSource]::new()
+                Dump         = [System.Threading.CancellationTokenSource]::new()
+                Pause   = [System.Threading.CancellationTokenSource]::new()
+                Resume     = [System.Threading.CancellationTokenSource]::new()
             }
             Server    = @{
                 Routes          = @{

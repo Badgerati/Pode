@@ -411,10 +411,12 @@ function New-PodeContext {
 
     # create new cancellation tokens
     $ctx.Tokens = @{
-        Cancellation  = [System.Threading.CancellationTokenSource]::new()
-        Restart       = [System.Threading.CancellationTokenSource]::new()
-        Dump          = [System.Threading.CancellationTokenSource]::new()
-        SuspendResume = [System.Threading.CancellationTokenSource]::new()
+        Cancellation = [System.Threading.CancellationTokenSource]::new()
+        Restart      = [System.Threading.CancellationTokenSource]::new()
+        Dump         = [System.Threading.CancellationTokenSource]::new()
+        Pause        = [System.Threading.CancellationTokenSource]::new()
+        Resume       = [System.Threading.CancellationTokenSource]::new()
+        #Terminate = [System.Threading.CancellationTokenSource]::new()
     }
 
     # requests that should be logged
