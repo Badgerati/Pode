@@ -253,11 +253,11 @@ function Start-PodeServer {
                 if (($PodeContext.Tokens.Suspend.IsCancellationRequested) -or ($PodeContext.Tokens.Resume.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
                     Clear-PodeKeyPressed
                     if ( $PodeContext.Server.Suspended) {
-                        $PodeContext.Tokens.Resume.Cancel()
+                        Resume-PodeServer
                         Resume-PodeServerInternal
                     }
                     else {
-                        $PodeContext.Tokens.Pause.Cancel()
+                        Suspend-PodeServer
                         Suspend-PodeServerInternal
                     }
                 }
@@ -316,7 +316,7 @@ function Start-PodeServer {
             # Terminating...
             Write-PodeHost $PodeLocale.terminatingMessage -NoNewLine -ForegroundColor Yellow
             Invoke-PodeEvent -Type Terminate
-            $PodeContext.Tokens.Cancellation.Cancel()
+            Close-PodeServer
         }
         catch {
             $_ | Write-PodeErrorLog
@@ -366,6 +366,7 @@ function Close-PodeServer {
     param()
 
     $PodeContext.Tokens.Cancellation.Cancel()
+    $PodeContext.Tokens.Terminate.Cancel()
 }
 
 <#
@@ -425,7 +426,8 @@ function Suspend-PodeServer {
     [CmdletBinding()]
     param()
     if (! $PodeContext.Server.Suspended) {
-        $PodeContext.Tokens.Pause.Cancel()
+        $PodeContext.Tokens.Suspend.Cancel()
+        #$PodeContext.Tokens.Cancellation.Cancel()
     }
 }
 

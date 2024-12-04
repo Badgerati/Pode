@@ -747,9 +747,10 @@ function Close-PodeServerInternal {
     )
 
     # ensure the token is cancelled
-    if ($null -ne $PodeContext.Tokens.Cancellation) {
+    if ($null -ne $PodeContext.Tokens.Cancellation -and $null -ne $PodeContext.Tokens.Cancellation) {
         Write-Verbose 'Cancelling main cancellation token'
         $PodeContext.Tokens.Cancellation.Cancel()
+        $PodeContext.Tokens.Terminate.Cancel()
     }
 
     # stop all current runspaces
@@ -764,7 +765,11 @@ function Close-PodeServerInternal {
         # remove all the cancellation tokens
         Write-Verbose 'Disposing cancellation tokens'
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Terminate
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Dump
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Suspend
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Resume
 
         # dispose mutex/semaphores
         Write-Verbose 'Diposing mutex and semaphores'

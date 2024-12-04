@@ -88,7 +88,7 @@ function Start-PodeScheduleRunspace {
 
                     # complete any schedules
                     Complete-PodeInternalSchedule -Now $_now
- 
+
                     # Calculate the remaining seconds to sleep until the next minute
                     $remainingSeconds = 60 - [DateTime]::Now.Second
 

@@ -414,9 +414,9 @@ function New-PodeContext {
         Cancellation = [System.Threading.CancellationTokenSource]::new()
         Restart      = [System.Threading.CancellationTokenSource]::new()
         Dump         = [System.Threading.CancellationTokenSource]::new()
-        Pause        = [System.Threading.CancellationTokenSource]::new()
+        Suspend      = [System.Threading.CancellationTokenSource]::new()
         Resume       = [System.Threading.CancellationTokenSource]::new()
-        #Terminate = [System.Threading.CancellationTokenSource]::new()
+        Terminate    = [System.Threading.CancellationTokenSource]::new()
     }
 
     # requests that should be logged

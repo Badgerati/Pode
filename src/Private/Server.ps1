@@ -269,6 +269,7 @@ function Restart-PodeInternalServer {
 
         # cancel the session token
         $PodeContext.Tokens.Cancellation.Cancel()
+        $PodeContext.Tokens.Terminate.Cancel()
 
         # close all current runspaces
         Close-PodeRunspace -ClosePool
@@ -377,8 +378,9 @@ function Restart-PodeInternalServer {
         Reset-PodeCancellationToken -Type Cancellation
         Reset-PodeCancellationToken -Type Restart
         Reset-PodeCancellationToken -Type Dump
-        Reset-PodeCancellationToken -Type Pause
+        Reset-PodeCancellationToken -Type Suspend
         Reset-PodeCancellationToken -Type Resume
+        Reset-PodeCancellationToken -Type Terminate
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
@@ -424,8 +426,8 @@ function Restart-PodeInternalServer {
     Reset-PodeCancellationToken -Type Dump
 
 .EXAMPLE
-    # Reset the cancellation token for the 'Pause' type
-    Reset-PodeCancellationToken -Type Pause
+    # Reset the cancellation token for the 'Suspend' type
+    Reset-PodeCancellationToken -Type Suspend
 
 .NOTES
     This function is used to manage cancellation tokens in Pode's internal context.
@@ -433,7 +435,7 @@ function Restart-PodeInternalServer {
 function Reset-PodeCancellationToken {
     param(
         [Parameter(Mandatory = $true)]
-        [validateset( 'Cancellation' , 'Restart', 'Dump', 'Pause', 'Resume' )]
+        [validateset( 'Cancellation' , 'Restart', 'Dump', 'Suspend', 'Resume', 'Terminate' )]
         [string]
         $Type
     )
@@ -515,6 +517,7 @@ function Suspend-PodeServerInternal {
 
         # Update the server's suspended state
         $PodeContext.Server.Suspended = $true
+        start-sleep 4
 
         # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
         $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' -and `
@@ -553,8 +556,8 @@ function Suspend-PodeServerInternal {
         $_ | Write-PodeErrorLog
     }
     finally {
-        Reset-PodeCancellationToken -Type Pause
-
+        Reset-PodeCancellationToken -Type Suspend
+        #Reset-PodeCancellationToken -Type Cancellation
     }
 }
 
@@ -587,7 +590,7 @@ function Resume-PodeServerInternal {
         # Update the server's suspended state
         $PodeContext.Server.Suspended = $false
 
-        # Pause briefly to ensure any required internal processes have time to stabilize
+        # Suspend briefly to ensure any required internal processes have time to stabilize
         Start-Sleep -Seconds 5
 
         # Retrieve all runspaces related to Pode
