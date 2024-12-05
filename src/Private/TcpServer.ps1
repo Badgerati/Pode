@@ -86,7 +86,13 @@ function Start-PodeTcpServer {
         )
 
         try {
-            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                while ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
+                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
                 # get email
                 $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
@@ -207,7 +213,13 @@ function Start-PodeTcpServer {
         )
 
         try {
-            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                while ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
+                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
                 Start-Sleep -Seconds 1
             }
         }

@@ -52,7 +52,15 @@ function Start-PodeWebSocketRunspace {
         )
 
         try {
-            while ($Receiver.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Receiver.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+
+                while ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
+                write-podehost 'checking for PodeContext.Tokens.Dump.IsCancellationRequested'
+                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
                 # get request
                 $request = (Wait-PodeTask -Task $Receiver.GetWebSocketRequestAsync($PodeContext.Tokens.Cancellation.Token))
 
@@ -119,9 +127,18 @@ function Start-PodeWebSocketRunspace {
         )
 
         try {
-            while ($Receiver.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Receiver.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                while ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
+                write-podehost 'checking for PodeContext.Tokens.Dump.IsCancellationRequested'
+                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
                 Start-Sleep -Seconds 1
             }
+
+
         }
         catch [System.OperationCanceledException] {
             $_ | Write-PodeErrorLog -Level Debug

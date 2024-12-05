@@ -14,7 +14,7 @@
         http://localhost:8081/openapi
     Documentation:
         http://localhost:8081/docs
-
+5
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-Dump.ps1
 
@@ -39,7 +39,7 @@ try {
 catch { throw }
 
 # Start Pode server with specified script block
-Start-PodeServer -Threads 4  -ScriptBlock {
+Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
@@ -94,7 +94,12 @@ Start-PodeServer -Threads 4  -ScriptBlock {
             }
         } | Set-PodeOARouteInfo -Summary 'Dump state' -Description 'Dump the memory state of the server.' -Tags 'dump'  -OperationId 'dump'-PassThru |
             Set-PodeOARequest -Parameters (New-PodeOAStringProperty -Name 'format' -Description 'Dump export format.' -Enum 'json', 'clixml', 'txt', 'bin', 'yaml' -Default 'json' | ConvertTo-PodeOAParameter -In Query )
-    }
+
+            Add-PodeRoute -Method Get -Path '/task/async' -PassThru -ScriptBlock {
+                Invoke-PodeTask -Name 'Test' -ArgumentList @{ value = 'wizard' } | Out-Null
+                Write-PodeJsonResponse -Value @{ Result = 'jobs done' }
+            }| Set-PodeOARouteInfo -Summary 'Task'
+        }
 
     Add-PodeVerb -Verb 'HELLO' -ScriptBlock {
         Write-PodeTcpClient -Message 'HI'
@@ -148,4 +153,15 @@ Start-PodeServer -Threads 4  -ScriptBlock {
         $name = Read-PodeTcpClient -CRLFMessageEnd
         Write-PodeTcpClient -Message "Hi, $($name)!"
     }
+
+
+    Add-PodeTask -Name 'Test' -ScriptBlock {
+        param($value)
+        Start-PodeSleep -Seconds 10
+        "a $($value) is comming" | Out-Default
+        Start-PodeSleep -Seconds 100
+        "a $($value) is never late, it arrives exactly when it means to" | Out-Default
+    }
+
+
 }

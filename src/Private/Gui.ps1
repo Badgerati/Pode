@@ -27,7 +27,7 @@ function Start-PodeGuiRunspace {
             # poll the server for a response
             $count = 0
 
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while (!$PodeContext.Tokens.Terminate.IsCancellationRequested) {
                 try {
                     $null = Invoke-WebRequest -Method Get -Uri $uri -UseBasicParsing -ErrorAction Stop
                     if (!$?) {

@@ -231,7 +231,7 @@ function Start-PodeServer {
             }
 
             # sit here waiting for termination/cancellation, or to restart the server
-            while (  !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
+            while (  !($PodeContext.Tokens.Terminate.IsCancellationRequested)) {
                 Start-Sleep -Seconds 1
 
                 if (!$PodeContext.Server.Console.DisableConsoleInput) {
@@ -247,6 +247,7 @@ function Start-PodeServer {
 
                 if (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
                     Clear-PodeKeyPressed
+                    Invoke-PodeDump
                     Invoke-PodeDumpInternal -Format $PodeContext.Server.Debug.Dump.Format -Path $PodeContext.Server.Debug.Dump.Path  -MaxDepth $PodeContext.Server.Debug.Dump.MaxDepth
                 }
 
@@ -405,6 +406,7 @@ function Resume-PodeServer {
     param()
     if ( $PodeContext.Server.Suspended) {
         $PodeContext.Tokens.Resume.Cancel()
+        $PodeContext.Tokens.Cancellation.Cancel()
     }
 }
 
@@ -426,8 +428,8 @@ function Suspend-PodeServer {
     [CmdletBinding()]
     param()
     if (! $PodeContext.Server.Suspended) {
+        $PodeContext.Tokens.Cancellation.Cancel()
         $PodeContext.Tokens.Suspend.Cancel()
-        #$PodeContext.Tokens.Cancellation.Cancel()
     }
 }
 

@@ -1553,4 +1553,45 @@ function Invoke-PodeDump {
     )
     $PodeContext.Server.Debug.Dump.Param = $PSBoundParameters
     $PodeContext.Tokens.Dump.Cancel()
+    $PodeContext.Tokens.Cancellation.Cancel()
+}
+
+
+
+function Start-PodeSleep {
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Seconds')]
+        [int]$Seconds = 1,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Milliseconds')]
+        [int]$Milliseconds,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Duration')]
+        [TimeSpan]$Duration
+    )
+
+    # Determine end time based on the parameter set
+    switch ($PSCmdlet.ParameterSetName) {
+        'Seconds' {
+            $endTime = (Get-Date).AddSeconds($Seconds)
+        }
+        'Milliseconds' {
+            $endTime = (Get-Date).AddMilliseconds($Milliseconds)
+        }
+        'Duration' {
+            $endTime = (Get-Date).Add($Duration)
+        }
+    }
+
+    while ((Get-Date) -lt $endTime) {
+        # Check if a debugger is attached
+       # if ($Host.Debugger.IsActive) {
+     #       Write-PodeHost "Debugger is attached. Waiting for interaction..."
+          #  Debugger # Trigger a breakpoint to allow interaction
+   #     }
+
+        # Sleep for a short duration to prevent high CPU usage
+        Start-Sleep -Milliseconds 200
+    }
 }

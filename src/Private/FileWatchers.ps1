@@ -62,7 +62,13 @@ function Start-PodeFileWatcherRunspace {
         )
 
         try {
-            while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Watcher.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                while ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
+                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
                 $evt = (Wait-PodeTask -Task $Watcher.GetFileEventAsync($PodeContext.Tokens.Cancellation.Token))
 
                 try {
@@ -144,7 +150,13 @@ function Start-PodeFileWatcherRunspace {
         )
 
         try {
-            while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Watcher.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                while ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
+                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
+                    Start-Sleep -Seconds 1
+                }
                 Start-Sleep -Seconds 1
             }
         }
