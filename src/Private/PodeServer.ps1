@@ -127,174 +127,172 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
+            do {
+                try {
+                    while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                        # get request and response
+                        $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
-            try {
-                while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
-                    while ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                        Start-Sleep -Seconds 1
-                    }
-                    while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                        Start-Sleep -Seconds 1
-                    }
-                    # get request and response
-                    $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
-
-                    try {
                         try {
-                            $Request = $context.Request
-                            $Response = $context.Response
+                            try {
+                                $Request = $context.Request
+                                $Response = $context.Response
 
-                            # reset with basic event data
-                            $WebEvent = @{
-                                OnEnd            = @()
-                                Auth             = @{}
-                                Response         = $Response
-                                Request          = $Request
-                                Lockable         = $PodeContext.Threading.Lockables.Global
-                                Path             = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
-                                Method           = $Request.HttpMethod.ToLowerInvariant()
-                                Query            = $null
-                                Endpoint         = @{
-                                    Protocol = $Request.Url.Scheme
-                                    Address  = $Request.Host
-                                    Name     = $context.EndpointName
-                                }
-                                ContentType      = $Request.ContentType
-                                ErrorType        = $null
-                                Cookies          = @{}
-                                PendingCookies   = @{}
-                                Parameters       = $null
-                                Data             = $null
-                                Files            = $null
-                                Streamed         = $true
-                                Route            = $null
-                                StaticContent    = $null
-                                Timestamp        = [datetime]::UtcNow
-                                TransferEncoding = $null
-                                AcceptEncoding   = $null
-                                Ranges           = $null
-                                Sse              = $null
-                                Metadata         = @{}
-                            }
-
-                            # if iis, and we have an app path, alter it
-                            if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Path.IsNonRoot) {
-                                $WebEvent.Path = ($WebEvent.Path -ireplace $PodeContext.Server.IIS.Path.Pattern, '')
-                                if ([string]::IsNullOrEmpty($WebEvent.Path)) {
-                                    $WebEvent.Path = '/'
-                                }
-                            }
-
-                            # accept/transfer encoding
-                            $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
-                            $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
-                            $WebEvent.Ranges = (Get-PodeRange -Range (Get-PodeHeader -Name 'Range') -ThrowError)
-
-                            # add logging endware for post-request
-                            Add-PodeRequestLogEndware -WebEvent $WebEvent
-
-                            # stop now if the request has an error
-                            if ($Request.IsAborted) {
-                                throw $Request.Error
-                            }
-
-                            # if we have an sse clientId, verify it and then set details in WebEvent
-                            if ($WebEvent.Request.HasSseClientId) {
-                                if (!(Test-PodeSseClientIdValid)) {
-                                    throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
+                                # reset with basic event data
+                                $WebEvent = @{
+                                    OnEnd            = @()
+                                    Auth             = @{}
+                                    Response         = $Response
+                                    Request          = $Request
+                                    Lockable         = $PodeContext.Threading.Lockables.Global
+                                    Path             = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
+                                    Method           = $Request.HttpMethod.ToLowerInvariant()
+                                    Query            = $null
+                                    Endpoint         = @{
+                                        Protocol = $Request.Url.Scheme
+                                        Address  = $Request.Host
+                                        Name     = $context.EndpointName
+                                    }
+                                    ContentType      = $Request.ContentType
+                                    ErrorType        = $null
+                                    Cookies          = @{}
+                                    PendingCookies   = @{}
+                                    Parameters       = $null
+                                    Data             = $null
+                                    Files            = $null
+                                    Streamed         = $true
+                                    Route            = $null
+                                    StaticContent    = $null
+                                    Timestamp        = [datetime]::UtcNow
+                                    TransferEncoding = $null
+                                    AcceptEncoding   = $null
+                                    Ranges           = $null
+                                    Sse              = $null
+                                    Metadata         = @{}
                                 }
 
-                                if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
-                                    throw [Pode.PodeRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)", 404)
+                                # if iis, and we have an app path, alter it
+                                if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Path.IsNonRoot) {
+                                    $WebEvent.Path = ($WebEvent.Path -ireplace $PodeContext.Server.IIS.Path.Pattern, '')
+                                    if ([string]::IsNullOrEmpty($WebEvent.Path)) {
+                                        $WebEvent.Path = '/'
+                                    }
                                 }
 
-                                $WebEvent.Sse = @{
-                                    Name        = $WebEvent.Request.SseClientName
-                                    Group       = $WebEvent.Request.SseClientGroup
-                                    ClientId    = $WebEvent.Request.SseClientId
-                                    LastEventId = $null
-                                    IsLocal     = $false
-                                }
-                            }
+                                # accept/transfer encoding
+                                $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
+                                $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
+                                $WebEvent.Ranges = (Get-PodeRange -Range (Get-PodeHeader -Name 'Range') -ThrowError)
 
-                            # invoke global and route middleware
-                            if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                                # has the request been aborted
+                                # add logging endware for post-request
+                                Add-PodeRequestLogEndware -WebEvent $WebEvent
+
+                                # stop now if the request has an error
                                 if ($Request.IsAborted) {
                                     throw $Request.Error
                                 }
 
-                                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
+                                # if we have an sse clientId, verify it and then set details in WebEvent
+                                if ($WebEvent.Request.HasSseClientId) {
+                                    if (!(Test-PodeSseClientIdValid)) {
+                                        throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
+                                    }
+
+                                    if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
+                                        throw [Pode.PodeRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)", 404)
+                                    }
+
+                                    $WebEvent.Sse = @{
+                                        Name        = $WebEvent.Request.SseClientName
+                                        Group       = $WebEvent.Request.SseClientGroup
+                                        ClientId    = $WebEvent.Request.SseClientId
+                                        LastEventId = $null
+                                        IsLocal     = $false
+                                    }
+                                }
+
+                                # invoke global and route middleware
+                                if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
                                     # has the request been aborted
                                     if ($Request.IsAborted) {
                                         throw $Request.Error
                                     }
 
-                                    # invoke the route
-                                    if ($null -ne $WebEvent.StaticContent) {
-                                        $fileBrowser = $WebEvent.Route.FileBrowser
-                                        if ($WebEvent.StaticContent.IsDownload) {
-                                            Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
+                                    if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
+                                        # has the request been aborted
+                                        if ($Request.IsAborted) {
+                                            throw $Request.Error
                                         }
-                                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
-                                            $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
-                                            Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
+
+                                        # invoke the route
+                                        if ($null -ne $WebEvent.StaticContent) {
+                                            $fileBrowser = $WebEvent.Route.FileBrowser
+                                            if ($WebEvent.StaticContent.IsDownload) {
+                                                Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
+                                            }
+                                            elseif ($WebEvent.StaticContent.RedirectToDefault) {
+                                                $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
+                                                Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
+                                            }
+                                            else {
+                                                $cachable = $WebEvent.StaticContent.IsCachable
+                                                Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
+                                                    -Cache:$cachable -FileBrowser:$fileBrowser
+                                            }
                                         }
-                                        else {
-                                            $cachable = $WebEvent.StaticContent.IsCachable
-                                            Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
-                                                -Cache:$cachable -FileBrowser:$fileBrowser
+                                        elseif ($null -ne $WebEvent.Route.Logic) {
+                                            $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments `
+                                                -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                                         }
-                                    }
-                                    elseif ($null -ne $WebEvent.Route.Logic) {
-                                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments `
-                                            -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                                     }
                                 }
                             }
-                        }
-                        catch [System.OperationCanceledException] {
-                            $_ | Write-PodeErrorLog -Level Debug
-                        }
-                        catch [Pode.PodeRequestException] {
-                            if ($Response.StatusCode -ge 500) {
+                            catch [System.OperationCanceledException] {
+                                $_ | Write-PodeErrorLog -Level Debug
+                            }
+                            catch [Pode.PodeRequestException] {
+                                if ($Response.StatusCode -ge 500) {
+                                    $_.Exception | Write-PodeErrorLog -CheckInnerException
+                                }
+
+                                $code = $_.Exception.StatusCode
+                                if ($code -le 0) {
+                                    $code = 400
+                                }
+
+                                Set-PodeResponseStatus -Code $code -Exception $_
+                            }
+                            catch {
+                                $_ | Write-PodeErrorLog
                                 $_.Exception | Write-PodeErrorLog -CheckInnerException
+                                Set-PodeResponseStatus -Code 500 -Exception $_
+                            }
+                            finally {
+                                Update-PodeServerRequestMetric -WebEvent $WebEvent
                             }
 
-                            $code = $_.Exception.StatusCode
-                            if ($code -le 0) {
-                                $code = 400
-                            }
-
-                            Set-PodeResponseStatus -Code $code -Exception $_
-                        }
-                        catch {
-                            $_ | Write-PodeErrorLog
-                            $_.Exception | Write-PodeErrorLog -CheckInnerException
-                            Set-PodeResponseStatus -Code 500 -Exception $_
+                            # invoke endware specifc to the current web event
+                            $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
+                            Invoke-PodeEndware -Endware $_endware
                         }
                         finally {
-                            Update-PodeServerRequestMetric -WebEvent $WebEvent
+                            $WebEvent = $null
+                            Close-PodeDisposable -Disposable $context
                         }
-
-                        # invoke endware specifc to the current web event
-                        $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
-                        Invoke-PodeEndware -Endware $_endware
-                    }
-                    finally {
-                        $WebEvent = $null
-                        Close-PodeDisposable -Disposable $context
                     }
                 }
-            }
-            catch [System.OperationCanceledException] {
-                $_ | Write-PodeErrorLog -Level Debug
-            }
-            catch {
-                $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
-            }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                    $_.Exception | Write-PodeErrorLog -CheckInnerException
+                    throw $_.Exception
+                }
+
+                # end do-while
+            } while (Test-PodeSuspensionToken) # Check for suspension or dump tokens and wait for the debugger to reset if active
+
         }
 
         # start the runspace for listening on x-number of threads
@@ -311,73 +309,71 @@ function Start-PodeWebServer {
                 [Parameter(Mandatory = $true)]
                 $Listener
             )
+            do {
+                try {
+                    while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                        $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
-            try {
-                while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
-                    while ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                        Start-Sleep -Seconds 1
-                    }
-                    while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                        Start-Sleep -Seconds 1
-                    }
-                    $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
+                        try {
+                            # get the sockets for the message
+                            $sockets = @()
 
-                    try {
-                        # get the sockets for the message
-                        $sockets = @()
+                            # by clientId
+                            if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
+                                $sockets = @($Listener.Signals[$message.ClientId])
+                            }
+                            else {
+                                $sockets = @($Listener.Signals.Values)
 
-                        # by clientId
-                        if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
-                            $sockets = @($Listener.Signals[$message.ClientId])
-                        }
-                        else {
-                            $sockets = @($Listener.Signals.Values)
+                                # by path
+                                if (![string]::IsNullOrWhiteSpace($message.Path)) {
+                                    $sockets = @(foreach ($socket in $sockets) {
+                                            if ($socket.Path -ieq $message.Path) {
+                                                $socket
+                                            }
+                                        })
+                                }
+                            }
 
-                            # by path
-                            if (![string]::IsNullOrWhiteSpace($message.Path)) {
-                                $sockets = @(foreach ($socket in $sockets) {
-                                        if ($socket.Path -ieq $message.Path) {
-                                            $socket
-                                        }
-                                    })
+                            # do nothing if no socket found
+                            if (($null -eq $sockets) -or ($sockets.Length -eq 0)) {
+                                continue
+                            }
+
+                            # send the message to all found sockets
+                            foreach ($socket in $sockets) {
+                                try {
+                                    $null = Wait-PodeTask -Task $socket.Context.Response.SendSignal($message)
+                                }
+                                catch {
+                                    $null = $Listener.Signals.Remove($socket.ClientId)
+                                }
                             }
                         }
-
-                        # do nothing if no socket found
-                        if (($null -eq $sockets) -or ($sockets.Length -eq 0)) {
-                            continue
+                        catch [System.OperationCanceledException] {
+                            $_ | Write-PodeErrorLog -Level Debug
                         }
-
-                        # send the message to all found sockets
-                        foreach ($socket in $sockets) {
-                            try {
-                                $null = Wait-PodeTask -Task $socket.Context.Response.SendSignal($message)
-                            }
-                            catch {
-                                $null = $Listener.Signals.Remove($socket.ClientId)
-                            }
+                        catch {
+                            $_ | Write-PodeErrorLog
+                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
-                    }
-                    catch [System.OperationCanceledException] {
-                        $_ | Write-PodeErrorLog -Level Debug
-                    }
-                    catch {
-                        $_ | Write-PodeErrorLog
-                        $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    }
-                    finally {
-                        Close-PodeDisposable -Disposable $message
+                        finally {
+                            Close-PodeDisposable -Disposable $message
+                        }
                     }
                 }
-            }
-            catch [System.OperationCanceledException] {
-                $_ | Write-PodeErrorLog -Level Debug
-            }
-            catch {
-                $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
-            }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                    $_.Exception | Write-PodeErrorLog -CheckInnerException
+                    throw $_.Exception
+                }
+
+                # end do-while
+            } while (Test-PodeSuspensionToken) # Check for suspension or dump tokens and wait for the debugger to reset if active
+
         }
 
         Add-PodeRunspace -Type Signals -Name 'Listener' -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
@@ -396,75 +392,74 @@ function Start-PodeWebServer {
                 $ThreadId
             )
 
-            try {
-                while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
-                    while ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                        Start-Sleep -Seconds 1
-                    }
-                    while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                        Start-Sleep -Seconds 1
-                    }
-                    $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
+            do {
+                try {
+                    while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                        $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
-                    try {
-                        $payload = ($context.Message | ConvertFrom-Json)
-                        $Request = $context.Signal.Context.Request
-                        $Response = $context.Signal.Context.Response
+                        try {
+                            $payload = ($context.Message | ConvertFrom-Json)
+                            $Request = $context.Signal.Context.Request
+                            $Response = $context.Signal.Context.Response
 
-                        $SignalEvent = @{
-                            Response  = $Response
-                            Request   = $Request
-                            Lockable  = $PodeContext.Threading.Lockables.Global
-                            Path      = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
-                            Data      = @{
-                                Path     = [System.Web.HttpUtility]::UrlDecode($payload.path)
-                                Message  = $payload.message
-                                ClientId = $payload.clientId
-                                Direct   = [bool]$payload.direct
+                            $SignalEvent = @{
+                                Response  = $Response
+                                Request   = $Request
+                                Lockable  = $PodeContext.Threading.Lockables.Global
+                                Path      = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
+                                Data      = @{
+                                    Path     = [System.Web.HttpUtility]::UrlDecode($payload.path)
+                                    Message  = $payload.message
+                                    ClientId = $payload.clientId
+                                    Direct   = [bool]$payload.direct
+                                }
+                                Endpoint  = @{
+                                    Protocol = $Request.Url.Scheme
+                                    Address  = $Request.Host
+                                    Name     = $context.Signal.Context.EndpointName
+                                }
+                                Route     = $null
+                                ClientId  = $context.Signal.ClientId
+                                Timestamp = $context.Timestamp
+                                Streamed  = $true
+                                Metadata  = @{}
                             }
-                            Endpoint  = @{
-                                Protocol = $Request.Url.Scheme
-                                Address  = $Request.Host
-                                Name     = $context.Signal.Context.EndpointName
+
+                            # see if we have a route and invoke it, otherwise auto-send
+                            $SignalEvent.Route = Find-PodeSignalRoute -Path $SignalEvent.Path -EndpointName $SignalEvent.Endpoint.Name
+
+                            if ($null -ne $SignalEvent.Route) {
+                                $null = Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $SignalEvent.Route.Arguments -UsingVariables $SignalEvent.Route.UsingVariables -Scoped -Splat
                             }
-                            Route     = $null
-                            ClientId  = $context.Signal.ClientId
-                            Timestamp = $context.Timestamp
-                            Streamed  = $true
-                            Metadata  = @{}
+                            else {
+                                Send-PodeSignal -Value $SignalEvent.Data.Message -Path $SignalEvent.Data.Path -ClientId $SignalEvent.Data.ClientId
+                            }
                         }
-
-                        # see if we have a route and invoke it, otherwise auto-send
-                        $SignalEvent.Route = Find-PodeSignalRoute -Path $SignalEvent.Path -EndpointName $SignalEvent.Endpoint.Name
-
-                        if ($null -ne $SignalEvent.Route) {
-                            $null = Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $SignalEvent.Route.Arguments -UsingVariables $SignalEvent.Route.UsingVariables -Scoped -Splat
+                        catch [System.OperationCanceledException] {
+                            $_ | Write-PodeErrorLog -Level Debug
                         }
-                        else {
-                            Send-PodeSignal -Value $SignalEvent.Data.Message -Path $SignalEvent.Data.Path -ClientId $SignalEvent.Data.ClientId
+                        catch {
+                            $_ | Write-PodeErrorLog
+                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
-                    }
-                    catch [System.OperationCanceledException] {
-                        $_ | Write-PodeErrorLog -Level Debug
-                    }
-                    catch {
-                        $_ | Write-PodeErrorLog
-                        $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    }
-                    finally {
-                        Update-PodeServerSignalMetric -SignalEvent $SignalEvent
-                        Close-PodeDisposable -Disposable $context
+                        finally {
+                            Update-PodeServerSignalMetric -SignalEvent $SignalEvent
+                            Close-PodeDisposable -Disposable $context
+                        }
                     }
                 }
-            }
-            catch [System.OperationCanceledException] {
-                $_ | Write-PodeErrorLog -Level Debug
-            }
-            catch {
-                $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
-            }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                    $_.Exception | Write-PodeErrorLog -CheckInnerException
+                    throw $_.Exception
+                }
+                
+                # end do-while
+            } while (Test-PodeSuspensionToken) # Check for suspension or dump tokens and wait for the debugger to reset if active
+
         }
 
         # start the runspace for listening on x-number of threads
@@ -483,12 +478,6 @@ function Start-PodeWebServer {
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
-                while ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
                 Start-Sleep -Seconds 1
             }
         }

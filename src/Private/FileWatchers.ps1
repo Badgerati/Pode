@@ -60,82 +60,80 @@ function Start-PodeFileWatcherRunspace {
             [int]
             $ThreadId
         )
+        do {
+            try {
+                while ($Watcher.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                    $evt = (Wait-PodeTask -Task $Watcher.GetFileEventAsync($PodeContext.Tokens.Cancellation.Token))
 
-        try {
-            while ($Watcher.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
-                while ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                $evt = (Wait-PodeTask -Task $Watcher.GetFileEventAsync($PodeContext.Tokens.Cancellation.Token))
-
-                try {
                     try {
-                        # get file watcher
-                        $fileWatcher = $PodeContext.Fim.Items[$evt.FileWatcher.Name]
-                        if ($null -eq $fileWatcher) {
-                            continue
-                        }
-
-                        # if there are exclusions, and one matches, return
-                        $exc = (Convert-PodePathPatternsToRegex -Paths $fileWatcher.Exclude)
-                        if (($null -ne $exc) -and ($evt.Name -imatch $exc)) {
-                            continue
-                        }
-
-                        # if there are inclusions, and none match, return
-                        $inc = (Convert-PodePathPatternsToRegex -Paths $fileWatcher.Include)
-                        if (($null -ne $inc) -and ($evt.Name -inotmatch $inc)) {
-                            continue
-                        }
-
-                        # set file event object
-                        $FileEvent = @{
-                            Type       = $evt.ChangeType
-                            FullPath   = $evt.FullPath
-                            Name       = $evt.Name
-                            Old        = @{
-                                FullPath = $evt.OldFullPath
-                                Name     = $evt.OldName
+                        try {
+                            # get file watcher
+                            $fileWatcher = $PodeContext.Fim.Items[$evt.FileWatcher.Name]
+                            if ($null -eq $fileWatcher) {
+                                continue
                             }
-                            Parameters = @{}
-                            Lockable   = $PodeContext.Threading.Lockables.Global
-                            Timestamp  = [datetime]::UtcNow
-                            Metadata   = @{}
-                        }
 
-                        # do we have any parameters?
-                        if ($fileWatcher.Placeholders.Exist -and ($FileEvent.FullPath -imatch $fileWatcher.Placeholders.Path)) {
-                            $FileEvent.Parameters = $Matches
-                        }
+                            # if there are exclusions, and one matches, return
+                            $exc = (Convert-PodePathPatternsToRegex -Paths $fileWatcher.Exclude)
+                            if (($null -ne $exc) -and ($evt.Name -imatch $exc)) {
+                                continue
+                            }
 
-                        # invoke main script
-                        $null = Invoke-PodeScriptBlock -ScriptBlock $fileWatcher.Script -Arguments $fileWatcher.Arguments -UsingVariables $fileWatcher.UsingVariables -Scoped -Splat
+                            # if there are inclusions, and none match, return
+                            $inc = (Convert-PodePathPatternsToRegex -Paths $fileWatcher.Include)
+                            if (($null -ne $inc) -and ($evt.Name -inotmatch $inc)) {
+                                continue
+                            }
+
+                            # set file event object
+                            $FileEvent = @{
+                                Type       = $evt.ChangeType
+                                FullPath   = $evt.FullPath
+                                Name       = $evt.Name
+                                Old        = @{
+                                    FullPath = $evt.OldFullPath
+                                    Name     = $evt.OldName
+                                }
+                                Parameters = @{}
+                                Lockable   = $PodeContext.Threading.Lockables.Global
+                                Timestamp  = [datetime]::UtcNow
+                                Metadata   = @{}
+                            }
+
+                            # do we have any parameters?
+                            if ($fileWatcher.Placeholders.Exist -and ($FileEvent.FullPath -imatch $fileWatcher.Placeholders.Path)) {
+                                $FileEvent.Parameters = $Matches
+                            }
+
+                            # invoke main script
+                            $null = Invoke-PodeScriptBlock -ScriptBlock $fileWatcher.Script -Arguments $fileWatcher.Arguments -UsingVariables $fileWatcher.UsingVariables -Scoped -Splat
+                        }
+                        catch [System.OperationCanceledException] {
+                            $_ | Write-PodeErrorLog -Level Debug
+                        }
+                        catch {
+                            $_ | Write-PodeErrorLog
+                            $_.Exception | Write-PodeErrorLog -CheckInnerException
+                        }
                     }
-                    catch [System.OperationCanceledException] {
-                        $_ | Write-PodeErrorLog -Level Debug
+                    finally {
+                        $FileEvent = $null
+                        Close-PodeDisposable -Disposable $evt
                     }
-                    catch {
-                        $_ | Write-PodeErrorLog
-                        $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    }
-                }
-                finally {
-                    $FileEvent = $null
-                    Close-PodeDisposable -Disposable $evt
                 }
             }
-        }
-        catch [System.OperationCanceledException] {
-            $_ | Write-PodeErrorLog -Level Debug
-        }
-        catch {
-            $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
-        }
+            catch [System.OperationCanceledException] {
+                $_ | Write-PodeErrorLog -Level Debug
+            }
+            catch {
+                $_ | Write-PodeErrorLog
+                $_.Exception | Write-PodeErrorLog -CheckInnerException
+                throw $_.Exception
+            }
+
+            # end do-while
+        } while (Test-PodeSuspensionToken) # Check for suspension or dump tokens and wait for the debugger to reset if active
+
     }
 
     1..$PodeContext.Threads.Files | ForEach-Object {
@@ -151,12 +149,6 @@ function Start-PodeFileWatcherRunspace {
 
         try {
             while ($Watcher.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
-                while ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
                 Start-Sleep -Seconds 1
             }
         }

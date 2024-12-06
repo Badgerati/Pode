@@ -375,12 +375,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Types = @()
 
         # recreate the session tokens
-        Reset-PodeCancellationToken -Type Cancellation
-        Reset-PodeCancellationToken -Type Restart
-        Reset-PodeCancellationToken -Type Dump
-        Reset-PodeCancellationToken -Type Suspend
-        Reset-PodeCancellationToken -Type Resume
-        Reset-PodeCancellationToken -Type Terminate
+        Reset-PodeCancellationToken -Type Cancellation, Restart, Dump, Suspend, Resume, Terminate
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
@@ -436,14 +431,16 @@ function Reset-PodeCancellationToken {
     param(
         [Parameter(Mandatory = $true)]
         [validateset( 'Cancellation' , 'Restart', 'Dump', 'Suspend', 'Resume', 'Terminate' )]
-        [string]
+        [string[]]
         $Type
     )
-    # Ensure cleanup of disposable tokens
-    Close-PodeDisposable -Disposable $PodeContext.Tokens[$Type]
+    $type.ForEach({
+            # Ensure cleanup of disposable tokens
+            Close-PodeDisposable -Disposable $PodeContext.Tokens[$_]
 
-    # Reinitialize the Token
-    $PodeContext.Tokens[$Type] = [System.Threading.CancellationTokenSource]::new()
+            # Reinitialize the Token
+            $PodeContext.Tokens[$_] = [System.Threading.CancellationTokenSource]::new()
+        })
 }
 
 
@@ -517,36 +514,18 @@ function Suspend-PodeServerInternal {
 
         # Update the server's suspended state
         $PodeContext.Server.Suspended = $true
-        start-sleep 4
+        start-sleep 2
 
         # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
-        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' -and `
-                $_.Name -notlike '*__pode_session_inmem_cleanup__*' } | Sort-Object Name
+        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Task*' } | Sort-Object Name
 
         foreach ($runspace in $runspaces) {
-            try {
-                # Attach debugger to the runspace
-                $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
-
-                # Enable debugging and pause execution
-                Enable-RunspaceDebug -BreakAll -Runspace $runspace
-
-                # Inform user about the suspension process for the current runspace
-                Write-PodeHost "Waiting for $($runspace.Name) to be suspended." -NoNewLine -ForegroundColor Yellow
-
-                # Suspend the runspace
-                Suspend-PodeRunspace -Runspace $Runspace
-            }
-            finally {
-                # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
-                if ($null -ne $debugger) {
-                    $debugger.Dispose()
-                }
-            }
+            # Suspend the runspace
+            $null = Suspend-PodeRunspace -Runspace $Runspace -NumberOfRunspaces $runspaces.Count
         }
 
         # Short pause before refreshing the console
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 2
 
         # Clear the host and display header information
         Show-PodeConsoleInfo -ShowHeader
@@ -555,10 +534,7 @@ function Suspend-PodeServerInternal {
         # Log any errors that occur
         $_ | Write-PodeErrorLog
     }
-    finally {
-        Reset-PodeCancellationToken -Type Suspend
-        #Reset-PodeCancellationToken -Type Cancellation
-    }
+
 }
 
 
@@ -594,7 +570,7 @@ function Resume-PodeServerInternal {
         Start-Sleep -Seconds 5
 
         # Retrieve all runspaces related to Pode
-        $runspaces = Get-Runspace -name 'Pode_*'
+        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Task*' } | Sort-Object Name
         foreach ($runspace in $runspaces) {
             # Disable debugging for each runspace to restore normal execution
             Disable-RunspaceDebug -Runspace $runspace
@@ -614,7 +590,8 @@ function Resume-PodeServerInternal {
         $_ | Write-PodeErrorLog
     }
     finally {
+
         # Reinitialize the CancellationTokenSource for future suspension/resumption
-        Reset-PodeCancellationToken -Type Resume
+        Reset-PodeCancellationToken -Type  Resume
     }
 }

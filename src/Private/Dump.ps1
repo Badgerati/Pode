@@ -156,9 +156,9 @@ function Invoke-PodeDumpInternal {
         # Retrieve all runspaces related to Pode ordered by name
         $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' -and `
                 $_.Name -notlike '*__pode_session_inmem_cleanup__*' -and `
-                $_.Name -notlike 'Pode_*_Listener_*' -and `
-                $_.Name -notlike 'Pode_*_KeepAlive_*' -and `
-                $_.Name -notlike 'Pode_Signals_Broadcaster_*'
+                #   $_.Name -notlike 'Pode_*_Listener_*' -and `
+                $_.Name -notlike 'Pode_*_KeepAlive_*' #-and `
+            #  $_.Name -notlike 'Pode_Signals_Broadcaster_*'
         } | Sort-Object Name
 
 
@@ -168,7 +168,7 @@ function Invoke-PodeDumpInternal {
                 Id                  = $r.Id
                 Name                = @{
                     $r.Name = @{
-                        ScopedVariables = Get-PodeRunspaceVariablesViaDebugger -Runspace $r -NumberOfRunspaces $runspaces.Count
+                        ScopedVariables = Suspend-PodeRunspace -Runspace $r -NumberOfRunspaces $runspaces.Count
                     }
                 }
                 InitialSessionState = $r.InitialSessionState
@@ -238,8 +238,8 @@ function Invoke-PodeDumpInternal {
         Write-PodeHost -ForegroundColor Yellow "Memory dump saved to $dumpFilePath"
     }
     end {
-        Reset-PodeCancellationToken -Type Cancellation
-        Reset-PodeCancellationToken -Type Dump
+
+        Reset-PodeCancellationToken -Type Cancellation, Dump
     }
 }
 
@@ -273,7 +273,7 @@ function Invoke-PodeDumpInternal {
     The function uses an embedded C# class to handle the `DebuggerStop` event. This class attaches and detaches the debugger and processes commands in the stopped state.
     The collected variables are returned as a `PSObject`.
 #>
-function Get-PodeRunspaceVariablesViaDebugger {
+function Suspend-PodeRunspace {
     param (
         [Parameter(Mandatory = $true)]
         [System.Management.Automation.Runspaces.Runspace]
@@ -285,57 +285,65 @@ function Get-PodeRunspaceVariablesViaDebugger {
 
         [Parameter(Mandatory = $true)]
         [int]
-        $NumberOfRunspaces
+        $NumberOfRunspaces,
+
+        [switch]
+        $CollectVariable
 
     )
+    try {
 
-    # Initialize variables collection
-    $variables = @(@{})
+        # Wait for the event to be triggered or timeout
+        Write-PodeHost "Waiting for $($Runspace.Name) to be suspended." -NoNewLine
 
-    for ($i = 0; $i -le 3; $i++) {
+        $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
+        Enable-RunspaceDebug -BreakAll -Runspace $Runspace
 
-        try {
+        # Wait for the event to be triggered or timeout
+        $startTime = [DateTime]::UtcNow
+        Start-Sleep -Milliseconds 500
 
+        Write-PodeHost '.' -NoNewLine
 
-            # Wait for the event to be triggered or timeout
-            Write-PodeHost "Waiting for $($Runspace.Name) to enter in debug ." -NoNewLine
-
-            $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
-            Enable-RunspaceDebug -BreakAll -Runspace $Runspace
-
-            # Wait for the event to be triggered or timeout
-            $startTime = [DateTime]::UtcNow
-            Start-Sleep -Milliseconds 500
-
+        while (!$debugger.IsEventTriggered) {
+            Start-Sleep -Milliseconds 1000
             Write-PodeHost '.' -NoNewLine
-
-            while (!$debugger.IsEventTriggered) {
-                Start-Sleep -Milliseconds 1000
-                Write-PodeHost '.' -NoNewLine
-                if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
-                    Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
-                    return $variables[0]
-                }
+            if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
+                Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
+                if ( $CollectVariable) { return @{} }else { return $false }
             }
+        }
+        Write-PodeHost 'Done'
+        if ( $CollectVariable) {
+            # Return the collected variables
             return $debugger.Variables
         }
-        catch {
-            # Log the error details using Write-PodeErrorLog.
-            # This ensures that any exceptions thrown during the execution are logged appropriately.
-            $_ | Write-PodeErrorLog
+        else {
+            return $true
         }
-        finally {
-            # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
-            if ($null -ne $debugger) {
-                $debugger.Dispose()
-            }
-
+    }
+    catch {
+        # Log the error details using Write-PodeErrorLog.
+        # This ensures that any exceptions thrown during the execution are logged appropriately.
+        $_ | Write-PodeErrorLog
+    }
+    finally {
+        # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
+        if ($null -ne $debugger) {
+            $debugger.Dispose()
+        }
+        if ($CollectVariable) {
             # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
             Disable-RunspaceDebug -Runspace $Runspace
         }
     }
 
-    return $variables[0]
+    if ( $CollectVariable) {
+        return @{}
+    }
+    else {
+        return $false
+    }
 }
 
 
@@ -496,269 +504,47 @@ function Initialize-PodeDebugHandler {
     }
 }
 
-function Send-PodeTelnetCommand {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$ServerUri, # Server URI in the format tcp://hostname:port or tcps://hostname:port
-
-        [Parameter(Mandatory = $true)]
-        [string]$Command, # The string command to send (e.g., "HELO domain.com")
-
-        [int]$Timeout = 2000      # Timeout in milliseconds
-    )
-
-    try {
-        # Parse the ServerUri to extract the host and port
-        $uri = [System.Uri]::new($ServerUri)
-        if ($uri.Scheme -notin @('tcp', 'tcps')) {
-            Write-Verbose "Invalid URI scheme. Expected 'tcp://' or 'tcps://', but got '$($uri.Scheme)://'."
-            return
-        }
-        $server = $uri.Host
-        $port = $uri.Port
-
-        # Create a TCP client and connect to the server
-        $tcpClient = [System.Net.Sockets.TcpClient]::new()
-        $tcpClient.Connect($server, $port)
-        $tcpClient.ReceiveTimeout = $Timeout
-        $tcpClient.SendTimeout = $Timeout
-
-        # Get the network stream
-        $stream = $tcpClient.GetStream()
-
-        # Wrap the stream in SslStream for TCPS connections
-        if ($uri.Scheme -eq 'tcps') {
-            $sslStream = [System.Net.Security.SslStream]::new($stream, $false, { $true }) # Simple certificate validation
-            $sslStream.AuthenticateAsClient($server)
-            $stream = $sslStream
-        }
-
-        # Create a stream writer and reader for the connection
-        $writer = [System.IO.StreamWriter]::new($stream)
-        $reader = [System.IO.StreamReader]::new($stream)
-
-        # Send the command
-        Write-Verbose "Sending command: $Command"
-        $writer.WriteLine($Command)
-        $writer.Flush()
-
-        # Read the response
-        $response = @()
-        while ($reader.Peek() -ge 0) {
-            $response += $reader.ReadLine()
-        }
-
-        # Close the connection
-        $writer.Close()
-        $reader.Close()
-        $stream.Close()
-        $tcpClient.Close()
-
-        # Return the response
-        return $response -join "`n"
-    }
-    catch {
-        Write-Verbose "An error occurred: $_"
-    }
-}
 
 
 
-function Send-PodeWebSocketMessage {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Message,
 
-        [Parameter(Mandatory = $true)]
-        [string]
-        $ServerUri
-    )
+<#
+.SYNOPSIS
+    Waits for Pode suspension or dump cancellation tokens to be reset.
 
-    # Load the WebSocket Client
-    # Add-Type -AssemblyName System.Net.Http
+.DESCRIPTION
+    The `Test-PodeSuspensionToken` function checks the status of cancellation tokens in the `$PodeContext`.
+    It enters a loop to wait for the `Suspend` or `Dump` cancellation tokens to be reset before proceeding.
+    Each loop iteration includes a 1-second delay to minimize resource usage.
+    Returns a boolean indicating whether the suspension or dump was initially requested.
 
-    # Initialize the WebSocket client
-    $clientWebSocket = [System.Net.WebSockets.ClientWebSocket]::new()
+.PARAMETER None
+    This function does not accept any parameters.
 
-    try {
-        # Connect to the WebSocket server
-        Write-Verbose "Connecting to WebSocket server at $ServerUri..."
-        $clientWebSocket.ConnectAsync([uri]::new($ServerUri), [System.Threading.CancellationToken]::None).Wait()
-        Write-Verbose 'Connected to WebSocket server.'
+.EXAMPLE
+    Test-PodeSuspensionToken
 
-        # Convert the message to bytes
-        $buffer = [System.Text.Encoding]::UTF8.GetBytes($Message)
-        $segment = [System.ArraySegment[byte]]::new($buffer)
+    Waits for the suspension or dump tokens to be reset in the Pode context.
 
-        # Send the message
-        Write-Verbose "Sending message: $Message"
-        $clientWebSocket.SendAsync($segment, [System.Net.WebSockets.WebSocketMessageType]::Text, $true, [System.Threading.CancellationToken]::None).Wait()
-        Write-Verbose 'Message sent successfully.'
+.OUTPUTS
+    [bool] - Indicates whether either the suspension or dump was initially requested.
 
-        # Optional: Receive a response (if expected)
-        $responseBuffer = [byte[]]::new( 1024)
-        $responseSegment = [System.ArraySegment[byte]]::new($responseBuffer)
-        $result = $clientWebSocket.ReceiveAsync($responseSegment, [System.Threading.CancellationToken]::None).Result
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeSuspensionToken {
+    # Check if either Suspend or Dump tokens are initially requested
+    $suspended = $PodeContext.Tokens.Suspend.IsCancellationRequested -or $PodeContext.Tokens.Dump.IsCancellationRequested
 
-        # Decode and display the response message
-        $responseMessage = [System.Text.Encoding]::UTF8.GetString($responseBuffer, 0, $result.Count)
-        Write-Verbose "Received response: $responseMessage"
-
-    }
-    catch {
-        Write-Error "An error occurred: $_"
-    }
-    finally {
-        # Close the WebSocket connection
-        try {
-            $clientWebSocket.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, 'Closing', [System.Threading.CancellationToken]::None).Wait()
-            Write-Verbose 'WebSocket connection closed.'
-        }
-        catch {
-            Write-Verbose "Failed to close WebSocket connection: $_"
-        }
-
-        # Dispose of the WebSocket client
-        $clientWebSocket.Dispose()
-    }
-}
-
-function  Send-PodeInterrupt {
-    param (
-        [string]
-        $Name
-    )
-
-    if ($Name.StartsWith('Pode_Web_Listener') ) {
-        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Web' -and !$_.Url.StartsWith('https') }).Url
-        if ($uri) {
-            if (  $uri -is [array]) {
-                $uri = $uri[0]
-            }
-            try {
-                Invoke-WebRequest -Uri $uri -ErrorAction SilentlyContinue > $null 2>&1
-            }
-            catch {
-                # Suppress any exceptions
-                Write-Verbose -Message $_
-            }
-        }
-        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Web' -and $_.Url.StartsWith('https') }).Url
-        if ($uri) {
-            if (  $uri -is [array]) {
-                $uri = $uri[0]
-            }
-            try {
-                Invoke-WebRequest -Uri $uri -SkipCertificateCheck -ErrorAction SilentlyContinue > $null 2>&1
-            }
-            catch {
-                # Suppress any exceptions
-                Write-Verbose -Message $_
-            }
-        }
-    }
-    elseif ($Name.StartsWith('Pode_Smtp_Listener')) {
-        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Smtp' }).Url
-
-        if ($uri) {
-            if (  $uri -is [array]) {
-                $uri = $uri[0]
-            }
-            Send-PodeTelnetCommand -ServerUri  $uri -command   "HELO domain.com`n"
-        }
-    }
-    elseif ($Name.StartsWith('Pode_Tcp_Listener')) {
-        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Tcp' }).Url
-        if ($uri) {
-            if (  $uri -is [array]) {
-                $uri = $uri[0]
-            }
-            Send-PodeTelnetCommand -ServerUri  $uri -command "`n"
-        }
-
-    }
-    elseif ($Name.StartsWith('Pode_Signals_Broadcaster')) {
-        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Signals' }).Url
-        if ($uri) {
-            if (  $uri -is [array]) {
-                $uri = $uri[0]
-            }
-
-            Send-PodeWebSocketMessage -ServerUri  $uri  -Message '{"message":"Broadcast from PowerShell!"}'
-        }
-
-    }
-    elseif ( $Name.StartsWith('Pode_Signals_Listener')) {
-        $uri = $PodeContext.Server.EndpointsInfo.Where({ $_.Pool -eq 'Signals' }).Url
-        if ($uri) {
-            if (  $uri -is [array]) {
-                $uri = $uri[0]
-            }
-            #  $newuri = 'http' + $uri.Substring(2) #deal with both http and https
-            try {
-                #    Invoke-WebRequest -Uri $newuri  -ErrorAction SilentlyContinue -SkipCertificateCheck > $null 2>&1
-
-
-                Send-PodeWebSocketMessage -ServerUri  $uri  -Message '{"message":"Broadcast from PowerShell!"}'
-            }
-            catch {
-                # Suppress any exceptions
-                Write-Verbose -Message $_
-            }
-        }
-
-    }
-    else {
-        return $false
+    # Wait for the Suspend token to be reset
+    while ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
+        Start-Sleep -Seconds 1
     }
 
-    Return $true
-}
-
-
-function Suspend-PodeRunspace {
-    param (
-        $Runspace
-    )
-
-    # Attach the debugger and break all
-    $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
-    Enable-RunspaceDebug -BreakAll -Runspace $Runspace
-    #  Start-Sleep -Milliseconds 500
-    #  Enable-RunspaceDebug -BreakAll -Runspace $Runspace
-
-    # Wait for the event to be triggered or timeout
-    $startTime = [DateTime]::UtcNow
-    Start-Sleep -Milliseconds 500
-    #  Write-PodeHost '..' -NoNewLine
-
-    #Send-PodeInterrupt -Name $Runspace.Name
-
-    Write-PodeHost '.' -NoNewLine
-
-    while (!$debugger.IsEventTriggered) {
-        Start-Sleep -Milliseconds 1000
-
-        <#     if (([int]([DateTime]::UtcNow - $startTime).TotalSeconds) % 5 -eq 0) {
-            if (Send-PodeInterrupt -Name $Runspace.Name) {
-                Write-PodeHost '*' -NoNewLine
-            }
-            else {
-                Write-PodeHost '.' -NoNewLine
-            }
-        }
-        else {
-            Write-PodeHost '.' -NoNewLine
-        }#>
-        Write-PodeHost '.' -NoNewLine
-        if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
-            Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
-            return $false
-        }
+    # Wait for the Dump token to be reset
+    while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
+        Start-Sleep -Seconds 1
     }
-
-    Write-PodeHost 'Done'
-    return $true
+    # Return whether suspension or dump was initially requested
+    return $suspended
 }

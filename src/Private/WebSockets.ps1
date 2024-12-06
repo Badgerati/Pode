@@ -51,66 +51,63 @@ function Start-PodeWebSocketRunspace {
             $ThreadId
         )
 
-        try {
-            while ($Receiver.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+        do {
+            try {
+                while ($Receiver.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                    # get request
+                    $request = (Wait-PodeTask -Task $Receiver.GetWebSocketRequestAsync($PodeContext.Tokens.Cancellation.Token))
 
-                while ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                write-podehost 'checking for PodeContext.Tokens.Dump.IsCancellationRequested'
-                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                # get request
-                $request = (Wait-PodeTask -Task $Receiver.GetWebSocketRequestAsync($PodeContext.Tokens.Cancellation.Token))
-
-                try {
                     try {
-                        $WsEvent = @{
-                            Request   = $request
-                            Data      = $null
-                            Files     = $null
-                            Lockable  = $PodeContext.Threading.Lockables.Global
-                            Timestamp = [datetime]::UtcNow
-                            Metadata  = @{}
+                        try {
+                            $WsEvent = @{
+                                Request   = $request
+                                Data      = $null
+                                Files     = $null
+                                Lockable  = $PodeContext.Threading.Lockables.Global
+                                Timestamp = [datetime]::UtcNow
+                                Metadata  = @{}
+                            }
+
+                            # find the websocket definition
+                            $websocket = Find-PodeWebSocket -Name $request.WebSocket.Name
+                            if ($null -eq $websocket.Logic) {
+                                continue
+                            }
+
+                            # parse data
+                            $result = ConvertFrom-PodeRequestContent -Request $request -ContentType $request.WebSocket.ContentType
+                            $WsEvent.Data = $result.Data
+                            $WsEvent.Files = $result.Files
+
+                            # invoke websocket script
+                            $null = Invoke-PodeScriptBlock -ScriptBlock $websocket.Logic -Arguments $websocket.Arguments -UsingVariables $websocket.UsingVariables -Scoped -Splat
                         }
-
-                        # find the websocket definition
-                        $websocket = Find-PodeWebSocket -Name $request.WebSocket.Name
-                        if ($null -eq $websocket.Logic) {
-                            continue
+                        catch [System.OperationCanceledException] {
+                            $_ | Write-PodeErrorLog -Level Debug
                         }
-
-                        # parse data
-                        $result = ConvertFrom-PodeRequestContent -Request $request -ContentType $request.WebSocket.ContentType
-                        $WsEvent.Data = $result.Data
-                        $WsEvent.Files = $result.Files
-
-                        # invoke websocket script
-                        $null = Invoke-PodeScriptBlock -ScriptBlock $websocket.Logic -Arguments $websocket.Arguments -UsingVariables $websocket.UsingVariables -Scoped -Splat
+                        catch {
+                            $_ | Write-PodeErrorLog
+                            $_.Exception | Write-PodeErrorLog -CheckInnerException
+                        }
                     }
-                    catch [System.OperationCanceledException] {
-                        $_ | Write-PodeErrorLog -Level Debug
+                    finally {
+                        $WsEvent = $null
+                        Close-PodeDisposable -Disposable $request
                     }
-                    catch {
-                        $_ | Write-PodeErrorLog
-                        $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    }
-                }
-                finally {
-                    $WsEvent = $null
-                    Close-PodeDisposable -Disposable $request
                 }
             }
-        }
-        catch [System.OperationCanceledException] {
-            $_ | Write-PodeErrorLog -Level Debug
-        }
-        catch {
-            $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
-        }
+            catch [System.OperationCanceledException] {
+                $_ | Write-PodeErrorLog -Level Debug
+            }
+            catch {
+                $_ | Write-PodeErrorLog
+                $_.Exception | Write-PodeErrorLog -CheckInnerException
+                throw $_.Exception
+            }
+
+            # end do-while
+        } while (Test-PodeSuspensionToken) # Check for suspension or dump tokens and wait for the debugger to reset if active
+
     }
 
     # start the runspace for listening on x-number of threads
@@ -128,13 +125,6 @@ function Start-PodeWebSocketRunspace {
 
         try {
             while ($Receiver.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
-                while ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                write-podehost 'checking for PodeContext.Tokens.Dump.IsCancellationRequested'
-                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
                 Start-Sleep -Seconds 1
             }
 

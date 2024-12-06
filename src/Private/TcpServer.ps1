@@ -85,118 +85,117 @@ function Start-PodeTcpServer {
             $ThreadId
         )
 
-        try {
-            while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
-                while ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                # get email
-                $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
+        do {
+            try {
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                    # get email
+                    $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
-                try {
                     try {
-                        $Request = $context.Request
-                        $Response = $context.Response
+                        try {
+                            $Request = $context.Request
+                            $Response = $context.Response
 
-                        $TcpEvent = @{
-                            Response   = $Response
-                            Request    = $Request
-                            Lockable   = $PodeContext.Threading.Lockables.Global
-                            Endpoint   = @{
-                                Protocol = $Request.Scheme
-                                Address  = $Request.Address
-                                Name     = $context.EndpointName
+                            $TcpEvent = @{
+                                Response   = $Response
+                                Request    = $Request
+                                Lockable   = $PodeContext.Threading.Lockables.Global
+                                Endpoint   = @{
+                                    Protocol = $Request.Scheme
+                                    Address  = $Request.Address
+                                    Name     = $context.EndpointName
+                                }
+                                Parameters = $null
+                                Timestamp  = [datetime]::UtcNow
+                                Metadata   = @{}
                             }
-                            Parameters = $null
-                            Timestamp  = [datetime]::UtcNow
-                            Metadata   = @{}
-                        }
 
-                        # stop now if the request has an error
-                        if ($Request.IsAborted) {
-                            throw $Request.Error
-                        }
+                            # stop now if the request has an error
+                            if ($Request.IsAborted) {
+                                throw $Request.Error
+                            }
 
-                        # convert the ip
-                        $ip = (ConvertTo-PodeIPAddress -Address $Request.RemoteEndPoint)
+                            # convert the ip
+                            $ip = (ConvertTo-PodeIPAddress -Address $Request.RemoteEndPoint)
 
-                        # ensure the request ip is allowed
-                        if (!(Test-PodeIPAccess -IP $ip)) {
-                            $Response.WriteLine('Your IP address was rejected', $true)
-                            Close-PodeTcpClient
-                            continue
-                        }
+                            # ensure the request ip is allowed
+                            if (!(Test-PodeIPAccess -IP $ip)) {
+                                $Response.WriteLine('Your IP address was rejected', $true)
+                                Close-PodeTcpClient
+                                continue
+                            }
 
-                        # has the ip hit the rate limit?
-                        if (!(Test-PodeIPLimit -IP $ip)) {
-                            $Response.WriteLine('Your IP address has hit the rate limit', $true)
-                            Close-PodeTcpClient
-                            continue
-                        }
+                            # has the ip hit the rate limit?
+                            if (!(Test-PodeIPLimit -IP $ip)) {
+                                $Response.WriteLine('Your IP address has hit the rate limit', $true)
+                                Close-PodeTcpClient
+                                continue
+                            }
 
-                        # deal with tcp call and find the verb, and for the endpoint
-                        if ([string]::IsNullOrEmpty($TcpEvent.Request.Body)) {
-                            continue
-                        }
+                            # deal with tcp call and find the verb, and for the endpoint
+                            if ([string]::IsNullOrEmpty($TcpEvent.Request.Body)) {
+                                continue
+                            }
 
-                        $verb = Find-PodeVerb -Verb $TcpEvent.Request.Body -EndpointName $TcpEvent.Endpoint.Name
-                        if ($null -eq $verb) {
-                            $verb = Find-PodeVerb -Verb '*' -EndpointName $TcpEvent.Endpoint.Name
-                        }
+                            $verb = Find-PodeVerb -Verb $TcpEvent.Request.Body -EndpointName $TcpEvent.Endpoint.Name
+                            if ($null -eq $verb) {
+                                $verb = Find-PodeVerb -Verb '*' -EndpointName $TcpEvent.Endpoint.Name
+                            }
 
-                        if ($null -eq $verb) {
-                            continue
-                        }
+                            if ($null -eq $verb) {
+                                continue
+                            }
 
-                        # set the route parameters
-                        if ($verb.Verb -ine '*') {
-                            $TcpEvent.Parameters = @{}
-                            if ($TcpEvent.Request.Body -imatch "$($verb.Verb)$") {
-                                $TcpEvent.Parameters = $Matches
+                            # set the route parameters
+                            if ($verb.Verb -ine '*') {
+                                $TcpEvent.Parameters = @{}
+                                if ($TcpEvent.Request.Body -imatch "$($verb.Verb)$") {
+                                    $TcpEvent.Parameters = $Matches
+                                }
+                            }
+
+                            # invoke it
+                            if ($null -ne $verb.Logic) {
+                                $null = Invoke-PodeScriptBlock -ScriptBlock $verb.Logic -Arguments $verb.Arguments -UsingVariables $verb.UsingVariables -Scoped -Splat
+                            }
+
+                            # is the verb auto-close?
+                            if ($verb.Connection.Close) {
+                                Close-PodeTcpClient
+                                continue
+                            }
+
+                            # is the verb auto-upgrade to ssl?
+                            if ($verb.Connection.UpgradeToSsl) {
+                                $Request.UpgradeToSSL()
                             }
                         }
-
-                        # invoke it
-                        if ($null -ne $verb.Logic) {
-                            $null = Invoke-PodeScriptBlock -ScriptBlock $verb.Logic -Arguments $verb.Arguments -UsingVariables $verb.UsingVariables -Scoped -Splat
+                        catch [System.OperationCanceledException] {
+                            $_ | Write-PodeErrorLog -Level Debug
                         }
-
-                        # is the verb auto-close?
-                        if ($verb.Connection.Close) {
-                            Close-PodeTcpClient
-                            continue
-                        }
-
-                        # is the verb auto-upgrade to ssl?
-                        if ($verb.Connection.UpgradeToSsl) {
-                            $Request.UpgradeToSSL()
+                        catch {
+                            $_ | Write-PodeErrorLog
+                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
                     }
-                    catch [System.OperationCanceledException] {
-                        $_ | Write-PodeErrorLog -Level Debug
+                    finally {
+                        $TcpEvent = $null
+                        Close-PodeDisposable -Disposable $context
                     }
-                    catch {
-                        $_ | Write-PodeErrorLog
-                        $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    }
-                }
-                finally {
-                    $TcpEvent = $null
-                    Close-PodeDisposable -Disposable $context
                 }
             }
-        }
-        catch [System.OperationCanceledException] {
-            $_ | Write-PodeErrorLog -Level Debug
-        }
-        catch {
-            $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
-        }
+            catch [System.OperationCanceledException] {
+                $_ | Write-PodeErrorLog -Level Debug
+            }
+            catch {
+                $_ | Write-PodeErrorLog
+                $_.Exception | Write-PodeErrorLog -CheckInnerException
+                throw $_.Exception
+            }
+
+            # end do-while
+        } while (Test-PodeSuspensionToken) # Check for suspension or dump tokens and wait for the debugger to reset if active
+
     }
 
     # start the runspace for listening on x-number of threads
@@ -214,12 +213,6 @@ function Start-PodeTcpServer {
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
-                while ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
-                while ($PodeContext.Tokens.Dump.IsCancellationRequested) {
-                    Start-Sleep -Seconds 1
-                }
                 Start-Sleep -Seconds 1
             }
         }

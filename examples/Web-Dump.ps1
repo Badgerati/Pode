@@ -45,7 +45,7 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Https -SelfSigned
     Add-PodeEndpoint -Address localhost -Port 8083 -Protocol Http
-    #Add-PodeEndpoint -Address localhost -Port 8025 -Protocol Smtp
+    Add-PodeEndpoint -Address localhost -Port 8025 -Protocol Smtp
     Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws -Name 'WS1'
     Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Http -Name 'WS'
     Add-PodeEndpoint -Address localhost -Port 8100 -Protocol Tcp
@@ -95,11 +95,11 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
         } | Set-PodeOARouteInfo -Summary 'Dump state' -Description 'Dump the memory state of the server.' -Tags 'dump'  -OperationId 'dump'-PassThru |
             Set-PodeOARequest -Parameters (New-PodeOAStringProperty -Name 'format' -Description 'Dump export format.' -Enum 'json', 'clixml', 'txt', 'bin', 'yaml' -Default 'json' | ConvertTo-PodeOAParameter -In Query )
 
-            Add-PodeRoute -Method Get -Path '/task/async' -PassThru -ScriptBlock {
-                Invoke-PodeTask -Name 'Test' -ArgumentList @{ value = 'wizard' } | Out-Null
-                Write-PodeJsonResponse -Value @{ Result = 'jobs done' }
-            }| Set-PodeOARouteInfo -Summary 'Task'
-        }
+        Add-PodeRoute -Method Get -Path '/task/async' -PassThru -ScriptBlock {
+            Invoke-PodeTask -Name 'Test' -ArgumentList @{ value = 'wizard' } | Out-Null
+            Write-PodeJsonResponse -Value @{ Result = 'jobs done' }
+        } | Set-PodeOARouteInfo -Summary 'Task'
+    }
 
     Add-PodeVerb -Verb 'HELLO' -ScriptBlock {
         Write-PodeTcpClient -Message 'HI'
@@ -107,7 +107,7 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
     }
 
     # setup an smtp handler
-    <#   Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
+    Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
         Write-PodeHost '- - - - - - - - - - - - - - - - - -'
         Write-PodeHost $SmtpEvent.Email.From
         Write-PodeHost $SmtpEvent.Email.To
@@ -126,7 +126,7 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
         $SmtpEvent.Email.Headers | out-default
         Write-PodeHost '- - - - - - - - - - - - - - - - - -'
     }
-#>
+
     # GET request for web page
     Add-PodeRoute -Method Get -Path '/' -EndpointName 'WS' -ScriptBlock {
         Write-PodeViewResponse -Path 'websockets'
@@ -159,6 +159,16 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
         param($value)
         Start-PodeSleep -Seconds 10
         "a $($value) is comming" | Out-Default
+        Start-PodeSleep -Seconds 10
+        "a $($value) is comming...2" | Out-Default
+        Start-PodeSleep -Seconds 10
+        "a $($value) is comming...3" | Out-Default
+        Start-PodeSleep -Seconds 10
+        "a $($value) is comming...4" | Out-Default
+        Start-PodeSleep -Seconds 10
+        "a $($value) is comming...5" | Out-Default
+        Start-PodeSleep -Seconds 10
+        "a $($value) is comming...6" | Out-Default
         Start-PodeSleep -Seconds 100
         "a $($value) is never late, it arrives exactly when it means to" | Out-Default
     }

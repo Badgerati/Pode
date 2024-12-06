@@ -244,27 +244,13 @@ function Start-PodeServer {
                     Clear-PodeKeyPressed
                     Restart-PodeInternalServer
                 }
-
-                if (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
+                elseif (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
                     Clear-PodeKeyPressed
                     Invoke-PodeDump
                     Invoke-PodeDumpInternal -Format $PodeContext.Server.Debug.Dump.Format -Path $PodeContext.Server.Debug.Dump.Path  -MaxDepth $PodeContext.Server.Debug.Dump.MaxDepth
                 }
-
-                if (($PodeContext.Tokens.Suspend.IsCancellationRequested) -or ($PodeContext.Tokens.Resume.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
-                    Clear-PodeKeyPressed
-                    if ( $PodeContext.Server.Suspended) {
-                        Resume-PodeServer
-                        Resume-PodeServerInternal
-                    }
-                    else {
-                        Suspend-PodeServer
-                        Suspend-PodeServerInternal
-                    }
-                }
-
                 # check for open browser
-                if (Test-PodeOpenBrowserPressed -Key $key) {
+                elseif (Test-PodeOpenBrowserPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $url = Get-PodeEndpointUrl
                     if (![string]::IsNullOrWhitespace($url)) {
@@ -272,40 +258,49 @@ function Start-PodeServer {
                         Start-Process $url
                     }
                 }
-
-                if ( Test-PodeHelpPressed -Key $key) {
+                elseif ( Test-PodeHelpPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.ShowHelp = !$PodeContext.Server.Console.ShowHelp
                     Show-PodeConsoleInfo -ShowHeader -ClearHost
                 }
-
-                if ( Test-PodeOpenAPIPressed -Key $key) {
+                elseif ( Test-PodeOpenAPIPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.ShowOpenAPI = !$PodeContext.Server.Console.ShowOpenAPI
                     Show-PodeConsoleInfo -ShowHeader -ClearHost
                 }
-
-                if ( Test-PodeEndpointsPressed -Key $key) {
+                elseif ( Test-PodeEndpointsPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.ShowEndpoints = !$PodeContext.Server.Console.ShowEndpoints
                     Show-PodeConsoleInfo -ShowHeader -ClearHost
                 }
-
-                if ( Test-PodeClearPressed -Key $key) {
+                elseif ( Test-PodeClearPressed -Key $key) {
                     Clear-PodeKeyPressed
                     Show-PodeConsoleInfo -ShowHeader -ClearHost
                 }
-
-                if ( Test-PodeQuietPressed -Key $key) {
+                elseif ( Test-PodeQuietPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.Quiet = !$PodeContext.Server.Console.Quiet
                     Show-PodeConsoleInfo -ShowHeader -ClearHost -Force
                 }
-
-                if ( Test-PodeTerminationPressed -Key $key) {
+                elseif ( Test-PodeTerminationPressed -Key $key) {
                     Clear-PodeKeyPressed
                     break
                 }
+                elseif ( $PodeContext.Server.Suspended) {
+                    if (($PodeContext.Tokens.Resume.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
+                        Clear-PodeKeyPressed
+                        Resume-PodeServer
+                        Resume-PodeServerInternal
+                    }
+                }
+                else {
+                    if ( ($PodeContext.Tokens.Suspend.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
+                        Clear-PodeKeyPressed
+                        Suspend-PodeServer
+                        Suspend-PodeServerInternal
+                    }
+                }
+
             }
 
             if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Shutdown) {
@@ -405,8 +400,15 @@ function Resume-PodeServer {
     [CmdletBinding()]
     param()
     if ( $PodeContext.Server.Suspended) {
-        $PodeContext.Tokens.Resume.Cancel()
-        $PodeContext.Tokens.Cancellation.Cancel()
+        if (!$PodeContext.Tokens.Resume.IsCancellationRequested) {
+            $PodeContext.Tokens.Resume.Cancel()
+        }
+        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            Reset-PodeCancellationToken -Type Cancellation
+        }
+        if ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
+            Reset-PodeCancellationToken -Type Suspend
+        }
     }
 }
 
@@ -428,8 +430,12 @@ function Suspend-PodeServer {
     [CmdletBinding()]
     param()
     if (! $PodeContext.Server.Suspended) {
-        $PodeContext.Tokens.Cancellation.Cancel()
-        $PodeContext.Tokens.Suspend.Cancel()
+        if (!$PodeContext.Tokens.Suspend.IsCancellationRequested) {
+            $PodeContext.Tokens.Suspend.Cancel()
+        }
+        if (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            $PodeContext.Tokens.Cancellation.Cancel()
+        }
     }
 }
 
