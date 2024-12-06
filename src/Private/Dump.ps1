@@ -162,19 +162,39 @@ function Invoke-PodeDumpInternal {
         } | Sort-Object Name
 
 
+
         $runspaceDetails = @{}
+        # Initialize the master progress bar
+        $runspaceCount = $runspaces.Count
+        $currentRunspaceIndex = 0
+        $masterActivityId = (Get-Random) # Unique ID for master progress
+
         foreach ($r in $runspaces) {
+            # Update master progress bar
+            $currentRunspaceIndex++
+            $masterPercentComplete = [math]::Round(($currentRunspaceIndex / $runspaceCount) * 100)
+
+            Write-Progress -Activity 'Suspending Runspaces' `
+                -Status "Processing runspace $($currentRunspaceIndex) of $($runspaceCount): $($r.Name)" `
+                -PercentComplete $masterPercentComplete `
+                -Id $masterActivityId
+
+            # Call Suspend-PodeRunspace with nested child progress bar
             $runspaceDetails[$r.Name] = @{
                 Id                  = $r.Id
                 Name                = @{
                     $r.Name = @{
-                        ScopedVariables = Suspend-PodeRunspace -Runspace $r -NumberOfRunspaces $runspaces.Count
+                        ScopedVariables = Suspend-PodeRunspace -Runspace $r -ParentActivityId $masterActivityId -CollectVariable
                     }
                 }
                 InitialSessionState = $r.InitialSessionState
                 RunspaceStateInfo   = $r.RunspaceStateInfo
             }
         }
+
+        # Clear master progress bar once all runspaces are processed
+        Write-Progress -Activity 'Suspending Runspaces' -Completed -Id $masterActivityId
+
 
         if ($null -ne $PodeContext.RunspacePools) {
             foreach ($poolName in $PodeContext.RunspacePools.Keys) {
@@ -258,9 +278,6 @@ function Invoke-PodeDumpInternal {
 .PARAMETER Timeout
     The maximum time (in seconds) to wait for the debugger stop event to be triggered. Defaults to 60 seconds.
 
-.PARAMETER NumberOfRunspaces
-    The total numebr of Runspaces to collect.
-
 .EXAMPLE
     $runspace = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace()
     $runspace.Open()
@@ -281,40 +298,57 @@ function Suspend-PodeRunspace {
 
         [Parameter()]
         [int]
-        $Timeout = 60,
+        $Timeout = 30,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [int]
-        $NumberOfRunspaces,
+        $ParentActivityId,
 
         [switch]
         $CollectVariable
-
     )
+
     try {
-
-        # Wait for the event to be triggered or timeout
-        Write-PodeHost "Waiting for $($Runspace.Name) to be suspended." -NoNewLine
-
+        # Initialize debugger
         $debugger = [Pode.Embedded.DebuggerHandler]::new($Runspace)
         Enable-RunspaceDebug -BreakAll -Runspace $Runspace
 
-        # Wait for the event to be triggered or timeout
+        # Initialize progress bar variables
         $startTime = [DateTime]::UtcNow
-        Start-Sleep -Milliseconds 500
+        $elapsedTime = 0
+        $childActivityId = (Get-Random) # Unique ID for child progress bar
 
-        Write-PodeHost '.' -NoNewLine
+        # Initial progress bar display
+        Write-Progress -Activity "Suspending Runspace $($Runspace.Name)" `
+            -Status 'Waiting for suspension...' `
+            -PercentComplete 0 `
+            -Id $childActivityId `
+            -ParentId $ParentActivityId
 
         while (!$debugger.IsEventTriggered) {
-            Start-Sleep -Milliseconds 1000
-            Write-PodeHost '.' -NoNewLine
-            if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
+            # Update elapsed time and progress
+            $elapsedTime = ([DateTime]::UtcNow - $startTime).TotalSeconds
+            $percentComplete = [math]::Min(($elapsedTime / $Timeout) * 100, 100)
+
+            Write-Progress -Activity "Suspending Runspace $($Runspace.Name)" `
+                -Status 'Waiting for suspension...' `
+                -PercentComplete $percentComplete `
+                -Id $childActivityId `
+                -ParentId $ParentActivityId
+
+            # Check for timeout
+            if ($elapsedTime -ge $Timeout) {
+                Write-Progress -Completed -Id $childActivityId
                 Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
-                if ( $CollectVariable) { return @{} }else { return $false }
+                if ($CollectVariable) { return @{} } else { return $false }
             }
+
+            Start-Sleep -Milliseconds 1000
         }
-        Write-PodeHost 'Done'
-        if ( $CollectVariable) {
+
+        # Completion message
+        Write-Progress -Completed -Id $childActivityId
+        if ($CollectVariable) {
             # Return the collected variables
             return $debugger.Variables
         }
@@ -323,28 +357,29 @@ function Suspend-PodeRunspace {
         }
     }
     catch {
-        # Log the error details using Write-PodeErrorLog.
-        # This ensures that any exceptions thrown during the execution are logged appropriately.
+        # Log the error details using Write-PodeErrorLog for troubleshooting.
         $_ | Write-PodeErrorLog
     }
     finally {
-        # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
+        # Clean up debugger resources and disable debugging
         if ($null -ne $debugger) {
             $debugger.Dispose()
         }
         if ($CollectVariable) {
-            # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
             Disable-RunspaceDebug -Runspace $Runspace
         }
     }
 
-    if ( $CollectVariable) {
-        return @{}
+    # Fallback returns for unhandled scenarios
+    if ($CollectVariable) {
+        return @{ }
     }
     else {
         return $false
     }
 }
+
+
 
 
 <#

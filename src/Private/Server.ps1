@@ -518,11 +518,24 @@ function Suspend-PodeServerInternal {
 
         # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
         $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Task*' } | Sort-Object Name
+        # Initialize the master progress bar
+        $runspaceCount = $runspaces.Count
+        $currentRunspaceIndex = 0
+        $masterActivityId = (Get-Random) # Unique ID for master progress
+        foreach ($r in $runspaces) {
+            # Update master progress bar
+            $currentRunspaceIndex++
+            $masterPercentComplete = [math]::Round(($currentRunspaceIndex / $runspaceCount) * 100)
 
-        foreach ($runspace in $runspaces) {
+            Write-Progress -Activity 'Suspending Runspaces' `
+                -Status "Processing runspace $($currentRunspaceIndex) of $($runspaceCount): $($r.Name)" `
+                -PercentComplete $masterPercentComplete `
+                -Id $masterActivityId
             # Suspend the runspace
-            $null = Suspend-PodeRunspace -Runspace $Runspace -NumberOfRunspaces $runspaces.Count
+            $null = Suspend-PodeRunspace -Runspace $r  -ParentActivityId $masterActivityId
         }
+        # Clear master progress bar once all runspaces are processed
+        Write-Progress -Activity 'Suspending Runspaces' -Completed -Id $masterActivityId
 
         # Short pause before refreshing the console
         Start-Sleep -Seconds 2
