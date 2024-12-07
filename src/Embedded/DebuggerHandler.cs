@@ -79,7 +79,7 @@ namespace Pode.Embedded
             var command = new PSCommand();
             command.AddCommand(_collectVariables
                 ? "Get-PodeDumpScopedVariable"
-                : "while($PodeContext.Server.Suspended) { Start-Sleep -Milliseconds 500 }");
+                : "while($PodeContext.Tokens.Suspend.IsCancellationRequested) { Start-Sleep -Milliseconds 500 }; Continue");
 
             // Execute the command within the debugger
             var outputCollection = new PSDataCollection<PSObject>();

@@ -194,6 +194,9 @@ function Invoke-PodeDumpInternal {
 
         # Clear master progress bar once all runspaces are processed
         Write-Progress -Activity 'Suspending Runspaces' -Completed -Id $masterActivityId
+       # $outputCollection = [System.Management.Automation.PSDataCollection[psobject]]::new()
+        # $cmd=[System.Management.Automation.PSCommand]::new().AddCommand('Continue')
+        # $p.Debugger.ProcessCommand($cmd,$outputCollection)
 
 
         if ($null -ne $PodeContext.RunspacePools) {
@@ -256,6 +259,8 @@ function Invoke-PodeDumpInternal {
         }
 
         Write-PodeHost -ForegroundColor Yellow "Memory dump saved to $dumpFilePath"
+
+        Get-Runspace
     }
     end {
 
@@ -361,10 +366,13 @@ function Suspend-PodeRunspace {
         $_ | Write-PodeErrorLog
     }
     finally {
+        Start-Sleep 1
         # Clean up debugger resources and disable debugging
         if ($null -ne $debugger) {
+
             $debugger.Dispose()
         }
+
         if ($CollectVariable) {
             Disable-RunspaceDebug -Runspace $Runspace
         }
