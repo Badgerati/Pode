@@ -515,30 +515,85 @@ function Suspend-PodeServerInternal {
         # Update the server's suspended state
         $PodeContext.Server.Suspended = $true
         start-sleep 2
+        try {
+            # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
+            $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Tasks_*' -or $_.Name -like 'Pode_Schedules_*' } | Sort-Object Name
+            # Initialize the master progress bar
+            $runspaceCount = $runspaces.Count
+            $currentRunspaceIndex = 0
+            $masterActivityId = (Get-Random) # Unique ID for master progress
+            $runspaces | Foreach-Object {
 
-        # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
-        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Task*' } | Sort-Object Name
-        # Initialize the master progress bar
-        $runspaceCount = $runspaces.Count
-        $currentRunspaceIndex = 0
-        $masterActivityId = (Get-Random) # Unique ID for master progress
-        foreach ($r in $runspaces) {
-            # Update master progress bar
-            $currentRunspaceIndex++
-            $masterPercentComplete = [math]::Round(($currentRunspaceIndex / $runspaceCount) * 100)
+                $originalName = $_.Name
+                # Initialize progress bar variables
+                $startTime = [DateTime]::UtcNow
+                $elapsedTime = 0
+                $childActivityId = (Get-Random) # Unique ID for child progress bar
+                # Update master progress bar
+                $currentRunspaceIndex++
+                $masterPercentComplete = [math]::Round(($currentRunspaceIndex / $runspaceCount) * 100)
 
-            Write-Progress -Activity 'Suspending Runspaces' `
-                -Status "Processing runspace $($currentRunspaceIndex) of $($runspaceCount): $($r.Name)" `
-                -PercentComplete $masterPercentComplete `
-                -Id $masterActivityId
-            # Suspend the runspace
-            $null = Suspend-PodeRunspace -Runspace $r  -ParentActivityId $masterActivityId
+                Write-Progress -Activity 'Suspending Runspaces' `
+                    -Status "Processing runspace $($currentRunspaceIndex) of $($runspaceCount): $($_.Name)" `
+                    -PercentComplete $masterPercentComplete `
+                    -Id $masterActivityId
+                # Suspend the runspace
+                Enable-RunspaceDebug -BreakAll -Runspace $_
+                try {
+                    # Initial progress bar display
+                    Write-Progress -Activity "Suspending Runspace $($_.Name)" `
+                        -Status 'Waiting for suspension...' `
+                        -PercentComplete 0 `
+                        -Id $childActivityId `
+                        -ParentId $masterActivityId
+
+                    while (! $_.debugger.InBreakpoint) {
+                        # Update elapsed time and progress
+                        $elapsedTime = ([DateTime]::UtcNow - $startTime).TotalSeconds
+                        $percentComplete = [math]::Min(($elapsedTime / $Timeout) * 100, 100)
+
+                        Write-Progress -Activity "Suspending Runspace $($_.Name)" `
+                            -Status 'Waiting for suspension...' `
+                            -PercentComplete $percentComplete `
+                            -Id $childActivityId `
+                            -ParentId $masterActivityId
+
+                        if ($_.Name.StartsWith('_')) {
+                            Write-PodeHost "$originalName runspace has beed completed"
+                            Write-Progress -Completed -Id $childActivityId -ParentId $masterActivityId
+                            break
+                        }
+                        # Check for timeout
+                        if ($elapsedTime -ge $Timeout) {
+                            Write-Progress -Completed -Id $childActivityId -ParentId $masterActivityId
+                            Write-PodeHost "$($_.Name) failed (Timeout reached after $Timeout seconds.)"
+                            break
+                        }
+
+                        Start-Sleep -Milliseconds 1000
+                    }
+
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
+                finally {
+                    # Completion message
+                    Write-Progress -Completed -Id $childActivityId -ParentId $masterActivityId
+                    Start-Sleep -Milliseconds 1000
+                }
+            }
         }
-        # Clear master progress bar once all runspaces are processed
-        Write-Progress -Activity 'Suspending Runspaces' -Completed -Id $masterActivityId
+        catch {
+            $_ | Write-PodeErrorLog
+        }
+        finally {
+            # Clear master progress bar once all runspaces are processed
+            Write-Progress -Activity 'Suspending Runspaces' -Completed -Id $masterActivityId
+        }
 
         # Short pause before refreshing the console
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 1
 
         # Clear the host and display header information
         Show-PodeConsoleInfo -ShowHeader
@@ -580,14 +635,10 @@ function Resume-PodeServerInternal {
         $PodeContext.Server.Suspended = $false
 
         # Suspend briefly to ensure any required internal processes have time to stabilize
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 1
 
-        # Retrieve all runspaces related to Pode
-        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Task*' } | Sort-Object Name
-        foreach ($runspace in $runspaces) {
-            # Disable debugging for each runspace to restore normal execution
-            Disable-RunspaceDebug -Runspace $runspace
-        }
+        # Disable debugging for each runspace to restore normal execution
+        Get-Runspace | Where-Object { $_.Debugger.InBreakpoint } | Disable-RunspaceDebug
 
         # Inform user that the resume process is complete
         Write-PodeHost 'Done' -ForegroundColor Green

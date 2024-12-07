@@ -1541,7 +1541,7 @@ function Invoke-PodeDump {
         $ErrorRecord,
 
         [Parameter()]
-        [ValidateSet('JSON', 'CLIXML', 'TXT', 'BIN',  'YAML')]
+        [ValidateSet('JSON', 'CLIXML', 'TXT', 'BIN', 'YAML')]
         [string]
         $Format,
 
@@ -1557,7 +1557,54 @@ function Invoke-PodeDump {
 }
 
 
+<#
+.SYNOPSIS
+    A function to pause execution for a specified duration with an optional progress bar.
 
+.DESCRIPTION
+    The `Start-PodeSleep` function pauses script execution for a given duration specified in seconds, milliseconds, or a TimeSpan.
+    It includes an optional progress bar that displays the elapsed time and completion percentage.
+    The progress bar can also display a custom activity name and allows grouping with a ParentId.
+
+.PARAMETER Seconds
+    Specifies the duration to pause execution in seconds. Default is 1 second.
+
+.PARAMETER Milliseconds
+    Specifies the duration to pause execution in milliseconds.
+
+.PARAMETER Duration
+    Specifies the duration to pause execution using a TimeSpan object.
+
+.PARAMETER Activity
+    Specifies the activity name displayed in the progress bar. Default is "Sleeping...".
+
+.PARAMETER ParentId
+    Optional parameter to specify the ParentId for the progress bar, enabling hierarchical grouping.
+
+.PARAMETER ShowProgress
+    Switch to enable the progress bar during the sleep duration.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Start-PodeSleep -Seconds 5 -ShowProgress
+
+    Pauses execution for 5 seconds and displays a progress bar.
+
+.EXAMPLE
+    Start-PodeSleep -Milliseconds 3000 -ShowProgress -Activity "Processing Task" -ParentId 1
+
+    Pauses execution for 3000 milliseconds, showing a progress bar with the custom activity grouped under ParentId 1.
+
+.EXAMPLE
+    Start-PodeSleep -Duration (New-TimeSpan -Seconds 10) -ShowProgress -Activity "Running Script"
+
+    Pauses execution for 10 seconds using a TimeSpan object and displays a progress bar.
+
+.NOTES
+    This function is useful for scenarios where tracking the remaining wait time visually is helpful.
+#>
 function Start-PodeSleep {
     [CmdletBinding()]
     param (
@@ -1568,30 +1615,60 @@ function Start-PodeSleep {
         [int]$Milliseconds,
 
         [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Duration')]
-        [TimeSpan]$Duration
+        [TimeSpan]$Duration,
+
+        [Parameter(Position = 1, Mandatory = $false)]
+        [string]$Activity = "Sleeping...",
+
+        [Parameter(Mandatory = $false)]
+        [int]$ParentId,
+
+        [Parameter(Mandatory = $false)]
+        [Switch]$ShowProgress
     )
 
-    # Determine end time based on the parameter set
+    # Determine total duration and end time
     switch ($PSCmdlet.ParameterSetName) {
         'Seconds' {
-            $endTime = (Get-Date).AddSeconds($Seconds)
+            $totalDuration = [TimeSpan]::FromSeconds($Seconds)
         }
         'Milliseconds' {
-            $endTime = (Get-Date).AddMilliseconds($Milliseconds)
+            $totalDuration = [TimeSpan]::FromMilliseconds($Milliseconds)
         }
         'Duration' {
-            $endTime = (Get-Date).Add($Duration)
+            $totalDuration = $Duration
         }
     }
+    $endTime = (Get-Date).Add($totalDuration)
+
+    # Start the timer
+    $startTime = Get-Date
 
     while ((Get-Date) -lt $endTime) {
-        # Check if a debugger is attached
-       # if ($Host.Debugger.IsActive) {
-     #       Write-PodeHost "Debugger is attached. Waiting for interaction..."
-          #  Debugger # Trigger a breakpoint to allow interaction
-   #     }
+        if ($ShowProgress) {
+            # Calculate progress and build Write-Progress parameters
+            $progressParams = @{
+                Activity        = $Activity
+                Status          = "$([math]::Round((($(Get-Date) - $startTime).TotalMilliseconds / $totalDuration.TotalMilliseconds) * 100, 1))%"
+                PercentComplete = [math]::Min((($(Get-Date) - $startTime).TotalMilliseconds / $totalDuration.TotalMilliseconds) * 100, 100)
+            }
+            if ($ParentId) {
+                $progressParams.ParentId = $ParentId
+            }
+
+            # Write the progress with dynamic parameters
+            Write-Progress @progressParams
+        }
 
         # Sleep for a short duration to prevent high CPU usage
         Start-Sleep -Milliseconds 200
     }
+
+    # Clear the progress bar after completion
+    if ($ShowProgress) {
+        Write-Progress -Activity $Activity -Completed
+    }
 }
+
+
+

@@ -51,6 +51,8 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8100 -Protocol Tcp
     Add-PodeEndpoint -Address localhost -Port 9002 -Protocol Tcps -SelfSigned
 
+    Set-PodeTaskConcurrency -Maximum 10
+
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Html
 
@@ -103,7 +105,7 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
 
     Add-PodeVerb -Verb 'HELLO' -ScriptBlock {
         Write-PodeTcpClient -Message 'HI'
-        'here' | Out-Default
+        'here'
     }
 
     # setup an smtp handler
@@ -116,14 +118,14 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
         Write-PodeHost '|'
         # Write-PodeHost $SmtpEvent.Email.Data
         # Write-PodeHost '|'
-        $SmtpEvent.Email.Attachments | Out-Default
+        $SmtpEvent.Email.Attachments
         if ($SmtpEvent.Email.Attachments.Length -gt 0) {
             #$SmtpEvent.Email.Attachments[0].Save('C:\temp')
         }
         Write-PodeHost '|'
-        $SmtpEvent.Email | Out-Default
-        $SmtpEvent.Request | out-default
-        $SmtpEvent.Email.Headers | out-default
+        $SmtpEvent.Email
+        $SmtpEvent.Request
+        $SmtpEvent.Email.Headers
         Write-PodeHost '- - - - - - - - - - - - - - - - - -'
     }
 
@@ -158,20 +160,61 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
     Add-PodeTask -Name 'Test' -ScriptBlock {
         param($value)
         Start-PodeSleep -Seconds 10
-        "a $($value) is comming" | Out-Default
+        write-podehost  "a $($value) is comming"
         Start-PodeSleep -Seconds 10
-        "a $($value) is comming...2" | Out-Default
+        write-podehost  "a $($value) is comming...2"
         Start-PodeSleep -Seconds 10
-        "a $($value) is comming...3" | Out-Default
+        write-podehost  "a $($value) is comming...3"
         Start-PodeSleep -Seconds 10
-        "a $($value) is comming...4" | Out-Default
+        write-podehost  "a $($value) is comming...4"
         Start-PodeSleep -Seconds 10
-        "a $($value) is comming...5" | Out-Default
+        write-podehost  "a $($value) is comming...5"
         Start-PodeSleep -Seconds 10
-        "a $($value) is comming...6" | Out-Default
-        Start-PodeSleep -Seconds 100
-        "a $($value) is never late, it arrives exactly when it means to" | Out-Default
+        write-podehost "a $($value) is comming...6"
+        Start-PodeSleep -Seconds 10
+        write-podehost  "a $($value) is never late, it arrives exactly when it means to"
+    }
+    # schedule minutely using predefined cron
+    $message = 'Hello, world!'
+    Add-PodeSchedule -Name 'predefined' -Cron '@minutely' -Limit 2 -ScriptBlock {
+        param($Event, $Message1, $Message2)
+        $using:message | Out-Default
+        Get-PodeSchedule -Name 'predefined' | Out-Default
+        "Last: $($Event.Sender.LastTriggerTime)" | Out-Default
+        "Next: $($Event.Sender.NextTriggerTime)" | Out-Default
+        "Message1: $($Message1)" | Out-Default
+        "Message2: $($Message2)" | Out-Default
     }
 
+    Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './scripts/schedule.ps1'
+
+    # schedule defined using two cron expressions
+    Add-PodeSchedule -Name 'two-crons' -Cron @('0/3 * * * *', '0/5 * * * *') -ScriptBlock {
+        'double cron' | Out-Default
+        Get-PodeSchedule -Name 'two-crons' | Out-Default
+    }
+
+    # schedule to run every tuesday at midnight
+    Add-PodeSchedule -Name 'tuesdays' -Cron '0 0 * * TUE' -ScriptBlock {
+        # logic
+    }
+
+    # schedule to run every 5 past the hour, starting in 2hrs
+    Add-PodeSchedule -Name 'hourly-start' -Cron '5,7,9 * * * *' -ScriptBlock {
+        # logic
+    } -StartTime ([DateTime]::Now.AddHours(2))
+
+    # schedule to run every 10 minutes, and end in 2hrs
+    Add-PodeSchedule -Name 'every-10mins-end' -Cron '0/10 * * * *' -ScriptBlock {
+        # logic
+    } -EndTime ([DateTime]::Now.AddHours(2))
+
+    # adhoc invoke a schedule's logic
+    Add-PodeRoute -Method Get -Path '/api/run' -ScriptBlock {
+        Invoke-PodeSchedule -Name 'predefined' -ArgumentList @{
+            Message1 = 'Hello!'
+            Message2 = 'Bye!'
+        }
+    }
 
 }

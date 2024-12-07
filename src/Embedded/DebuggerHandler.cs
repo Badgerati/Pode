@@ -71,23 +71,19 @@ namespace Pode.Embedded
             {
                 return;
             }
-
-            // Enable step mode for command execution
-            debugger.SetDebuggerStepMode(true);
-
-            // Create the command to execute
-            var command = new PSCommand();
-            command.AddCommand(_collectVariables
-                ? "Get-PodeDumpScopedVariable"
-                : "while($PodeContext.Tokens.Suspend.IsCancellationRequested) { Start-Sleep -Milliseconds 500 }; Continue");
-
-            // Execute the command within the debugger
-            var outputCollection = new PSDataCollection<PSObject>();
-            debugger.ProcessCommand(command, outputCollection);
-
-            // Collect the variables if required
             if (_collectVariables)
             {
+                // Enable step mode for command execution
+                debugger.SetDebuggerStepMode(true);
+
+                // Create the command to execute
+                var command = new PSCommand();
+                command.AddCommand("Get-PodeDumpScopedVariable");
+                // Execute the command within the debugger
+                var outputCollection = new PSDataCollection<PSObject>();
+                debugger.ProcessCommand(command, outputCollection);
+
+                // Collect the variables if required
                 foreach (var output in outputCollection)
                 {
                     Variables.Add(output);

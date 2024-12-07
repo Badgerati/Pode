@@ -165,36 +165,46 @@ function Invoke-PodeDumpInternal {
 
         $runspaceDetails = @{}
         # Initialize the master progress bar
-        $runspaceCount = $runspaces.Count
+        $runspaceCount = $runspaces.Count + 1
         $currentRunspaceIndex = 0
-        $masterActivityId = (Get-Random) # Unique ID for master progress
+        $skipped = 0
+        $mainActivityId = (Get-Random) # Unique ID for master progress
+        try {
+            foreach ($r in $runspaces) {
+                try {
+                    # Update master progress bar
+                    $currentRunspaceIndex++
+                    $masterPercentComplete = [math]::Round(($currentRunspaceIndex / $runspaceCount) * 100)
 
-        foreach ($r in $runspaces) {
-            # Update master progress bar
-            $currentRunspaceIndex++
-            $masterPercentComplete = [math]::Round(($currentRunspaceIndex / $runspaceCount) * 100)
+                    Write-Progress -Activity 'Suspending Runspaces' `
+                        -Status "Processing runspace $($currentRunspaceIndex) of $($runspaceCount): $($r.Name)" `
+                        -PercentComplete $masterPercentComplete `
+                        -Id $mainActivityId
 
-            Write-Progress -Activity 'Suspending Runspaces' `
-                -Status "Processing runspace $($currentRunspaceIndex) of $($runspaceCount): $($r.Name)" `
-                -PercentComplete $masterPercentComplete `
-                -Id $masterActivityId
-
-            # Call Suspend-PodeRunspace with nested child progress bar
-            $runspaceDetails[$r.Name] = @{
-                Id                  = $r.Id
-                Name                = @{
-                    $r.Name = @{
-                        ScopedVariables = Suspend-PodeRunspace -Runspace $r -ParentActivityId $masterActivityId -CollectVariable
+                    # Call Suspend-PodeRunspace with nested child progress bar
+                    $runspaceDetails[$r.Name] = @{
+                        Id                  = $r.Id
+                        Name                = @{
+                            $r.Name = @{
+                                ScopedVariables = Suspend-PodeRunspace -Runspace $r -ParentActivityId $mainActivityId -CollectVariable
+                            }
+                        }
+                        InitialSessionState = $r.InitialSessionState
+                        RunspaceStateInfo   = $r.RunspaceStateInfo
                     }
                 }
-                InitialSessionState = $r.InitialSessionState
-                RunspaceStateInfo   = $r.RunspaceStateInfo
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
             }
         }
-
-        # Clear master progress bar once all runspaces are processed
-        Write-Progress -Activity 'Suspending Runspaces' -Completed -Id $masterActivityId
-       # $outputCollection = [System.Management.Automation.PSDataCollection[psobject]]::new()
+        finally {
+            Start-PodeSleep -Seconds 3 -ParentId $mainActivityId -ShowProgress
+            # Clear master progress bar once all runspaces are processed
+            Write-Progress -Activity 'Suspending Runspaces' -Completed -Id $mainActivityId
+            Write-Verbose "$skipped of $runspaceCount runspaces are not in a busy state"
+        }
+        # $outputCollection = [System.Management.Automation.PSDataCollection[psobject]]::new()
         # $cmd=[System.Management.Automation.PSCommand]::new().AddCommand('Continue')
         # $p.Debugger.ProcessCommand($cmd,$outputCollection)
 
@@ -343,19 +353,26 @@ function Suspend-PodeRunspace {
 
             # Check for timeout
             if ($elapsedTime -ge $Timeout) {
-                Write-Progress -Completed -Id $childActivityId
-                Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
+                Write-Progress -Completed -Id $childActivityId -ParentId $ParentActivityId
+                Write-PodeHost "$($Runspace.Name) failed (Timeout reached after $Timeout seconds.)"
                 if ($CollectVariable) { return @{} } else { return $false }
             }
 
             Start-Sleep -Milliseconds 1000
         }
-
-        # Completion message
-        Write-Progress -Completed -Id $childActivityId
         if ($CollectVariable) {
+            $r = $debugger.Variables
+            <#  $variables = [System.Management.Automation.PSDataCollection[psobject]]::new();
+            $outputCollection = [System.Management.Automation.PSDataCollection[psobject]]::new()
+            $cmd = [System.Management.Automation.PSCommand]::new().AddCommand('Get-PodeDumpScopedVariable')
+            $Runspace.Debugger.ProcessCommand($cmd, $outputCollection)
+
+            foreach ($output in $outputCollection)
+            {
+                $variables.Add($output)
+            }#>
             # Return the collected variables
-            return $debugger.Variables
+            return $r
         }
         else {
             return $true
@@ -376,6 +393,8 @@ function Suspend-PodeRunspace {
         if ($CollectVariable) {
             Disable-RunspaceDebug -Runspace $Runspace
         }
+        # Completion message
+        Write-Progress -Completed -Id $childActivityId
     }
 
     # Fallback returns for unhandled scenarios
