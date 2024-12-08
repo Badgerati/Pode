@@ -377,6 +377,14 @@ function New-PodeContext {
     #OpenApi Definition Tag
     $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
+
+    $ctx.Server.SuspensionState = @{
+        Suspended      = $false
+        SuspendTimeout = 30  # timeout in seconds
+        ResumeTimeout  = 30  # timeout in seconds
+    }
+
+
     # server metrics
     $ctx.Metrics = @{
         Server   = @{

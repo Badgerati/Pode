@@ -204,7 +204,7 @@ function Show-PodeConsoleInfo {
 
     if ($ShowHeader) {
 
-        if ($PodeContext.Server.Suspended) {
+        if ($PodeContext.Server.SuspensionState.Suspended) {
             $status = $Podelocale.suspendedMessage # Suspended
         }
         else {
@@ -220,7 +220,7 @@ function Show-PodeConsoleInfo {
         }
     }
 
-    if (!$PodeContext.Server.Suspended) {
+    if (!$PodeContext.Server.SuspensionState.Suspended) {
         if ($PodeContext.Server.Console.ShowEndpoints) {
             # state what endpoints are being listened on
             Show-PodeEndPointConsoleInfo -Force:$Force
@@ -232,14 +232,14 @@ function Show-PodeConsoleInfo {
     }
 
     if (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp) {
-        $resumeOrSuspend = $(if ($PodeContext.Server.Suspended) { $Podelocale.ResumeServerMessage } else { $Podelocale.SuspendServerMessage })
+        $resumeOrSuspend = $(if ($PodeContext.Server.SuspensionState.Suspended) { $Podelocale.ResumeServerMessage } else { $Podelocale.SuspendServerMessage })
         Write-PodeHost -Force:$Force
         Write-PodeHost $Podelocale.ServerControlCommandsTitle -ForegroundColor Green -Force:$Force
         Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor Cyan -Force:$Force
         Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor Cyan -Force:$Force
         Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor Cyan -Force:$Force
 
-        if ((Get-PodeEndpointUrl) -and !($PodeContext.Server.Suspended)) {
+        if ((Get-PodeEndpointUrl) -and !($PodeContext.Server.SuspensionState.Suspended)) {
             Write-PodeHost "    Ctrl+B   : $($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor Cyan -Force:$Force
         }
 
@@ -384,7 +384,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Metrics.Server.RestartCount++
 
         # Update the server's suspended state
-        $PodeContext.Server.Suspended = $false
+        $PodeContext.Server.SuspensionState.Suspended = $false
         Start-PodeInternalServer
     }
     catch {
@@ -471,7 +471,7 @@ function Suspend-PodeServerInternal {
         Invoke-PodeEvent -Type Suspend
 
         # Update the server's suspended state
-        $PodeContext.Server.Suspended = $true
+        $PodeContext.Server.SuspensionState.Suspended = $true
         start-sleep 1
         try {
             Write-Progress -Activity $PodeLocale.SuspendingMessage `
@@ -503,7 +503,7 @@ function Suspend-PodeServerInternal {
                     -Id $masterActivityId `
                     -ParentId $suspendActivityId
 
-               Write-Progress -Activity $PodeLocale.SuspendingMessage `
+                Write-Progress -Activity $PodeLocale.SuspendingMessage `
                     -Status $PodeLocale.suspendingRunspaceMessage -PercentComplete ($masterPercentComplete - 5) `
                     -Id $suspendActivityId
 
@@ -587,13 +587,16 @@ function Suspend-PodeServerInternal {
     This function resumes the Pode server, ensuring all associated runspaces are restored to their normal execution state.
     It triggers the 'Resume' event, updates the server's suspended status, and clears the host for a refreshed console view.
 
-.NOTES
-    This is an internal function used within the Pode framework.
-    It may change in future releases.
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to be recovered before timing out. Default is 30 seconds.
 
 .EXAMPLE
     Resume-PodeServerInternal
     # Resumes the Pode server after a suspension.
+
+.NOTES
+    This is an internal function used within the Pode framework.
+    It may change in future releases.
 
 #>
 function Resume-PodeServerInternal {
@@ -616,7 +619,7 @@ function Resume-PodeServerInternal {
         Invoke-PodeEvent -Type Resume
 
         # Update the server's suspended state
-        $PodeContext.Server.Suspended = $false
+        $PodeContext.Server.SuspensionState.Suspended = $false
         start-sleep 1
         try {
             Write-Progress -Activity $PodeLocale.ResumingMessage `

@@ -288,18 +288,18 @@ function Start-PodeServer {
                     Clear-PodeKeyPressed
                     break
                 }
-                elseif ( $PodeContext.Server.Suspended) {
+                elseif ( $PodeContext.Server.SuspensionState.Suspended) {
                     if (($PodeContext.Tokens.Resume.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
                         Clear-PodeKeyPressed
                         Resume-PodeServer
-                        Resume-PodeServerInternal
+                        Resume-PodeServerInternal -Timeout $PodeContext.Server.SuspensionState.ResumeTimeout
                     }
                 }
                 else {
                     if ( ($PodeContext.Tokens.Suspend.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
                         Clear-PodeKeyPressed
                         Suspend-PodeServer
-                        Suspend-PodeServerInternal
+                        Suspend-PodeServerInternal -Timeout $PodeContext.Server.SuspensionState.SuspendTimeout
                     }
                 }
 
@@ -317,7 +317,7 @@ function Start-PodeServer {
             Close-PodeServer
         }
         catch {
-            $_ | Write-PodeErrorLog 
+            $_ | Write-PodeErrorLog
 
             Invoke-PodeEvent -Type Crash
             $ShowDoneMessage = $false
@@ -388,6 +388,9 @@ function Restart-PodeServer {
     This function resumes the Pode server, ensuring all associated runspaces are restored to their normal execution state.
     It triggers the 'Resume' event, updates the server's suspended status, and clears the host for a refreshed console view.
 
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to be recovered before timing out. Default is 30 seconds.
+
 .EXAMPLE
     Resume-PodeServer
     # Resumes the Pode server after a suspension.
@@ -395,8 +398,16 @@ function Restart-PodeServer {
 #>
 function Resume-PodeServer {
     [CmdletBinding()]
-    param()
-    if ( $PodeContext.Server.Suspended) {
+    param(
+        [int]
+        $Timeout
+    )
+
+    if ($Timeout) {
+        $PodeContext.Server.SuspensionState.ResumeTimeout = $Timeout
+    }
+
+    if ( $PodeContext.Server.SuspensionState.Suspended) {
         if (!$PodeContext.Tokens.Resume.IsCancellationRequested) {
             $PodeContext.Tokens.Resume.Cancel()
         }
@@ -418,6 +429,9 @@ function Resume-PodeServer {
     This function suspends the Pode server by pausing all associated runspaces and ensuring they enter a debug state.
     It triggers the 'Suspend' event, updates the server's suspended status, and provides feedback during the suspension process.
 
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to be suspended before timing out. Default is 30 seconds.
+
 .EXAMPLE
     Suspend-PodeServer
     # Suspends the Pode server with a timeout of 60 seconds.
@@ -425,8 +439,16 @@ function Resume-PodeServer {
 #>
 function Suspend-PodeServer {
     [CmdletBinding()]
-    param()
-    if (! $PodeContext.Server.Suspended) {
+    param(
+        [int]
+        $Timeout
+    )
+
+    if ($Timeout) {
+        $PodeContext.Server.SuspensionState.SuspendTimeout = $Timeout
+    }
+
+    if (! $PodeContext.Server.SuspensionState.Suspended) {
         if (!$PodeContext.Tokens.Suspend.IsCancellationRequested) {
             $PodeContext.Tokens.Suspend.Cancel()
         }
