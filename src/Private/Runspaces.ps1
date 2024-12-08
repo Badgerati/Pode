@@ -31,6 +31,9 @@
 .PARAMETER PassThru
     If specified, returns the pipeline and handler for custom processing.
 
+.PARAMETER Name
+    If specified, is used as base name for the runspace.
+
 .EXAMPLE
     Add-PodeRunspace -Type 'Tasks' -ScriptBlock {
         # Your script code here
@@ -66,10 +69,7 @@ function Add-PodeRunspace {
         $PassThru,
 
         [string]
-        $Name,
-
-        [string]
-        $Id = '1'
+        $Name = 'generic'
     )
 
     try {
@@ -108,12 +108,15 @@ function Add-PodeRunspace {
         $ps = [powershell]::Create()
         $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
 
+        # $Id = (++$PodeContext.RunspacePools[$Type].LastId)
+
+
         # Add the script block and parameters to the pipeline.
         $null = $ps.AddScript($openRunspaceScript)
         $null = $ps.AddParameters(
             @{
                 'Type'      = $Type
-                'Name'      = "Pode_$($Type)_$($Name)_$($Id)"
+                'Name'      = "Pode_$($Type)_$($Name)_$((++$PodeContext.RunspacePools[$Type].LastId))"
                 'NoProfile' = $NoProfile.IsPresent
             }
         )
@@ -304,7 +307,7 @@ function Close-PodeRunspace {
     }
 }
 
- <#
+<#
 .SYNOPSIS
     Resets the name of the current Pode runspace by modifying its structure.
 

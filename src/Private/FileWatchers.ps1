@@ -137,7 +137,7 @@ function Start-PodeFileWatcherRunspace {
     }
 
     1..$PodeContext.Threads.Files | ForEach-Object {
-        Add-PodeRunspace -Type Files -Name 'Watcher' -Id $_ -ScriptBlock $watchScript -Parameters @{ 'Watcher' = $watcher ; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type Files -Name 'Watcher' -ScriptBlock $watchScript -Parameters @{ 'Watcher' = $watcher ; 'ThreadId' = $_ }
     }
 
     # script to keep file watcher server alive until cancelled

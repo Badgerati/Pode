@@ -681,7 +681,6 @@ function Resume-PodeServerInternal {
             $masterActivityId = (Get-Random) # Unique ID for master progress
 
             $runspaces | Foreach-Object {
-                $originalName = $_.Name
                 # Initialize progress bar variables
                 $startTime = [DateTime]::UtcNow
                 $elapsedTime = 0

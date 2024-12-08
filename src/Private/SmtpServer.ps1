@@ -88,7 +88,7 @@ function Start-PodeSmtpServer {
             [int]
             $ThreadId
         )
-        
+
         do {
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
@@ -182,7 +182,7 @@ function Start-PodeSmtpServer {
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.General | ForEach-Object {
-        Add-PodeRunspace -Type Smtp -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type Smtp -Name 'Listener' -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep smtp server listening until cancelled

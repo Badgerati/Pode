@@ -297,7 +297,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Web -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+            Add-PodeRunspace -Type Web -Name 'Listener' -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
     }
 
@@ -456,7 +456,7 @@ function Start-PodeWebServer {
                     $_.Exception | Write-PodeErrorLog -CheckInnerException
                     throw $_.Exception
                 }
-                
+
                 # end do-while
             } while (Test-PodeSuspensionToken) # Check for suspension or dump tokens and wait for the debugger to reset if active
 
@@ -464,7 +464,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Signals -Name 'Broadcaster' -Id $_ -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+            Add-PodeRunspace -Type Signals -Name 'Broadcaster' -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
     }
 

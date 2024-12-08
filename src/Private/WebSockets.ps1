@@ -112,7 +112,7 @@ function Start-PodeWebSocketRunspace {
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.WebSockets | ForEach-Object {
-        Add-PodeRunspace -Type WebSockets -Name 'Receiver' -Id $_ -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type WebSockets -Name 'Receiver' -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver; 'ThreadId' = $_ }
     }
 
     # script to keep websocket server receiving until cancelled
