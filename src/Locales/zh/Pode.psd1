@@ -305,4 +305,8 @@
     suspendedMessage                                                  = '已暂停'
     runningMessage                                                    = '运行中'
     openHttpEndpointMessage                                           = '在默认浏览器中打开第一个 HTTP 端点。'
+    suspendingRunspaceMessage                                         = '暂停运行空间'
+    resumingRunspaceMessage                                           = '恢复运行空间'
+    waitingforSuspendingMessage                                       = '等待暂停...'
+    waitingforResumingMessage                                         = '等待恢复...'
 }

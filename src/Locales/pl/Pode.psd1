@@ -305,4 +305,8 @@
     suspendedMessage                                                  = 'Wstrzymany'
     runningMessage                                                    = 'Działa'
     openHttpEndpointMessage                                           = 'Otwórz pierwszy punkt końcowy HTTP w domyślnej przeglądarce.'
+    suspendingRunspaceMessage                                         = 'Wstrzymywanie przestrzeni roboczych'
+    resumingRunspaceMessage                                           = 'Wznawianie przestrzeni roboczych'
+    waitingforSuspendingMessage                                       = 'Oczekiwanie na zawieszenie ...'
+    waitingforResumingMessage                                         = 'Oczekiwanie na wznowienie ...'
 }

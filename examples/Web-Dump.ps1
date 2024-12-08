@@ -110,23 +110,23 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
 
     # setup an smtp handler
     Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
-        Write-PodeHost '- - - - - - - - - - - - - - - - - -'
-        Write-PodeHost $SmtpEvent.Email.From
-        Write-PodeHost $SmtpEvent.Email.To
-        Write-PodeHost '|'
-        Write-PodeHost $SmtpEvent.Email.Body
-        Write-PodeHost '|'
-        # Write-PodeHost $SmtpEvent.Email.Data
-        # Write-PodeHost '|'
+        Write-Verbose '- - - - - - - - - - - - - - - - - -'
+        Write-Verbose $SmtpEvent.Email.From
+        Write-Verbose $SmtpEvent.Email.To
+        Write-Verbose '|'
+        Write-Verbose $SmtpEvent.Email.Body
+        Write-Verbose '|'
+        # Write-Verbose $SmtpEvent.Email.Data
+        # Write-Verbose '|'
         $SmtpEvent.Email.Attachments
         if ($SmtpEvent.Email.Attachments.Length -gt 0) {
             #$SmtpEvent.Email.Attachments[0].Save('C:\temp')
         }
-        Write-PodeHost '|'
+        Write-Verbose '|'
         $SmtpEvent.Email
         $SmtpEvent.Request
         $SmtpEvent.Email.Headers
-        Write-PodeHost '- - - - - - - - - - - - - - - - - -'
+        Write-Verbose '- - - - - - - - - - - - - - - - - -'
     }
 
     # GET request for web page
@@ -160,37 +160,37 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
     Add-PodeTask -Name 'Test' -ScriptBlock {
         param($value)
         Start-PodeSleep -Seconds 10
-        write-podehost  "a $($value) is comming"
+        Write-Verbose  "a $($value) is comming"
         Start-PodeSleep -Seconds 10
-        write-podehost  "a $($value) is comming...2"
+        Write-Verbose  "a $($value) is comming...2"
         Start-PodeSleep -Seconds 10
-        write-podehost  "a $($value) is comming...3"
+        Write-Verbose  "a $($value) is comming...3"
         Start-PodeSleep -Seconds 10
-        write-podehost  "a $($value) is comming...4"
+        Write-Verbose  "a $($value) is comming...4"
         Start-PodeSleep -Seconds 10
-        write-podehost  "a $($value) is comming...5"
+        Write-Verbose  "a $($value) is comming...5"
         Start-PodeSleep -Seconds 10
-        write-podehost "a $($value) is comming...6"
+        Write-Verbose "a $($value) is comming...6"
         Start-PodeSleep -Seconds 10
-        write-podehost  "a $($value) is never late, it arrives exactly when it means to"
+        Write-Verbose  "a $($value) is never late, it arrives exactly when it means to"
     }
     # schedule minutely using predefined cron
     $message = 'Hello, world!'
     Add-PodeSchedule -Name 'predefined' -Cron '@minutely' -Limit 2 -ScriptBlock {
         param($Event, $Message1, $Message2)
-        $using:message | Out-Default
-        Get-PodeSchedule -Name 'predefined' | Out-Default
-        "Last: $($Event.Sender.LastTriggerTime)" | Out-Default
-        "Next: $($Event.Sender.NextTriggerTime)" | Out-Default
-        "Message1: $($Message1)" | Out-Default
-        "Message2: $($Message2)" | Out-Default
+        Write-Verbose     $using:message
+        Get-PodeSchedule -Name 'predefined'
+        Write-Verbose "Last: $($Event.Sender.LastTriggerTime)"
+        Write-Verbose  "Next: $($Event.Sender.NextTriggerTime)"
+        Write-Verbose  "Message1: $($Message1)"
+        Write-Verbose "Message2: $($Message2)"
     }
 
     Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './scripts/schedule.ps1'
 
     # schedule defined using two cron expressions
     Add-PodeSchedule -Name 'two-crons' -Cron @('0/3 * * * *', '0/5 * * * *') -ScriptBlock {
-        'double cron' | Out-Default
+        Write-Verbose  'double cron'
         Get-PodeSchedule -Name 'two-crons' | Out-Default
     }
 

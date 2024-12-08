@@ -305,4 +305,8 @@
     suspendedMessage                                                  = 'Angehalten'
     runningMessage                                                    = 'Läuft'
     openHttpEndpointMessage                                           = 'Öffnen Sie den ersten HTTP-Endpunkt im Standardbrowser.'
+    suspendingRunspaceMessage                                        = 'Suspension der Runspaces'
+    resumingRunspaceMessage                                          = 'Fortsetzung der Runspaces'
+    waitingforSuspendingMessage                                      = 'Warten auf das Suspendieren ...'
+    waitingforResumingMessage                                        = 'Warten auf das Fortsetzen ...'
 }

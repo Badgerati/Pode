@@ -305,4 +305,8 @@
     suspendedMessage                                                  = '일시 중지됨'
     runningMessage                                                    = '실행 중'
     openHttpEndpointMessage                                           = '기본 브라우저에서 첫 번째 HTTP 엔드포인트를 엽니다.'
+    suspendingRunspaceMessage                                         = '런스페이스 일시 정지'
+    resumingRunspaceMessage                                           = '런스페이스 재개'
+    waitingforSuspendingMessage                                       = '일시 정지 대기 중...'
+    waitingforResumingMessage                                         = '재개 대기 중...'
 }

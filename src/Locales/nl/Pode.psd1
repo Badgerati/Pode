@@ -305,4 +305,8 @@
     suspendedMessage                                                  = 'Gepauzeerd'
     runningMessage                                                    = 'Actief'
     openHttpEndpointMessage                                           = 'Open het eerste HTTP-eindpunt in de standaardbrowser.'
+    suspendingRunspaceMessage                                         = 'Wstrzymywanie przestrzeni roboczych'
+    resumingRunspaceMessage                                           = 'Wznawianie przestrzeni roboczych'
+    waitingforSuspendingMessage                                       = 'Oczekiwanie na zawieszenie ...'
+    waitingforResumingMessage                                         = 'Oczekiwanie na wznowienie ...'
 }

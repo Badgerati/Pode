@@ -305,4 +305,8 @@
     suspendedMessage                                                  = '一時停止中'
     runningMessage                                                    = '実行中'
     openHttpEndpointMessage                                           = 'デフォルトのブラウザで最初の HTTP エンドポイントを開きます。'
+    suspendingRunspaceMessage                                         = 'ランスペースの停止'
+    resumingRunspaceMessage                                           = 'ランスペースの再開'
+    waitingforSuspendingMessage                                       = '停止待機中...'
+    waitingforResumingMessage                                         = '再開待機中...'
 }

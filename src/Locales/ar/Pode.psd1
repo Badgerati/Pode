@@ -305,4 +305,8 @@
     suspendedMessage                                                  = 'معلق'
     runningMessage                                                    = 'يعمل'
     openHttpEndpointMessage                                           = 'افتح أول نقطة نهاية HTTP في المتصفح الافتراضي.'
+    suspendingRunspaceMessage                                        = 'إيقاف تنفيذ المسارات'
+    resumingRunspaceMessage                                          = 'استئناف تنفيذ المسارات'
+    waitingforSuspendingMessage                                      = 'انتظار الإيقاف...'
+    waitingforResumingMessage                                        = 'انتظار الاستئناف...'
 }
