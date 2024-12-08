@@ -200,7 +200,22 @@ Describe 'Restart-PodeInternalServer' {
                     Storage = @{}
                 }
                 ScopedVariables = @{}
-                Quiet           = $true
+                Console              = @{
+                    DisableTermination  = $true
+                    DisableConsoleInput = $true
+                    Quiet               = $true
+                    ClearHost           = $false
+                    ShowOpenAPI         = $true
+                    ShowEndpoints       = $true
+                    ShowHelp            = $false
+
+                }
+                SuspensionState = @{
+                    Suspended      = $false
+                    SuspendTimeout = 30  # timeout in seconds
+                    ResumeTimeout  = 30  # timeout in seconds
+                }
+
             }
             Metrics   = @{
                 Server = @{
