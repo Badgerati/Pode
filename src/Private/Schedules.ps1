@@ -64,9 +64,13 @@ function Start-PodeScheduleRunspace {
             Complete-PodeInternalSchedule -Now $_now
 
             # first, sleep for a period of time to get to 00 seconds (start of minute)
-            Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
+            Start-PodeSleep -Seconds (60 - [DateTime]::Now.Second)
 
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while (!$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+
+                # Check for suspension or dump tokens and wait for the debugger to reset if active
+                Test-PodeSuspensionToken
+
                 try {
                     $_now = [DateTime]::Now
 
@@ -89,8 +93,15 @@ function Start-PodeScheduleRunspace {
                     # complete any schedules
                     Complete-PodeInternalSchedule -Now $_now
 
-                    # cron expression only goes down to the minute, so sleep for 1min
-                    Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
+                    # Calculate the remaining seconds to sleep until the next minute
+                    $remainingSeconds = 60 - [DateTime]::Now.Second
+
+                    # Loop in 5-second intervals until the remaining seconds are covered
+                    while ($remainingSeconds -gt 0) {
+                        $sleepTime = [math]::Min(5, $remainingSeconds) # Sleep for 5 seconds or remaining time
+                        Start-PodeSleep -Seconds $sleepTime
+                        $remainingSeconds -= $sleepTime
+                    }
                 }
                 catch {
                     $_ | Write-PodeErrorLog
@@ -325,6 +336,7 @@ function Get-PodeScheduleScriptBlock {
             $_ | Write-PodeErrorLog
         }
         finally {
+            Reset-PodeRunspaceName
             Invoke-PodeGC
         }
     }

@@ -144,6 +144,8 @@
         'Get-PodeCurrentRunspaceName',
         'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',
+        'Invoke-PodeDump',
+        'Start-PodeSleep',
 
         # routes
         'Add-PodeRoute',
@@ -307,6 +309,8 @@
         'Get-PodeServerDefaultSecret',
         'Wait-PodeDebugger',
         'Get-PodeVersion',
+        'Suspend-PodeServer',
+        'Resume-PodeServer',
 
         # openapi
         'Enable-PodeOpenApi',

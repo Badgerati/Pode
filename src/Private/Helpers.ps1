@@ -566,7 +566,7 @@ function Test-PodeTerminationPressed {
         $Key = $null
     )
 
-    if ($PodeContext.Server.DisableTermination) {
+    if ($PodeContext.Server.Console.DisableConsoleInput -or $PodeContext.Server.Console.DisableTermination) {
         return $false
     }
 
@@ -579,6 +579,10 @@ function Test-PodeRestartPressed {
         $Key = $null
     )
 
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
     return (Test-PodeKeyPressed -Key $Key -Character 'r')
 }
 
@@ -588,8 +592,135 @@ function Test-PodeOpenBrowserPressed {
         $Key = $null
     )
 
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
     return (Test-PodeKeyPressed -Key $Key -Character 'b')
 }
+
+function Test-PodeHelpPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'h')
+}
+
+function Test-PodeOpenAPIPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'o')
+}
+
+function Test-PodeEndpointsPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'e')
+}
+
+function Test-PodeClearPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'l')
+}
+
+function Test-PodeQuietPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 't')
+}
+
+function Test-PodeDumpPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+    }
+    return (Test-PodeKeyPressed -Key $Key -Character 'd')
+}
+
+function Test-PodeSuspendPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput -or $PodeContext.Server.Console.DisableTermination) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'u')
+}
+
+
+
+<#
+.SYNOPSIS
+    Clears any remaining keys in the console input buffer.
+
+.DESCRIPTION
+    The `Clear-PodeKeyPressed` function checks if there are any keys remaining in the input buffer
+    and discards them, ensuring that no leftover key presses interfere with subsequent reads.
+
+.EXAMPLE
+    Clear-PodeKeyPressed
+    [Console]::ReadKey($true)
+
+    This example clears the buffer and then reads a new key without interference.
+
+.NOTES
+    This function is useful when using `[Console]::ReadKey($true)` to prevent previous key presses
+    from affecting the input.
+
+#>
+function Clear-PodeKeyPressed {
+    if (!$PodeContext.Server.Console.DisableConsoleInput) {
+
+        # Clear any remaining keys in the input buffer
+        while ([Console]::KeyAvailable) {
+
+            [Console]::ReadKey($true) | Out-Null
+        }
+    }
+}
+
 
 function Test-PodeKeyPressed {
     param(
@@ -616,9 +747,10 @@ function Close-PodeServerInternal {
     )
 
     # ensure the token is cancelled
-    if ($null -ne $PodeContext.Tokens.Cancellation) {
+    if ($null -ne $PodeContext.Tokens.Cancellation -and $null -ne $PodeContext.Tokens.Cancellation) {
         Write-Verbose 'Cancelling main cancellation token'
         $PodeContext.Tokens.Cancellation.Cancel()
+        $PodeContext.Tokens.Terminate.Cancel()
     }
 
     # stop all current runspaces
@@ -633,7 +765,11 @@ function Close-PodeServerInternal {
         # remove all the cancellation tokens
         Write-Verbose 'Disposing cancellation tokens'
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Terminate
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Dump
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Suspend
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Resume
 
         # dispose mutex/semaphores
         Write-Verbose 'Diposing mutex and semaphores'
@@ -2464,7 +2600,50 @@ function Find-PodeFileForContentType {
     # no file was found
     return $null
 }
+<#
+.SYNOPSIS
+	Resolves and processes a relative or absolute file system path based on the specified parameters.
 
+.DESCRIPTION
+	This function processes a given path and applies various transformations and checks based on the provided parameters. It supports resolving relative paths, joining them with a root path, normalizing relative paths, and verifying path existence.
+
+.PARAMETER Path
+	The file system path to be processed. This can be relative or absolute.
+
+.PARAMETER RootPath
+	(Optional) The root path to join with if the provided path is relative and the -JoinRoot switch is enabled.
+
+.PARAMETER JoinRoot
+	Indicates that the relative path should be joined to the specified root path. If no RootPath is provided, the Pode context server root will be used.
+
+.PARAMETER Resolve
+	Resolves the path to its absolute, full path.
+
+.PARAMETER TestPath
+	Verifies if the resolved path exists. Throws an exception if the path does not exist.
+
+.PARAMETER NormalizeRelativePath
+	(Optional) Removes any leading './' or '../' segments from the relative path when used with -JoinRoot. This ensures that the path is normalized before being joined with the root path.
+
+.OUTPUTS
+	System.String
+	Returns the resolved and processed path as a string.
+
+.EXAMPLE
+	# Example 1: Resolve a relative path and join it with a root path
+	Get-PodeRelativePath -Path './example' -RootPath 'C:\Root' -JoinRoot
+
+.EXAMPLE
+	# Example 2: Resolve and normalize a relative path
+	Get-PodeRelativePath -Path '../example' -RootPath 'C:\Root' -JoinRoot -NormalizeRelativePath
+
+.EXAMPLE
+	# Example 3: Test if a path exists
+	Get-PodeRelativePath -Path 'C:\Root\example.txt' -TestPath
+
+.NOTES
+	This is an internal function and may change in future releases of Pode
+#>
 function Get-PodeRelativePath {
     param(
         [Parameter(Mandatory = $true)]
@@ -2482,7 +2661,11 @@ function Get-PodeRelativePath {
         $Resolve,
 
         [switch]
-        $TestPath
+        $TestPath,
+
+        [switch]
+        $NormalizeRelativePath
+
     )
 
     # if the path is relative, join to root if flagged
@@ -2491,7 +2674,12 @@ function Get-PodeRelativePath {
             $RootPath = $PodeContext.Server.Root
         }
 
-        $Path = [System.IO.Path]::Combine($RootPath, $Path)
+        if ($NormalizeRelativePath) {
+            $Path = [System.IO.Path]::Combine($RootPath, ($Path -replace '^\.{1,2}([\\\/])?', ''))
+        }
+        else {
+            $Path = [System.IO.Path]::Combine($RootPath, $Path)
+        }
     }
 
     # if flagged, resolve the path
@@ -2598,6 +2786,10 @@ function Get-PodeEndpointUrl {
         if ($null -eq $Endpoint) {
             $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') })[0]
         }
+    }
+
+    if ($null -eq $Endpoint) {
+        return $null
     }
 
     $url = $Endpoint.Url
@@ -3767,3 +3959,5 @@ function Copy-PodeObjectDeepClone {
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }
+
+

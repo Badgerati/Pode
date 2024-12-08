@@ -814,7 +814,7 @@ function Out-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet) {
             return
         }
         # Set InputObject to the array of values
@@ -855,6 +855,9 @@ Show the Object Type
 .PARAMETER Label
 Show a label for the object
 
+.PARAMETER Force
+Overrides the -Quiet flag of the server.
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
@@ -883,7 +886,10 @@ function Write-PodeHost {
 
         [Parameter( Mandatory = $false, ParameterSetName = 'object')]
         [string]
-        $Label
+        $Label,
+
+        [switch]
+        $Force
     )
     begin {
         # Initialize an array to hold piped-in values
@@ -896,7 +902,7 @@ function Write-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet -and !($Force.IsPresent)) {
             return
         }
         # Set Object to the array of values
@@ -1486,3 +1492,183 @@ function Invoke-PodeGC {
 
     [System.GC]::Collect()
 }
+
+<#
+.SYNOPSIS
+    Captures a memory dump with runspace and exception details when a fatal exception occurs.
+
+.DESCRIPTION
+    The Invoke-PodeDump function gathers diagnostic information, including process memory usage, exception details, runspace information, and
+    variables from active runspaces. It saves this data in the specified format (JSON, CLIXML, Plain Text, Binary, or YAML) in a "Dump" folder within
+    the current directory. If the folder does not exist, it will be created.
+
+.PARAMETER ErrorRecord
+    The ErrorRecord object representing the fatal exception that triggered the memory dump. This provides details on the error, such as message and stack trace.
+    Accepts input from the pipeline.
+
+.PARAMETER Format
+    Specifies the format for saving the dump file. Supported formats are 'json', 'clixml', 'txt', 'bin', and 'yaml'.
+
+
+.PARAMETER Path
+    Specifies the directory where the dump file will be saved. If the directory does not exist, it will be created. Defaults to a "Dump" folder.
+
+.PARAMETER MaxDepth
+    Specifies the maximum depth of objects to serialize when saving the dump in JSON or YAML
+
+
+.EXAMPLE
+    try {
+        # Simulate a critical error
+        throw [System.AccessViolationException] "Simulated access violation error"
+    }
+    catch {
+        # Capture the dump in YAML format
+        $_ | Invoke-PodeDump -Format 'yaml'
+    }
+
+    This example catches a simulated AccessViolationException and pipes it to Invoke-PodeDump to capture the error in YAML format.
+
+.NOTES
+    This function is designed to assist with post-mortem analysis by capturing critical application state information when a fatal error occurs.
+    It may be further adapted to log additional details or support different formats for captured data.
+
+#>
+function Invoke-PodeDump {
+    [CmdletBinding()]
+    param(  [Parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [System.Management.Automation.ErrorRecord]
+        $ErrorRecord,
+
+        [Parameter()]
+        [ValidateSet('JSON', 'CLIXML', 'TXT', 'BIN', 'YAML')]
+        [string]
+        $Format,
+
+        [string]
+        $Path,
+
+        [int]
+        $MaxDepth
+    )
+    $PodeContext.Server.Debug.Dump.Param = $PSBoundParameters
+    $PodeContext.Tokens.Dump.Cancel()
+    $PodeContext.Tokens.Cancellation.Cancel()
+}
+
+
+<#
+.SYNOPSIS
+    A function to pause execution for a specified duration with an optional progress bar.
+
+.DESCRIPTION
+    The `Start-PodeSleep` function pauses script execution for a given duration specified in seconds, milliseconds, or a TimeSpan.
+    It includes an optional progress bar that displays the elapsed time and completion percentage.
+    The progress bar can also display a custom activity name and allows grouping with a ParentId.
+
+.PARAMETER Seconds
+    Specifies the duration to pause execution in seconds. Default is 1 second.
+
+.PARAMETER Milliseconds
+    Specifies the duration to pause execution in milliseconds.
+
+.PARAMETER Duration
+    Specifies the duration to pause execution using a TimeSpan object.
+
+.PARAMETER Activity
+    Specifies the activity name displayed in the progress bar. Default is "Sleeping...".
+
+.PARAMETER ParentId
+    Optional parameter to specify the ParentId for the progress bar, enabling hierarchical grouping.
+
+.PARAMETER ShowProgress
+    Switch to enable the progress bar during the sleep duration.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Start-PodeSleep -Seconds 5 -ShowProgress
+
+    Pauses execution for 5 seconds and displays a progress bar.
+
+.EXAMPLE
+    Start-PodeSleep -Milliseconds 3000 -ShowProgress -Activity "Processing Task" -ParentId 1
+
+    Pauses execution for 3000 milliseconds, showing a progress bar with the custom activity grouped under ParentId 1.
+
+.EXAMPLE
+    Start-PodeSleep -Duration (New-TimeSpan -Seconds 10) -ShowProgress -Activity "Running Script"
+
+    Pauses execution for 10 seconds using a TimeSpan object and displays a progress bar.
+
+.NOTES
+    This function is useful for scenarios where tracking the remaining wait time visually is helpful.
+#>
+function Start-PodeSleep {
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Seconds')]
+        [int]$Seconds = 1,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Milliseconds')]
+        [int]$Milliseconds,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Duration')]
+        [TimeSpan]$Duration,
+
+        [Parameter(Position = 1, Mandatory = $false)]
+        [string]$Activity = "Sleeping...",
+
+        [Parameter(Mandatory = $false)]
+        [int]$ParentId,
+
+        [Parameter(Mandatory = $false)]
+        [Switch]$ShowProgress
+    )
+
+    # Determine total duration and end time
+    switch ($PSCmdlet.ParameterSetName) {
+        'Seconds' {
+            $totalDuration = [TimeSpan]::FromSeconds($Seconds)
+        }
+        'Milliseconds' {
+            $totalDuration = [TimeSpan]::FromMilliseconds($Milliseconds)
+        }
+        'Duration' {
+            $totalDuration = $Duration
+        }
+    }
+    $endTime = (Get-Date).Add($totalDuration)
+
+    # Start the timer
+    $startTime = Get-Date
+
+    while ((Get-Date) -lt $endTime) {
+        if ($ShowProgress) {
+            # Calculate progress and build Write-Progress parameters
+            $progressParams = @{
+                Activity        = $Activity
+                Status          = "$([math]::Round((($(Get-Date) - $startTime).TotalMilliseconds / $totalDuration.TotalMilliseconds) * 100, 1))%"
+                PercentComplete = [math]::Min((($(Get-Date) - $startTime).TotalMilliseconds / $totalDuration.TotalMilliseconds) * 100, 100)
+            }
+            if ($ParentId) {
+                $progressParams.ParentId = $ParentId
+            }
+
+            # Write the progress with dynamic parameters
+            Write-Progress @progressParams
+        }
+
+        # Sleep for a short duration to prevent high CPU usage
+        Start-Sleep -Milliseconds 200
+    }
+
+    # Clear the progress bar after completion
+    if ($ShowProgress) {
+        Write-Progress -Activity $Activity -Completed
+    }
+}
+
+
+

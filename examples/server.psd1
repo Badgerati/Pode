@@ -63,6 +63,12 @@
             Breakpoints = @{
                 Enable = $true
             }
+            Dump        = @{
+                Enabled = $true
+                Format  = 'json'
+                Path    = './Dump'
+                MaxDepth = 6
+            }
         }
     }
 }
