@@ -43,11 +43,8 @@ function New-PodeContext {
         [string[]]
         $EnablePool,
 
-        [switch]
-        $DisableTermination,
-
-        [switch]
-        $Quiet,
+        [hashtable]
+        $Console,
 
         [switch]
         $EnableBreakpoints
@@ -92,8 +89,7 @@ function New-PodeContext {
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
-    $ctx.Server.DisableTermination = $DisableTermination.IsPresent
-    $ctx.Server.Quiet = $Quiet.IsPresent
+    $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
 
     # list of created listeners/receivers
@@ -190,6 +186,12 @@ function New-PodeContext {
         'Errors' = 'errors'
     }
 
+    $ctx.Server.Debug = @{
+        Breakpoints = @{
+            Enabled = $false
+        }
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -214,10 +216,6 @@ function New-PodeContext {
 
     # debugging
     if ($EnableBreakpoints) {
-        if ($null -eq $ctx.Server.Debug) {
-            $ctx.Server.Debug = @{ Breakpoints = @{} }
-        }
-
         $ctx.Server.Debug.Breakpoints.Enabled = $EnableBreakpoints.IsPresent
     }
 
@@ -228,7 +226,7 @@ function New-PodeContext {
     $ctx.Server.ServerlessType = $ServerlessType
     $ctx.Server.IsServerless = $isServerless
     if ($isServerless) {
-        $ctx.Server.DisableTermination = $true
+        $ctx.Server.Console.DisableTermination = $true
     }
 
     # set the server types
@@ -238,11 +236,11 @@ function New-PodeContext {
     # is the server running under IIS? (also, disable termination)
     $ctx.Server.IsIIS = (!$isServerless -and (!(Test-PodeIsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-PodeIsEmpty $env:ASPNETCORE_TOKEN)))
     if ($ctx.Server.IsIIS) {
-        $ctx.Server.DisableTermination = $true
+        $ctx.Server.Console.DisableTermination = $true
 
         # if under IIS and Azure Web App, force quiet
         if (!(Test-PodeIsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
-            $ctx.Server.Quiet = $true
+            $ctx.Server.Console.Quiet = $true
         }
 
         # set iis token/settings
@@ -269,7 +267,7 @@ function New-PodeContext {
 
     # if we're inside a remote host, stop termination
     if ($Host.Name -ieq 'ServerRemoteHost') {
-        $ctx.Server.DisableTermination = $true
+        $ctx.Server.Console.DisableTermination = $true
     }
 
     # set the IP address details
@@ -320,13 +318,13 @@ function New-PodeContext {
 
     # routes for pages and api
     $ctx.Server.Routes = [ordered]@{
-# common methods
+        # common methods
         'get'     = [ordered]@{}
         'post'    = [ordered]@{}
         'put'     = [ordered]@{}
         'patch'   = [ordered]@{}
         'delete'  = [ordered]@{}
-# other methods
+        # other methods
         'connect' = [ordered]@{}
         'head'    = [ordered]@{}
         'merge'   = [ordered]@{}
@@ -379,6 +377,14 @@ function New-PodeContext {
     #OpenApi Definition Tag
     $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
+
+    $ctx.Server.SuspensionState = @{
+        Suspended      = $false
+        SuspendTimeout = 30  # timeout in seconds
+        ResumeTimeout  = 30  # timeout in seconds
+    }
+
+
     # server metrics
     $ctx.Metrics = @{
         Server   = @{
@@ -405,10 +411,7 @@ function New-PodeContext {
     }
 
     # create new cancellation tokens
-    $ctx.Tokens = @{
-        Cancellation = [System.Threading.CancellationTokenSource]::new()
-        Restart      = [System.Threading.CancellationTokenSource]::new()
-    }
+    $ctx.Tokens = New-PodeSuspensionToken
 
     # requests that should be logged
     $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
@@ -545,47 +548,53 @@ function New-PodeRunspacePool {
     # main runspace - for timers, schedules, etc
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{
-        Pool  = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
-        State = 'Waiting'
+        Pool   = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+        State  = 'Waiting'
+        LastId = 0
     }
 
     # web runspace - if we have any http/s endpoints
     if (Test-PodeEndpointByProtocolType -Type Http) {
         $PodeContext.RunspacePools.Web = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # smtp runspace - if we have any smtp endpoints
     if (Test-PodeEndpointByProtocolType -Type Smtp) {
         $PodeContext.RunspacePools.Smtp = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # tcp runspace - if we have any tcp endpoints
     if (Test-PodeEndpointByProtocolType -Type Tcp) {
         $PodeContext.RunspacePools.Tcp = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # signals runspace - if we have any ws/s endpoints
     if (Test-PodeEndpointByProtocolType -Type Ws) {
         $PodeContext.RunspacePools.Signals = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # web socket connections runspace - for receiving data for external sockets
     if (Test-PodeWebSocketsExist) {
         $PodeContext.RunspacePools.WebSockets = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.WebSockets + 1, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.WebSockets + 1, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
 
         New-PodeWebSocketReceiver
@@ -594,40 +603,45 @@ function New-PodeRunspacePool {
     # setup timer runspace pool -if we have any timers
     if (Test-PodeTimersExist) {
         $PodeContext.RunspacePools.Timers = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Timers, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Timers, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # setup schedule runspace pool -if we have any schedules
     if (Test-PodeSchedulesExist) {
         $PodeContext.RunspacePools.Schedules = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # setup tasks runspace pool -if we have any tasks
     if (Test-PodeTasksExist) {
         $PodeContext.RunspacePools.Tasks = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Tasks, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Tasks, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # setup files runspace pool -if we have any file watchers
     if (Test-PodeFileWatchersExist) {
         $PodeContext.RunspacePools.Files = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Files + 1, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Files + 1, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # setup gui runspace pool (only for non-ps-core) - if gui enabled
     if (Test-PodeGuiEnabled) {
         $PodeContext.RunspacePools.Gui = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
 
         $PodeContext.RunspacePools.Gui.Pool.ApartmentState = 'STA'
@@ -900,7 +914,7 @@ function Set-PodeServerConfiguration {
     # debug
     $Context.Server.Debug = @{
         Breakpoints = @{
-            Enabled = [bool]$Configuration.Debug.Breakpoints.Enable
+            Enabled = [bool](Protect-PodeValue -Value  $Configuration.Debug.Breakpoints.Enable -Default $Context.Server.Debug.Breakpoints.Enable)
         }
     }
 }

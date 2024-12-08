@@ -13,7 +13,7 @@ The following steps will run you through creating your first Pode app, and give 
 
 * Run `pode init` in the console, this will create a basic `package.json` file for you - see the [`CLI`](../CLI) reference for more information.
 
-    * The `init` action will ask for some input, leave everything as default (just press enter).
+* The `init` action will ask for some input, leave everything as default (just press enter).
 
 ```powershell
 PS> pode init

@@ -139,4 +139,8 @@ try {
 catch {
     throw ("Failed to load the Pode module. $_")
 }
+finally {
+    # Cleanup temporary variables
+    Remove-Variable -Name 'tmpPodeLocale', 'localesPath', 'moduleManifest', 'root', 'version', 'libsPath', 'netFolder', 'podeDll', 'sysfuncs', 'sysaliases', 'funcs', 'aliases', 'moduleManifestPath', 'moduleVersion' -ErrorAction SilentlyContinue
+}
 

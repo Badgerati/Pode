@@ -11,7 +11,7 @@
 
 .EXAMPLE
     Set-PodeCurrentRunspaceName -Name "MyRunspace"
-    This command sets the name of the current runspace to "MyRunspace".
+    This command sets the name of the current runspace to "Pode_MyRunspace".
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
@@ -27,6 +27,11 @@ function Set-PodeCurrentRunspaceName {
 
     # Get the current runspace
     $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+
+    if (!$Name.StartsWith( 'Pode_' ) -and $Name -ne 'PodeServer') {
+        $Name = 'Pode_' + $Name
+    }
+
     # Set the name of the current runspace if the name is not already set
     if ( $currentRunspace.Name -ne $Name) {
         # Set the name of the current runspace

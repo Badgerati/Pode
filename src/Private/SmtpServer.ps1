@@ -89,95 +89,100 @@ function Start-PodeSmtpServer {
             $ThreadId
         )
 
-        try {
-            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                # get email
-                $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
+        do {
+            try {
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                    # get email
+                    $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
-                try {
                     try {
-                        $Request = $context.Request
-                        $Response = $context.Response
+                        try {
+                            $Request = $context.Request
+                            $Response = $context.Response
 
-                        $script:SmtpEvent = @{
-                            Response  = $Response
-                            Request   = $Request
-                            Lockable  = $PodeContext.Threading.Lockables.Global
-                            Email     = @{
-                                From            = $Request.From
-                                To              = $Request.To
-                                Data            = $Request.RawBody
-                                Headers         = $Request.Headers
-                                Subject         = $Request.Subject
-                                IsUrgent        = $Request.IsUrgent
-                                ContentType     = $Request.ContentType
-                                ContentEncoding = $Request.ContentEncoding
-                                Attachments     = $Request.Attachments
-                                Body            = $Request.Body
+                            $script:SmtpEvent = @{
+                                Response  = $Response
+                                Request   = $Request
+                                Lockable  = $PodeContext.Threading.Lockables.Global
+                                Email     = @{
+                                    From            = $Request.From
+                                    To              = $Request.To
+                                    Data            = $Request.RawBody
+                                    Headers         = $Request.Headers
+                                    Subject         = $Request.Subject
+                                    IsUrgent        = $Request.IsUrgent
+                                    ContentType     = $Request.ContentType
+                                    ContentEncoding = $Request.ContentEncoding
+                                    Attachments     = $Request.Attachments
+                                    Body            = $Request.Body
+                                }
+                                Endpoint  = @{
+                                    Protocol = $Request.Scheme
+                                    Address  = $Request.Address
+                                    Name     = $context.EndpointName
+                                }
+                                Timestamp = [datetime]::UtcNow
+                                Metadata  = @{}
                             }
-                            Endpoint  = @{
-                                Protocol = $Request.Scheme
-                                Address  = $Request.Address
-                                Name     = $context.EndpointName
+
+                            # stop now if the request has an error
+                            if ($Request.IsAborted) {
+                                throw $Request.Error
                             }
-                            Timestamp = [datetime]::UtcNow
-                            Metadata  = @{}
-                        }
 
-                        # stop now if the request has an error
-                        if ($Request.IsAborted) {
-                            throw $Request.Error
-                        }
+                            # convert the ip
+                            $ip = (ConvertTo-PodeIPAddress -Address $Request.RemoteEndPoint)
 
-                        # convert the ip
-                        $ip = (ConvertTo-PodeIPAddress -Address $Request.RemoteEndPoint)
-
-                        # ensure the request ip is allowed
-                        if (!(Test-PodeIPAccess -IP $ip)) {
-                            $Response.WriteLine('554 Your IP address was rejected', $true)
-                        }
-
-                        # has the ip hit the rate limit?
-                        elseif (!(Test-PodeIPLimit -IP $ip)) {
-                            $Response.WriteLine('554 Your IP address has hit the rate limit', $true)
-                        }
-
-                        # deal with smtp call
-                        else {
-                            $handlers = Get-PodeHandler -Type Smtp
-                            foreach ($name in $handlers.Keys) {
-                                $handler = $handlers[$name]
-                                $null = Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $handler.Arguments -UsingVariables $handler.UsingVariables -Scoped -Splat
+                            # ensure the request ip is allowed
+                            if (!(Test-PodeIPAccess -IP $ip)) {
+                                $Response.WriteLine('554 Your IP address was rejected', $true)
                             }
+
+                            # has the ip hit the rate limit?
+                            elseif (!(Test-PodeIPLimit -IP $ip)) {
+                                $Response.WriteLine('554 Your IP address has hit the rate limit', $true)
+                            }
+
+                            # deal with smtp call
+                            else {
+                                $handlers = Get-PodeHandler -Type Smtp
+                                foreach ($name in $handlers.Keys) {
+                                    $handler = $handlers[$name]
+                                    $null = Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $handler.Arguments -UsingVariables $handler.UsingVariables -Scoped -Splat
+                                }
+                            }
+                        }
+                        catch [System.OperationCanceledException] {
+                            $_ | Write-PodeErrorLog -Level Debug
+                        }
+                        catch {
+                            $_ | Write-PodeErrorLog
+                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
                     }
-                    catch [System.OperationCanceledException] {
-                        $_ | Write-PodeErrorLog -Level Debug
+                    finally {
+                        $script:SmtpEvent = $null
+                        Close-PodeDisposable -Disposable $context
                     }
-                    catch {
-                        $_ | Write-PodeErrorLog
-                        $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    }
-                }
-                finally {
-                    $script:SmtpEvent = $null
-                    Close-PodeDisposable -Disposable $context
                 }
             }
-        }
-        catch [System.OperationCanceledException] {
-            $_ | Write-PodeErrorLog -Level Debug
-        }
-        catch {
-            $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
-        }
+            catch [System.OperationCanceledException] {
+                $_ | Write-PodeErrorLog -Level Debug
+            }
+            catch {
+                $_ | Write-PodeErrorLog
+                $_.Exception | Write-PodeErrorLog -CheckInnerException
+                throw $_.Exception
+            }
+
+            # end do-while
+        } while (Test-PodeSuspensionToken) # Check for suspension token and wait for the debugger to reset if active
+
     }
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.General | ForEach-Object {
-        Add-PodeRunspace -Type Smtp -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type Smtp -Name 'Listener' -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep smtp server listening until cancelled
@@ -189,7 +194,7 @@ function Start-PodeSmtpServer {
         )
 
         try {
-            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
                 Start-Sleep -Seconds 1
             }
         }
