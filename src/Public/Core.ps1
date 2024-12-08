@@ -221,9 +221,6 @@ function Start-PodeServer {
             # Create main context object
             $PodeContext = New-PodeContext @ContextParams
 
-            # Compile the Debug Handler
-            Initialize-PodeDebugHandler
-
             # set it so ctrl-c can terminate, unless serverless/iis, or disabled
             if (!$PodeContext.Server.Console.DisableTermination -and ($null -eq $psISE)) {
                 [Console]::TreatControlCAsInput = $true
@@ -241,7 +238,7 @@ function Start-PodeServer {
             }
 
             # sit here waiting for termination/cancellation, or to restart the server
-            while (  !($PodeContext.Tokens.Terminate.IsCancellationRequested)) {
+            while (!($PodeContext.Tokens.Terminate.IsCancellationRequested)) {
                 Start-Sleep -Seconds 1
 
                 if (!$PodeContext.Server.Console.DisableConsoleInput) {
@@ -253,11 +250,6 @@ function Start-PodeServer {
                 if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
                     Clear-PodeKeyPressed
                     Restart-PodeInternalServer
-                }
-                elseif (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
-                    Clear-PodeKeyPressed
-                    Invoke-PodeDump
-                    Invoke-PodeDumpInternal -Format $PodeContext.Server.Debug.Dump.Format -Path $PodeContext.Server.Debug.Dump.Path  -MaxDepth $PodeContext.Server.Debug.Dump.MaxDepth
                 }
                 # check for open browser
                 elseif (Test-PodeOpenBrowserPressed -Key $key) {
@@ -325,12 +317,7 @@ function Start-PodeServer {
             Close-PodeServer
         }
         catch {
-            $_ | Write-PodeErrorLog
-
-            if ($PodeContext.Server.Debug.Dump.Enable) {
-                Invoke-PodeDumpInternal -ErrorRecord $_ -Format $PodeContext.Server.Debug.Dump.Format `
-                    -Path $PodeContext.Server.Debug.Dump.Path  -MaxDepth $PodeContext.Server.Debug.Dump.MaxDepth
-            }
+            $_ | Write-PodeErrorLog 
 
             Invoke-PodeEvent -Type Crash
             $ShowDoneMessage = $false

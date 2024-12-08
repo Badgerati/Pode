@@ -299,7 +299,6 @@
     restartServerMessage                                              = 'Restart the server and reload configurations.'
     resumeServerMessage                                               = 'Resume the server.'
     suspendServerMessage                                              = 'Suspend the server.'
-    generateDiagnosticDumpMessage                                     = 'Generate a diagnostic dump for debugging purposes.'
     initializingMessage                                               = 'Initializing'
     restartingMessage                                                 = 'Restarting'
     suspendedMessage                                                  = 'Suspended'

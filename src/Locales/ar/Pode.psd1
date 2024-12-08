@@ -299,7 +299,6 @@
     restartServerMessage                                              = 'إعادة تشغيل الخادم وتحميل التكوينات.'
     resumeServerMessage                                               = 'استئناف الخادم.'
     suspendServerMessage                                              = 'تعليق الخادم.'
-    generateDiagnosticDumpMessage                                     = 'إنشاء تفريغ تشخيصي لأغراض التصحيح.'
     initializingMessage                                               = 'جارٍ التهيئة'
     restartingMessage                                                 = 'جارٍ إعادة التشغيل'
     suspendedMessage                                                  = 'معلق'

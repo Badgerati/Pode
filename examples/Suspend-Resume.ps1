@@ -1,27 +1,40 @@
 <#
 .SYNOPSIS
-    Initializes and starts a Pode server with OpenAPI support and error logging.
+	Initializes and starts a Pode server with OpenAPI support, scheduling, and error logging.
 
 .DESCRIPTION
-    This script sets up a Pode server with HTTP endpoints, error logging, and OpenAPI documentation.
-    It also includes a sample route to simulate a critical error and dump the server's memory state.
+	This script sets up a Pode server with multiple features including:
+	- HTTP, HTTPS, TCP, SMTP, and WebSocket endpoints.
+	- OpenAPI documentation and viewers for API specifications.
+	- Error logging to the terminal.
+	- Task and schedule management.
+	- Signal and verb-based routes for custom protocols.
+	- Session management.
 
- .EXAMPLE
-    To run the sample: ./Web-Dump.ps1
+	It demonstrates various functionalities provided by Pode, including OpenAPI integrations, signal routes, and scheduled tasks.
 
-    OpenAPI Info:
-    Specification:
-        http://localhost:8081/openapi
-    Documentation:
-        http://localhost:8081/docs
-5
+.PARAMETER ScriptPath
+	Specifies the path to the current script.
+
+.PARAMETER PodePath
+	Specifies the path to the Pode module. If the module is available in the source path, it is loaded from there; otherwise, it is loaded from installed modules.
+
+.EXAMPLE
+	To run the sample:
+	./Suspend-Resume.ps1
+
+	OpenAPI Info:
+	- Specification: http://localhost:8081/openapi
+	- Documentation: http://localhost:8081/docs
+
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Dump.ps1
+	https://github.com/Badgerati/Pode/blob/develop/examples/Suspend-Resume.ps1
 
 .NOTES
-    Author: Pode Team
-    License: MIT License
+	Author: Pode Team
+	License: MIT License
 #>
+
 
 try {
     # Determine the script path and Pode module path
@@ -84,18 +97,6 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
 
     # Define API routes
     Add-PodeRouteGroup -Path '/api/v3'   -Routes {
-
-        Add-PodeRoute -PassThru -Method Get -Path '/dump' -ScriptBlock {
-            $format = $WebEvent.Query['format']
-            try {
-                # Simulate a critical error
-                throw [System.DivideByZeroException] 'Simulated divide by zero error'
-            }
-            catch {
-                $_ | Invoke-PodeDump  -Format $format
-            }
-        } | Set-PodeOARouteInfo -Summary 'Dump state' -Description 'Dump the memory state of the server.' -Tags 'dump'  -OperationId 'dump'-PassThru |
-            Set-PodeOARequest -Parameters (New-PodeOAStringProperty -Name 'format' -Description 'Dump export format.' -Enum 'json', 'clixml', 'txt', 'bin', 'yaml' -Default 'json' | ConvertTo-PodeOAParameter -In Query )
 
         Add-PodeRoute -Method Get -Path '/task/async' -PassThru -ScriptBlock {
             Invoke-PodeTask -Name 'Test' -ArgumentList @{ value = 'wizard' } | Out-Null

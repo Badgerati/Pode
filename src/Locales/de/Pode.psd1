@@ -299,7 +299,6 @@
     restartServerMessage                                              = 'Server neu starten und Konfigurationen laden.'
     resumeServerMessage                                               = 'Server fortsetzen.'
     suspendServerMessage                                              = 'Server anhalten.'
-    generateDiagnosticDumpMessage                                     = 'Diagnostischen Dump für Debuggingzwecke erstellen.'
     initializingMessage                                               = 'Initialisierung'
     restartingMessage                                                 = 'Neustart'
     suspendedMessage                                                  = 'Angehalten'

@@ -299,7 +299,6 @@
     restartServerMessage                                              = '서버를 재시작하고 설정을 다시 로드합니다.'
     resumeServerMessage                                               = '서버를 재개합니다.'
     suspendServerMessage                                              = '서버를 일시 중지합니다.'
-    generateDiagnosticDumpMessage                                     = '디버깅을 위한 진단 덤프를 생성합니다.'
     initializingMessage                                               = '초기화 중'
     restartingMessage                                                 = '재시작 중'
     suspendedMessage                                                  = '일시 중지됨'

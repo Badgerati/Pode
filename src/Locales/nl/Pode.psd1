@@ -299,7 +299,6 @@
     restartServerMessage                                              = 'Server opnieuw starten en configuraties herladen.'
     resumeServerMessage                                               = 'Server hervatten.'
     suspendServerMessage                                              = 'Server pauzeren.'
-    generateDiagnosticDumpMessage                                     = 'Genereer een diagnostische dump voor debuggingdoeleinden.'
     initializingMessage                                               = 'Initialiseren'
     restartingMessage                                                 = 'Herstarten'
     suspendedMessage                                                  = 'Gepauzeerd'

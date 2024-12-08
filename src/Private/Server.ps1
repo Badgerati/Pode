@@ -171,7 +171,7 @@ function Start-PodeInternalServer {
     The Show-PodeConsoleInfo function displays key information about the current Pode server instance.
     It optionally clears the console before displaying server details such as version, process ID (PID), and running status.
     If the server is running, it also displays information about active endpoints and OpenAPI definitions.
-    Additionally, it provides server control commands like restart, suspend, and generating diagnostic dumps.
+    Additionally, it provides server control commands like restart, suspend.
 
 .PARAMETER ClearHost
     Clears the console screen before displaying server information.
@@ -243,9 +243,6 @@ function Show-PodeConsoleInfo {
             Write-PodeHost "    Ctrl+B   : $($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor Cyan -Force:$Force
         }
 
-        if ($PodeContext.Server.Debug.Dump.Enabled) {
-            Write-PodeHost "    Ctrl+D   : $($Podelocale.GenerateDiagnosticDumpMessage)" -ForegroundColor Cyan -Force:$Force
-        }
         Write-PodeHost '    ----' -ForegroundColor Cyan -Force:$Force
         Write-PodeHost '    Ctrl+H   : Hide this help' -ForegroundColor Cyan -Force:$Force
         Write-PodeHost "    Ctrl+E   : $(if($PodeContext.Server.Console.ShowEndpoints){'Hide'}else{'Show'}) Endpoints" -ForegroundColor Cyan -Force:$Force
@@ -375,7 +372,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Types = @()
 
         # recreate the session tokens
-        Reset-PodeCancellationToken -Type Cancellation, Restart, Dump, Suspend, Resume, Terminate
+        Reset-PodeCancellationToken -Type Cancellation, Restart, Suspend, Resume, Terminate
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
@@ -397,51 +394,6 @@ function Restart-PodeInternalServer {
 }
 
 
-<#
-.SYNOPSIS
-    Resets the cancellation token for a specific type in Pode.
-.DESCRIPTION
-    The `Reset-PodeCancellationToken` function disposes of the existing cancellation token
-    for the specified type and reinitializes it with a new token. This ensures proper cleanup
-    of disposable resources associated with the cancellation token.
-.PARAMETER Type
-    The type of cancellation token to reset. This is a mandatory parameter and must be
-    provided as a string.
-
-.EXAMPLE
-    # Reset the cancellation token for the 'Cancellation' type
-    Reset-PodeCancellationToken -Type Cancellation
-
-.EXAMPLE
-    # Reset the cancellation token for the 'Restart' type
-    Reset-PodeCancellationToken -Type Restart
-
-.EXAMPLE
-    # Reset the cancellation token for the 'Dump' type
-    Reset-PodeCancellationToken -Type Dump
-
-.EXAMPLE
-    # Reset the cancellation token for the 'Suspend' type
-    Reset-PodeCancellationToken -Type Suspend
-
-.NOTES
-    This function is used to manage cancellation tokens in Pode's internal context.
-#>
-function Reset-PodeCancellationToken {
-    param(
-        [Parameter(Mandatory = $true)]
-        [validateset( 'Cancellation' , 'Restart', 'Dump', 'Suspend', 'Resume', 'Terminate' )]
-        [string[]]
-        $Type
-    )
-    $type.ForEach({
-            # Ensure cleanup of disposable tokens
-            Close-PodeDisposable -Disposable $PodeContext.Tokens[$_]
-
-            # Reinitialize the Token
-            $PodeContext.Tokens[$_] = [System.Threading.CancellationTokenSource]::new()
-        })
-}
 
 
 <#
@@ -767,48 +719,5 @@ function Resume-PodeServerInternal {
         # Reinitialize the CancellationTokenSource for future suspension/resumption
         Reset-PodeCancellationToken -Type  Resume
     }
-    <#
-try{
-
-        # Inform user that the server is resuming
-       # Write-PodeHost $PodeLocale.ResumingMessage -NoNewline -ForegroundColor Yellow
-        Write-Progress -Activity $PodeLocale.ResumingMessage `
-        -Status 'Invoke Resume Event' `
-        -PercentComplete 5 `
-        -Id $suspendActivityId
-        # Trigger the Resume event
-        Invoke-PodeEvent -Type Resume
-
-        # Update the server's suspended state
-        $PodeContext.Server.Suspended = $false
-
-        # Suspend briefly to ensure any required internal processes have time to stabilize
-        Start-Sleep -Seconds 1
-
-        # Disable debugging for each runspace to restore normal execution
-      $runspaces=  Get-Runspace | Where-Object { $_.Debugger.InBreakpoint }
-
-
-
-
-        Disable-RunspaceDebug
-
-        # Inform user that the resume process is complete
-        Write-PodeHost 'Done' -ForegroundColor Green
-
-        # Small delay before refreshing the console
-        Start-Sleep 1
-
-        # Clear the host and display header information
-        Show-PodeConsoleInfo -ShowHeader
-    }
-    catch {
-        # Log any errors that occur
-        $_ | Write-PodeErrorLog
-    }
-    finally {
-
-        # Reinitialize the CancellationTokenSource for future suspension/resumption
-        Reset-PodeCancellationToken -Type  Resume
-    }#>
 }
+

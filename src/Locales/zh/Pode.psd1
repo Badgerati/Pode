@@ -299,7 +299,6 @@
     restartServerMessage                                              = '重启服务器并重新加载配置。'
     resumeServerMessage                                               = '恢复服务器。'
     suspendServerMessage                                              = '暂停服务器。'
-    generateDiagnosticDumpMessage                                     = '生成诊断转储以用于调试。'
     initializingMessage                                               = '初始化中'
     restartingMessage                                                 = '正在重启'
     suspendedMessage                                                  = '已暂停'

@@ -64,7 +64,6 @@ Start-PodeServer -EnableBreakpoints {
 The steps to attach to the Pode process are as follows:
 
 1. In a PowerShell console, start the above Pode server. You will see the following output, and you'll need the PID that is shown:
-
     ```plain
     Pode v2.10.0 (PID: 28324)
     Listening on the following 1 endpoint(s) [1 thread(s)]:
@@ -72,19 +71,16 @@ The steps to attach to the Pode process are as follows:
     ```
 
 2. In a browser or a new PowerShell console, invoke the `[GET] http://localhost:8080` Route to hit the breakpoint.
-
     ```powershell
     Invoke-RestMethod -Uri 'http://localhost:8080/'
     ```
 
 3. Open another new PowerShell console, and run the following command to enter the first PowerShell console running Pode - you'll need the PID as well:
-
     ```powershell
     Enter-PSHostProcess -Id '<PID_HERE>'
     ```
 
 4. Once you have entered the PowerShell console running Pode, run the below command to attach to the breakpoint:
-
     ```powershell
     Get-Runspace |
         Where-Object { $_.Debugger.InBreakpoint } |
@@ -105,7 +101,6 @@ The steps to attach to the Pode process are as follows:
 7. When you are done debugging the current request, hit the `d` key.
 
 8. When you're done with debugging altogether, you can exit the entered process as follows:
-
     ```powershell
     exit
     ```
@@ -115,7 +110,6 @@ The steps to attach to the Pode process are as follows:
 If you're using [`Wait-PodeDebugger`](../../Functions/Core/Wait-PodeDebugger) then you can leave these breakpoint lines in place, and toggle them in non-developer environments by passing `-EnableBreakpoints` to [`Start-PodeServer`](../../Functions/Core/Start-PodeServer). If you don't supply `-EnableBreakpoints`, or you explicitly pass `-EnableBreakpoints:$false`, then this will disable the breakpoints from being set.
 
 You can also toggle breakpoints via the `server.psd1` [configuration file](../../Tutorials/Configuration):
-
 ```powershell
 @{
     Server = @{
@@ -164,7 +158,6 @@ The steps to attach to the Pode process are as follows:
 1. In a PowerShell console, start the above Pode server.
 
 2. In a browser or a new PowerShell console, invoke the `[GET] http://localhost:8080` Route to hit the breakpoint.
-
     ```powershell
     Invoke-RestMethod -Uri 'http://localhost:8080/'
     ```
@@ -181,6 +174,8 @@ The steps to attach to the Pode process are as follows:
 5. You'll also be able to query variables as well, such as `$WebEvent` and other variables you might have created.
 
 6. When you are done debugging the current request, hit the `d` key.
+
+
 
 ## Managing Runspace Names
 
@@ -214,7 +209,7 @@ Set-PodeCurrentRunspaceName -Name 'Custom Runspace Name'
 
 This cmdlet sets a custom name for the runspace, making it easier to track during execution.
 
-#### Example: Setting a Custom Runspace Name in a Task
+#### Example
 
 Here’s an example that demonstrates how to set a custom runspace name in a Pode task:
 
@@ -240,7 +235,7 @@ Get-PodeCurrentRunspaceName
 
 This cmdlet returns the name of the current runspace, allowing for easier tracking and management in complex scenarios with multiple concurrent runspaces.
 
-#### Example: Outputting the Runspace Name in a Schedule
+#### Example
 
 Here’s an example that uses `Get-PodeCurrentRunspaceName` to output the runspace name during the execution of a schedule:
 
@@ -251,149 +246,3 @@ Add-PodeSchedule -Name 'TestSchedule' -Cron '@hourly' -ScriptBlock {
 ```
 
 In this example, the schedule outputs the name of the runspace executing the script block every hour. This can be useful for logging and monitoring purposes when dealing with multiple schedules or tasks.
-
-## Memory Dump for Diagnostics
-
-Pode provides a powerful memory dump feature to capture detailed information during critical failures or fatal exceptions. This feature, triggered by the `Invoke-PodeDump` function, captures the state of your application, including memory usage, runspace details, variables, and stack traces. You can configure the dump format, enable or disable it, and specify the save location. By default, Pode saves the dump in JSON format, but you can also choose from other supported formats.
-
-### Configuring Dump Defaults
-
-To set up default options for the memory dump feature in Pode, you can configure them in the `server.psd1` configuration file. Under the `Server.Debug.Dump` section, you can specify whether to enable the dump, the default format, and the save path. Below is an example configuration for setting up defaults:
-
-```powershell
-@{
-    Server = @{
-        Debug = @{
-            Dump = @{
-                Enable = $true
-                Format = 'Yaml'  # Options: 'json', 'clixml', 'txt', 'bin', 'yaml'
-                Path = './Dump'  # Path to save the dump files
-                MaxDepth = 6
-            }
-        }
-    }
-}
-```
-
-- **Enable**: Boolean value to enable or disable the memory dump feature.
-- **Format**: Specifies the default format for the dump file. Supported formats are `json`, `clixml`, `txt`, `bin`, and `yaml`.
-- **Path**: Specifies the directory where the dump file will be saved. If the directory does not exist, it will be created.
-- **MaxDepth**: Specifies the maximum depth to traverse when collecting information.
-
-### Overriding Default Settings at Runtime
-
-The `Invoke-PodeDump` function allows you to override these defaults at runtime by passing parameters to specify the format and path. This can be useful for debugging in specific cases without altering the default configuration.
-
-```powershell
-try {
-    # Simulate a critical error
-    throw [System.OutOfMemoryException] "Simulated out of memory error"
-}
-catch {
-    # Capture the dump with custom options
-    Invoke-PodeDump -ErrorRecord $_ -Format 'clixml' -Path 'C:\CustomDump'
-}
-```
-
-In this example:
-
-- The memory dump is saved in CLIXML format instead of the default.
-- The dump file is saved in the specified directory (`C:\CustomDump`) instead of the default path.
-
-### Using the Dump Feature
-
-To use the dump feature effectively in your Pode server, you may want to include it in specific places within your code to capture state information when critical errors occur.
-
-Example :
-
-```powershell
-Start-PodeServer -EnableBreakpoints {
-    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        try {
-            # Simulate an operation that could fail
-            $processes = Get-Process -ErrorAction Stop
-            Write-PodeJsonResponse -Value @{ Process = $processes[0] }
-        }
-        catch {
-            # Invoke a memory dump when a critical error occurs
-            $_ | Invoke-PodeDump
-        }
-    }
-}
-```
-
-In this setup, if an error occurs in the route, `Invoke-PodeDump` is called, capturing the current state.
-
-### Dump File Content
-
-When a dump file is created using the `Invoke-PodeDump` function, it captures detailed information about the state of the Pode application. The captured information provides valuable insights into the internal state at the time of the error or diagnostic event. Below is a description of the content included in the dump file:
-
-#### **1. Timestamp**
-
-- The exact date and time when the dump was generated.
-- Format: ISO8601 (e.g., `2024-12-01T12:34:56`).
-
-#### **2. Memory Details**
-
-- Provides information about the memory usage of the Pode application at the time of the dump.
-- Captures metrics such as total memory allocated and other relevant details to analyze memory-related issues.
-
-#### **3. Script Context**
-
-- Contains details about the script execution context at the time of the dump.
-- Includes information such as the script path, parameters passed, and the execution environment.
-
-#### **4. Stack Trace**
-
-- A snapshot of the call stack, showing the sequence of function calls leading up to the dump.
-- Useful for identifying the source of an error or pinpointing the exact location in the code where the issue occurred.
-
-#### **5. Exception Details**
-
-- Contains information about any exceptions that triggered the dump.
-- Includes the exception type, message, and inner exception details (if available).
-
-#### **6. Scoped Variables**
-
-- Lists all variables currently in scope, including their names and values.
-- This information is useful for debugging issues related to variable states.
-
-#### **7. Runspace Pool Details**
-
-- Describes the state and configuration of each runspace pool within the Pode application.
-- Captures the following details for each runspace pool:
-  - **Pool Name**: The name assigned to the runspace pool.
-  - **State**: The current state of the pool (e.g., `Opened`, `Closing`).
-  - **Result**: The result of the last operation performed on the pool.
-  - **Instance ID**: A unique identifier for the runspace pool instance.
-  - **Is Disposed**: Indicates whether the pool has been disposed.
-  - **Runspace Pool State Info**: Detailed state information about the runspace pool.
-  - **Initial Session State**: The initial session state used to configure the pool.
-  - **Cleanup Interval**: The interval used to clean up the pool.
-  - **Availability**: The availability of the runspace pool for handling requests.
-  - **Thread Options**: The threading options configured for the pool.
-
-#### **8. Runspace Details**
-
-- Provides detailed information about each individual runspace within the application.
-- Captures the following information for each runspace:
-  - **Runspace ID**: A unique identifier for the runspace.
-  - **Name**: The name of the runspace, often reflecting its purpose (e.g., `Pode_Web_Listener_1`).
-  - **Scoped Variables**: A detailed list of variables scoped to this runspace, captured using the Pode debugger.
-  - **Initial Session State**: The initial session state of the runspace.
-  - **Runspace State Info**: Detailed state information about the runspace, such as `Opened`, `Busy`, or `Disconnected`.
-
-### Dumping Options and Best Practices
-
-- **Enabling Dump in Production**: Enabling the dump in production can be valuable for diagnosing unexpected failures. However, use it selectively, especially if you are using binary or CLIXML formats, as they can produce large files.
-- **Specifying Formats**: Choose a format based on your needs:
-  - **JSON** and **YAML** are human-readable and suitable for quick inspection.
-  - **CLIXML** is ideal for preserving object structures, especially when analyzing PowerShell-specific data.
-  - **Binary** is compact and suitable for raw state captures but requires deserialization for inspection.
-- **Setting the Path**: Use a dedicated folder for dump files (e.g., `./Dump`) to keep diagnostic files organized. The default path in the configuration can be overridden at runtime if needed.
-
-With these configurations and usage practices, the memory dump feature in Pode can provide a powerful tool for diagnostics and debugging, capturing critical state information at the time of failure.
-
-

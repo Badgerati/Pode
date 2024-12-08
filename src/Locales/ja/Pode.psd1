@@ -299,7 +299,6 @@
     restartServerMessage                                              = 'サーバーを再起動して設定をリロードします。'
     resumeServerMessage                                               = 'サーバーを再開します。'
     suspendServerMessage                                              = 'サーバーを一時停止します。'
-    generateDiagnosticDumpMessage                                     = 'デバッグ目的の診断ダンプを生成します。'
     initializingMessage                                               = '初期化中'
     restartingMessage                                                 = '再起動中'
     suspendedMessage                                                  = '一時停止中'

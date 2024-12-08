@@ -144,7 +144,6 @@
         'Get-PodeCurrentRunspaceName',
         'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',
-        'Invoke-PodeDump',
         'Start-PodeSleep',
 
         # routes

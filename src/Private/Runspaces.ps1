@@ -103,20 +103,17 @@ function Add-PodeRunspace {
                 throw
             }
         }
-
+        
         # Create a PowerShell pipeline.
         $ps = [powershell]::Create()
         $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
-
-        # $Id = (++$PodeContext.RunspacePools[$Type].LastId)
-
 
         # Add the script block and parameters to the pipeline.
         $null = $ps.AddScript($openRunspaceScript)
         $null = $ps.AddParameters(
             @{
                 'Type'      = $Type
-                'Name'      = "Pode_$($Type)_$($Name)_$((++$PodeContext.RunspacePools[$Type].LastId))"
+                'Name'      = "Pode_$($Type)_$($Name)_$((++$PodeContext.RunspacePools[$Type].LastId))" # create the name and increment the last Id for the type
                 'NoProfile' = $NoProfile.IsPresent
             }
         )

@@ -664,18 +664,6 @@ function Test-PodeQuietPressed {
     return (Test-PodeKeyPressed -Key $Key -Character 't')
 }
 
-function Test-PodeDumpPressed {
-    param(
-        [Parameter()]
-        $Key = $null
-    )
-
-    if ($PodeContext.Server.Console.DisableConsoleInput) {
-        return $false
-    }
-    return (Test-PodeKeyPressed -Key $Key -Character 'd')
-}
-
 function Test-PodeSuspendPressed {
     param(
         [Parameter()]
@@ -764,12 +752,7 @@ function Close-PodeServerInternal {
     try {
         # remove all the cancellation tokens
         Write-Verbose 'Disposing cancellation tokens'
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Terminate
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Dump
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Suspend
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Resume
+        Close-PodeCancellationToken -Type Cancellation, Terminate, Restart, Suspend, Resume
 
         # dispose mutex/semaphores
         Write-Verbose 'Diposing mutex and semaphores'

@@ -194,7 +194,7 @@ function Start-PodeTcpServer {
             }
 
             # end do-while
-        } while (Test-PodeSuspensionToken) # Check for suspension or dump tokens and wait for the debugger to reset if active
+        } while (Test-PodeSuspensionToken) # Check for suspension token and wait for the debugger to reset if active
 
     }
 

@@ -53,8 +53,6 @@ Start-PodeServer {
     Add-PodeTask -Name 'Test2' -ScriptBlock {
         param($value)
         Start-Sleep -Seconds 10
-        "a $($value) is comming" | Out-Default
-        Start-Sleep -Seconds 100
         "a $($value) is never late, it arrives exactly when it means to" | Out-Default
     }
 

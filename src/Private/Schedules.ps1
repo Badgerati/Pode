@@ -68,7 +68,7 @@ function Start-PodeScheduleRunspace {
 
             while (!$PodeContext.Tokens.Terminate.IsCancellationRequested) {
 
-                # Check for suspension or dump tokens and wait for the debugger to reset if active
+                # Check for suspension token and wait for the debugger to reset if active
                 Test-PodeSuspensionToken
 
                 try {
