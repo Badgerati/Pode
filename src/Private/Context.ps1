@@ -377,11 +377,13 @@ function New-PodeContext {
     #OpenApi Definition Tag
     $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
-
-    $ctx.Server.SuspensionState = @{
-        Suspended      = $false
-        SuspendTimeout = 30  # timeout in seconds
-        ResumeTimeout  = 30  # timeout in seconds
+    $ctx.Server.AllowedOperations = @{
+        Suspend = $true
+        Restart = $true
+        Timeout = @{
+            Suspend = 30
+            Resume  = 30
+        }
     }
 
 
@@ -915,6 +917,35 @@ function Set-PodeServerConfiguration {
     $Context.Server.Debug = @{
         Breakpoints = @{
             Enabled = [bool](Protect-PodeValue -Value  $Configuration.Debug.Breakpoints.Enable -Default $Context.Server.Debug.Breakpoints.Enable)
+        }
+    }
+
+    $Context.Server.AllowedOperations = @{
+        Suspend = [bool](Protect-PodeValue -Value  $Configuration.AllowedOperations.Suspend -Default $Context.Server.AllowedOperations.Suspend)
+        Restart = [bool](Protect-PodeValue -Value  $Configuration.AllowedOperations.Restart -Default $Context.Server.AllowedOperations.Restart)
+        Timeout = @{
+            Suspend = [int](Protect-PodeValue -Value  $Configuration.AllowedOperations.Timeout.Suspend -Default $Context.Server.AllowedOperations.Timeout.Suspend)
+            Resume  = [int](Protect-PodeValue -Value  $Configuration.AllowedOperations.Timeout.Resume -Default $Context.Server.AllowedOperations.Timeout.Resume)
+        }
+    }
+
+    $Context.Server.Console = @{
+        DisableTermination  = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableTermination -Default $Context.Server.Console.DisableTermination)
+        DisableConsoleInput = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableConsoleInput -Default $Context.Server.Console.DisableConsoleInput)
+        Quiet               = [bool](Protect-PodeValue -Value  $Configuration.Console.Quiet -Default $Context.Server.Console.Quiet)
+        ClearHost           = [bool](Protect-PodeValue -Value  $Configuration.Console.ClearHost -Default $Context.Server.Console.ClearHost)
+        ShowOpenAPI         = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowOpenAPI -Default $Context.Server.Console.ShowOpenAPI)
+        ShowEndpoints       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowEndpoints -Default $Context.Server.Console.ShowEndpoints)
+        ShowHelp            = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowHelp -Default $Context.Server.Console.ShowHelp)
+
+        Colors              = @{
+            Header          = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Header -Default $Context.Server.Console.Colors.Header), $true)
+            Help            = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Help -Default $Context.Server.Console.Colors.Help), $true)
+            EndpointsHeader = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.EndpointsHeader -Default $Context.Server.Console.Colors.EndpointsHeader), $true)
+            Endpoints       = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Endpoints -Default $Context.Server.Console.Colors.Endpoints), $true)
+            OpenApiUrls     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiUrls -Default $Context.Server.Console.Colors.OpenApiUrls), $true)
+            OpenApiHeaders  = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiHeaders -Default $Context.Server.Console.Colors.OpenApiHeaders), $true)
+            OpenApiTitles   = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiTitles -Default $Context.Server.Console.Colors.OpenApiTitles), $true)
         }
     }
 }

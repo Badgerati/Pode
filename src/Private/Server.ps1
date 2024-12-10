@@ -8,15 +8,7 @@ function Start-PodeInternalServer {
     )
 
     try {
-        # Check if the running version of Powershell is EOL
-        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID)) " -ForegroundColor Cyan -NoNewline
-
-        if ($PodeContext.Metrics.Server.RestartCount -gt 0) {
-            Write-PodeHost "[$( $PodeLocale.restartingMessage)]" -ForegroundColor Cyan -NoNewline
-        }
-        else {
-            Write-PodeHost "[$($PodeLocale.initializingMessage)]" -ForegroundColor Cyan -NoNewline
-        }
+        Show-PodeConsoleInfo
 
         $null = Test-PodeVersionPwshEOL -ReportUntested
 
@@ -149,16 +141,16 @@ function Start-PodeInternalServer {
             }
         }
 
+        # Trigger the start
+        $PodeContext.Tokens.Start.Cancel()
+
         # set the start time of the server (start and after restart)
         $PodeContext.Metrics.Server.StartTime = [datetime]::UtcNow
 
         # run running event hooks
         Invoke-PodeEvent -Type Running
 
-        Show-PodeConsoleInfo -ShowHeader
-
-        # Trigger the start
-        $PodeContext.Tokens.Start.Cancel()
+        Show-PodeConsoleInfo
 
     }
     catch {
@@ -179,9 +171,6 @@ function Start-PodeInternalServer {
 .PARAMETER ClearHost
     Clears the console screen before displaying server information.
 
-.PARAMETER ShowHeader
-    Displays the Pode version, server process ID (PID), and current server status in the console header.
-
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
@@ -191,39 +180,80 @@ function Show-PodeConsoleInfo {
         $ClearHost,
 
         [switch]
-        $ShowHeader,
-
-        [switch]
         $Force
     )
+
+    $serverState = (Get-PodeServerState)
+
+    if (!$PodeContext) { return }
+
+    $headerColor = $PodeContext.Server.Console.Colors.Header
+    $helpColor = $PodeContext.Server.Console.Colors.Help
+
 
     if ($PodeContext.Server.Console.Quiet -and !$Force) {
         return
     }
 
+
     if ($ClearHost -or $PodeContext.Server.Console.ClearHost) {
         Clear-Host
     }
 
-    if ($ShowHeader) {
-
-        if ($PodeContext.Server.SuspensionState.Suspended) {
-            $status = $Podelocale.suspendedMessage # Suspended
+    switch ($serverState) {
+        'Suspended' {
+            $status = $Podelocale.suspendedMessage
+            $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
+            $noHeaderNewLine = !$showHelp
+            $ctrlH = !$showHelp
+            break
         }
-        else {
-            $status = $Podelocale.runningMessage # Running
+        'Restarting' {
+            $status = $Podelocale.restartingMessage
+            $showHelp = $false
+            $noHeaderNewLine = $true
+            $ctrlH = $false
+            break
         }
-
-        Write-PodeHost "`rPode $(Get-PodeVersion) (PID: $($PID)) [$status]  " -ForegroundColor Cyan -Force:$Force -NoNewLine
-        if ($PodeContext.Server.Console.ShowHelp -or $Force) {
-            Write-PodeHost -Force:$Force
+        'Starting' {
+            $status = $Podelocale.startingMessage
+            $showHelp = $false
+            $noHeaderNewLine = $true
+            $ctrlH = $false
+            break
         }
-        else {
-            Write-PodeHost '- Ctrl+H for the Command List'  -ForegroundColor Cyan
+        'Running' {
+            $status = $Podelocale.runningMessage
+            $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
+            $noHeaderNewLine = !$showHelp
+            $ctrlH = !$showHelp
+            break
+        }
+        'Terminating' {
+            $status = $Podelocale.terminatingMessage
+            $showHelp = $false
+            $noHeaderNewLine = $true
+            $ctrlH = $false
+            break
+        }
+        'Terminated' {
+            $status = 'Terminated'
+            $showHelp = $false
+            $noHeaderNewLine = $false
+            $ctrlH = $false
+            break
+        }
+        default {
+            return
         }
     }
 
-    if (!$PodeContext.Server.SuspensionState.Suspended) {
+    Write-PodeHost "`rPode $(Get-PodeVersion) (PID: $($PID)) [$status] " -ForegroundColor $headerColor -Force:$Force -NoNewLine:$noHeaderNewLine
+    if ($ctrlH ) {
+        Write-PodeHost '- Ctrl+H for the Command List'  -ForegroundColor $headerColor -Force:$Force
+    }
+
+    if ($serverState -eq 'Running') {
         if ($PodeContext.Server.Console.ShowEndpoints) {
             # state what endpoints are being listened on
             Show-PodeEndPointConsoleInfo -Force:$Force
@@ -234,37 +264,42 @@ function Show-PodeConsoleInfo {
         }
     }
 
-    if (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp) {
-        $resumeOrSuspend = $(if ($PodeContext.Server.SuspensionState.Suspended) { $Podelocale.ResumeServerMessage } else { $Podelocale.SuspendServerMessage })
+    if ($showHelp) {
+        $resumeOrSuspend = $(if ($serverState -eq 'Suspended') { $Podelocale.ResumeServerMessage } else { $Podelocale.SuspendServerMessage })
         Write-PodeHost -Force:$Force
         Write-PodeHost $Podelocale.ServerControlCommandsTitle -ForegroundColor Green -Force:$Force
-        Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor Cyan -Force:$Force
-        Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor Cyan -Force:$Force
-        Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor Cyan -Force:$Force
+        Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpColor -Force:$Force
+        Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor $helpColor -Force:$Force
+        Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor $helpColor -Force:$Force
 
-        if ((Get-PodeEndpointUrl) -and !($PodeContext.Server.SuspensionState.Suspended)) {
-            Write-PodeHost "    Ctrl+B   : $($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor Cyan -Force:$Force
+        if ((Get-PodeEndpointUrl) -and ($serverState -ne 'Suspended') ) {
+            Write-PodeHost "    Ctrl+B   : $($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor $helpColor -Force:$Force
         }
 
-        Write-PodeHost '    ----' -ForegroundColor Cyan -Force:$Force
-        Write-PodeHost '    Ctrl+H   : Hide this help' -ForegroundColor Cyan -Force:$Force
-        Write-PodeHost "    Ctrl+E   : $(if($PodeContext.Server.Console.ShowEndpoints){'Hide'}else{'Show'}) Endpoints" -ForegroundColor Cyan -Force:$Force
+        Write-PodeHost '    ----' -ForegroundColor $helpColor -Force:$Force
+        Write-PodeHost '    Ctrl+H   : Hide this help' -ForegroundColor $helpColor -Force:$Force
+        Write-PodeHost "    Ctrl+E   : $(if($PodeContext.Server.Console.ShowEndpoints){'Hide'}else{'Show'}) Endpoints" -ForegroundColor $helpColor -Force:$Force
         if (Test-PodeOAEnabled) {
-            Write-PodeHost "    Ctrl+O   : $(if($PodeContext.Server.Console.ShowOpenAPI){'Hide'}else{'Show'}) OpenAPI" -ForegroundColor Cyan -Force:$Force
+            Write-PodeHost "    Ctrl+O   : $(if($PodeContext.Server.Console.ShowOpenAPI){'Hide'}else{'Show'}) OpenAPI" -ForegroundColor $helpColor -Force:$Force
         }
-        Write-PodeHost '    Ctrl+L   : Clear the Console' -ForegroundColor Cyan -Force:$Force
+        Write-PodeHost '    Ctrl+L   : Clear the Console' -ForegroundColor $helpColor -Force:$Force
 
-        Write-PodeHost "    Ctrl+T   : $(if($PodeContext.Server.Console.Quiet){'Disable'}else{'Enable'}) Quiet Mode" -ForegroundColor Cyan -Force:$Force
+        Write-PodeHost "    Ctrl+T   : $(if($PodeContext.Server.Console.Quiet){'Disable'}else{'Enable'}) Quiet Mode" -ForegroundColor $helpColor -Force:$Force
     }
 }
 
 function Restart-PodeInternalServer {
+
+    if (!$PodeContext.Tokens.Restart.IsCancellationRequested) {
+        return
+    }
+
     try {
         Reset-PodeCancellationToken -Type Start
         # inform restart
         # Restarting server...
-        Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Yellow
-
+        #  Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Yellow
+        Show-PodeConsoleInfo
         # run restart event hooks
         Invoke-PodeEvent -Type Restart
 
@@ -382,7 +417,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
         # done message
-        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
+        #     Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
@@ -395,8 +430,6 @@ function Restart-PodeInternalServer {
             Reset-PodeCancellationToken -Type Suspend
         }
 
-        # Update the server's suspended state
-        $PodeContext.Server.SuspensionState.Suspended = $false
         Start-PodeInternalServer
     }
     catch {
@@ -469,6 +502,13 @@ function Suspend-PodeServerInternal {
         [int]
         $Timeout = 30
     )
+
+    # Check if the cancellation for suspend tokens is not requested.
+    # If not, exit the current scope early.
+    if (!$PodeContext.Tokens.Suspend.IsCancellationRequested) {
+        return
+    }
+
     try {
 
         # Inform user that the server is suspending
@@ -482,8 +522,6 @@ function Suspend-PodeServerInternal {
         # Trigger the Suspend event
         Invoke-PodeEvent -Type Suspend
 
-        # Update the server's suspended state
-        $PodeContext.Server.SuspensionState.Suspended = $true
         start-sleep 1
         try {
             Write-Progress -Activity $PodeLocale.SuspendingMessage `
@@ -574,11 +612,6 @@ function Suspend-PodeServerInternal {
             Write-Progress -Activity $PodeLocale.suspendingRunspaceMessage -Completed -Id $masterActivityId -ParentId $suspendActivityId
         }
 
-        # Short pause before refreshing the console
-        Start-Sleep -Seconds 1
-
-        # Clear the host and display header information
-        Show-PodeConsoleInfo -ShowHeader
     }
     catch {
         # Log any errors that occur
@@ -587,6 +620,15 @@ function Suspend-PodeServerInternal {
     finally {
         # Clear master progress bar once all suspension is completed
         Write-Progress -Activity $PodeLocale.SuspendingMessage -Completed -Id $suspendActivityId
+        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            Reset-PodeCancellationToken -Type Cancellation
+        }
+
+        # Short pause before refreshing the console
+        Start-Sleep -Seconds 1
+
+        # Clear the host and display header information
+        Show-PodeConsoleInfo
     }
 }
 
@@ -617,8 +659,14 @@ function Resume-PodeServerInternal {
         [int]
         $Timeout = 30
     )
-    try {
 
+    # Check if the cancellation for resuming tokens is not requested.
+    # If not, exit the current scope early.
+    if (!$PodeContext.Tokens.Resume.IsCancellationRequested) {
+        return
+    }
+
+    try {
         # Inform user that the server is suspending
         $ResumingActivityId = (Get-Random)
         # Inform user that the server is suspending
@@ -630,8 +678,6 @@ function Resume-PodeServerInternal {
         # Trigger the Resume event
         Invoke-PodeEvent -Type Resume
 
-        # Update the server's suspended state
-        $PodeContext.Server.SuspensionState.Suspended = $false
         start-sleep 1
         try {
             Write-Progress -Activity $PodeLocale.ResumingMessage `
@@ -721,7 +767,7 @@ function Resume-PodeServerInternal {
         Start-Sleep -Seconds 1
 
         # Clear the host and display header information
-        Show-PodeConsoleInfo -ShowHeader
+        Show-PodeConsoleInfo
     }
     catch {
         # Log any errors that occur
@@ -735,4 +781,6 @@ function Resume-PodeServerInternal {
         Reset-PodeCancellationToken -Type  Resume
     }
 }
+
+
 

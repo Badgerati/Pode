@@ -200,7 +200,7 @@ Describe 'Restart-PodeInternalServer' {
                     Storage = @{}
                 }
                 ScopedVariables = @{}
-                Console              = @{
+                Console         = @{
                     DisableTermination  = $true
                     DisableConsoleInput = $true
                     Quiet               = $true
@@ -210,10 +210,13 @@ Describe 'Restart-PodeInternalServer' {
                     ShowHelp            = $false
 
                 }
-                SuspensionState = @{
-                    Suspended      = $false
-                    SuspendTimeout = 30  # timeout in seconds
-                    ResumeTimeout  = 30  # timeout in seconds
+                AllowedOperations    = @{
+                    Suspend = $true
+                    Restart = $true
+                    Timeout = @{
+                        Suspend = 30  # timeout in seconds
+                        Resume  = 30  # timeout in seconds
+                    }
                 }
 
             }

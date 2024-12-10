@@ -234,7 +234,15 @@ function Start-PodeServer {
                     ShowOpenAPI         = !$HideOpenAPI.IsPresent
                     ShowEndpoints       = !$HideEndpoints.IsPresent
                     ShowHelp            = $ShowHelp.IsPresent
-
+                    Colors              = @{
+                        Header          = [System.ConsoleColor]::Cyan
+                        Help            = [System.ConsoleColor]::Cyan
+                        EndpointsHeader = [System.ConsoleColor]::Green
+                        Endpoints       = [System.ConsoleColor]::Yellow
+                        OpenApiUrls     = [System.ConsoleColor]::White
+                        OpenApiHeaders  = [System.ConsoleColor]::Green
+                        OpenApiTitles   = [System.ConsoleColor]::Yellow
+                    }
                 }
                 EnableBreakpoints    = $EnableBreakpoints
             }
@@ -278,8 +286,9 @@ function Start-PodeServer {
                 }
 
                 # check for internal restart
-                if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
+                if (($PodeContext.Server.AllowedOperations.Restart) -and ($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
                     Clear-PodeKeyPressed
+                    Restart-PodeServer
                     Restart-PodeInternalServer
                 }
                 # check for open browser
@@ -294,43 +303,43 @@ function Start-PodeServer {
                 elseif ( Test-PodeHelpPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.ShowHelp = !$PodeContext.Server.Console.ShowHelp
-                    Show-PodeConsoleInfo -ShowHeader -ClearHost
+                    Show-PodeConsoleInfo -ClearHost
                 }
                 elseif ( Test-PodeOpenAPIPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.ShowOpenAPI = !$PodeContext.Server.Console.ShowOpenAPI
-                    Show-PodeConsoleInfo -ShowHeader -ClearHost
+                    Show-PodeConsoleInfo -ClearHost
                 }
                 elseif ( Test-PodeEndpointsPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.ShowEndpoints = !$PodeContext.Server.Console.ShowEndpoints
-                    Show-PodeConsoleInfo -ShowHeader -ClearHost
+                    Show-PodeConsoleInfo -ClearHost
                 }
                 elseif ( Test-PodeClearPressed -Key $key) {
                     Clear-PodeKeyPressed
-                    Show-PodeConsoleInfo -ShowHeader -ClearHost
+                    Show-PodeConsoleInfo -ClearHost
                 }
                 elseif ( Test-PodeQuietPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.Quiet = !$PodeContext.Server.Console.Quiet
-                    Show-PodeConsoleInfo -ShowHeader -ClearHost -Force
+                    Show-PodeConsoleInfo -ClearHost -Force
                 }
                 elseif ( Test-PodeTerminationPressed -Key $key) {
                     Clear-PodeKeyPressed
                     break
                 }
-                elseif ( $PodeContext.Server.SuspensionState.Suspended) {
-                    if (($PodeContext.Tokens.Resume.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
+                elseif ((Get-PodeServerState) -eq 'Suspended') {
+                    if (($PodeContext.Server.AllowedOperations.Suspend) -and (($PodeContext.Tokens.Resume.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key))) {
                         Clear-PodeKeyPressed
                         Resume-PodeServer
-                        Resume-PodeServerInternal -Timeout $PodeContext.Server.SuspensionState.ResumeTimeout
+                        Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedOperations.Timeout.Resume
                     }
                 }
                 else {
-                    if ( ($PodeContext.Tokens.Suspend.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key)) {
+                    if (($PodeContext.Server.AllowedOperations.Suspend) -and (($PodeContext.Tokens.Suspend.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key))) {
                         Clear-PodeKeyPressed
                         Suspend-PodeServer
-                        Suspend-PodeServerInternal -Timeout $PodeContext.Server.SuspensionState.SuspendTimeout
+                        Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedOperations.Timeout.Suspend
                     }
                 }
 
@@ -343,9 +352,10 @@ function Start-PodeServer {
             }
 
             # Terminating...
-            Write-PodeHost $PodeLocale.terminatingMessage -NoNewLine -ForegroundColor Yellow
+            #  Write-PodeHost $PodeLocale.terminatingMessage -NoNewLine -ForegroundColor Yellow
             Invoke-PodeEvent -Type Terminate
             Close-PodeServer
+            Show-PodeConsoleInfo
         }
         catch {
             $_ | Write-PodeErrorLog
@@ -364,13 +374,19 @@ function Start-PodeServer {
             Unregister-PodeSecretVaultsInternal
 
             # clean the runspaces and tokens
-            Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
+            Close-PodeServerInternal
 
-            # clean the session
-            $PodeContext = $null
+            Show-PodeConsoleInfo
 
             # Restore the name of the current runspace
             Set-PodeCurrentRunspaceName -Name $previousRunspaceName
+
+            if (($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless)) {
+                Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
+            }
+
+            # clean the session
+            $PodeContext = $null
         }
     }
 }
@@ -407,7 +423,10 @@ function Restart-PodeServer {
     [CmdletBinding()]
     param()
 
-    $PodeContext.Tokens.Restart.Cancel()
+    # Only if the Restart feature is anabled
+    if ($PodeContext.Server.AllowedOperations.Restart) {
+        $PodeContext.Tokens.Restart.Cancel()
+    }
 }
 
 
@@ -433,20 +452,24 @@ function Resume-PodeServer {
         [int]
         $Timeout
     )
-
-    if ($Timeout) {
-        $PodeContext.Server.SuspensionState.ResumeTimeout = $Timeout
-    }
-
-    if ( $PodeContext.Server.SuspensionState.Suspended) {
-        if (!$PodeContext.Tokens.Resume.IsCancellationRequested) {
-            $PodeContext.Tokens.Resume.Cancel()
+    # Only if the Suspend feature is anabled
+    if ($PodeContext.Server.AllowedOperations.Suspend) {
+        if ($Timeout) {
+            $PodeContext.Server.AllowedOperations.Timeout.Resume = $Timeout
         }
-        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-            Reset-PodeCancellationToken -Type Cancellation
-        }
-        if ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
-            Reset-PodeCancellationToken -Type Suspend
+
+        if ((Get-PodeServerState) -eq 'Suspended') {
+            if (!$PodeContext.Tokens.Resume.IsCancellationRequested) {
+                $PodeContext.Tokens.Resume.Cancel()
+            }
+            # This condition shouldn't be true
+            if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                Reset-PodeCancellationToken -Type Cancellation
+            }
+
+            if ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
+                Reset-PodeCancellationToken -Type Suspend
+            }
         }
     }
 }
@@ -474,17 +497,18 @@ function Suspend-PodeServer {
         [int]
         $Timeout
     )
-
-    if ($Timeout) {
-        $PodeContext.Server.SuspensionState.SuspendTimeout = $Timeout
-    }
-
-    if (! $PodeContext.Server.SuspensionState.Suspended) {
-        if (!$PodeContext.Tokens.Suspend.IsCancellationRequested) {
-            $PodeContext.Tokens.Suspend.Cancel()
+    # Only if the Suspend feature is anabled
+    if ($PodeContext.Server.AllowedOperations.Suspend) {
+        if ($Timeout) {
+            $PodeContext.Server.AllowedOperations.Timeout.Suspend = $Timeout
         }
-        if (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-            $PodeContext.Tokens.Cancellation.Cancel()
+        if ((Get-PodeServerState) -ne 'Suspended') {
+            if (!$PodeContext.Tokens.Suspend.IsCancellationRequested) {
+                $PodeContext.Tokens.Suspend.Cancel()
+            }
+            if (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                $PodeContext.Tokens.Cancellation.Cancel()
+            }
         }
     }
 }
@@ -1621,4 +1645,33 @@ function Wait-PodeDebugger {
     }
 
     Wait-Debugger
+}
+
+
+
+function Get-PodeServerState {
+    if ($null -eq $PodeContext -or $null -eq $PodeContext.Tokens) {
+        return 'Terminated'
+    }
+
+    if ($PodeContext.Tokens.Terminate.IsCancellationRequested) {
+        return 'Terminating'
+    }
+
+    if ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
+        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            return 'Suspending'
+        }
+        return 'Suspended'
+    }
+
+    if ($PodeContext.Tokens.Restart.IsCancellationRequested) {
+        return 'Restarting'
+    }
+
+    if (!$PodeContext.Tokens.Start.IsCancellationRequested) {
+        return 'Starting'
+    }
+
+    return 'Running'
 }

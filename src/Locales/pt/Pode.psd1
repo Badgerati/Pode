@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = 'Caminho para carregar {0} não encontrado: {1}'
     failedToImportModuleExceptionMessage                              = 'Falha ao importar módulo: {0}'
     endpointNotExistExceptionMessage                                  = "O ponto de extremidade com o protocolo '{0}' e endereço '{1}' ou endereço local '{2}' não existe."
-    terminatingMessage                                                = 'Terminando...'
+    terminatingMessage                                                = 'Terminando'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = 'Nenhum comando fornecido para converter em Rotas.'
     invalidTaskTypeExceptionMessage                                   = 'O tipo de tarefa é inválido, esperado [System.Threading.Tasks.Task] ou [hashtable].'
     alreadyConnectedToWebSocketExceptionMessage                       = "Já conectado ao websocket com o nome '{0}'"
@@ -299,7 +299,7 @@
     restartServerMessage                                              = 'Reiniciar o servidor e recarregar configurações.'
     resumeServerMessage                                               = 'Retomar o servidor.'
     suspendServerMessage                                              = 'Suspender o servidor.'
-    initializingMessage                                               = 'Inicializando'
+    startingMessage                                               = 'Inicializando'
     restartingMessage                                                 = 'Reiniciando'
     suspendedMessage                                                  = 'Suspenso'
     runningMessage                                                    = 'Executando'

@@ -28,7 +28,7 @@
     pathToLoadNotFoundExceptionMessage                                = 'Path to load {0} not found: {1}'
     failedToImportModuleExceptionMessage                              = 'Failed to import module: {0}'
     endpointNotExistExceptionMessage                                  = "Endpoint with protocol '{0}' and address '{1}' or local address '{2}' does not exist."
-    terminatingMessage                                                = 'Terminating...'
+    terminatingMessage                                                = 'Terminating'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = 'No commands supplied to convert to Routes.'
     invalidTaskTypeExceptionMessage                                   = 'Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]'
     alreadyConnectedToWebSocketExceptionMessage                       = "Already connected to WebSocket with name '{0}'"
@@ -299,7 +299,7 @@
     restartServerMessage                                              = 'Restart the server and reload configurations.'
     resumeServerMessage                                               = 'Resume the server.'
     suspendServerMessage                                              = 'Suspend the server.'
-    initializingMessage                                               = 'Initialising'
+    startingMessage                                               = 'Initialising'
     restartingMessage                                                 = 'Restarting'
     suspendedMessage                                                  = 'Suspended'
     runningMessage                                                    = 'Running'

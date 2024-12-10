@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = '未找到要加载的路径 {0}: {1}'
     failedToImportModuleExceptionMessage                              = '导入模块失败: {0}'
     endpointNotExistExceptionMessage                                  = "具有协议 '{0}' 和地址 '{1}' 或本地地址 '{2}' 的端点不存在。"
-    terminatingMessage                                                = '正在终止...'
+    terminatingMessage                                                = '正在终止'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = '未提供要转换为路由的命令。'
     invalidTaskTypeExceptionMessage                                   = '任务类型无效，预期类型为[System.Threading.Tasks.Task]或[hashtable]。'
     alreadyConnectedToWebSocketExceptionMessage                       = "已连接到名为 '{0}' 的 WebSocket"
@@ -299,7 +299,7 @@
     restartServerMessage                                              = '重启服务器并重新加载配置。'
     resumeServerMessage                                               = '恢复服务器。'
     suspendServerMessage                                              = '暂停服务器。'
-    initializingMessage                                               = '初始化中'
+    startingMessage                                               = '初始化中'
     restartingMessage                                                 = '正在重启'
     suspendedMessage                                                  = '已暂停'
     runningMessage                                                    = '运行中'

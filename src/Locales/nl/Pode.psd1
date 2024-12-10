@@ -28,7 +28,7 @@
     pathToLoadNotFoundExceptionMessage                                = 'Pad om te laden {0} niet gevonden: {1}'
     failedToImportModuleExceptionMessage                              = 'Kon module niet importeren: {0}'
     endpointNotExistExceptionMessage                                  = "Eindpunt met protocol '{0}' en adres '{1}' of lokaal adres '{2}' bestaat niet."
-    terminatingMessage                                                = 'Beëindigen...'
+    terminatingMessage                                                = 'Beëindigen'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = 'Geen opdrachten opgegeven om om te zetten naar routes.'
     invalidTaskTypeExceptionMessage                                   = 'Taaktype is ongeldig, verwacht ofwel [System.Threading.Tasks.Task] of [hashtable]'
     alreadyConnectedToWebSocketExceptionMessage                       = "Al verbonden met WebSocket met naam '{0}'"
@@ -299,7 +299,7 @@
     restartServerMessage                                              = 'Server opnieuw starten en configuraties herladen.'
     resumeServerMessage                                               = 'Server hervatten.'
     suspendServerMessage                                              = 'Server pauzeren.'
-    initializingMessage                                               = 'Initialiseren'
+    startingMessage                                               = 'Initialiseren'
     restartingMessage                                                 = 'Herstarten'
     suspendedMessage                                                  = 'Gepauzeerd'
     runningMessage                                                    = 'Actief'

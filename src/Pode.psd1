@@ -310,6 +310,7 @@
         'Get-PodeVersion',
         'Suspend-PodeServer',
         'Resume-PodeServer',
+        'Get-PodeServerState',
 
         # openapi
         'Enable-PodeOpenApi',

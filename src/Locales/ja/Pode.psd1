@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = '読み込むパス{0}が見つかりません: {1}'
     failedToImportModuleExceptionMessage                              = 'モジュールのインポートに失敗しました: {0}'
     endpointNotExistExceptionMessage                                  = "プロトコル'{0}'、アドレス'{1}'またはローカルアドレス'{2}'のエンドポイントが存在しません。"
-    terminatingMessage                                                = '終了中...'
+    terminatingMessage                                                = '終了中'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = 'ルートに変換するためのコマンドが提供されていません。'
     invalidTaskTypeExceptionMessage                                   = 'タスクタイプが無効です。予期されるタイプ：[System.Threading.Tasks.Task]または[hashtable]'
     alreadyConnectedToWebSocketExceptionMessage                       = "名前 '{0}' の WebSocket に既に接続されています"
@@ -299,7 +299,7 @@
     restartServerMessage                                              = 'サーバーを再起動して設定をリロードします。'
     resumeServerMessage                                               = 'サーバーを再開します。'
     suspendServerMessage                                              = 'サーバーを一時停止します。'
-    initializingMessage                                               = '初期化中'
+    startingMessage                                               = '初期化中'
     restartingMessage                                                 = '再起動中'
     suspendedMessage                                                  = '一時停止中'
     runningMessage                                                    = '実行中'

@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = '로드할 경로 {0}을(를) 찾을 수 없습니다: {1}'
     failedToImportModuleExceptionMessage                              = '모듈을 가져오지 못했습니다: {0}'
     endpointNotExistExceptionMessage                                  = "프로토콜 '{0}' 및 주소 '{1}' 또는 로컬 주소 '{2}'가 있는 엔드포인트가 존재하지 않습니다."
-    terminatingMessage                                                = '종료 중...'
+    terminatingMessage                                                = '종료 중'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = '경로로 변환할 명령이 제공되지 않았습니다.'
     invalidTaskTypeExceptionMessage                                   = '작업 유형이 유효하지 않습니다. 예상된 유형: [System.Threading.Tasks.Task] 또는 [hashtable]'
     alreadyConnectedToWebSocketExceptionMessage                       = "이름이 '{0}'인 WebSocket에 이미 연결되어 있습니다."
@@ -299,7 +299,7 @@
     restartServerMessage                                              = '서버를 재시작하고 설정을 다시 로드합니다.'
     resumeServerMessage                                               = '서버를 재개합니다.'
     suspendServerMessage                                              = '서버를 일시 중지합니다.'
-    initializingMessage                                               = '초기화 중'
+    startingMessage                                               = '초기화 중'
     restartingMessage                                                 = '재시작 중'
     suspendedMessage                                                  = '일시 중지됨'
     runningMessage                                                    = '실행 중'

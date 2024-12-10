@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = 'لم يتم العثور على المسار لتحميل {0}: {1}'
     failedToImportModuleExceptionMessage                              = 'فشل في استيراد الوحدة: {0}'
     endpointNotExistExceptionMessage                                  = "نقطة النهاية مع البروتوكول '{0}' والعنوان '{1}' أو العنوان المحلي '{2}' غير موجودة."
-    terminatingMessage                                                = 'إنهاء...'
+    terminatingMessage                                                = 'إنهاء'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = 'لم يتم توفير أي أوامر لتحويلها إلى طرق.'
     invalidTaskTypeExceptionMessage                                   = 'نوع المهمة غير صالح، المتوقع إما [System.Threading.Tasks.Task] أو [hashtable].'
     alreadyConnectedToWebSocketExceptionMessage                       = "متصل بالفعل بـ WebSocket بالاسم '{0}'"
@@ -299,7 +299,7 @@
     restartServerMessage                                              = 'إعادة تشغيل الخادم وتحميل التكوينات.'
     resumeServerMessage                                               = 'استئناف الخادم.'
     suspendServerMessage                                              = 'تعليق الخادم.'
-    initializingMessage                                               = 'جارٍ التهيئة'
+    startingMessage                                               = 'جارٍ التهيئة'
     restartingMessage                                                 = 'جارٍ إعادة التشغيل'
     suspendedMessage                                                  = 'معلق'
     runningMessage                                                    = 'يعمل'

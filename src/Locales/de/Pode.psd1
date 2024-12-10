@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = 'Pfad zum Laden von {0} nicht gefunden: {1}'
     failedToImportModuleExceptionMessage                              = 'Modulimport fehlgeschlagen: {0}'
     endpointNotExistExceptionMessage                                  = "Der Endpunkt mit dem Protokoll '{0}' und der Adresse '{1}' oder der lokalen Adresse '{2}' existiert nicht"
-    terminatingMessage                                                = 'Beenden...'
+    terminatingMessage                                                = 'Beenden'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = 'Keine Befehle zur Umwandlung in Routen bereitgestellt.'
     invalidTaskTypeExceptionMessage                                   = 'Aufgabentyp ist ungültig, erwartet entweder [System.Threading.Tasks.Task] oder [hashtable]'
     alreadyConnectedToWebSocketExceptionMessage                       = "Bereits mit dem WebSocket mit dem Namen '{0}' verbunden"
@@ -299,7 +299,7 @@
     restartServerMessage                                              = 'Server neu starten und Konfigurationen laden.'
     resumeServerMessage                                               = 'Server fortsetzen.'
     suspendServerMessage                                              = 'Server anhalten.'
-    initializingMessage                                               = 'Initialisierung'
+    startingMessage                                               = 'Initialisierung'
     restartingMessage                                                 = 'Neustart'
     suspendedMessage                                                  = 'Angehalten'
     runningMessage                                                    = 'Läuft'
