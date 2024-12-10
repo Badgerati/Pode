@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = 'لم يتم العثور على المسار لتحميل {0}: {1}'
     failedToImportModuleExceptionMessage                              = 'فشل في استيراد الوحدة: {0}'
     endpointNotExistExceptionMessage                                  = "نقطة النهاية مع البروتوكول '{0}' والعنوان '{1}' أو العنوان المحلي '{2}' غير موجودة."
-    terminatingMessage                                                = 'إنهاء...'
+    terminatingMessage                                                = 'إنهاء'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = 'لم يتم توفير أي أوامر لتحويلها إلى طرق.'
     invalidTaskTypeExceptionMessage                                   = 'نوع المهمة غير صالح، المتوقع إما [System.Threading.Tasks.Task] أو [hashtable].'
     alreadyConnectedToWebSocketExceptionMessage                       = "متصل بالفعل بـ WebSocket بالاسم '{0}'"
@@ -291,5 +291,21 @@
     getRequestBodyNotAllowedExceptionMessage                          = "'{0}' لا يمكن أن يحتوي على جسم الطلب. استخدم -AllowNonStandardBody لتجاوز هذا التقييد."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
-    LocalEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
+    localEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
+    suspendingMessage                                                 = 'تعليق الخادم...'
+    resumingMessage                                                   = 'استئناف الخادم...'
+    serverControlCommandsTitle                                        = 'أوامر التحكم بالخادم:'
+    gracefullyTerminateMessage                                        = 'إنهاء الخادم بلطف.'
+    restartServerMessage                                              = 'إعادة تشغيل الخادم وتحميل التكوينات.'
+    resumeServerMessage                                               = 'استئناف الخادم.'
+    suspendServerMessage                                              = 'تعليق الخادم.'
+    startingMessage                                               = 'جارٍ التهيئة'
+    restartingMessage                                                 = 'جارٍ إعادة التشغيل'
+    suspendedMessage                                                  = 'معلق'
+    runningMessage                                                    = 'يعمل'
+    openHttpEndpointMessage                                           = 'افتح أول نقطة نهاية HTTP في المتصفح الافتراضي.'
+    suspendingRunspaceMessage                                        = 'إيقاف تنفيذ المسارات'
+    resumingRunspaceMessage                                          = 'استئناف تنفيذ المسارات'
+    waitingforSuspendingMessage                                      = 'انتظار الإيقاف...'
+    waitingforResumingMessage                                        = 'انتظار الاستئناف...'
 }

@@ -2372,3 +2372,88 @@ function Test-PodeRouteOADefinitionTag {
 
     return  $oaDefinitionTag
 }
+
+
+<#
+.SYNOPSIS
+    Displays OpenAPI endpoint information for each definition in Pode.
+
+.DESCRIPTION
+    The `Show-PodeOAConsoleInfo` function iterates through the OpenAPI definitions
+    configured in the Pode server and displays their associated specification and
+    documentation endpoints in the console. The information includes protocol, address,
+    and paths for specification and documentation endpoints.
+
+.PARAMETER Force
+    Overrides the -Quiet flag of the server.
+
+.EXAMPLE
+    Show-PodeOAConsoleInfo
+
+    This command will output the OpenAPI information for all definitions currently
+    configured in the Pode server, including specification and documentation URLs.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Show-PodeOAConsoleInfo {
+    param(
+        [switch]
+        $Force
+    )
+    # state the OpenAPI endpoints for each definition
+    foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
+        $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
+        if ( !$bookmarks) {
+            continue
+        }
+
+        Write-PodeHost -Force:$Force
+        if (!$OpenAPIHeader) {
+            # OpenAPI Info
+            Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiHeaders -Force:$Force
+            $OpenAPIHeader = $true
+        }
+        Write-PodeHost " '$key':" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles -Force:$Force
+
+        if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
+            # Specification
+            Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles  -Force:$Force
+            foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiUrls -Force:$Force
+            }
+            # Documentation
+            Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles -Force:$Force
+            foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiUrls -Force:$Force
+            }
+        }
+        else {
+            # Specification
+            Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles -Force:$Force
+            $PodeContext.Server.EndpointsInfo | ForEach-Object {
+                if ($_.Pool -eq 'web') {
+                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
+                    Write-PodeHost "     . $url" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiUrls -Force:$Force
+                }
+            }
+            Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles -Force:$Force
+            $PodeContext.Server.EndpointsInfo | ForEach-Object {
+                if ($_.Pool -eq 'web') {
+                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
+                    Write-PodeHost "     . $url" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiUrls -Force:$Force
+                }
+            }
+        }
+    }
+}
+
+function Test-PodeOAEnabled {
+    foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
+        $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
+        if (  $bookmarks) {
+            return $true
+        }
+    }
+    return $false
+}

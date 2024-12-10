@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = '로드할 경로 {0}을(를) 찾을 수 없습니다: {1}'
     failedToImportModuleExceptionMessage                              = '모듈을 가져오지 못했습니다: {0}'
     endpointNotExistExceptionMessage                                  = "프로토콜 '{0}' 및 주소 '{1}' 또는 로컬 주소 '{2}'가 있는 엔드포인트가 존재하지 않습니다."
-    terminatingMessage                                                = '종료 중...'
+    terminatingMessage                                                = '종료 중'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = '경로로 변환할 명령이 제공되지 않았습니다.'
     invalidTaskTypeExceptionMessage                                   = '작업 유형이 유효하지 않습니다. 예상된 유형: [System.Threading.Tasks.Task] 또는 [hashtable]'
     alreadyConnectedToWebSocketExceptionMessage                       = "이름이 '{0}'인 WebSocket에 이미 연결되어 있습니다."
@@ -291,5 +291,21 @@
     getRequestBodyNotAllowedExceptionMessage                          = "'{0}' 작업은 요청 본문을 가질 수 없습니다. 이 제한을 무시하려면 -AllowNonStandardBody를 사용하세요."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "함수 '{0}'은(는) 배열을 파이프라인 입력으로 받지 않습니다."
     unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
-    LocalEndpointConflictExceptionMessage                             = "'{0}' 와 '{1}' 는 OpenAPI 로컬 엔드포인트로 정의되었지만, API 정의당 하나의 로컬 엔드포인트만 허용됩니다."
+    localEndpointConflictExceptionMessage                             = "'{0}' 와 '{1}' 는 OpenAPI 로컬 엔드포인트로 정의되었지만, API 정의당 하나의 로컬 엔드포인트만 허용됩니다."
+    suspendingMessage                                                 = '서버를 일시 중지하는 중...'
+    resumingMessage                                                   = '서버를 재개하는 중...'
+    serverControlCommandsTitle                                        = '서버 제어 명령:'
+    gracefullyTerminateMessage                                        = '서버를 정상적으로 종료합니다.'
+    restartServerMessage                                              = '서버를 재시작하고 설정을 다시 로드합니다.'
+    resumeServerMessage                                               = '서버를 재개합니다.'
+    suspendServerMessage                                              = '서버를 일시 중지합니다.'
+    startingMessage                                               = '초기화 중'
+    restartingMessage                                                 = '재시작 중'
+    suspendedMessage                                                  = '일시 중지됨'
+    runningMessage                                                    = '실행 중'
+    openHttpEndpointMessage                                           = '기본 브라우저에서 첫 번째 HTTP 엔드포인트를 엽니다.'
+    suspendingRunspaceMessage                                         = '런스페이스 일시 정지'
+    resumingRunspaceMessage                                           = '런스페이스 재개'
+    waitingforSuspendingMessage                                       = '일시 정지 대기 중...'
+    waitingforResumingMessage                                         = '재개 대기 중...'
 }

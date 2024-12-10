@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = 'Caminho para carregar {0} não encontrado: {1}'
     failedToImportModuleExceptionMessage                              = 'Falha ao importar módulo: {0}'
     endpointNotExistExceptionMessage                                  = "O ponto de extremidade com o protocolo '{0}' e endereço '{1}' ou endereço local '{2}' não existe."
-    terminatingMessage                                                = 'Terminando...'
+    terminatingMessage                                                = 'Terminando'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = 'Nenhum comando fornecido para converter em Rotas.'
     invalidTaskTypeExceptionMessage                                   = 'O tipo de tarefa é inválido, esperado [System.Threading.Tasks.Task] ou [hashtable].'
     alreadyConnectedToWebSocketExceptionMessage                       = "Já conectado ao websocket com o nome '{0}'"
@@ -291,5 +291,21 @@
     getRequestBodyNotAllowedExceptionMessage                          = "As operações '{0}' não podem ter um corpo de solicitação. Use -AllowNonStandardBody para contornar essa restrição."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'
-    LocalEndpointConflictExceptionMessage                             = "Tanto '{0}' quanto '{1}' estão definidos como endpoints locais do OpenAPI, mas apenas um endpoint local é permitido por definição de API."
+    localEndpointConflictExceptionMessage                             = "Tanto '{0}' quanto '{1}' estão definidos como endpoints locais do OpenAPI, mas apenas um endpoint local é permitido por definição de API."
+    suspendingMessage                                                 = 'Suspendendo o servidor...'
+    resumingMessage                                                   = 'Retomando o servidor...'
+    serverControlCommandsTitle                                        = 'Comandos de controle do servidor:'
+    gracefullyTerminateMessage                                        = 'Encerrar o servidor graciosamente.'
+    restartServerMessage                                              = 'Reiniciar o servidor e recarregar configurações.'
+    resumeServerMessage                                               = 'Retomar o servidor.'
+    suspendServerMessage                                              = 'Suspender o servidor.'
+    startingMessage                                               = 'Inicializando'
+    restartingMessage                                                 = 'Reiniciando'
+    suspendedMessage                                                  = 'Suspenso'
+    runningMessage                                                    = 'Executando'
+    openHttpEndpointMessage                                           = 'Abrir o primeiro endpoint HTTP no navegador padrão.'
+    suspendingRunspaceMessage                                         = 'Suspensão dos Runspaces'
+    resumingRunspaceMessage                                           = 'Retomada dos Runspaces'
+    waitingforSuspendingMessage                                       = 'Esperando para suspender ...'
+    waitingforResumingMessage                                         = 'Esperando para retomar ...'
 }

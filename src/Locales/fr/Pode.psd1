@@ -27,7 +27,7 @@
     pathToLoadNotFoundExceptionMessage                                = 'Chemin à charger {0} non trouvé : {1}'
     failedToImportModuleExceptionMessage                              = "Échec de l'importation du module : {0}"
     endpointNotExistExceptionMessage                                  = "Un point de terminaison avec le protocole '{0}' et l'adresse '{1}' ou l'adresse locale '{2}' n'existe pas."
-    terminatingMessage                                                = 'Terminaison...'
+    terminatingMessage                                                = 'Terminaison'
     noCommandsSuppliedToConvertToRoutesExceptionMessage               = 'Aucune commande fournie pour convertir en routes.'
     invalidTaskTypeExceptionMessage                                   = "Le type de tâche n'est pas valide, attendu [System.Threading.Tasks.Task] ou [hashtable]."
     alreadyConnectedToWebSocketExceptionMessage                       = "Déjà connecté au WebSocket avec le nom '{0}'"
@@ -291,5 +291,21 @@
     getRequestBodyNotAllowedExceptionMessage                          = "Les opérations '{0}' ne peuvent pas avoir de corps de requête. Utilisez -AllowNonStandardBody pour contourner cette restriction."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = "La compression de flux {0} n'est pas prise en charge."
-    LocalEndpointConflictExceptionMessage                             = "Les deux '{0}' et '{1}' sont définis comme des points de terminaison locaux pour OpenAPI, mais un seul point de terminaison local est autorisé par définition d'API."
+    localEndpointConflictExceptionMessage                             = "Les deux '{0}' et '{1}' sont définis comme des points de terminaison locaux pour OpenAPI, mais un seul point de terminaison local est autorisé par définition d'API."
+    suspendingMessage                                                 = 'Suspension du serveur...'
+    resumingMessage                                                   = 'Reprise du serveur...'
+    serverControlCommandsTitle                                        = 'Commandes de contrôle du serveur :'
+    gracefullyTerminateMessage                                        = 'Arrêter le serveur gracieusement.'
+    restartServerMessage                                              = 'Redémarrer le serveur et recharger les configurations.'
+    resumeServerMessage                                               = 'Reprendre le serveur.'
+    suspendServerMessage                                              = 'Suspendre le serveur.'
+    startingMessage                                               = 'Initialisation'
+    restartingMessage                                                 = 'Redémarrage'
+    suspendedMessage                                                  = 'Suspendu'
+    runningMessage                                                    = "En cours d'exécution"
+    openHttpEndpointMessage                                           = 'Ouvrez le premier point de terminaison HTTP dans le navigateur par défaut.'
+    suspendingRunspaceMessage                                         = 'Suspension des Runspaces'
+    resumingRunspaceMessage                                           = 'Reprise des Runspaces'
+    waitingforSuspendingMessage                                       = 'En attente de la suspension ...'
+    waitingforResumingMessage                                         = 'En attente de la reprise ...'
 }

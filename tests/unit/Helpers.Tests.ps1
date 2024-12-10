@@ -1061,6 +1061,10 @@ Describe 'Get-PodeRelativePath' {
         Get-PodeRelativePath -Path './path' -JoinRoot | Should -Be 'c:/./path'
     }
 
+    It 'Returns path for a relative path joined to default root normalized' {
+        Get-PodeRelativePath -Path './path' -JoinRoot -NormalizeRelativePath | Should -Be 'c:/path'
+    }
+
     It 'Returns resolved path for a relative path joined to default root when resolving' {
         $PodeContext = @{
             Server = @{
@@ -1073,6 +1077,10 @@ Describe 'Get-PodeRelativePath' {
 
     It 'Returns path for a relative path joined to passed root' {
         Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' | Should -Be 'e:/./path'
+    }
+
+    It 'Returns path for a relative path joined to passed root normalized' {
+        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' -NormalizeRelativePath | Should -Be 'e:/path'
     }
 
     It 'Throws error for path ot existing' {
@@ -1150,17 +1158,6 @@ Describe 'Close-PodeServerInternal' {
         Assert-MockCalled Write-Host -Times 0 -Scope It
     }
 
-    It 'Closes out pode, but with the done flag' {
-        $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }
-        Close-PodeServerInternal -ShowDoneMessage
-        Assert-MockCalled Write-Host -Times 1 -Scope It
-    }
-
-    It 'Closes out pode, but with no done flag if serverless' {
-        $PodeContext = @{ 'Server' = @{ 'Types' = 'Server'; 'IsServerless' = $true } }
-        Close-PodeServerInternal -ShowDoneMessage
-        Assert-MockCalled Write-Host -Times 0 -Scope It
-    }
 }
 
 Describe 'Get-PodeEndpointUrl' {

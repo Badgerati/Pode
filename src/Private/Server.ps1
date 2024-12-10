@@ -8,8 +8,8 @@ function Start-PodeInternalServer {
     )
 
     try {
-        # Check if the running version of Powershell is EOL
-        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID))" -ForegroundColor Cyan
+        Show-PodeConsoleInfo
+
         $null = Test-PodeVersionPwshEOL -ReportUntested
 
         # setup temp drives for internal dirs
@@ -83,7 +83,7 @@ function Start-PodeInternalServer {
         }
 
         # start the appropriate server
-        $endpoints = @()
+        $PodeContext.Server.EndpointsInfo = @()
 
         # - service
         if ($PodeContext.Server.IsService) {
@@ -109,21 +109,21 @@ function Start-PodeInternalServer {
             foreach ($_type in $PodeContext.Server.Types) {
                 switch ($_type.ToUpperInvariant()) {
                     'SMTP' {
-                        $endpoints += (Start-PodeSmtpServer)
+                        $PodeContext.Server.EndpointsInfo += (Start-PodeSmtpServer)
                     }
 
                     'TCP' {
-                        $endpoints += (Start-PodeTcpServer)
+                        $PodeContext.Server.EndpointsInfo += (Start-PodeTcpServer)
                     }
 
                     'HTTP' {
-                        $endpoints += (Start-PodeWebServer -Browse:$Browse)
+                        $PodeContext.Server.EndpointsInfo += (Start-PodeWebServer -Browse:$Browse)
                     }
                 }
             }
 
             # now go back through, and wait for each server type's runspace pool to be ready
-            foreach ($pool in ($endpoints.Pool | Sort-Object -Unique)) {
+            foreach ($pool in ($PodeContext.Server.EndpointsInfo.Pool | Sort-Object -Unique)) {
                 $start = [datetime]::Now
                 Write-Verbose "Waiting for the $($pool) RunspacePool to be Ready"
 
@@ -141,89 +141,171 @@ function Start-PodeInternalServer {
             }
         }
 
+        # Trigger the start
+        $PodeContext.Tokens.Start.Cancel()
+
         # set the start time of the server (start and after restart)
         $PodeContext.Metrics.Server.StartTime = [datetime]::UtcNow
 
         # run running event hooks
         Invoke-PodeEvent -Type Running
 
-        # state what endpoints are being listened on
-        if ($endpoints.Length -gt 0) {
+        Show-PodeConsoleInfo
 
-            # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
-            Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $endpoints.Length, $PodeContext.Threads.General) -ForegroundColor Yellow
-            $endpoints | ForEach-Object {
-                $flags = @()
-                if ($_.DualMode) {
-                    $flags += 'DualMode'
-                }
-
-                if ($flags.Length -eq 0) {
-                    $flags = [string]::Empty
-                }
-                else {
-                    $flags = "[$($flags -join ',')]"
-                }
-
-                Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
-            }
-            # state the OpenAPI endpoints for each definition
-            foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
-                $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
-                if ( $bookmarks) {
-                    Write-PodeHost
-                    if (!$OpenAPIHeader) {
-                        # OpenAPI Info
-                        Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor Yellow
-                        $OpenAPIHeader = $true
-                    }
-                    Write-PodeHost " '$key':" -ForegroundColor Yellow
-
-                    if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
-                        # Specification
-                        Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
-                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor Yellow
-                        }
-                        # Documentation
-                        Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
-                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor Yellow
-                        }
-                    }
-                    else {
-                        # Specification
-                        Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
-                        $endpoints | ForEach-Object {
-                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
-                            Write-PodeHost "     . $url" -ForegroundColor Yellow
-                        }
-                        Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
-                        $endpoints | ForEach-Object {
-                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
-                            Write-PodeHost "     . $url" -ForegroundColor Yellow
-                        }
-                    }
-                }
-            }
-        }
     }
     catch {
         throw
     }
 }
 
+<#
+.SYNOPSIS
+    Displays Pode server information on the console, including version, PID, status, endpoints, and control commands.
+
+.DESCRIPTION
+    The Show-PodeConsoleInfo function displays key information about the current Pode server instance.
+    It optionally clears the console before displaying server details such as version, process ID (PID), and running status.
+    If the server is running, it also displays information about active endpoints and OpenAPI definitions.
+    Additionally, it provides server control commands like restart, suspend.
+
+.PARAMETER ClearHost
+    Clears the console screen before displaying server information.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Show-PodeConsoleInfo {
+    param(
+        [switch]
+        $ClearHost,
+
+        [switch]
+        $Force
+    )
+
+    $serverState = (Get-PodeServerState)
+
+    if (!$PodeContext) { return }
+
+    $headerColor = $PodeContext.Server.Console.Colors.Header
+    $helpColor = $PodeContext.Server.Console.Colors.Help
+
+
+    if ($PodeContext.Server.Console.Quiet -and !$Force) {
+        return
+    }
+
+
+    if ($ClearHost -or $PodeContext.Server.Console.ClearHost) {
+        Clear-Host
+    }
+
+    switch ($serverState) {
+        'Suspended' {
+            $status = $Podelocale.suspendedMessage
+            $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
+            $noHeaderNewLine = !$showHelp
+            $ctrlH = !$showHelp
+            break
+        }
+        'Restarting' {
+            $status = $Podelocale.restartingMessage
+            $showHelp = $false
+            $noHeaderNewLine = $true
+            $ctrlH = $false
+            break
+        }
+        'Starting' {
+            $status = $Podelocale.startingMessage
+            $showHelp = $false
+            $noHeaderNewLine = $true
+            $ctrlH = $false
+            break
+        }
+        'Running' {
+            $status = $Podelocale.runningMessage
+            $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
+            $noHeaderNewLine = !$showHelp
+            $ctrlH = !$showHelp
+            break
+        }
+        'Terminating' {
+            $status = $Podelocale.terminatingMessage
+            $showHelp = $false
+            $noHeaderNewLine = $true
+            $ctrlH = $false
+            break
+        }
+        'Terminated' {
+            $status = 'Terminated'
+            $showHelp = $false
+            $noHeaderNewLine = $false
+            $ctrlH = $false
+            break
+        }
+        default {
+            return
+        }
+    }
+
+    Write-PodeHost "`rPode $(Get-PodeVersion) (PID: $($PID)) [$status] " -ForegroundColor $headerColor -Force:$Force -NoNewLine:$noHeaderNewLine
+    if ($ctrlH ) {
+        Write-PodeHost '- Ctrl+H for the Command List'  -ForegroundColor $headerColor -Force:$Force
+    }
+
+    if ($serverState -eq 'Running') {
+        if ($PodeContext.Server.Console.ShowEndpoints) {
+            # state what endpoints are being listened on
+            Show-PodeEndPointConsoleInfo -Force:$Force
+        }
+        if ($PodeContext.Server.Console.ShowOpenAPI) {
+            # state the OpenAPI endpoints for each definition
+            Show-PodeOAConsoleInfo -Force:$Force
+        }
+    }
+
+    if ($showHelp) {
+        $resumeOrSuspend = $(if ($serverState -eq 'Suspended') { $Podelocale.ResumeServerMessage } else { $Podelocale.SuspendServerMessage })
+        Write-PodeHost -Force:$Force
+        Write-PodeHost $Podelocale.ServerControlCommandsTitle -ForegroundColor Green -Force:$Force
+        Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpColor -Force:$Force
+        Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor $helpColor -Force:$Force
+        Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor $helpColor -Force:$Force
+
+        if ((Get-PodeEndpointUrl) -and ($serverState -ne 'Suspended') ) {
+            Write-PodeHost "    Ctrl+B   : $($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor $helpColor -Force:$Force
+        }
+
+        Write-PodeHost '    ----' -ForegroundColor $helpColor -Force:$Force
+        Write-PodeHost '    Ctrl+H   : Hide this help' -ForegroundColor $helpColor -Force:$Force
+        Write-PodeHost "    Ctrl+E   : $(if($PodeContext.Server.Console.ShowEndpoints){'Hide'}else{'Show'}) Endpoints" -ForegroundColor $helpColor -Force:$Force
+        if (Test-PodeOAEnabled) {
+            Write-PodeHost "    Ctrl+O   : $(if($PodeContext.Server.Console.ShowOpenAPI){'Hide'}else{'Show'}) OpenAPI" -ForegroundColor $helpColor -Force:$Force
+        }
+        Write-PodeHost '    Ctrl+L   : Clear the Console' -ForegroundColor $helpColor -Force:$Force
+
+        Write-PodeHost "    Ctrl+T   : $(if($PodeContext.Server.Console.Quiet){'Disable'}else{'Enable'}) Quiet Mode" -ForegroundColor $helpColor -Force:$Force
+    }
+}
+
 function Restart-PodeInternalServer {
+
+    if (!$PodeContext.Tokens.Restart.IsCancellationRequested) {
+        return
+    }
+
     try {
+        Reset-PodeCancellationToken -Type Start
         # inform restart
         # Restarting server...
-        Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Cyan
-
+        Show-PodeConsoleInfo
+        
         # run restart event hooks
         Invoke-PodeEvent -Type Restart
 
         # cancel the session token
         $PodeContext.Tokens.Cancellation.Cancel()
+        $PodeContext.Tokens.Terminate.Cancel()
 
         # close all current runspaces
         Close-PodeRunspace -ClosePool
@@ -329,20 +411,25 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Types = @()
 
         # recreate the session tokens
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        $PodeContext.Tokens.Cancellation = [System.Threading.CancellationTokenSource]::new()
-
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
+        Reset-PodeCancellationToken -Type Cancellation, Restart, Suspend, Resume, Terminate
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
         # done message
-        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
+        #     Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
+
+        # reset tokens if needed
+        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            Reset-PodeCancellationToken -Type Cancellation
+        }
+        if ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
+            Reset-PodeCancellationToken -Type Suspend
+        }
+
         Start-PodeInternalServer
     }
     catch {
@@ -350,6 +437,30 @@ function Restart-PodeInternalServer {
         throw $_.Exception
     }
 }
+
+
+
+
+<#
+.SYNOPSIS
+    Determines whether the Pode server should remain open based on its configuration and active components.
+
+.DESCRIPTION
+    The `Test-PodeServerKeepOpen` function evaluates the current server state and configuration
+    to decide whether to keep the Pode server running. It considers the existence of timers,
+    schedules, file watchers, service mode, and server types to make this determination.
+
+    - If any timers, schedules, or file watchers are active, the server remains open.
+    - If the server is not running as a service and is either serverless or has no types defined,
+      the server will close.
+    - In other cases, the server will stay open.
+
+ .NOTES
+    This function is primarily used internally by Pode to manage the server lifecycle.
+    It helps ensure the server remains active only when necessary based on its current state.
+
+
+#>
 
 function Test-PodeServerKeepOpen {
     # if we have any timers/schedules/fim - keep open
@@ -365,3 +476,311 @@ function Test-PodeServerKeepOpen {
     # keep server open
     return $true
 }
+
+<#
+.SYNOPSIS
+    Suspends the Pode server and its runspaces.
+
+.DESCRIPTION
+    This function suspends the Pode server by pausing all associated runspaces and ensuring they enter a debug state.
+    It triggers the 'Suspend' event, updates the server's suspended status, and provides feedback during the suspension process.
+
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to be suspended before timing out. Default is 30 seconds.
+
+.EXAMPLE
+    Suspend-PodeServerInternal -Timeout 60
+    # Suspends the Pode server with a timeout of 60 seconds.
+
+.NOTES
+    This is an internal function used within the Pode framework.
+    It may change in future releases.
+
+#>
+function Suspend-PodeServerInternal {
+    param(
+        [int]
+        $Timeout = 30
+    )
+
+    # Check if the cancellation for suspend tokens is not requested.
+    # If not, exit the current scope early.
+    if (!$PodeContext.Tokens.Suspend.IsCancellationRequested) {
+        return
+    }
+
+    try {
+
+        # Inform user that the server is suspending
+        $suspendActivityId = (Get-Random)
+        # Inform user that the server is suspending
+
+        Write-Progress -Activity $PodeLocale.SuspendingMessage `
+            -Status 'Invoke Suspend Event' `
+            -PercentComplete 3 `
+            -Id $suspendActivityId
+        # Trigger the Suspend event
+        Invoke-PodeEvent -Type Suspend
+
+        start-sleep 1
+        try {
+            Write-Progress -Activity $PodeLocale.SuspendingMessage `
+                -Status $PodeLocale.suspendingRunspaceMessage `
+                -PercentComplete 5 `
+                -Id $suspendActivityId
+
+            # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
+            $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Tasks_*' -or $_.Name -like 'Pode_Schedules_*' } | Sort-Object Name
+
+            # Initialize the master progress bar
+            $runspaceCount = $runspaces.Count
+            $currentRunspaceIndex = 0
+            $masterActivityId = (Get-Random) # Unique ID for master progress
+
+            $runspaces | Foreach-Object {
+                $originalName = $_.Name
+                # Initialize progress bar variables
+                $startTime = [DateTime]::UtcNow
+                $elapsedTime = 0
+                $childActivityId = (Get-Random) # Unique ID for child progress bar
+                # Update master progress bar
+                $currentRunspaceIndex++
+                $masterPercentComplete = [math]::Round(($currentRunspaceIndex / $runspaceCount) * 100)
+
+                Write-Progress -Activity $PodeLocale.suspendingRunspaceMessage `
+                    -Status "[$($currentRunspaceIndex)/$($runspaceCount)]: $($_.Name)" `
+                    -PercentComplete $masterPercentComplete `
+                    -Id $masterActivityId `
+                    -ParentId $suspendActivityId
+
+                Write-Progress -Activity $PodeLocale.SuspendingMessage `
+                    -Status $PodeLocale.suspendingRunspaceMessage -PercentComplete ($masterPercentComplete - 5) `
+                    -Id $suspendActivityId
+
+                # Suspend the runspace
+                Enable-RunspaceDebug -BreakAll -Runspace $_
+                try {
+                    # Initial progress bar display
+                    Write-Progress -Activity "$($PodeLocale.suspendingRunspaceMessage) $($_.Name)" `
+                        -Status  $PodeLocale.waitingforSuspendingMessage `
+                        -PercentComplete 0 -Id $childActivityId -ParentId $masterActivityId
+
+                    while (! $_.debugger.InBreakpoint) {
+                        # Update elapsed time and progress
+                        $elapsedTime = ([DateTime]::UtcNow - $startTime).TotalSeconds
+                        $percentComplete = [math]::Min(($elapsedTime / $Timeout) * 100, 100)
+
+                        Write-Progress -Activity "$($PodeLocale.suspendingRunspaceMessage) $($_.Name)" `
+                            -Status $PodeLocale.suspendingRunspaceMessage `
+                            -PercentComplete $percentComplete `
+                            -Id $childActivityId `
+                            -ParentId $masterActivityId
+
+                        if ($_.Name.StartsWith('_')) {
+                            Write-Progress -Completed -Id $childActivityId -ParentId $masterActivityId
+                            Write-Verbose "$originalName runspace has beed completed"
+                            break
+                        }
+                        # Check for timeout
+                        if ($elapsedTime -ge $Timeout) {
+                            Write-Progress -Completed -Id $childActivityId -ParentId $masterActivityId
+                            Write-Verbose "$($_.Name) failed (Timeout reached after $Timeout seconds.)"
+                            break
+                        }
+
+                        Start-Sleep -Milliseconds 1000
+                    }
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
+                finally {
+                    # Completion message
+                    Write-Progress -Completed -Id $childActivityId -ParentId $masterActivityId
+                    Write-Progress -Activity $PodeLocale.SuspendingMessage `
+                        -Status $PodeLocale.suspendingRunspaceMessage -PercentComplete 100 -Id $suspendActivityId
+
+                    Start-Sleep -Milliseconds 1000
+                }
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
+        finally {
+            # Clear master progress bar once all runspaces are processed
+            Write-Progress -Activity $PodeLocale.suspendingRunspaceMessage -Completed -Id $masterActivityId -ParentId $suspendActivityId
+        }
+
+    }
+    catch {
+        # Log any errors that occur
+        $_ | Write-PodeErrorLog
+    }
+    finally {
+        # Clear master progress bar once all suspension is completed
+        Write-Progress -Activity $PodeLocale.SuspendingMessage -Completed -Id $suspendActivityId
+        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            Reset-PodeCancellationToken -Type Cancellation
+        }
+
+        # Short pause before refreshing the console
+        Start-Sleep -Seconds 1
+
+        # Clear the host and display header information
+        Show-PodeConsoleInfo
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Resumes the Pode server from a suspended state.
+
+.DESCRIPTION
+    This function resumes the Pode server, ensuring all associated runspaces are restored to their normal execution state.
+    It triggers the 'Resume' event, updates the server's suspended status, and clears the host for a refreshed console view.
+
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to be recovered before timing out. Default is 30 seconds.
+
+.EXAMPLE
+    Resume-PodeServerInternal
+    # Resumes the Pode server after a suspension.
+
+.NOTES
+    This is an internal function used within the Pode framework.
+    It may change in future releases.
+
+#>
+function Resume-PodeServerInternal {
+
+    param(
+        [int]
+        $Timeout = 30
+    )
+
+    # Check if the cancellation for resuming tokens is not requested.
+    # If not, exit the current scope early.
+    if (!$PodeContext.Tokens.Resume.IsCancellationRequested) {
+        return
+    }
+
+    try {
+        # Inform user that the server is suspending
+        $ResumingActivityId = (Get-Random)
+        # Inform user that the server is suspending
+
+        Write-Progress -Activity $PodeLocale.ResumingMessage `
+            -Status 'Invoke Resume Event' `
+            -PercentComplete 3 `
+            -Id $ResumingActivityId
+        # Trigger the Resume event
+        Invoke-PodeEvent -Type Resume
+
+        start-sleep 1
+        try {
+            Write-Progress -Activity $PodeLocale.ResumingMessage `
+                -Status $PodeLocale.resumingRunspaceMessage `
+                -PercentComplete 5 `
+                -Id $ResumingActivityId
+
+            # Disable debugging for each runspace to restore normal execution
+            $runspaces = Get-Runspace | Where-Object { $_.Debugger.InBreakpoint }
+
+            # Initialize the master progress bar
+            $runspaceCount = $runspaces.Count
+            $currentRunspaceIndex = 0
+            $masterActivityId = (Get-Random) # Unique ID for master progress
+
+            $runspaces | Foreach-Object {
+                # Initialize progress bar variables
+                $startTime = [DateTime]::UtcNow
+                $elapsedTime = 0
+                $childActivityId = (Get-Random) # Unique ID for child progress bar
+                # Update master progress bar
+                $currentRunspaceIndex++
+                $masterPercentComplete = [math]::Round(($currentRunspaceIndex / $runspaceCount) * 100)
+
+                Write-Progress -Activity $PodeLocale.resumingRunspaceMessage `
+                    -Status "[$($currentRunspaceIndex)/$($runspaceCount)]: $($_.Name)" `
+                    -PercentComplete $masterPercentComplete `
+                    -Id $masterActivityId `
+                    -ParentId $ResumingActivityId
+
+                Write-Progress -Activity $PodeLocale.ResumingMessage `
+                    -Status $PodeLocale.resumingRunspaceMessage -PercentComplete ($masterPercentComplete - 5) `
+                    -Id $ResumingActivityId
+
+                # Resume the runspace
+                Disable-RunspaceDebug -Runspace $_
+                try {
+                    # Initial progress bar display
+                    Write-Progress -Activity "$($PodeLocale.resumingRunspaceMessage) $($_.Name)" `
+                        -Status $PodeLocale.waitingforResumingMessage `
+                        -PercentComplete 0 -Id $childActivityId -ParentId $masterActivityId
+
+                    while (  $_.debugger.InBreakpoint) {
+                        # Update elapsed time and progress
+                        $elapsedTime = ([DateTime]::UtcNow - $startTime).TotalSeconds
+                        $percentComplete = [math]::Min(($elapsedTime / $Timeout) * 100, 100)
+
+                        Write-Progress -Activity "$($PodeLocale.resumingRunspaceMessage) $($_.Name)" `
+                            -Status ($PodeLocale.resumingRunspaceMessage) `
+                            -PercentComplete $percentComplete `
+                            -Id $childActivityId `
+                            -ParentId $masterActivityId
+
+                        # Check for timeout
+                        if ($elapsedTime -ge $Timeout) {
+                            Write-Progress -Completed -Id $childActivityId -ParentId $masterActivityId
+                            Write-Verbose "$($_.Name) failed (Timeout reached after $Timeout seconds.)"
+                            break
+                        }
+
+                        Start-Sleep -Milliseconds 1000
+                    }
+
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
+                finally {
+                    # Completion message
+                    Write-Progress -Completed -Id $childActivityId -ParentId $masterActivityId
+                    Write-Progress -Activity $PodeLocale.ResumingMessage `
+                        -Status $PodeLocale.resumingRunspaceMessage -PercentComplete 100 -Id $ResumingActivityId
+
+                    Start-Sleep -Milliseconds 1000
+                }
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
+        finally {
+            # Clear master progress bar once all runspaces are processed
+            Write-Progress -Activity $PodeLocale.resumingRunspaceMessage -Completed -Id $masterActivityId -ParentId $ResumingActivityId
+        }
+
+        # Short pause before refreshing the console
+        Start-Sleep -Seconds 1
+
+        # Clear the host and display header information
+        Show-PodeConsoleInfo
+    }
+    catch {
+        # Log any errors that occur
+        $_ | Write-PodeErrorLog
+    }
+    finally {
+        # Clear master progress bar once all suspension is completed
+        Write-Progress -Activity $PodeLocale.ResumingMessage -Completed -Id $ResumingActivityId
+
+        # Reinitialize the CancellationTokenSource for future suspension/resumption
+        Reset-PodeCancellationToken -Type  Resume
+    }
+}
+
+
+

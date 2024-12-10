@@ -20,7 +20,7 @@ Close-PodeDisposable -Disposable $stream -Close
 function Close-PodeDisposable {
     [CmdletBinding()]
     param(
-        [Parameter()]
+        [Parameter(ValueFromPipeline = $true)]
         [System.IDisposable]
         $Disposable,
 
@@ -30,26 +30,27 @@ function Close-PodeDisposable {
         [switch]
         $CheckNetwork
     )
-
-    if ($null -eq $Disposable) {
-        return
-    }
-
-    try {
-        if ($Close) {
-            $Disposable.Close()
-        }
-    }
-    catch [exception] {
-        if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
+    process {
+        if ($null -eq $Disposable) {
             return
         }
 
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
-    }
-    finally {
-        $Disposable.Dispose()
+        try {
+            if ($Close) {
+                $Disposable.Close()
+            }
+        }
+        catch [exception] {
+            if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
+                return
+            }
+
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+        finally {
+            $Disposable.Dispose()
+        }
     }
 }
 
@@ -814,7 +815,7 @@ function Out-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet) {
             return
         }
         # Set InputObject to the array of values
@@ -855,6 +856,9 @@ Show the Object Type
 .PARAMETER Label
 Show a label for the object
 
+.PARAMETER Force
+Overrides the -Quiet flag of the server.
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
@@ -883,7 +887,10 @@ function Write-PodeHost {
 
         [Parameter( Mandatory = $false, ParameterSetName = 'object')]
         [string]
-        $Label
+        $Label,
+
+        [switch]
+        $Force
     )
     begin {
         # Initialize an array to hold piped-in values
@@ -896,7 +903,7 @@ function Write-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet -and !($Force.IsPresent)) {
             return
         }
         # Set Object to the array of values
@@ -1486,3 +1493,119 @@ function Invoke-PodeGC {
 
     [System.GC]::Collect()
 }
+
+<#
+.SYNOPSIS
+    A function to pause execution for a specified duration with an optional progress bar.
+
+.DESCRIPTION
+    The `Start-PodeSleep` function pauses script execution for a given duration specified in seconds, milliseconds, or a TimeSpan.
+    It includes an optional progress bar that displays the elapsed time and completion percentage.
+    The progress bar can also display a custom activity name and allows grouping with a ParentId.
+
+.PARAMETER Seconds
+    Specifies the duration to pause execution in seconds. Default is 1 second.
+
+.PARAMETER Milliseconds
+    Specifies the duration to pause execution in milliseconds.
+
+.PARAMETER Duration
+    Specifies the duration to pause execution using a TimeSpan object.
+
+.PARAMETER Activity
+    Specifies the activity name displayed in the progress bar. Default is "Sleeping...".
+
+.PARAMETER ParentId
+    Optional parameter to specify the ParentId for the progress bar, enabling hierarchical grouping.
+
+.PARAMETER ShowProgress
+    Switch to enable the progress bar during the sleep duration.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Start-PodeSleep -Seconds 5 -ShowProgress
+
+    Pauses execution for 5 seconds and displays a progress bar.
+
+.EXAMPLE
+    Start-PodeSleep -Milliseconds 3000 -ShowProgress -Activity "Processing Task" -ParentId 1
+
+    Pauses execution for 3000 milliseconds, showing a progress bar with the custom activity grouped under ParentId 1.
+
+.EXAMPLE
+    Start-PodeSleep -Duration (New-TimeSpan -Seconds 10) -ShowProgress -Activity "Running Script"
+
+    Pauses execution for 10 seconds using a TimeSpan object and displays a progress bar.
+
+.NOTES
+    This function is useful for scenarios where tracking the remaining wait time visually is helpful.
+#>
+function Start-PodeSleep {
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Seconds')]
+        [int]$Seconds = 1,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Milliseconds')]
+        [int]$Milliseconds,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Duration')]
+        [TimeSpan]$Duration,
+
+        [Parameter(Position = 1, Mandatory = $false)]
+        [string]$Activity = 'Sleeping...',
+
+        [Parameter(Mandatory = $false)]
+        [int]$ParentId,
+
+        [Parameter(Mandatory = $false)]
+        [Switch]$ShowProgress
+    )
+
+    # Determine total duration and end time
+    switch ($PSCmdlet.ParameterSetName) {
+        'Seconds' {
+            $totalDuration = [TimeSpan]::FromSeconds($Seconds)
+        }
+        'Milliseconds' {
+            $totalDuration = [TimeSpan]::FromMilliseconds($Milliseconds)
+        }
+        'Duration' {
+            $totalDuration = $Duration
+        }
+    }
+    $endTime = (Get-Date).Add($totalDuration)
+
+    # Start the timer
+    $startTime = Get-Date
+
+    while ((Get-Date) -lt $endTime) {
+        if ($ShowProgress) {
+            # Calculate progress and build Write-Progress parameters
+            $progressParams = @{
+                Activity        = $Activity
+                Status          = "$([math]::Round((($(Get-Date) - $startTime).TotalMilliseconds / $totalDuration.TotalMilliseconds) * 100, 1))%"
+                PercentComplete = [math]::Min((($(Get-Date) - $startTime).TotalMilliseconds / $totalDuration.TotalMilliseconds) * 100, 100)
+            }
+            if ($ParentId) {
+                $progressParams.ParentId = $ParentId
+            }
+
+            # Write the progress with dynamic parameters
+            Write-Progress @progressParams
+        }
+
+        # Sleep for a short duration to prevent high CPU usage
+        Start-Sleep -Milliseconds 200
+    }
+
+    # Clear the progress bar after completion
+    if ($ShowProgress) {
+        Write-Progress -Activity $Activity -Completed
+    }
+}
+
+
+
