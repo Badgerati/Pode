@@ -127,6 +127,8 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
+            # Waits for the Pode server to fully start before proceeding with further operations.
+            Wait-PodeStartToken
             do {
                 try {
                     while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
@@ -309,6 +311,9 @@ function Start-PodeWebServer {
                 [Parameter(Mandatory = $true)]
                 $Listener
             )
+            # Waits for the Pode server to fully start before proceeding with further operations.
+            Wait-PodeStartToken
+
             do {
                 try {
                     while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
@@ -391,6 +396,9 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
+
+            # Waits for the Pode server to fully start before proceeding with further operations.
+Wait-PodeStartToken
 
             do {
                 try {

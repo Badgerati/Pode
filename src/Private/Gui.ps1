@@ -12,6 +12,9 @@ function Start-PodeGuiRunspace {
     }
 
     $script = {
+        # Waits for the Pode server to fully start before proceeding with further operations.
+        Wait-PodeStartToken
+
         try {
             # if there are multiple endpoints, flag warning we're only using the first - unless explicitly set
             if ($null -eq $PodeContext.Server.Gui.Endpoint) {

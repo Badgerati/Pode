@@ -89,6 +89,9 @@ function Start-PodeSmtpServer {
             $ThreadId
         )
 
+        # Waits for the Pode server to fully start before proceeding with further operations.
+Wait-PodeStartToken
+
         do {
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {

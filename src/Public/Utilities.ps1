@@ -20,7 +20,7 @@ Close-PodeDisposable -Disposable $stream -Close
 function Close-PodeDisposable {
     [CmdletBinding()]
     param(
-        [Parameter()]
+        [Parameter(ValueFromPipeline = $true)]
         [System.IDisposable]
         $Disposable,
 
@@ -30,26 +30,27 @@ function Close-PodeDisposable {
         [switch]
         $CheckNetwork
     )
-
-    if ($null -eq $Disposable) {
-        return
-    }
-
-    try {
-        if ($Close) {
-            $Disposable.Close()
-        }
-    }
-    catch [exception] {
-        if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
+    process {
+        if ($null -eq $Disposable) {
             return
         }
 
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
-    }
-    finally {
-        $Disposable.Dispose()
+        try {
+            if ($Close) {
+                $Disposable.Close()
+            }
+        }
+        catch [exception] {
+            if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
+                return
+            }
+
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+        finally {
+            $Disposable.Dispose()
+        }
     }
 }
 
@@ -1554,7 +1555,7 @@ function Start-PodeSleep {
         [TimeSpan]$Duration,
 
         [Parameter(Position = 1, Mandatory = $false)]
-        [string]$Activity = "Sleeping...",
+        [string]$Activity = 'Sleeping...',
 
         [Parameter(Mandatory = $false)]
         [int]$ParentId,

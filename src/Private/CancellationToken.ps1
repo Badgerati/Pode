@@ -28,7 +28,7 @@
 function Reset-PodeCancellationToken {
     param(
         [Parameter(Mandatory = $true)]
-        [validateset( 'Cancellation' , 'Restart', 'Suspend', 'Resume', 'Terminate' )]
+        [validateset( 'Cancellation' , 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start' )]
         [string[]]
         $Type
     )
@@ -41,52 +41,66 @@ function Reset-PodeCancellationToken {
         })
 }
 
-
 <#
 .SYNOPSIS
-	Closes specified cancellation tokens in the Pode context.
+    Closes and disposes of specified cancellation tokens in the Pode context.
 
 .DESCRIPTION
-	The `Close-PodeCancellationToken` function ensures proper cleanup of disposable cancellation tokens
-	within the `$PodeContext`. It takes one or more token types as input and disposes of the corresponding tokens.
+    The `Close-PodeCancellationToken` function ensures proper cleanup of disposable cancellation tokens
+    within the `$PodeContext`. It allows you to specify one or more token types to close and dispose of,
+    or you can dispose of all tokens if no type is specified.
 
-	Supported token types include:
-	- `Cancellation`
-	- `Restart`
-	- `Suspend`
-	- `Resume`
-	- `Terminate`
+    Supported token types include:
+    - `Cancellation`
+    - `Restart`
+    - `Suspend`
+    - `Resume`
+    - `Terminate`
+    - `Start`
 
-	This function is useful for managing and cleaning up resources during the lifecycle of a Pode application.
+    This function is essential for managing resources during the lifecycle of a Pode application,
+    especially when cleaning up during shutdown or restarting.
 
 .PARAMETER Type
-	Specifies the type(s) of cancellation tokens to close. Valid values are:
-	`Cancellation`, `Restart`, `Suspend`, `Resume`, `Terminate`.
+    Specifies the type(s) of cancellation tokens to close. Valid values are:
+    `Cancellation`, `Restart`, `Suspend`, `Resume`, `Terminate`, `Start`.
+
+    If this parameter is not specified, all tokens in `$PodeContext.Tokens` will be disposed of.
 
 .EXAMPLE
-	Close-PodeCancellationToken -Type 'Suspend'
-	Closes the `Suspend` cancellation token in the Pode context.
+    Close-PodeCancellationToken -Type 'Suspend'
+    Closes and disposes of the `Suspend` cancellation token in the Pode context.
 
 .EXAMPLE
-	Close-PodeCancellationToken -Type 'Restart', 'Terminate'
-	Closes the `Restart` and `Terminate` cancellation tokens in the Pode context.
+    Close-PodeCancellationToken -Type 'Restart', 'Terminate'
+    Closes and disposes of the `Restart` and `Terminate` cancellation tokens in the Pode context.
+
+.EXAMPLE
+    Close-PodeCancellationToken
+    Closes and disposes of all tokens in the Pode context.
 
 .NOTES
-	This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
+
 #>
+
 
 function Close-PodeCancellationToken {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate')]
+        [Parameter()]
+        [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start' )]
         [string[]]
         $Type
     )
-
-    foreach ($tokenType in $Type) {
-        # Ensure cleanup of disposable tokens
-        Close-PodeDisposable -Disposable $PodeContext.Tokens[$tokenType]
+    if ($null -eq $Type) {
+        $PodeContext.Tokens.Values | Close-PodeDisposable
+    }
+    else {
+        foreach ($tokenType in $Type) {
+            # Ensure cleanup of disposable tokens
+            Close-PodeDisposable -Disposable $PodeContext.Tokens[$tokenType]
+        }
     }
 }
 
@@ -127,42 +141,87 @@ function Test-PodeSuspensionToken {
     return $suspended
 }
 
+<#
+.SYNOPSIS
+    Creates a set of cancellation tokens for managing Pode application states.
+
+.DESCRIPTION
+    The `New-PodeSuspensionToken` function initializes and returns a hashtable containing
+    multiple cancellation tokens used for managing various states in a Pode application.
+    These tokens provide coordinated control over application operations, such as cancellation,
+    restart, suspension, resumption, termination, and start operations.
+
+    The returned hashtable includes the following keys:
+    - `Cancellation`: A token specifically for managing endpoint cancellation tasks.
+    - `Restart`: A token for managing application restarts.
+    - `Suspend`: A token for handling suspension operations.
+    - `Resume`: A token for resuming operations after suspension.
+    - `Terminate`: A token for managing application termination.
+    - `Start`: A token for monitoring application startup.
+
+.EXAMPLE
+    $tokens = New-PodeSuspensionToken
+    Initializes a set of cancellation tokens and stores them in the `$tokens` variable.
+
+.OUTPUTS
+    [hashtable]
+    A hashtable containing initialized cancellation tokens.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function New-PodeSuspensionToken {
+    # Initialize and return a hashtable containing various cancellation tokens.
+    return @{
+        # A cancellation token specifically for managing endpoint cancellation tasks.
+        Cancellation = [System.Threading.CancellationTokenSource]::new()
+
+        # A cancellation token specifically for managing application restart operations.
+        Restart      = [System.Threading.CancellationTokenSource]::new()
+
+        # A cancellation token for suspending operations in the Pode application.
+        Suspend      = [System.Threading.CancellationTokenSource]::new()
+
+        # A cancellation token for resuming operations after a suspension.
+        Resume       = [System.Threading.CancellationTokenSource]::new()
+
+        # A cancellation token for managing application termination.
+        Terminate    = [System.Threading.CancellationTokenSource]::new()
+
+        # A cancellation token for monitoring application startup.
+        Start        = [System.Threading.CancellationTokenSource]::new()
+    }
+}
+
 
 <#
 .SYNOPSIS
-	Creates a set of cancellation tokens for managing Pode application states.
+    Waits for the Pode server to start by monitoring the cancellation token.
 
 .DESCRIPTION
-	The `New-PodeSuspensionToken` function initializes and returns a hashtable containing
-	multiple cancellation tokens used for managing various states in a Pode application.
-	These tokens enable coordinated control over application operations, such as cancellation,
-	restart, suspension, resumption, and termination.
-
-	The returned hashtable includes the following keys:
-	- `Cancellation`: A token for general cancellation tasks.
-	- `Restart`: A token for managing application restarts.
-	- `Suspend`: A token for handling suspension operations.
-	- `Resume`: A token for resuming operations after suspension.
-	- `Terminate`: A token for managing application termination.
+    This function repeatedly checks the `$PodeContext.Tokens.Start` cancellation token to determine if the Pode server has started.
+    It pauses execution using `Start-Sleep` until the cancellation request is received.
 
 .EXAMPLE
-	$tokens = New-PodeSuspensionToken
-	Initializes a set of cancellation tokens and stores them in the `$tokens` variable.
+    Wait-PodeStartToken
 
-.OUTPUTS
-	[hashtable]
-	A hashtable containing initialized cancellation tokens.
+    This example waits for the Pode server to start before proceeding with the rest of the script.
 
 .NOTES
-	This is an internal function and may change in future releases of Pode.
-#>
+    This function is designed for internal use and may change in future releases of Pode.
 
-function New-PodeSuspensionToken {
-    return @{
-        Cancellation = [System.Threading.CancellationTokenSource]::new()
-        Restart      = [System.Threading.CancellationTokenSource]::new()
-        Suspend      = [System.Threading.CancellationTokenSource]::new()
-        Resume       = [System.Threading.CancellationTokenSource]::new()
-        Terminate    = [System.Threading.CancellationTokenSource]::new()
+.PARAMETER None
+    This function does not take any parameters.
+
+.OUTPUTS
+    None
+
+#>
+function Wait-PodeStartToken {
+    while ( !$PodeContext.Tokens.Start.IsCancellationRequested) {
+        Start-Sleep 1
     }
 }
+
+
+

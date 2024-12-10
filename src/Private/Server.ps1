@@ -157,6 +157,9 @@ function Start-PodeInternalServer {
 
         Show-PodeConsoleInfo -ShowHeader
 
+        # Trigger the start
+        $PodeContext.Tokens.Start.Cancel()
+
     }
     catch {
         throw
@@ -257,6 +260,7 @@ function Show-PodeConsoleInfo {
 
 function Restart-PodeInternalServer {
     try {
+        Reset-PodeCancellationToken -Type Start
         # inform restart
         # Restarting server...
         Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Yellow
@@ -382,6 +386,14 @@ function Restart-PodeInternalServer {
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
+
+        # reset tokens if needed
+        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            Reset-PodeCancellationToken -Type Cancellation
+        }
+        if ( $PodeContext.Tokens.Suspend.IsCancellationRequested) {
+            Reset-PodeCancellationToken -Type Suspend
+        }
 
         # Update the server's suspended state
         $PodeContext.Server.SuspensionState.Suspended = $false

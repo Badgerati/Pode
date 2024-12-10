@@ -752,7 +752,7 @@ function Close-PodeServerInternal {
     try {
         # remove all the cancellation tokens
         Write-Verbose 'Disposing cancellation tokens'
-        Close-PodeCancellationToken -Type Cancellation, Terminate, Restart, Suspend, Resume
+        Close-PodeCancellationToken #-Type Cancellation, Terminate, Restart, Suspend, Resume, Start
 
         # dispose mutex/semaphores
         Write-Verbose 'Diposing mutex and semaphores'

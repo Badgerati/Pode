@@ -84,6 +84,8 @@ function Start-PodeTcpServer {
             [int]
             $ThreadId
         )
+# Waits for the Pode server to fully start before proceeding with further operations.
+Wait-PodeStartToken
 
         do {
             try {

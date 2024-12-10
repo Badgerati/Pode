@@ -19,8 +19,10 @@ function Start-PodeTimerRunspace {
     }
 
     $script = {
-        try {
+        # Waits for the Pode server to fully start before proceeding with further operations.
+Wait-PodeStartToken
 
+        try {
             while (!$PodeContext.Tokens.Terminate.IsCancellationRequested) {
                 # Check for suspension token and wait for the debugger to reset if active
                 Test-PodeSuspensionToken
