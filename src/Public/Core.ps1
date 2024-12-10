@@ -3,73 +3,95 @@
     Starts a Pode Server with the supplied ScriptBlock.
 
 .DESCRIPTION
-    Starts a Pode Server with the supplied ScriptBlock.
+    Starts a Pode Server with the supplied ScriptBlock or file containing server logic.
+    This function initializes and configures the server, enabling customization of its behavior
+    and console interaction.
 
 .PARAMETER ScriptBlock
-    The main logic for the Server.
+    The main logic for the server, provided as a ScriptBlock.
 
 .PARAMETER FilePath
-    A literal, or relative, path to a file containing a ScriptBlock for the Server's logic.
-    The directory of this file will be used as the Server's root path - unless a specific -RootPath is supplied.
+    A literal or relative path to a file containing a ScriptBlock for the server's logic.
+    The directory of this file will be used as the server's root path unless a specific -RootPath is supplied.
 
 .PARAMETER Interval
-    For 'Service' type Servers, will invoke the ScriptBlock every X seconds.
+    For 'Service' type servers, specifies the interval in seconds for invoking the ScriptBlock.
 
 .PARAMETER Name
-    An optional name for the Server (intended for future ideas).
+    An optional name for the server, useful for identification and future extensions.
 
 .PARAMETER Threads
-    The numbers of threads to use for Web, SMTP, and TCP servers.
+    The number of threads to use for Web, SMTP, and TCP servers. Defaults to 1.
 
 .PARAMETER RootPath
-    An override for the Server's root path.
+    Overrides the server's root path.
 
 .PARAMETER Request
-    Intended for Serverless environments, this is Requests details that Pode can parse and use.
+    Provides request details for serverless environments that Pode can parse and use.
 
 .PARAMETER ServerlessType
-    Optional, this is the serverless type, to define how Pode should run and deal with incoming Requests.
+    Specifies the serverless type for Pode. Valid values are:
+    - AzureFunctions
+    - AwsLambda
 
 .PARAMETER StatusPageExceptions
-    An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
+    Controls whether stack traces are shown in the status pages. Valid values are:
+    - Show
+    - Hide
     If supplied this value will override the ShowExceptions setting in the server.psd1 file.
 
 .PARAMETER ListenerType
-    An optional value to use a custom Socket Listener. The default is Pode's inbuilt listener.
-    There's the Pode.Kestrel module, so the value here should be "Kestrel" if using that.
+    Specifies a custom socket listener. Defaults to Pode's inbuilt listener.
+    Example: Set to "Kestrel" for the Pode.Kestrel module.
 
 .PARAMETER DisableTermination
-    Disables the ability to terminate and suspend/resume the Server.
+    Disables the ability to terminate, suspend, or resume the server using the keyboard interactive commands.
 
 .PARAMETER DisableConsoleInput
-    Disables any console keyboard interaction
+    Disables any console keyboard interaction for the server.
 
 .PARAMETER ClearHost
-    Clears the console screen before displaying server information.
+    Clears the console screen whenever the server changes state (e.g., running → suspend → resume).
 
 .PARAMETER Quiet
-    Disables any output from the Server.
+    Disables all output from the server.
 
 .PARAMETER Browse
-    Open the web Server's default endpoint in your default browser.
+    Opens the web server's default endpoint in your default browser.
 
 .PARAMETER CurrentPath
-    Sets the Server's root path to be the current working path - for -FilePath only.
+    Sets the server's root path to the current working directory. Applicable only when -FilePath is used.
 
 .PARAMETER EnablePool
-    Tells Pode to configure certain RunspacePools when they're being used adhoc, such as Timers or Schedules.
+    Configures specific runspace pools (e.g., Timers, Schedules, Tasks, WebSockets, Files) for ad-hoc usage.
 
 .PARAMETER EnableBreakpoints
-    If supplied, any breakpoints created by using Wait-PodeDebugger will be enabled - or disabled if false passed explicitly, or not supplied.
+    Enables breakpoints created by `Wait-PodeDebugger`.
+
+.PARAMETER HideOpenAPI
+    Hides OpenAPI details in the console output, such as specification and documentation URLs.
+
+.PARAMETER HideEndpoints
+    Hides the list of active endpoints in the console output.
+
+.PARAMETER ShowHelp
+    Displays a help menu in the console with control commands.
 
 .EXAMPLE
     Start-PodeServer { /* logic */ }
+    Starts a Pode server using the provided ScriptBlock.
 
 .EXAMPLE
     Start-PodeServer -Interval 10 { /* logic */ }
+    Starts a Pode server that invokes the ScriptBlock every 10 seconds.
 
 .EXAMPLE
     Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda { /* logic */ }
+    Starts a Pode server in a serverless environment, using AWS Lambda input.
+
+.EXAMPLE
+    Start-PodeServer -HideEndpoints -HideOpenAPI -ClearHost { /* logic */ }
+    Starts a Pode server with customized console behavior to hide endpoints and OpenAPI details and clear the console on state changes.
 #>
 function Start-PodeServer {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -121,7 +143,20 @@ function Start-PodeServer {
         $EnablePool,
 
         [switch]
+        $Browse,
+
+        [Parameter(ParameterSetName = 'File')]
+        [switch]
+        $CurrentPath,
+
+        [switch]
+        $EnableBreakpoints,
+
+        [switch]
         $DisableTermination,
+
+        [switch]
+        $Quiet,
 
         [switch]
         $DisableConsoleInput,
@@ -130,17 +165,13 @@ function Start-PodeServer {
         $ClearHost,
 
         [switch]
-        $Quiet,
+        $HideOpenAPI,
 
         [switch]
-        $Browse,
-
-        [Parameter(ParameterSetName = 'File')]
-        [switch]
-        $CurrentPath,
+        $HideEndpoints,
 
         [switch]
-        $EnableBreakpoints
+        $ShowHelp
     )
     begin {
         $pipelineItemCount = 0
@@ -200,9 +231,9 @@ function Start-PodeServer {
                     DisableConsoleInput = $DisableConsoleInput.IsPresent
                     Quiet               = $Quiet.IsPresent
                     ClearHost           = $ClearHost.IsPresent
-                    ShowOpenAPI         = $true
-                    ShowEndpoints       = $true
-                    ShowHelp            = $false
+                    ShowOpenAPI         = !$HideOpenAPI.IsPresent
+                    ShowEndpoints       = !$HideEndpoints.IsPresent
+                    ShowHelp            = $ShowHelp.IsPresent
 
                 }
                 EnableBreakpoints    = $EnableBreakpoints
