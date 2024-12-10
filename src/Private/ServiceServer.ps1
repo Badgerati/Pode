@@ -13,7 +13,7 @@ function Start-PodeServiceServer {
     $serverScript = {
 
         try {
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while (!$PodeContext.Tokens.Terminate.IsCancellationRequested) { 
                 # the event object
                 $script:ServiceEvent = @{
                     Lockable = $PodeContext.Threading.Lockables.Global

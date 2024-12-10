@@ -291,5 +291,21 @@
     getRequestBodyNotAllowedExceptionMessage                          = "'{0}' لا يمكن أن يحتوي على جسم الطلب. استخدم -AllowNonStandardBody لتجاوز هذا التقييد."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
-    LocalEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
+    localEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
+    suspendingMessage                                                 = 'تعليق الخادم...'
+    resumingMessage                                                   = 'استئناف الخادم...'
+    serverControlCommandsTitle                                        = 'أوامر التحكم بالخادم:'
+    gracefullyTerminateMessage                                        = 'إنهاء الخادم بلطف.'
+    restartServerMessage                                              = 'إعادة تشغيل الخادم وتحميل التكوينات.'
+    resumeServerMessage                                               = 'استئناف الخادم.'
+    suspendServerMessage                                              = 'تعليق الخادم.'
+    initializingMessage                                               = 'جارٍ التهيئة'
+    restartingMessage                                                 = 'جارٍ إعادة التشغيل'
+    suspendedMessage                                                  = 'معلق'
+    runningMessage                                                    = 'يعمل'
+    openHttpEndpointMessage                                           = 'افتح أول نقطة نهاية HTTP في المتصفح الافتراضي.'
+    suspendingRunspaceMessage                                        = 'إيقاف تنفيذ المسارات'
+    resumingRunspaceMessage                                          = 'استئناف تنفيذ المسارات'
+    waitingforSuspendingMessage                                      = 'انتظار الإيقاف...'
+    waitingforResumingMessage                                        = 'انتظار الاستئناف...'
 }
