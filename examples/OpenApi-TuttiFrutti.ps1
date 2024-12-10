@@ -19,6 +19,10 @@
 .PARAMETER DisableTermination
     Prevents the server from being terminated.
 
+.PARAMETER IgnoreServerPsConfig
+    Ignores the server.psd1 configuration file when starting the server.
+    This parameter ensures the server does not load or apply any settings defined in the server.psd1 file, allowing for a fully manual configuration at runtime.
+
 .EXAMPLE
     To run the sample: ./OpenApi-TuttiFrutti.ps1
 
@@ -48,7 +52,10 @@ param(
     $Quiet,
 
     [switch]
-    $DisableTermination
+    $DisableTermination,
+
+    [switch]
+    $IgnoreServerPsConfig
 )
 
 try {
@@ -66,7 +73,7 @@ try {
 }
 catch { throw }
 
-Start-PodeServer  -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination -ScriptBlock {
+Start-PodeServer  -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination -IgnoreServerPsConfig:$IgnoreServerPsConfig -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port $PortV3 -Protocol Http -Default -Name 'endpoint_v3'
     Add-PodeEndpoint -Address localhost -Port $PortV3_1 -Protocol Http -Default -Name 'endpoint_v3.1'
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -422,7 +429,7 @@ Some useful links:
     Select-PodeOADefinition -Tag 'v3' -Scriptblock {
         Add-PodeRouteGroup -Path '/api/v3/private'     -Routes {
 
-            Add-PodeRoute -PassThru -Method Put,Post -Path '/pat/:petId' -ScriptBlock {
+            Add-PodeRoute -PassThru -Method Put, Post -Path '/pat/:petId' -ScriptBlock {
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['petId'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200

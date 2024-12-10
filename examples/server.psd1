@@ -29,11 +29,11 @@
         }
     }
     Server = @{
-        FileMonitor       = @{
+        FileMonitor    = @{
             Enable    = $false
             ShowFiles = $true
         }
-        Logging           = @{
+        Logging        = @{
             Masking = @{
                 Patterns = @(
                     '(?<keep_before>Password=)\w+',
@@ -42,7 +42,7 @@
                 Mask     = '--MASKED--'
             }
         }
-        AutoImport        = @{
+        AutoImport     = @{
             Functions    = @{
                 ExportOnly = $true
             }
@@ -55,16 +55,16 @@
                 }
             }
         }
-        Request           = @{
+        Request        = @{
             Timeout  = 30
             BodySize = 100MB
         }
-        Debug             = @{
+        Debug          = @{
             Breakpoints = @{
                 Enable = $true
             }
         }
-        AllowedOperations = @{
+        AllowedActions = @{
             Suspend = $true
             Restart = $true
             Timeout = @{
@@ -72,7 +72,7 @@
                 Resume  = 30
             }
         }
-        Console           = @{
+        Console        = @{
             DisableTermination  = $false
             DisableConsoleInput = $false
             Quiet               = $false

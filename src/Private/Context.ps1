@@ -47,7 +47,10 @@ function New-PodeContext {
         $Console,
 
         [switch]
-        $EnableBreakpoints
+        $EnableBreakpoints,
+
+        [switch]
+        $IgnoreServerPsConfig
     )
 
     # set a random server name if one not supplied
@@ -192,8 +195,11 @@ function New-PodeContext {
         }
     }
 
-    # check if there is any global configuration
-    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
+    if (!$IgnoreServerPsConfig) {
+        # check if there is any global configuration
+        $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
+    }
+
 
     # over status page exceptions
     if (!(Test-PodeIsEmpty $StatusPageExceptions)) {
@@ -377,7 +383,7 @@ function New-PodeContext {
     #OpenApi Definition Tag
     $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
-    $ctx.Server.AllowedOperations = @{
+    $ctx.Server.AllowedActions = @{
         Suspend = $true
         Restart = $true
         Timeout = @{
@@ -920,12 +926,12 @@ function Set-PodeServerConfiguration {
         }
     }
 
-    $Context.Server.AllowedOperations = @{
-        Suspend = [bool](Protect-PodeValue -Value  $Configuration.AllowedOperations.Suspend -Default $Context.Server.AllowedOperations.Suspend)
-        Restart = [bool](Protect-PodeValue -Value  $Configuration.AllowedOperations.Restart -Default $Context.Server.AllowedOperations.Restart)
+    $Context.Server.AllowedActions = @{
+        Suspend = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Suspend -Default $Context.Server.AllowedActions.Suspend)
+        Restart = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Restart -Default $Context.Server.AllowedActions.Restart)
         Timeout = @{
-            Suspend = [int](Protect-PodeValue -Value  $Configuration.AllowedOperations.Timeout.Suspend -Default $Context.Server.AllowedOperations.Timeout.Suspend)
-            Resume  = [int](Protect-PodeValue -Value  $Configuration.AllowedOperations.Timeout.Resume -Default $Context.Server.AllowedOperations.Timeout.Resume)
+            Suspend = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Suspend -Default $Context.Server.AllowedActions.Timeout.Suspend)
+            Resume  = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Resume -Default $Context.Server.AllowedActions.Timeout.Resume)
         }
     }
 

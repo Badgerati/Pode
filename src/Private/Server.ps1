@@ -298,8 +298,8 @@ function Restart-PodeInternalServer {
         Reset-PodeCancellationToken -Type Start
         # inform restart
         # Restarting server...
-        #  Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Yellow
         Show-PodeConsoleInfo
+        
         # run restart event hooks
         Invoke-PodeEvent -Type Restart
 
