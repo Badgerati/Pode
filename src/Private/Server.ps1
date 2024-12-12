@@ -507,23 +507,23 @@ function Test-PodeServerKeepOpen {
 
 <#
 .SYNOPSIS
-    Suspends the Pode server and its runspaces.
+    Suspends the Pode server and its associated runspaces.
 
 .DESCRIPTION
     This function suspends the Pode server by pausing all associated runspaces and ensuring they enter a debug state.
-    It triggers the 'Suspend' event, updates the server's suspended status, and provides feedback during the suspension process.
+    It triggers the 'Suspend' event, updates the server's suspension status, and provides progress and feedback during the suspension process.
+    This is primarily used internally by the Pode framework to handle server suspension.
 
 .PARAMETER Timeout
-    The maximum time, in seconds, to wait for each runspace to be suspended before timing out. Default is 30 seconds.
+    The maximum time, in seconds, to wait for each runspace to be suspended before timing out.
+    The default timeout is 30 seconds.
 
 .EXAMPLE
     Suspend-PodeServerInternal -Timeout 60
     # Suspends the Pode server with a timeout of 60 seconds.
 
 .NOTES
-    This is an internal function used within the Pode framework.
-    It may change in future releases.
-
+    This is an internal function used within the Pode framework and is subject to change in future releases.
 #>
 function Suspend-PodeServerInternal {
     param(
@@ -531,71 +531,73 @@ function Suspend-PodeServerInternal {
         $Timeout = 30
     )
 
-    # Check if the cancellation for suspend tokens is not requested.
-    # If not, exit the current scope early.
+    # Exit early if no suspension request is pending.
     if (!$PodeContext.Tokens.Suspend.IsCancellationRequested) {
         return
     }
 
     try {
-
-        # Suspending server...
+        # Display suspension initiation message in the console.
         Show-PodeConsoleInfo
 
-        # Trigger the Suspend event
+        # Trigger the 'Suspend' event for the server.
         Invoke-PodeEvent -Type Suspend
 
-        # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
+        # Retrieve and sort all Pode-related runspaces.
+        # Main runspaces are suspended first to avoid potential hangs.
         $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Tasks_*' -or $_.Name -like 'Pode_Schedules_*' } | Sort-Object Name
 
-
+        # Iterate over each runspace to initiate suspension.
         $runspaces | Foreach-Object {
             $originalName = $_.Name
             $startTime = [DateTime]::UtcNow
             $elapsedTime = 0
 
-            # Suspend the runspace
+            # Activate debug mode on the runspace to suspend it.
             Enable-RunspaceDebug -BreakAll -Runspace $_
 
-            while (! $_.debugger.InBreakpoint) {
-                # Update elapsed time and progress
+            while (! $_.Debugger.InBreakpoint) {
+                # Calculate elapsed suspension time.
                 $elapsedTime = ([DateTime]::UtcNow - $startTime).TotalSeconds
 
+                # Exit loop if the runspace is already completed.
                 if ($_.Name.StartsWith('_')) {
-                    Write-Verbose "$originalName runspace has beed completed"
+                    Write-Verbose "$originalName runspace has been completed."
                     break
                 }
-                # Check for timeout
-                if ($elapsedTime -ge $Timeout) { 
-                    $errorMsg = "$($_.Name) failed (Timeout reached after $Timeout seconds.)"
+
+                # Handle timeout scenario and raise an error if exceeded.
+                if ($elapsedTime -ge $Timeout) {
+                    $errorMsg = "$($_.Name) failed to suspend (Timeout reached after $Timeout seconds)."
                     Write-PodeHost $errorMsg -ForegroundColor Red
                     throw $errorMsg
                 }
 
+                # Pause briefly before rechecking the runspace state.
                 Start-Sleep -Milliseconds 200
             }
         }
-
     }
     catch {
-        # Log any errors that occur
+        # Log any errors encountered during suspension.
         $_ | Write-PodeErrorLog
-        # force a resume
+
+        # Force a resume action to ensure server continuity.
         Set-PodeResumeToken
     }
     finally {
-        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+        # Reset cancellation token if a cancellation request was made.
+        if ($PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             Reset-PodeCancellationToken -Type Cancellation
         }
 
-        # Short pause before refreshing the console
+        # Brief pause before refreshing console output.
         Start-Sleep -Seconds 1
 
-        # Clear the host and display header information
+        # Refresh the console and display updated information.
         Show-PodeConsoleInfo
     }
 }
-
 
 <#
 .SYNOPSIS
@@ -603,19 +605,19 @@ function Suspend-PodeServerInternal {
 
 .DESCRIPTION
     This function resumes the Pode server, ensuring all associated runspaces are restored to their normal execution state.
-    It triggers the 'Resume' event, updates the server's suspended status, and clears the host for a refreshed console view.
+    It triggers the 'Resume' event, updates the server's status, and clears the console for a refreshed view.
+    The function also provides timeout handling and progress feedback during the resumption process.
 
 .PARAMETER Timeout
-    The maximum time, in seconds, to wait for each runspace to be recovered before timing out. Default is 30 seconds.
+    The maximum time, in seconds, to wait for each runspace to exit its suspended state before timing out.
+    The default timeout is 30 seconds.
 
 .EXAMPLE
     Resume-PodeServerInternal
-    # Resumes the Pode server after a suspension.
+    # Resumes the Pode server after being suspended.
 
 .NOTES
-    This is an internal function used within the Pode framework.
-    It may change in future releases.
-
+    This is an internal function used within the Pode framework and may change in future releases.
 #>
 function Resume-PodeServerInternal {
 
@@ -624,62 +626,64 @@ function Resume-PodeServerInternal {
         $Timeout = 30
     )
 
-    # Check if the cancellation for resuming tokens is not requested.
-    # If not, exit the current scope early.
+    # Exit early if no resumption request is pending.
     if (!$PodeContext.Tokens.Resume.IsCancellationRequested) {
         return
     }
 
     try {
-
-        # Resuming server...
+        # Display resumption initiation message in the console.
         Show-PodeConsoleInfo
-        # Trigger the Resume event
+
+        # Trigger the 'Resume' event for the server.
         Invoke-PodeEvent -Type Resume
 
-        start-sleep 1
+        # Pause briefly to allow processes to stabilize.
+        Start-Sleep -Seconds 1
 
-        # Disable debugging for each runspace to restore normal execution
+        # Retrieve all runspaces currently in a suspended (debug) state.
         $runspaces = Get-Runspace | Where-Object { $_.Debugger.InBreakpoint }
 
-        $runspaces | Foreach-Object {
-            # Initialize progress bar variables
+        # Iterate over each suspended runspace to restore normal execution.
+        $runspaces | ForEach-Object {
+            # Track the start time for timeout calculations.
             $startTime = [DateTime]::UtcNow
             $elapsedTime = 0
 
-            # Resume the runspace
+            # Disable debug mode on the runspace to resume it.
             Disable-RunspaceDebug -Runspace $_
 
-            while (  $_.debugger.InBreakpoint) {
-                # Update elapsed time and progress
+            while ($_.Debugger.InBreakpoint) {
+                # Calculate the elapsed time since resumption started.
                 $elapsedTime = ([DateTime]::UtcNow - $startTime).TotalSeconds
 
-                # Check for timeout
+                # Handle timeout scenario and raise an error if exceeded.
                 if ($elapsedTime -ge $Timeout) {
-                    $errorMsg = "$($_.Name) failed (Timeout reached after $Timeout seconds.)"
+                    $errorMsg = "$($_.Name) failed to resume (Timeout reached after $Timeout seconds)."
                     Write-PodeHost $errorMsg -ForegroundColor Red
                     throw $errorMsg
                 }
 
+                # Pause briefly before rechecking the runspace state.
                 Start-Sleep -Milliseconds 200
             }
         }
 
-        # Short pause before refreshing the console
+        # Pause briefly before refreshing the console view.
         Start-Sleep -Seconds 1
-
     }
     catch {
-        # Log any errors that occur
+        # Log any errors encountered during the resumption process.
         $_ | Write-PodeErrorLog
-        # force a restart
+
+        # Force a restart action to recover the server.
         Set-PodeRestartToken
     }
     finally {
-        # Reinitialize the CancellationTokenSource for future suspension/resumption
-        Reset-PodeCancellationToken -Type  Resume
+        # Reset the resume cancellation token for future suspension/resumption cycles.
+        Reset-PodeCancellationToken -Type Resume
 
-        # Clear the host and display header information
+        # Clear the console and display refreshed header information.
         Show-PodeConsoleInfo
     }
 }
