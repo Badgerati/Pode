@@ -292,14 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "De functie '{0}' accepteert geen array als pipeline-invoer."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Niet-ondersteunde streamcompressie-encodering: {0}'
     localEndpointConflictExceptionMessage                             = "Zowel '{0}' als '{1}' zijn gedefinieerd als lokale OpenAPI-eindpunten, maar er is slechts één lokaal eindpunt per API-definitie toegestaan."
-    suspendingMessage                                                 = 'Server wordt gepauzeerd...'
-    resumingMessage                                                   = 'Server wordt hervat...'
+    suspendingMessage                                                 = 'Onderbreken'
+    resumingMessage                                                   = 'Hervatten'
     serverControlCommandsTitle                                        = "Serverbedieningscommando's:"
     gracefullyTerminateMessage                                        = 'Server netjes afsluiten.'
     restartServerMessage                                              = 'Server opnieuw starten en configuraties herladen.'
     resumeServerMessage                                               = 'Server hervatten.'
     suspendServerMessage                                              = 'Server pauzeren.'
-    startingMessage                                               = 'Initialiseren'
+    startingMessage                                                   = 'Starten'
     restartingMessage                                                 = 'Herstarten'
     suspendedMessage                                                  = 'Gepauzeerd'
     runningMessage                                                    = 'Actief'

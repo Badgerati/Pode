@@ -292,14 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = "La compression de flux {0} n'est pas prise en charge."
     localEndpointConflictExceptionMessage                             = "Les deux '{0}' et '{1}' sont définis comme des points de terminaison locaux pour OpenAPI, mais un seul point de terminaison local est autorisé par définition d'API."
-    suspendingMessage                                                 = 'Suspension du serveur...'
-    resumingMessage                                                   = 'Reprise du serveur...'
+    suspendingMessage                                                 = 'Suspension'
+    resumingMessage                                                   = 'Reprise'
     serverControlCommandsTitle                                        = 'Commandes de contrôle du serveur :'
     gracefullyTerminateMessage                                        = 'Arrêter le serveur gracieusement.'
     restartServerMessage                                              = 'Redémarrer le serveur et recharger les configurations.'
     resumeServerMessage                                               = 'Reprendre le serveur.'
     suspendServerMessage                                              = 'Suspendre le serveur.'
-    startingMessage                                               = 'Initialisation'
+    startingMessage                                                   = 'Démarrage'
     restartingMessage                                                 = 'Redémarrage'
     suspendedMessage                                                  = 'Suspendu'
     runningMessage                                                    = "En cours d'exécution"

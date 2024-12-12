@@ -292,14 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
     localEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
-    suspendingMessage                                                 = 'サーバーを一時停止しています...'
-    resumingMessage                                                   = 'サーバーを再開しています...'
+    suspendingMessage                                                 = '停止'
+    resumingMessage                                                   = '再開'
     serverControlCommandsTitle                                        = 'サーバーコントロールコマンド:'
     gracefullyTerminateMessage                                        = 'サーバーを正常に終了します。'
     restartServerMessage                                              = 'サーバーを再起動して設定をリロードします。'
     resumeServerMessage                                               = 'サーバーを再開します。'
     suspendServerMessage                                              = 'サーバーを一時停止します。'
-    startingMessage                                               = '初期化中'
+    startingMessage                                                   = '開始中'
     restartingMessage                                                 = '再起動中'
     suspendedMessage                                                  = '一時停止中'
     runningMessage                                                    = '実行中'

@@ -292,14 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "함수 '{0}'은(는) 배열을 파이프라인 입력으로 받지 않습니다."
     unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
     localEndpointConflictExceptionMessage                             = "'{0}' 와 '{1}' 는 OpenAPI 로컬 엔드포인트로 정의되었지만, API 정의당 하나의 로컬 엔드포인트만 허용됩니다."
-    suspendingMessage                                                 = '서버를 일시 중지하는 중...'
-    resumingMessage                                                   = '서버를 재개하는 중...'
+    suspendingMessage                                                 = '중단'
+    resumingMessage                                                   = '재개'
     serverControlCommandsTitle                                        = '서버 제어 명령:'
     gracefullyTerminateMessage                                        = '서버를 정상적으로 종료합니다.'
     restartServerMessage                                              = '서버를 재시작하고 설정을 다시 로드합니다.'
     resumeServerMessage                                               = '서버를 재개합니다.'
     suspendServerMessage                                              = '서버를 일시 중지합니다.'
-    startingMessage                                               = '초기화 중'
+    startingMessage                                                   = '시작 중'
     restartingMessage                                                 = '재시작 중'
     suspendedMessage                                                  = '일시 중지됨'
     runningMessage                                                    = '실행 중'

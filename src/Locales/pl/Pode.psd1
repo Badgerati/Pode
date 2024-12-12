@@ -292,14 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
     localEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."
-    suspendingMessage                                                 = 'Wstrzymywanie serwera...'
-    resumingMessage                                                   = 'Wznawianie serwera...'
+    suspendingMessage                                                 = 'Wstrzymywanie'
+    resumingMessage                                                   = 'Wznawianie'
     serverControlCommandsTitle                                        = 'Polecenia sterowania serwerem:'
     gracefullyTerminateMessage                                        = 'Łagodne zakończenie działania serwera.'
     restartServerMessage                                              = 'Ponowne uruchomienie serwera i załadowanie konfiguracji.'
     resumeServerMessage                                               = 'Wznowienie serwera.'
     suspendServerMessage                                              = 'Wstrzymanie serwera.'
-    startingMessage                                               = 'Inicjalizacja'
+    startingMessage                                                   = 'Rozpoczynanie'
     restartingMessage                                                 = 'Ponowne uruchamianie'
     suspendedMessage                                                  = 'Wstrzymany'
     runningMessage                                                    = 'Działa'

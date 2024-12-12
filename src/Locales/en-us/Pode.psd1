@@ -292,14 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Unsupported stream compression encoding: {0}'
     localEndpointConflictExceptionMessage                             = "Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition."
-    suspendingMessage                                                 = 'Suspending server...'
-    resumingMessage                                                   = 'Resuming server...'
+    suspendingMessage                                                 = 'Suspending'
+    resumingMessage                                                   = 'Resuming'
     serverControlCommandsTitle                                        = 'Server Control Commands:'
     gracefullyTerminateMessage                                        = 'Gracefully terminate the server.'
     restartServerMessage                                              = 'Restart the server and reload configurations.'
     resumeServerMessage                                               = 'Resume the server.'
     suspendServerMessage                                              = 'Suspend the server.'
-    startingMessage                                                   = 'Initializing'
+    startingMessage                                                   = 'Starting'
     restartingMessage                                                 = 'Restarting'
     suspendedMessage                                                  = 'Suspended'
     runningMessage                                                    = 'Running'

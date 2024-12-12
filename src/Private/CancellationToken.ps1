@@ -194,7 +194,7 @@ function New-PodeSuspensionToken {
 }
 
 
- 
+
 <#
 .SYNOPSIS
     Waits for the Pode server to start by monitoring the cancellation token.
@@ -224,5 +224,94 @@ function Wait-PodeStartToken {
     }
 }
 
+
+<#
+.SYNOPSIS
+    Sets the Resume token for the Pode server to resume its operation from a suspended state.
+
+.DESCRIPTION
+    The Set-PodeResumeToken function ensures that the Resume token's cancellation is requested to signal that the server should
+    resume its operation. Additionally, it resets other related tokens, such as Cancellation and Suspend, if they are in a requested state.
+    This function prevents conflicts between tokens and ensures proper state management in the Pode server.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+
+.EXAMPLE
+    Set-PodeResumeToken
+
+    Signals the Pode server to resume operations and resets relevant tokens.
+#>
+function Set-PodeResumeToken {
+
+    # Ensure the Resume token is in a cancellation requested state
+    if (!$PodeContext.Tokens.Resume.IsCancellationRequested) {
+        $PodeContext.Tokens.Resume.Cancel()
+    }
+
+    # If the Cancellation token is in a requested state, reset it (unexpected scenario)
+    if ($PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+        Reset-PodeCancellationToken -Type Cancellation
+    }
+
+    # Reset the Suspend token if it is in a cancellation requested state
+    if ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
+        Reset-PodeCancellationToken -Type Suspend
+    }
+}
+
+<#
+.SYNOPSIS
+    Sets the Restart token for the Pode server to initiate a restart.
+
+.DESCRIPTION
+    The Set-PodeRestartToken function ensures that the Restart token's cancellation is requested to signal that the server should
+    initiate a restart. This function is a key part of managing the Pode server lifecycle and ensures proper state signaling.
+
+.NOTES
+
+    This is an internal function and may change in future releases of Pode.
+
+.EXAMPLE
+    Set-PodeRestartToken
+
+    Signals the Pode server to initiate a restart by setting the Restart token.
+#>
+function Set-PodeRestartToken {
+    # Ensure the Restart token is in a cancellation requested state
+    if (!$PodeContext.Tokens.Restart.IsCancellationRequested) {
+        $PodeContext.Tokens.Restart.Cancel()
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Sets the Suspend token for the Pode server to transition into a suspended state.
+
+.DESCRIPTION
+    The Set-PodeSuspendToken function ensures that the Suspend token's cancellation is requested to signal that the server should
+    transition into a suspended state. Additionally, it sets the Cancellation token to prevent further operations while the server
+    is suspended.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+
+.EXAMPLE
+    Set-PodeSuspendToken
+
+    Signals the Pode server to transition into a suspended state by setting the Suspend token and the Cancellation token.
+#>
+function Set-PodeSuspendToken {
+    # Ensure the Suspend token is in a cancellation requested state
+    if (!$PodeContext.Tokens.Suspend.IsCancellationRequested) {
+        $PodeContext.Tokens.Suspend.Cancel()
+    }
+
+    # Ensure the Cancellation token is in a cancellation requested state
+    if (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+        $PodeContext.Tokens.Cancellation.Cancel()
+    }
+}
 
 

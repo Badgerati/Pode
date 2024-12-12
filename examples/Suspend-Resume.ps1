@@ -192,7 +192,7 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
     # schedule defined using two cron expressions
     Add-PodeSchedule -Name 'two-crons' -Cron @('0/3 * * * *', '0/5 * * * *') -ScriptBlock {
         Write-Verbose  'double cron'
-        Get-PodeSchedule -Name 'two-crons' | Out-Default
+        Get-PodeSchedule -Name 'two-crons' | Write-Verbose
     }
 
     # schedule to run every tuesday at midnight
