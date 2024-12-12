@@ -9,7 +9,7 @@
     noLogicPassedForRouteExceptionMessage                             = 'No logic passed for Route: {0}'
     scriptPathDoesNotExistExceptionMessage                            = 'The script path does not exist: {0}'
     mutexAlreadyExistsExceptionMessage                                = 'A mutex with the following name already exists: {0}'
-    listeningOnEndpointsMessage                                       = 'Listening on the following {0} endpoint(s) [{1} thread(s)]:'
+    listeningOnEndpointsMessage                                       = 'Listening on {0} endpoint(s) [{1} thread(s)]:'
     unsupportedFunctionInServerlessContextExceptionMessage            = 'The {0} function is not supported in a serverless context.'
     expectedNoJwtSignatureSuppliedExceptionMessage                    = 'Expected no JWT signature to be supplied.'
     secretAlreadyMountedExceptionMessage                              = "A Secret with the name '{0}' has already been mounted."
@@ -277,7 +277,7 @@
     discriminatorIncompatibleWithAllOfExceptionMessage                = "The parameter 'Discriminator' is incompatible with 'allOf'."
     noNameForWebSocketSendMessageExceptionMessage                     = 'No Name for a WebSocket to send message to supplied.'
     hashtableMiddlewareNoLogicExceptionMessage                        = 'A Hashtable Middleware supplied has no Logic defined.'
-    openApiInfoMessage                                                = 'OpenAPI Info:'
+    openApiInfoMessage                                                = 'OpenAPI Information:'
     invalidSchemeForAuthValidatorExceptionMessage                     = "The supplied '{0}' Scheme for the '{1}' authentication validator requires a valid ScriptBlock."
     sseFailedToBroadcastExceptionMessage                              = 'SSE failed to broadcast due to defined SSE broadcast level for {0}: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory module only available on Windows OS.'

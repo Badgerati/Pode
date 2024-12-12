@@ -387,7 +387,6 @@ function Get-PodeEndpointByName {
     return $null
 }
 
-
 <#
 .SYNOPSIS
     Displays information about the endpoints the Pode server is listening on.
@@ -409,33 +408,76 @@ function Get-PodeEndpointByName {
 
 .NOTES
     This function uses `Write-PodeHost` to display messages, with the `Yellow` foreground
-    color for clarity. It ensures each endpoint is displayed with its associated flags,
-    enhancing visibility of specific configurations like `DualMode`.
+    color for the summary and other appropriate colors for URLs and flags.
 #>
 function Show-PodeEndPointConsoleInfo {
     param(
         [switch]
         $Force
     )
+
+    # Default colors if not set
+    if ($null -ne $PodeContext.Server.Console.Colors.EndpointsHeader) {
+        $headerColor = $PodeContext.Server.Console.Colors.EndpointsHeader
+    }
+    else {
+        $headerColor = [System.ConsoleColor]::Yellow
+    }
+
+    if ($null -ne $PodeContext.Server.Console.Colors.Endpoints) {
+        $endpointsColor = $PodeContext.Server.Console.Colors.Endpoints
+    }
+    else {
+        $endpointsColor = [System.ConsoleColor]::Cyan
+    }
+
+    if ($null -ne $PodeContext.Server.Console.Colors.Divider) {
+        $dividerColor = $PodeContext.Server.Console.Colors.Divider
+    }
+    else {
+        $dividerColor = [System.ConsoleColor]::Yellow
+    }
+
+
+    # Return early if no endpoints are available
     if ($PodeContext.Server.EndpointsInfo.Length -eq 0) {
         return
     }
 
-    # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
-    Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $PodeContext.Server.EndpointsInfo.Length, $PodeContext.Threads.General) -ForegroundColor Yellow -Force:$Force
+    # Display header
+    Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $PodeContext.Server.EndpointsInfo.Length, $PodeContext.Threads.General) -ForegroundColor $headerColor -Force:$Force
+    Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+
+    # Display each endpoint with extracted protocol
     $PodeContext.Server.EndpointsInfo | ForEach-Object {
+        # Extract protocol from the URL
+        $protocol = ($_.Url -split ':')[0].ToUpper()
+
+        # Determine protocol label
+        $protocolLabel = switch ($protocol) {
+            'HTTP' { 'HTTP      ' }
+            'HTTPS' { 'HTTPS     ' }
+            'WS' { 'WebSocket ' }
+            'SMTP' { 'SMTP      ' }
+            'SMTPS' { 'SMTPS      ' }
+            'TCP' { 'TCP       ' }
+            'TCPS' { 'TCPS      ' }
+            default { 'UNKNOWN   ' }
+        }
+
+        # Handle flags like DualMode
         $flags = @()
         if ($_.DualMode) {
             $flags += 'DualMode'
         }
 
-        if ($flags.Length -eq 0) {
-            $flags = [string]::Empty
-        }
-        else {
-            $flags = "[$($flags -join ',')]"
-        }
+        $flagString = if ($flags.Length -gt 0) { "[$($flags -join ',')]" } else { [string]::Empty }
 
-        Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow -Force:$Force
+        # Display endpoint details
+        Write-PodeHost "   - $protocolLabel : $($_.Url) $flagString" -ForegroundColor $endpointsColor -Force:$Force
     }
+
+    # Footer
+    Write-PodeHost
+    Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
 }

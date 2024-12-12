@@ -185,86 +185,143 @@ function Show-PodeConsoleInfo {
 
 
 
-    $serverState = (Get-PodeServerState)
+     # Get the current server state and timestamp
+     $serverState = Get-PodeServerState
+     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 
     if (!$PodeContext) { return }
 
-    $headerColor = $PodeContext.Server.Console.Colors.Header
-    $helpColor = $PodeContext.Server.Console.Colors.Help
+    # Define color variables with fallback for PowerShell 5.1
+
+    $headerColor = if ($null -ne $PodeContext.Server.Console.Colors.Header) {
+        $PodeContext.Server.Console.Colors.Header
+    }
+    else {
+        [System.ConsoleColor]::White
+    }
+
+    if ($null -ne $PodeContext.Server.Console.Colors.Divider) {
+        $dividerColor = $PodeContext.Server.Console.Colors.Divider
+    }
+    else {
+        $dividerColor = [System.ConsoleColor]::Yellow
+    }
+
+    # Define help section color variables
+    $helpHeaderColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpHeader) {
+        $PodeContext.Server.Console.Colors.HelpHeader
+    }
+    else {
+        [System.ConsoleColor]::Yellow
+    }
+
+    $helpKeyColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpKey) {
+        $PodeContext.Server.Console.Colors.HelpKey
+    }
+    else {
+        [System.ConsoleColor]::Green
+    }
+
+    $helpDescriptionColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpDescription) {
+        $PodeContext.Server.Console.Colors.HelpDescription
+    }
+    else {
+        [System.ConsoleColor]::White
+    }
+
+    $helpDividerColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpDivider) {
+        $PodeContext.Server.Console.Colors.HelpDivider
+    }
+    else {
+        [System.ConsoleColor]::Gray
+    }
+
+
 
 
     if ($PodeContext.Server.Console.Quiet -and !$Force) {
         return
     }
 
-
-    if ($ClearHost -or $PodeContext.Server.Console.ClearHost) {
-        Clear-Host
-    }
-
     switch ($serverState) {
         'Suspended' {
             $status = $Podelocale.suspendedMessage
+            $statusColor = [System.ConsoleColor]::Yellow
             $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
-            $noHeaderNewLine = !$showHelp
+            $noHeaderNewLine = $false
             $ctrlH = !$showHelp
             $bottomBar = $false
+            $topSeparator=$false
             break
         }
         'Suspending' {
             $status = $Podelocale.suspendingMessage
+            $statusColor = [System.ConsoleColor]::Yellow
             $showHelp = $false
             $noHeaderNewLine = $true
             $ctrlH = $false
             $bottomBar = $false
+            $topSeparator=$true
             break
         }
         'Resuming' {
             $status = $Podelocale.resumingMessage
+            $statusColor = [System.ConsoleColor]::Yellow
             $showHelp = $false
             $noHeaderNewLine = $true
             $ctrlH = $false
             $bottomBar = $false
+            $topSeparator=$true
             break
         }
         'Restarting' {
             $status = $Podelocale.restartingMessage
+            $statusColor = [System.ConsoleColor]::Yellow
             $showHelp = $false
-            $noHeaderNewLine = $true
+            $noHeaderNewLine = $false
             $ctrlH = $false
             $bottomBar = $false
+            $topSeparator=$true
             break
         }
         'Starting' {
             $status = $Podelocale.startingMessage
+            $statusColor = [System.ConsoleColor]::Yellow
             $showHelp = $false
             $noHeaderNewLine = $true
             $ctrlH = $false
             $bottomBar = $false
+            $topSeparator=$true
             break
         }
         'Running' {
             $status = $Podelocale.runningMessage
+            $statusColor = [System.ConsoleColor]::Green
             $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
             $noHeaderNewLine = $false
             $ctrlH = !$showHelp
             $bottomBar = $true
+            $topSeparator=$false
             break
         }
         'Terminating' {
             $status = $Podelocale.terminatingMessage
+            $statusColor = [System.ConsoleColor]::Red
             $showHelp = $false
             $noHeaderNewLine = $true
             $ctrlH = $false
             $bottomBar = $false
+            $topSeparator=$true
             break
         }
         'Terminated' {
             $status = 'Terminated'
+            $statusColor = [System.ConsoleColor]::Red
             $showHelp = $false
             $noHeaderNewLine = $false
             $ctrlH = $false
             $bottomBar = $false
+            $topSeparator=$false
             break
         }
         default {
@@ -272,9 +329,22 @@ function Show-PodeConsoleInfo {
         }
     }
 
-    Write-PodeHost "`rPode $(Get-PodeVersion) (PID: $($PID)) [$status]          " -ForegroundColor $headerColor -Force:$Force -NoNewLine:$noHeaderNewLine
+    if ($ClearHost -or $PodeContext.Server.Console.ClearHost) {
+        Clear-Host
+    }
+    elseif ($topSeparator) {
+        Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+    }
 
 
+    # Write the header line with dynamic status color
+    Write-PodeHost "`r[$timestamp] Pode $(Get-PodeVersion) (PID: $($PID)) [" -ForegroundColor $headerColor -Force:$Force -NoNewLine
+    Write-PodeHost "$status" -ForegroundColor $statusColor -Force:$Force -NoNewLine
+    Write-PodeHost ']              ' -ForegroundColor $headerColor -Force:$Force -NoNewLine:$noHeaderNewLine
+
+    if (!$noHeaderNewLine) {
+        Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+    }
     if ($serverState -eq 'Running') {
         if ($PodeContext.Server.Console.ShowEndpoints) {
             # state what endpoints are being listened on
@@ -287,35 +357,58 @@ function Show-PodeConsoleInfo {
     }
 
     if ($showHelp) {
-        $resumeOrSuspend = $(if ($serverState -eq 'Suspended') { $Podelocale.ResumeServerMessage } else { $Podelocale.SuspendServerMessage })
-        Write-PodeHost -Force:$Force
-        Write-PodeHost $Podelocale.ServerControlCommandsTitle -ForegroundColor Green -Force:$Force
-        Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpColor -Force:$Force
-        Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor $helpColor -Force:$Force
-        Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor $helpColor -Force:$Force
-
-        if ((Get-PodeEndpointUrl) -and ($serverState -ne 'Suspended') ) {
-            Write-PodeHost "    Ctrl+B   : $($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor $helpColor -Force:$Force
+        # Determine resume or suspend message
+        $resumeOrSuspend = if ($serverState -eq 'Suspended') {
+            $Podelocale.ResumeServerMessage
+        }
+        else {
+            $Podelocale.SuspendServerMessage
         }
 
-        Write-PodeHost '    ----' -ForegroundColor $helpColor -Force:$Force
-        Write-PodeHost '    Ctrl+H   : Hide this help' -ForegroundColor $helpColor -Force:$Force
-        Write-PodeHost "    Ctrl+E   : $(if($PodeContext.Server.Console.ShowEndpoints){'Hide'}else{'Show'}) Endpoints" -ForegroundColor $helpColor -Force:$Force
+        # Print help section
+        Write-PodeHost $Podelocale.serverControlCommandsTitle -ForegroundColor $helpHeaderColor -Force:$Force
+        Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+
+        Write-PodeHost '    Ctrl+C   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost "$($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
+
+        Write-PodeHost '    Ctrl+R   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost "$($Podelocale.RestartServerMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
+
+        Write-PodeHost '    Ctrl+U   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost "$resumeOrSuspend" -ForegroundColor $helpDescriptionColor -Force:$Force
+
+        Write-PodeHost '    Ctrl+H   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost 'Hide Help' -ForegroundColor $helpDescriptionColor -Force:$Force
+
+        if ((Get-PodeEndpointUrl) -and ($serverState -ne 'Suspended')) {
+            Write-PodeHost '    Ctrl+B   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "$($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
+        }
+
+        Write-PodeHost '    ----' -ForegroundColor $helpDividerColor -Force:$Force
+
+        Write-PodeHost '    Ctrl+E   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost "$(if ($PodeContext.Server.Console.ShowEndpoints) { 'Hide' } else { 'Show' }) Endpoints" -ForegroundColor $helpDescriptionColor -Force:$Force
+
         if (Test-PodeOAEnabled) {
-            Write-PodeHost "    Ctrl+O   : $(if($PodeContext.Server.Console.ShowOpenAPI){'Hide'}else{'Show'}) OpenAPI" -ForegroundColor $helpColor -Force:$Force
+            Write-PodeHost '    Ctrl+O   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "$(if ($PodeContext.Server.Console.ShowOpenAPI) { 'Hide' } else { 'Show' }) OpenAPI" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
-        Write-PodeHost '    Ctrl+L   : Clear the Console' -ForegroundColor $helpColor -Force:$Force
 
-        Write-PodeHost "    Ctrl+T   : $(if($PodeContext.Server.Console.Quiet){'Disable'}else{'Enable'}) Quiet Mode" -ForegroundColor $helpColor -Force:$Force
+        Write-PodeHost '    Ctrl+L   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost 'Clear the Console' -ForegroundColor $helpDescriptionColor -Force:$Force
+
+        Write-PodeHost '    Ctrl+T   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost "$(if ($PodeContext.Server.Console.Quiet) { 'Disable' } else { 'Enable' }) Quiet Mode" -ForegroundColor $helpDescriptionColor -Force:$Force
+        Write-PodeHost
+        if ($bottomBar) {
+            Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+        }
     }
     elseif ($ctrlH ) {
-        Write-PodeHost
-        Write-PodeHost 'Ctrl+H for Help'  -ForegroundColor Green -Force:$Force
-    }
-
-    if ($bottomBar) {
-        Write-PodeHost
-        Write-PodeHost '**********************************************************'
+        Write-PodeHost '    Ctrl+H  : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost 'Show Help'  -ForegroundColor $helpDescriptionColor -Force:$Force
     }
 }
 

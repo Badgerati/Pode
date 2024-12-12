@@ -81,13 +81,19 @@
             ShowEndpoints       = $true
             ShowHelp            = $false
             Colors              = @{
-                Header          = 'Cyan'
-                Help            = 'Cyan'
-                EndpointsHeader = 'Green'
-                Endpoints       = 'Yellow'
-                OpenApiUrls     = 'White'
-                OpenApiHeaders  = 'Green'
-                OpenApiTitles   = 'Yellow'
+                Header           = 'White'
+                Help             = 'Cyan'
+                EndpointsHeader  = 'Yellow'
+                Endpoints        = 'Cyan'
+                OpenApiUrls      = 'Cyan'
+                OpenApiHeaders   = 'Yellow'
+                OpenApiTitles    = 'White'
+                OpenApiSubtitles = 'Yellow'
+                HelpHeader       = 'Yellow'
+                HelpKey          = 'Green'
+                HelpDescription  = 'White'
+                HelpDivider      = 'Gray'
+                Divider          = 'DarkGray'
             }
         }
     }

@@ -2401,52 +2401,102 @@ function Show-PodeOAConsoleInfo {
         [switch]
         $Force
     )
-    # state the OpenAPI endpoints for each definition
-    foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
+
+    # Default header initialization
+    $openAPIHeader = $false
+
+    # Fallback colors
+
+    if ($null -ne $PodeContext.Server.Console.Colors.Divider) {
+        $dividerColor = $PodeContext.Server.Console.Colors.Divider
+    }
+    else {
+        $dividerColor = [System.ConsoleColor]::Yellow
+    }
+
+    $headerColor = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiHeaders) {
+        $PodeContext.Server.Console.Colors.OpenApiHeaders
+    }
+    else {
+        [System.ConsoleColor]::Yellow
+    }
+
+    $titleColor = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiTitles) {
+        $PodeContext.Server.Console.Colors.OpenApiTitles
+    }
+    else {
+        [System.ConsoleColor]::White
+    }
+
+    $subtitleColor  = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiSubtitles) {
+        $PodeContext.Server.Console.Colors.OpenApiSubtitles
+    }
+    else {
+        [System.ConsoleColor]::Yellow
+    }
+
+    $urlColor = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiUrls) {
+        $PodeContext.Server.Console.Colors.OpenApiUrls
+    }
+    else {
+        [System.ConsoleColor]::Cyan
+    }
+
+    # Iterate through OpenAPI definitions
+    foreach ($key in $PodeContext.Server.OpenAPI.Definitions.Keys) {
         $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
-        if ( !$bookmarks) {
+        if (!$bookmarks) {
             continue
         }
 
-        Write-PodeHost -Force:$Force
-        if (!$OpenAPIHeader) {
-            # OpenAPI Info
-            Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiHeaders -Force:$Force
-            $OpenAPIHeader = $true
+        # Print the header only once
+        # Write-PodeHost -Force:$Force
+        if (!$openAPIHeader) {
+            Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor $headerColor -Force:$Force
+            Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor  $dividerColor -Force:$Force
+            $openAPIHeader = $true
         }
-        Write-PodeHost " '$key':" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles -Force:$Force
 
+        # Print definition title
+        Write-PodeHost " '$key':" -ForegroundColor $titleColor -Force:$Force
+
+        # Determine endpoints for specification and documentation
         if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
-            # Specification
-            Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles  -Force:$Force
-            foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiUrls -Force:$Force
+            # Directly use $bookmarks.route.Endpoint
+            Write-PodeHost "   $($PodeLocale.specificationMessage):" -ForegroundColor $subtitleColor -Force:$Force
+            foreach ($endpoint in $bookmarks.route.Endpoint) {
+                Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor $urlColor -Force:$Force
             }
-            # Documentation
-            Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles -Force:$Force
-            foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiUrls -Force:$Force
+            Write-PodeHost "   $($PodeLocale.documentationMessage):" -ForegroundColor $subtitleColor -Force:$Force
+            foreach ($endpoint in $bookmarks.route.Endpoint) {
+                Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor $urlColor -Force:$Force
             }
         }
         else {
-            # Specification
-            Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles -Force:$Force
+            # Use EndpointsInfo for fallback
+            Write-PodeHost "   $($PodeLocale.specificationMessage):" -ForegroundColor $subtitleColor -Force:$Force
             $PodeContext.Server.EndpointsInfo | ForEach-Object {
                 if ($_.Pool -eq 'web') {
-                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
-                    Write-PodeHost "     . $url" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiUrls -Force:$Force
+                    $url = [System.Uri]::new([System.Uri]::new($_.Url), $bookmarks.openApiUrl)
+                    Write-PodeHost "     - $url" -ForegroundColor $urlColor -Force:$Force
                 }
             }
-            Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiTitles -Force:$Force
+            Write-PodeHost "   $($PodeLocale.documentationMessage):" -ForegroundColor $subtitleColor -Force:$Force
             $PodeContext.Server.EndpointsInfo | ForEach-Object {
                 if ($_.Pool -eq 'web') {
-                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
-                    Write-PodeHost "     . $url" -ForegroundColor $PodeContext.Server.Console.Colors.OpenApiUrls -Force:$Force
+                    $url = [System.Uri]::new([System.Uri]::new($_.Url), $bookmarks.path)
+                    Write-PodeHost "     - $url" -ForegroundColor $urlColor -Force:$Force
                 }
             }
         }
     }
+    if ($openAPIHeader) {
+        # Footer
+        Write-PodeHost
+        Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+    }
 }
+
 
 function Test-PodeOAEnabled {
     foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {

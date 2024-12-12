@@ -944,15 +944,26 @@ function Set-PodeServerConfiguration {
         ShowEndpoints       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowEndpoints -Default $Context.Server.Console.ShowEndpoints)
         ShowHelp            = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowHelp -Default $Context.Server.Console.ShowHelp)
 
-        Colors              = @{
+
+    }
+
+    try {
+        $Context.Server.Console.Colors = @{
             Header          = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Header -Default $Context.Server.Console.Colors.Header), $true)
-            Help            = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Help -Default $Context.Server.Console.Colors.Help), $true)
             EndpointsHeader = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.EndpointsHeader -Default $Context.Server.Console.Colors.EndpointsHeader), $true)
             Endpoints       = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Endpoints -Default $Context.Server.Console.Colors.Endpoints), $true)
             OpenApiUrls     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiUrls -Default $Context.Server.Console.Colors.OpenApiUrls), $true)
             OpenApiHeaders  = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiHeaders -Default $Context.Server.Console.Colors.OpenApiHeaders), $true)
             OpenApiTitles   = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiTitles -Default $Context.Server.Console.Colors.OpenApiTitles), $true)
+            HelpHeader      = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpHeader -Default $Context.Server.Console.Colors.HelpHeader), $true)
+            HelpKey         = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpKey -Default $Context.Server.Console.Colors.HelpKey), $true)
+            HelpDescription = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDescription -Default $Context.Server.Console.Colors.HelpDescription), $true)
+            HelpDivider     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDivider -Default $Context.Server.Console.Colors.HelpDivider), $true)
+            Divider     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Divider -Default $Context.Server.Console.Colors.Divider), $true)
         }
+    }
+    catch {
+        $_ | Write-PodeErrorLog
     }
 }
 

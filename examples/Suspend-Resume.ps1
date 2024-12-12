@@ -183,7 +183,7 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
         Get-PodeSchedule -Name 'predefined'
         Write-Verbose "Last: $($Event.Sender.LastTriggerTime)"
         Write-Verbose  "Next: $($Event.Sender.NextTriggerTime)"
-        Write-Verbose  "Message1: $($Message1)"
+        Write-Verbose "Message1: $($Message1)"
         Write-Verbose "Message2: $($Message2)"
     }
 

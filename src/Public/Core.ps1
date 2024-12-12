@@ -242,13 +242,18 @@ function Start-PodeServer {
                     ShowEndpoints       = !$HideEndpoints.IsPresent
                     ShowHelp            = $ShowHelp.IsPresent
                     Colors              = @{
-                        Header          = [System.ConsoleColor]::Cyan
-                        Help            = [System.ConsoleColor]::Cyan
-                        EndpointsHeader = [System.ConsoleColor]::Green
-                        Endpoints       = [System.ConsoleColor]::Yellow
-                        OpenApiUrls     = [System.ConsoleColor]::White
-                        OpenApiHeaders  = [System.ConsoleColor]::Green
-                        OpenApiTitles   = [System.ConsoleColor]::Yellow
+                        Header           = [System.ConsoleColor]::White
+                        EndpointsHeader  = [System.ConsoleColor]::Yellow
+                        Endpoints        = [System.ConsoleColor]::Cyan
+                        OpenApiUrls      = [System.ConsoleColor]::Cyan
+                        OpenApiHeaders   = [System.ConsoleColor]::Yellow
+                        OpenApiTitles    = [System.ConsoleColor]::White
+                        OpenApiSubtitles = [System.ConsoleColor]::Yellow
+                        HelpHeader       = [System.ConsoleColor]::Yellow
+                        HelpKey          = [System.ConsoleColor]::Green
+                        HelpDescription  = [System.ConsoleColor]::White
+                        HelpDivider      = [System.ConsoleColor]::Gray
+                        Divider          = [System.ConsoleColor]::Yellow
                     }
                 }
                 EnableBreakpoints    = $EnableBreakpoints
