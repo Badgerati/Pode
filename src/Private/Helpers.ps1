@@ -678,6 +678,19 @@ function Test-PodeSuspendPressed {
 }
 
 
+function Test-PodeDisablePressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput  ) {
+        return $false
+    }
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'd')
+}
+
 
 <#
 .SYNOPSIS

@@ -180,7 +180,10 @@ function Show-PodeConsoleInfo {
         $ClearHost,
 
         [switch]
-        $Force
+        $Force,
+
+        [switch]
+        $ShowTopSeparator
     )
 
 
@@ -229,9 +232,6 @@ function Show-PodeConsoleInfo {
         [System.ConsoleColor]::Gray
     }
 
-
-
-
     if ($PodeContext.Server.Console.Quiet -and !$Force) {
         return
     }
@@ -244,7 +244,7 @@ function Show-PodeConsoleInfo {
             $noHeaderNewLine = $false
             $ctrlH = !$showHelp
             $footerSeparator = $false
-            $topSeparator = $false
+            $topSeparator = $ShowTopSeparator.IsPresent
             $headerSeparator = $true
             break
         }
@@ -299,7 +299,7 @@ function Show-PodeConsoleInfo {
             $noHeaderNewLine = $false
             $ctrlH = !$showHelp
             $footerSeparator = $false
-            $topSeparator = $false
+            $topSeparator = $ShowTopSeparator.IsPresent
             $headerSeparator = $true
             break
         }
@@ -321,7 +321,7 @@ function Show-PodeConsoleInfo {
             $noHeaderNewLine = $false
             $ctrlH = $false
             $footerSeparator = $false
-            $topSeparator = $false
+            $topSeparator = $ShowTopSeparator.IsPresent
             $headerSeparator = $true
             break
         }
@@ -333,7 +333,7 @@ function Show-PodeConsoleInfo {
     if ($ClearHost -or $PodeContext.Server.Console.ClearHost) {
         Clear-Host
     }
-    elseif ($topSeparator) {
+    elseif ($topSeparator ) {
         # Write a horizontal divider line to the console.
         Write-PodeHostDivider -Force $true
     }
@@ -368,6 +368,7 @@ function Show-PodeConsoleInfo {
             $Podelocale.SuspendServerMessage
         }
 
+        $enableOrDisable = if (Test-PodeServerIsEnabled) { 'Disable Server' } else { 'Enable Server' }
         # Print help section
         Write-PodeHost $Podelocale.serverControlCommandsTitle -ForegroundColor $helpHeaderColor -Force:$Force
 
@@ -376,14 +377,25 @@ function Show-PodeConsoleInfo {
             Write-PodeHostDivider -Force $true
         }
 
-        Write-PodeHost '    Ctrl+C   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
-        Write-PodeHost "$($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
+        if (!$PodeContext.Server.Console.DisableTermination) {
+            Write-PodeHost '    Ctrl+C   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "$($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
+        }
 
-        Write-PodeHost '    Ctrl+R   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
-        Write-PodeHost "$($Podelocale.RestartServerMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
+        if ($PodeContext.Server.AllowedActions.Restart) {
+            Write-PodeHost '    Ctrl+R   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "$($Podelocale.RestartServerMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
+        }
 
-        Write-PodeHost '    Ctrl+U   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
-        Write-PodeHost "$resumeOrSuspend" -ForegroundColor $helpDescriptionColor -Force:$Force
+        if ($PodeContext.Server.AllowedActions.Suspend) {
+            Write-PodeHost '    Ctrl+U   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "$resumeOrSuspend" -ForegroundColor $helpDescriptionColor -Force:$Force
+        }
+
+        if (($serverState -eq 'Running') -and $PodeContext.Server.AllowedActions.Disable) {
+            Write-PodeHost '    Ctrl+D   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "$enableOrDisable" -ForegroundColor $helpDescriptionColor -Force:$Force
+        }
 
         Write-PodeHost '    Ctrl+H   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost 'Hide Help' -ForegroundColor $helpDescriptionColor -Force:$Force
@@ -395,12 +407,14 @@ function Show-PodeConsoleInfo {
 
         Write-PodeHost '    ----' -ForegroundColor $helpDividerColor -Force:$Force
 
-        Write-PodeHost '    Ctrl+E   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
-        Write-PodeHost "$(if ($PodeContext.Server.Console.ShowEndpoints) { 'Hide' } else { 'Show' }) Endpoints" -ForegroundColor $helpDescriptionColor -Force:$Force
+        if ($serverState -eq 'Running') {
+            Write-PodeHost '    Ctrl+E   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "$(if ($PodeContext.Server.Console.ShowEndpoints) { 'Hide' } else { 'Show' }) Endpoints" -ForegroundColor $helpDescriptionColor -Force:$Force
 
-        if (Test-PodeOAEnabled) {
-            Write-PodeHost '    Ctrl+O   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
-            Write-PodeHost "$(if ($PodeContext.Server.Console.ShowOpenAPI) { 'Hide' } else { 'Show' }) OpenAPI" -ForegroundColor $helpDescriptionColor -Force:$Force
+            if (Test-PodeOAEnabled) {
+                Write-PodeHost '    Ctrl+O   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+                Write-PodeHost "$(if ($PodeContext.Server.Console.ShowOpenAPI) { 'Hide' } else { 'Show' }) OpenAPI" -ForegroundColor $helpDescriptionColor -Force:$Force
+            }
         }
 
         Write-PodeHost '    Ctrl+L   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
@@ -793,3 +807,53 @@ function Resume-PodeServerInternal {
 
 
 
+<#
+.SYNOPSIS
+    Enables new requests by removing the middleware that blocks requests when the Pode Watchdog service is active.
+
+.DESCRIPTION
+    This function checks if the middleware associated with the Pode Watchdog client is present, and if so, it removes it to allow new requests.
+    This effectively re-enables access to the service by removing the request blocking.
+
+.NOTES
+    This function is used internally to manage Watchdog monitoring and may change in future releases of Pode.
+#>
+function Enable-PodeServer {
+
+    # Check if the Watchdog middleware exists and remove it if found to allow new requests
+    if (! (Test-PodeServerIsEnabled)) {
+        Remove-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName
+    }
+}
+
+<#
+.SYNOPSIS
+    Disables new requests by adding middleware that blocks incoming requests when the Pode Watchdog service is active.
+
+.DESCRIPTION
+    This function adds middleware to the Pode server to block new incoming requests while the Pode Watchdog client is active.
+    It responds to all new requests with a 503 Service Unavailable status and sets a 'Retry-After' header, indicating when the service will be available again.
+
+.NOTES
+    This function is used internally to manage Watchdog monitoring and may change in future releases of Pode.
+#>
+function Disable-PodeServer {
+
+    if (Test-PodeServerIsEnabled) {
+        # Add middleware to block new requests and respond with 503 Service Unavailable
+        Add-PodeMiddleware -Name  $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName -ScriptBlock {
+            # Set HTTP response header for retrying after a certain time (RFC7231)
+            Set-PodeHeader -Name 'Retry-After' -Value $PodeContext.Server.AllowedActions.DisableSettings.ServiceRecoveryTime
+
+            # Set HTTP status to 503 Service Unavailable
+            Set-PodeResponseStatus -Code 503
+
+            # Stop further processing
+            return $false
+        }
+    }
+}
+
+function Test-PodeServerIsEnabled {
+    return !(Test-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName)
+}

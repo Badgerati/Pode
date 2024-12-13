@@ -228,6 +228,7 @@
         'New-PodeMiddleware',
         'Add-PodeBodyParser',
         'Remove-PodeBodyParser',
+        'Test-PodeMiddleware',
 
         # sessions
         'Enable-PodeSessionMiddleware',

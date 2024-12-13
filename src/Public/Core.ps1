@@ -316,17 +316,17 @@ function Start-PodeServer {
                 elseif ( Test-PodeHelpPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.ShowHelp = !$PodeContext.Server.Console.ShowHelp
-                    Show-PodeConsoleInfo -ClearHost
+                    Show-PodeConsoleInfo -ShowTopSeparator
                 }
                 elseif ( Test-PodeOpenAPIPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.ShowOpenAPI = !$PodeContext.Server.Console.ShowOpenAPI
-                    Show-PodeConsoleInfo -ClearHost
+                    Show-PodeConsoleInfo -ShowTopSeparator
                 }
                 elseif ( Test-PodeEndpointsPressed -Key $key) {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.ShowEndpoints = !$PodeContext.Server.Console.ShowEndpoints
-                    Show-PodeConsoleInfo -ClearHost
+                    Show-PodeConsoleInfo -ShowTopSeparator
                 }
                 elseif ( Test-PodeClearPressed -Key $key) {
                     Clear-PodeKeyPressed
@@ -336,6 +336,15 @@ function Start-PodeServer {
                     Clear-PodeKeyPressed
                     $PodeContext.Server.Console.Quiet = !$PodeContext.Server.Console.Quiet
                     Show-PodeConsoleInfo -ClearHost -Force
+                }
+                elseif (( (Get-PodeServerState) -eq 'Running') -and (Test-PodeDisablePressed -Key $key)) {
+                    Clear-PodeKeyPressed
+                    if(Test-PodeServerIsEnabled){
+                        Disable-PodeServer
+                    }else{
+                        Enable-PodeServer
+                    }
+                    Show-PodeConsoleInfo -ShowTopSeparator
                 }
                 elseif ( Test-PodeTerminationPressed -Key $key) {
                     Clear-PodeKeyPressed

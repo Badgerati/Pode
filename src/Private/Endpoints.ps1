@@ -441,7 +441,7 @@ function Show-PodeEndPointConsoleInfo {
 
     # Write a horizontal divider line to the console.
     Write-PodeHostDivider -Force $true
-
+    $disabled = ! (Test-PodeServerIsEnabled)
     # Display each endpoint with extracted protocol
     $PodeContext.Server.EndpointsInfo | ForEach-Object {
         # Extract protocol from the URL
@@ -465,10 +465,13 @@ function Show-PodeEndPointConsoleInfo {
             $flags += 'DualMode'
         }
 
+        if ($disabled -and ('HTTP', 'HTTPS' -contains $protocol)) {
+            $flags += 'Disabled'
+        }
         $flagString = if ($flags.Length -gt 0) { "[$($flags -join ',')]" } else { [string]::Empty }
 
         # Display endpoint details
-        Write-PodeHost "   - $protocolLabel : $($_.Url) $flagString" -ForegroundColor $endpointsColor -Force:$Force
+        Write-PodeHost "   - $protocolLabel : $($_.Url) `t$flagString" -ForegroundColor $endpointsColor -Force:$Force
     }
 
     # Footer

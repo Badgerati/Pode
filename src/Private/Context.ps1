@@ -384,9 +384,14 @@ function New-PodeContext {
     $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
     $ctx.Server.AllowedActions = @{
-        Suspend = $true
-        Restart = $true
-        Timeout = @{
+        Suspend         = $true
+        Restart         = $true
+        Disable         = $true
+        DisableSettings = @{
+            ServiceRecoveryTime = 3600
+            MiddlewareName      = '__Pode_Midleware_Code_503'
+        }
+        Timeout         = @{
             Suspend = 30
             Resume  = 30
         }
@@ -927,9 +932,14 @@ function Set-PodeServerConfiguration {
     }
 
     $Context.Server.AllowedActions = @{
-        Suspend = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Suspend -Default $Context.Server.AllowedActions.Suspend)
-        Restart = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Restart -Default $Context.Server.AllowedActions.Restart)
-        Timeout = @{
+        Suspend         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Suspend -Default $Context.Server.AllowedActions.Suspend)
+        Restart         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Restart -Default $Context.Server.AllowedActions.Restart)
+        Disable         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Disable -Default $Context.Server.AllowedActions.Disable)
+        DisableSettings = @{
+            ServiceRecoveryTime = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.ServiceRecoveryTime -Default $Context.Server.AllowedActions.DisableSettings.ServiceRecoveryTime)
+            MiddlewareName      = (Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.MiddlewareName -Default $Context.Server.AllowedActions.DisableSettings.MiddlewareName)
+        }
+        Timeout         = @{
             Suspend = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Suspend -Default $Context.Server.AllowedActions.Timeout.Suspend)
             Resume  = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Resume -Default $Context.Server.AllowedActions.Timeout.Resume)
         }
