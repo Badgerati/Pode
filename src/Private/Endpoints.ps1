@@ -431,14 +431,6 @@ function Show-PodeEndPointConsoleInfo {
         $endpointsColor = [System.ConsoleColor]::Cyan
     }
 
-    if ($null -ne $PodeContext.Server.Console.Colors.Divider) {
-        $dividerColor = $PodeContext.Server.Console.Colors.Divider
-    }
-    else {
-        $dividerColor = [System.ConsoleColor]::Yellow
-    }
-
-
     # Return early if no endpoints are available
     if ($PodeContext.Server.EndpointsInfo.Length -eq 0) {
         return
@@ -446,7 +438,9 @@ function Show-PodeEndPointConsoleInfo {
 
     # Display header
     Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $PodeContext.Server.EndpointsInfo.Length, $PodeContext.Threads.General) -ForegroundColor $headerColor -Force:$Force
-    Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+
+    # Write a horizontal divider line to the console.
+    Write-PodeHostDivider -Force $true
 
     # Display each endpoint with extracted protocol
     $PodeContext.Server.EndpointsInfo | ForEach-Object {
@@ -479,5 +473,8 @@ function Show-PodeEndPointConsoleInfo {
 
     # Footer
     Write-PodeHost
-    Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+
+    # Write a horizontal divider line to the console.
+    Write-PodeHostDivider -Force $true
+
 }

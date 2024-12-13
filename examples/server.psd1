@@ -80,6 +80,9 @@
             ShowOpenAPI         = $true
             ShowEndpoints       = $true
             ShowHelp            = $false
+            ShowDivider         = $true
+            DividerLength       = 75
+            ShowTimeStamp       = $true
             Colors              = @{
                 Header           = 'White'
                 Help             = 'Cyan'

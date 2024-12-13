@@ -241,6 +241,9 @@ function Start-PodeServer {
                     ShowOpenAPI         = !$HideOpenAPI.IsPresent
                     ShowEndpoints       = !$HideEndpoints.IsPresent
                     ShowHelp            = $ShowHelp.IsPresent
+                    ShowDivider         = $true
+                    DividerLength       = 75
+                    ShowTimeStamp       = $true
                     Colors              = @{
                         Header           = [System.ConsoleColor]::White
                         EndpointsHeader  = [System.ConsoleColor]::Yellow
@@ -272,7 +275,9 @@ function Start-PodeServer {
             if (!$PodeContext.Server.Console.Quiet) {
                 [System.Console]::CursorVisible = $false
             }
-
+            if ($PodeContext.Server.Console.ShowDivider) {
+                [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+            }
             # start the file monitor for interally restarting
             Start-PodeFileMonitor
 

@@ -2407,13 +2407,6 @@ function Show-PodeOAConsoleInfo {
 
     # Fallback colors
 
-    if ($null -ne $PodeContext.Server.Console.Colors.Divider) {
-        $dividerColor = $PodeContext.Server.Console.Colors.Divider
-    }
-    else {
-        $dividerColor = [System.ConsoleColor]::Yellow
-    }
-
     $headerColor = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiHeaders) {
         $PodeContext.Server.Console.Colors.OpenApiHeaders
     }
@@ -2428,7 +2421,7 @@ function Show-PodeOAConsoleInfo {
         [System.ConsoleColor]::White
     }
 
-    $subtitleColor  = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiSubtitles) {
+    $subtitleColor = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiSubtitles) {
         $PodeContext.Server.Console.Colors.OpenApiSubtitles
     }
     else {
@@ -2453,7 +2446,10 @@ function Show-PodeOAConsoleInfo {
         # Write-PodeHost -Force:$Force
         if (!$openAPIHeader) {
             Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor $headerColor -Force:$Force
-            Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor  $dividerColor -Force:$Force
+
+            # Write a horizontal divider line to the console.
+            Write-PodeHostDivider -Force $true
+
             $openAPIHeader = $true
         }
 
@@ -2492,8 +2488,9 @@ function Show-PodeOAConsoleInfo {
     }
     if ($openAPIHeader) {
         # Footer
-        Write-PodeHost
-        Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+
+        # Write a horizontal divider line to the console.
+        Write-PodeHostDivider -Force $true
     }
 }
 

@@ -185,9 +185,9 @@ function Show-PodeConsoleInfo {
 
 
 
-     # Get the current server state and timestamp
-     $serverState = Get-PodeServerState
-     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    # Get the current server state and timestamp
+    $serverState = Get-PodeServerState
+    $timestamp = if ($PodeContext.Server.Console.ShowTimeStamp ) { "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')]" } else { '' }
 
     if (!$PodeContext) { return }
 
@@ -198,13 +198,6 @@ function Show-PodeConsoleInfo {
     }
     else {
         [System.ConsoleColor]::White
-    }
-
-    if ($null -ne $PodeContext.Server.Console.Colors.Divider) {
-        $dividerColor = $PodeContext.Server.Console.Colors.Divider
-    }
-    else {
-        $dividerColor = [System.ConsoleColor]::Yellow
     }
 
     # Define help section color variables
@@ -250,8 +243,9 @@ function Show-PodeConsoleInfo {
             $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
             $noHeaderNewLine = $false
             $ctrlH = !$showHelp
-            $bottomBar = $false
-            $topSeparator=$false
+            $footerSeparator = $false
+            $topSeparator = $false
+            $headerSeparator = $true
             break
         }
         'Suspending' {
@@ -260,8 +254,9 @@ function Show-PodeConsoleInfo {
             $showHelp = $false
             $noHeaderNewLine = $true
             $ctrlH = $false
-            $bottomBar = $false
-            $topSeparator=$true
+            $footerSeparator = $false
+            $topSeparator = $true
+            $headerSeparator = $false
             break
         }
         'Resuming' {
@@ -270,8 +265,9 @@ function Show-PodeConsoleInfo {
             $showHelp = $false
             $noHeaderNewLine = $true
             $ctrlH = $false
-            $bottomBar = $false
-            $topSeparator=$true
+            $footerSeparator = $false
+            $topSeparator = $true
+            $headerSeparator = $false
             break
         }
         'Restarting' {
@@ -280,8 +276,9 @@ function Show-PodeConsoleInfo {
             $showHelp = $false
             $noHeaderNewLine = $false
             $ctrlH = $false
-            $bottomBar = $false
-            $topSeparator=$true
+            $footerSeparator = $false
+            $topSeparator = $true
+            $headerSeparator = $false
             break
         }
         'Starting' {
@@ -290,8 +287,9 @@ function Show-PodeConsoleInfo {
             $showHelp = $false
             $noHeaderNewLine = $true
             $ctrlH = $false
-            $bottomBar = $false
-            $topSeparator=$true
+            $footerSeparator = $false
+            $topSeparator = $true
+            $headerSeparator = $false
             break
         }
         'Running' {
@@ -300,8 +298,9 @@ function Show-PodeConsoleInfo {
             $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
             $noHeaderNewLine = $false
             $ctrlH = !$showHelp
-            $bottomBar = $true
-            $topSeparator=$false
+            $footerSeparator = $false
+            $topSeparator = $false
+            $headerSeparator = $true
             break
         }
         'Terminating' {
@@ -310,8 +309,9 @@ function Show-PodeConsoleInfo {
             $showHelp = $false
             $noHeaderNewLine = $true
             $ctrlH = $false
-            $bottomBar = $false
-            $topSeparator=$true
+            $footerSeparator = $false
+            $topSeparator = $true
+            $headerSeparator = $false
             break
         }
         'Terminated' {
@@ -320,8 +320,9 @@ function Show-PodeConsoleInfo {
             $showHelp = $false
             $noHeaderNewLine = $false
             $ctrlH = $false
-            $bottomBar = $false
-            $topSeparator=$false
+            $footerSeparator = $false
+            $topSeparator = $false
+            $headerSeparator = $true
             break
         }
         default {
@@ -333,18 +334,20 @@ function Show-PodeConsoleInfo {
         Clear-Host
     }
     elseif ($topSeparator) {
-        Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+        # Write a horizontal divider line to the console.
+        Write-PodeHostDivider -Force $true
     }
 
-
     # Write the header line with dynamic status color
-    Write-PodeHost "`r[$timestamp] Pode $(Get-PodeVersion) (PID: $($PID)) [" -ForegroundColor $headerColor -Force:$Force -NoNewLine
+    Write-PodeHost "`r$timestamp Pode $(Get-PodeVersion) (PID: $($PID)) [" -ForegroundColor $headerColor -Force:$Force -NoNewLine
     Write-PodeHost "$status" -ForegroundColor $statusColor -Force:$Force -NoNewLine
     Write-PodeHost ']              ' -ForegroundColor $headerColor -Force:$Force -NoNewLine:$noHeaderNewLine
 
-    if (!$noHeaderNewLine) {
-        Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+    if ($headerSeparator) {
+        # Write a horizontal divider line to the console.
+        Write-PodeHostDivider -Force $true
     }
+
     if ($serverState -eq 'Running') {
         if ($PodeContext.Server.Console.ShowEndpoints) {
             # state what endpoints are being listened on
@@ -367,7 +370,11 @@ function Show-PodeConsoleInfo {
 
         # Print help section
         Write-PodeHost $Podelocale.serverControlCommandsTitle -ForegroundColor $helpHeaderColor -Force:$Force
-        Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
+
+        if ($headerSeparator) {
+            # Write a horizontal divider line to the console.
+            Write-PodeHostDivider -Force $true
+        }
 
         Write-PodeHost '    Ctrl+C   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost "$($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
@@ -402,13 +409,16 @@ function Show-PodeConsoleInfo {
         Write-PodeHost '    Ctrl+T   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost "$(if ($PodeContext.Server.Console.Quiet) { 'Disable' } else { 'Enable' }) Quiet Mode" -ForegroundColor $helpDescriptionColor -Force:$Force
         Write-PodeHost
-        if ($bottomBar) {
-            Write-PodeHost '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' -ForegroundColor $dividerColor -Force:$Force
-        }
+
     }
     elseif ($ctrlH ) {
         Write-PodeHost '    Ctrl+H  : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost 'Show Help'  -ForegroundColor $helpDescriptionColor -Force:$Force
+    }
+
+    if ($footerSeparator) {
+        # Write a horizontal divider line to the console.
+        Write-PodeHostDivider -Force $true
     }
 }
 

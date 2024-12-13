@@ -943,8 +943,9 @@ function Set-PodeServerConfiguration {
         ShowOpenAPI         = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowOpenAPI -Default $Context.Server.Console.ShowOpenAPI)
         ShowEndpoints       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowEndpoints -Default $Context.Server.Console.ShowEndpoints)
         ShowHelp            = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowHelp -Default $Context.Server.Console.ShowHelp)
-
-
+        ShowDivider         = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowDivider -Default $Context.Server.Console.ShowDivider)
+        ShowTimeStamp       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowTimeStamp -Default $Context.Server.Console.ShowTimeStamp)
+        DividerLength       = [int](Protect-PodeValue -Value  $Configuration.Console.DividerLength -Default $Context.Server.Console.DividerLength)
     }
 
     try {
@@ -959,7 +960,7 @@ function Set-PodeServerConfiguration {
             HelpKey         = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpKey -Default $Context.Server.Console.Colors.HelpKey), $true)
             HelpDescription = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDescription -Default $Context.Server.Console.Colors.HelpDescription), $true)
             HelpDivider     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDivider -Default $Context.Server.Console.Colors.HelpDivider), $true)
-            Divider     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Divider -Default $Context.Server.Console.Colors.Divider), $true)
+            Divider         = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Divider -Default $Context.Server.Console.Colors.Divider), $true)
         }
     }
     catch {
