@@ -85,7 +85,6 @@
             ShowTimeStamp       = $true
             Colors              = @{
                 Header           = 'White'
-                Help             = 'Cyan'
                 EndpointsHeader  = 'Yellow'
                 Endpoints        = 'Cyan'
                 OpenApiUrls      = 'Cyan'
@@ -98,6 +97,19 @@
                 HelpDivider      = 'Gray'
                 Divider          = 'DarkGray'
             }
+            KeyBindings         = @{
+                Browser   = 'b'
+                Help      = 'h'
+                OpenAPI   = 'o'
+                Endpoints = 'e'
+                Clear     = 'l'
+                Quiet     = 't'
+                Terminate = 'c'
+                Restart   = 'r'
+                Disable   = 'd'
+                Suspend   = 'u'
+            }
+
         }
     }
 }

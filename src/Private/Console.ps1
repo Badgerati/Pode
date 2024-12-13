@@ -215,6 +215,8 @@ function Show-PodeConsoleHelp {
         [switch]
         $Hide
     )
+    # Centralized key mapping
+    $KeyBindings = $PodeContext.Server.Console.KeyBindings
 
     # Define help section color variables
     $helpHeaderColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpHeader) {
@@ -247,7 +249,7 @@ function Show-PodeConsoleHelp {
 
     # Show concise "Show Help" option if $Hide is true
     if ($Hide) {
-        Write-PodeHost '    Ctrl+H  : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost "    Ctrl+$($KeyBindings.Help)  : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost 'Show Help'  -ForegroundColor $helpDescriptionColor -Force:$Force
     }
     else {
@@ -272,58 +274,56 @@ function Show-PodeConsoleHelp {
 
         # Display help commands
         if (!$PodeContext.Server.Console.DisableTermination) {
-            Write-PodeHost '    Ctrl+C   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "    Ctrl+$($KeyBindings.Terminate)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
             Write-PodeHost "$($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         if ($PodeContext.Server.AllowedActions.Restart) {
-            Write-PodeHost '    Ctrl+R   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "    Ctrl+$($KeyBindings.Restart)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
             Write-PodeHost "$($Podelocale.RestartServerMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         if ($PodeContext.Server.AllowedActions.Suspend) {
-            Write-PodeHost '    Ctrl+U   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "    Ctrl+$($KeyBindings.Suspend)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
             Write-PodeHost "$resumeOrSuspend" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         if (($serverState -eq 'Running') -and $PodeContext.Server.AllowedActions.Disable) {
-            Write-PodeHost '    Ctrl+D   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "    Ctrl+$($KeyBindings.Disable)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
             Write-PodeHost "$enableOrDisable" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
-        Write-PodeHost '    Ctrl+H   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost "    Ctrl+$($KeyBindings.Help)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost 'Hide Help' -ForegroundColor $helpDescriptionColor -Force:$Force
 
         if ((Get-PodeEndpointUrl) -and ($serverState -ne 'Suspended')) {
-            Write-PodeHost '    Ctrl+B   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "    Ctrl+$($KeyBindings.Browser)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
             Write-PodeHost "$($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         Write-PodeHost '    ----' -ForegroundColor $helpDividerColor -Force:$Force
 
         if ($serverState -eq 'Running') {
-            Write-PodeHost '    Ctrl+E   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost "    Ctrl+$($KeyBindings.Endpoints)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
             Write-PodeHost "$(if ($PodeContext.Server.Console.ShowEndpoints) { 'Hide' } else { 'Show' }) Endpoints" -ForegroundColor $helpDescriptionColor -Force:$Force
 
             # Check if OpenApi are in use
             if (Test-PodeOAEnabled) {
-                Write-PodeHost '    Ctrl+O   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+                Write-PodeHost "    Ctrl+$($KeyBindings.Quiet)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
                 Write-PodeHost "$(if ($PodeContext.Server.Console.ShowOpenAPI) { 'Hide' } else { 'Show' }) OpenAPI" -ForegroundColor $helpDescriptionColor -Force:$Force
             }
         }
 
-        Write-PodeHost '    Ctrl+L   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost "    Ctrl+$($KeyBindings.Clear)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost 'Clear the Console' -ForegroundColor $helpDescriptionColor -Force:$Force
 
-        Write-PodeHost '    Ctrl+T   : ' -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeHost "    Ctrl+$($KeyBindings.Quiet)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost "$(if ($PodeContext.Server.Console.Quiet) { 'Disable' } else { 'Enable' }) Quiet Mode" -ForegroundColor $helpDescriptionColor -Force:$Force
 
         # Final blank line for spacing
         Write-PodeHost
     }
 }
-
-
 
 <#
 .SYNOPSIS
@@ -663,15 +663,13 @@ function Get-PodeConsoleKey {
 
     return [Console]::ReadKey($true)
 }
-
 <#
 .SYNOPSIS
-    Processes console actions and cancellation token triggers for the Pode server.
+    Processes console actions and cancellation token triggers for the Pode server using a centralized key mapping.
 
 .DESCRIPTION
-    The `Invoke-PodeConsoleAction` function handles key presses and cancellation token triggers
-    for various server actions, such as restarting, suspending, enabling/disabling, or toggling
-    console displays (e.g., Help, Endpoints, OpenAPI).
+    The `Invoke-PodeConsoleAction` function uses a hashtable to define and centralize key mappings,
+    allowing for easier updates and a cleaner implementation.
 
 .NOTES
     This function is part of Pode's internal utilities and may change in future releases.
@@ -683,12 +681,16 @@ function Get-PodeConsoleKey {
 #>
 function Invoke-PodeConsoleAction {
 
+    # Centralized key mapping
+    $KeyBindings = $PodeContext.Server.Console.KeyBindings
+
+    # Get the next key press if console input is enabled
     if (!$PodeContext.Server.Console.DisableConsoleInput) {
-        # get the next key presses
-        $key = Get-PodeConsoleKey
+        $Key = Get-PodeConsoleKey
     }
-    # check for open browser
-    if ((Test-PodeKeyPressed -Key $Key -Character 'b')) {
+
+    # Browser action
+    if (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Browser) {
         Clear-PodeKeyPressed
         $url = Get-PodeEndpointUrl
         if (![string]::IsNullOrWhitespace($url)) {
@@ -696,50 +698,57 @@ function Invoke-PodeConsoleAction {
             Start-Process $url
         }
     }
-    elseif ((Test-PodeKeyPressed -Key $Key -Character 'h')) {
+    # Toggle help display
+    elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Help) {
         Clear-PodeKeyPressed
         $PodeContext.Server.Console.ShowHelp = !$PodeContext.Server.Console.ShowHelp
         Show-PodeConsoleInfo -ShowTopSeparator
     }
-    elseif ((Test-PodeKeyPressed -Key $Key -Character 'o')) {
+    # Toggle OpenAPI display
+    elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.OpenAPI) {
         Clear-PodeKeyPressed
         $PodeContext.Server.Console.ShowOpenAPI = !$PodeContext.Server.Console.ShowOpenAPI
         Show-PodeConsoleInfo -ShowTopSeparator
     }
-    elseif ((Test-PodeKeyPressed -Key $Key -Character 'e')) {
+    # Toggle endpoints display
+    elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Endpoints) {
         Clear-PodeKeyPressed
         $PodeContext.Server.Console.ShowEndpoints = !$PodeContext.Server.Console.ShowEndpoints
         Show-PodeConsoleInfo -ShowTopSeparator
     }
-    elseif ((Test-PodeKeyPressed -Key $Key -Character 'l')) {
+    # Clear console
+    elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Clear) {
         Clear-PodeKeyPressed
         Show-PodeConsoleInfo -ClearHost
     }
-    elseif ((Test-PodeKeyPressed -Key $Key -Character 't')) {
+    # Toggle quiet mode
+    elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Quiet) {
         Clear-PodeKeyPressed
         $PodeContext.Server.Console.Quiet = !$PodeContext.Server.Console.Quiet
         Show-PodeConsoleInfo -ClearHost -Force
     }
-    elseif ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character 'c')) {
+    # Terminate server
+    elseif ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Terminate)) {
         Clear-PodeKeyPressed
-        break
+        Set-PodeCancellationTokenRequest -Type Terminate
+        return
     }
 
-    # check for internal restart
-
+    # Handle restart actions
     if ($PodeContext.Server.AllowedActions.Restart) {
-        if ((Test-PodeKeyPressed -Key $Key -Character 'r')) {
+        if (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Restart) {
             Clear-PodeKeyPressed
             Set-PodeCancellationTokenRequest -Type Restart
             Restart-PodeInternalServer
         }
-        elseif ((Test-PodeCancellationTokenRequest -Type Restart)) {
+        elseif (Test-PodeCancellationTokenRequest -Type Restart) {
             Restart-PodeInternalServer
         }
     }
 
+    # Handle enable/disable server actions
     if ($PodeContext.Server.AllowedActions.Disable) {
-        if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character 'd')) {
+        if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Disable)) {
             Clear-PodeKeyPressed
             if (Test-PodeServerIsEnabled) {
                 Set-PodeCancellationTokenRequest -Type Disable
@@ -763,8 +772,9 @@ function Invoke-PodeConsoleAction {
         }
     }
 
+    # Handle suspend/resume actions
     if ($PodeContext.Server.AllowedActions.Suspend) {
-        if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character 'u')) {
+        if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Suspend)) {
             Clear-PodeKeyPressed
             if ((Get-PodeServerState) -eq 'Suspended') {
                 Set-PodeResumeToken
@@ -775,10 +785,10 @@ function Invoke-PodeConsoleAction {
                 Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
             }
         }
-        elseif (((Test-PodeCancellationTokenRequest -Type Resume) -and (Get-PodeServerState) -eq 'Suspended')) {
+        elseif ((Test-PodeCancellationTokenRequest -Type Resume) -and (Get-PodeServerState) -eq 'Suspended') {
             Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
         }
-        elseif (((Test-PodeCancellationTokenRequest -Type  Suspend) -and (Get-PodeServerState) -eq 'Running')) {
+        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and (Get-PodeServerState) -eq 'Running') {
             Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
         }
     }

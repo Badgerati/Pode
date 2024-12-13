@@ -945,7 +945,7 @@ function Set-PodeServerConfiguration {
         }
     }
 
-    $Context.Server.Console = @{
+    $tmpConsole = @{
         DisableTermination  = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableTermination -Default $Context.Server.Console.DisableTermination)
         DisableConsoleInput = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableConsoleInput -Default $Context.Server.Console.DisableConsoleInput)
         Quiet               = [bool](Protect-PodeValue -Value  $Configuration.Console.Quiet -Default $Context.Server.Console.Quiet)
@@ -959,7 +959,7 @@ function Set-PodeServerConfiguration {
     }
 
     try {
-        $Context.Server.Console.Colors = @{
+        $tmpConsole.Colors = @{
             Header          = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Header -Default $Context.Server.Console.Colors.Header), $true)
             EndpointsHeader = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.EndpointsHeader -Default $Context.Server.Console.Colors.EndpointsHeader), $true)
             Endpoints       = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Endpoints -Default $Context.Server.Console.Colors.Endpoints), $true)
@@ -976,6 +976,25 @@ function Set-PodeServerConfiguration {
     catch {
         $_ | Write-PodeErrorLog
     }
+
+    try {
+        $tmpConsole.KeyBindings = @{
+            Browser   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Browser -Default $Context.Server.Console.KeyBindings.Browser)
+            Help      = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Help -Default $Context.Server.Console.KeyBindings.Help)
+            OpenAPI   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.OpenAPI -Default $Context.Server.Console.KeyBindings.OpenAPI)
+            Endpoints = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Endpoints -Default $Context.Server.Console.KeyBindings.Endpoints)
+            Clear     = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Clear -Default $Context.Server.Console.KeyBindings.Clear)
+            Quiet     = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Quiet -Default $Context.Server.Console.KeyBindings.Quiet)
+            Terminate = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Terminate -Default $Context.Server.Console.KeyBindings.Terminate)
+            Restart   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Restart -Default $Context.Server.Console.KeyBindings.Restart)
+            Disable   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Disable -Default $Context.Server.Console.KeyBindings.Disable)
+            Suspend   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Suspend -Default $Context.Server.Console.KeyBindings.Suspend)
+        }
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+    }
+    $Context.Server.Console = $tmpConsole
 }
 
 function Set-PodeWebConfiguration {

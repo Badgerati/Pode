@@ -256,7 +256,19 @@ function Start-PodeServer {
                         HelpKey          = [System.ConsoleColor]::Green
                         HelpDescription  = [System.ConsoleColor]::White
                         HelpDivider      = [System.ConsoleColor]::Gray
-                        Divider          = [System.ConsoleColor]::Yellow
+                        Divider          = [System.ConsoleColor]::DarkGray
+                    }
+                    KeyBindings         = @{
+                        Browser   = 'b'
+                        Help      = 'h'
+                        OpenAPI   = 'o'
+                        Endpoints = 'e'
+                        Clear     = 'l'
+                        Quiet     = 't'
+                        Terminate = 'c'
+                        Restart   = 'r'
+                        Disable   = 'd'
+                        Suspend   = 'u'
                     }
                 }
                 EnableBreakpoints    = $EnableBreakpoints
