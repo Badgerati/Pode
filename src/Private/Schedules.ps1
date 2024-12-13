@@ -50,8 +50,8 @@ function Start-PodeScheduleRunspace {
     $script = {
         try {
 
-# Waits for the Pode server to fully start before proceeding with further operations.
-Wait-PodeStartToken
+            # Waits for the Pode server to fully start before proceeding with further operations.
+            Wait-PodeCancellationTokenRequest -Type Start
 
             # select the schedules that trigger on-start
             $_now = [DateTime]::Now

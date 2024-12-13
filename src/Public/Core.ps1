@@ -301,7 +301,7 @@ function Start-PodeServer {
                 # check for internal restart
                 if (($PodeContext.Server.AllowedActions.Restart) -and ($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
                     Clear-PodeKeyPressed
-                    Set-PodeRestartToken
+                    Set-PodeCancellationTokenRequest -Type Restart
                     Restart-PodeInternalServer
                 }
                 # check for open browser
@@ -339,9 +339,12 @@ function Start-PodeServer {
                 }
                 elseif (( (Get-PodeServerState) -eq 'Running') -and (Test-PodeDisablePressed -Key $key)) {
                     Clear-PodeKeyPressed
-                    if(Test-PodeServerIsEnabled){
+                    if (Test-PodeServerIsEnabled) {
+                        Set-PodeCancellationTokenRequest -Type Disable
                         Disable-PodeServer
-                    }else{
+                    }
+                    else {
+                        Reset-PodeCancellationToken -Type Disable
                         Enable-PodeServer
                     }
                     Show-PodeConsoleInfo -ShowTopSeparator
@@ -351,14 +354,14 @@ function Start-PodeServer {
                     break
                 }
                 elseif ((Get-PodeServerState) -eq 'Suspended') {
-                    if (($PodeContext.Server.AllowedActions.Suspend) -and (($PodeContext.Tokens.Resume.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key))) {
+                    if (($PodeContext.Server.AllowedActions.Suspend) -and ((Test-PodeCancellationTokenRequest -Type Resume) -or (Test-PodeSuspendPressed -Key $key))) {
                         Clear-PodeKeyPressed
                         Set-PodeResumeToken
                         Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
                     }
                 }
                 else {
-                    if (($PodeContext.Server.AllowedActions.Suspend) -and (($PodeContext.Tokens.Suspend.IsCancellationRequested) -or (Test-PodeSuspendPressed -Key $key))) {
+                    if (($PodeContext.Server.AllowedActions.Suspend) -and ((Test-PodeCancellationTokenRequest -Type Suspend) -or (Test-PodeSuspendPressed -Key $key))) {
                         Clear-PodeKeyPressed
                         Set-PodeSuspendToken
                         Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
@@ -427,8 +430,7 @@ function Close-PodeServer {
     [CmdletBinding()]
     param()
 
-    $PodeContext.Tokens.Cancellation.Cancel()
-    $PodeContext.Tokens.Terminate.Cancel()
+    Set-PodeCancellationTokenRequest -Type Cancellation,Terminate
 }
 
 <#
@@ -447,7 +449,7 @@ function Restart-PodeServer {
 
     # Only if the Restart feature is anabled
     if ($PodeContext.Server.AllowedActions.Restart) {
-        Set-PodeRestartToken
+        Set-PodeCancellationTokenRequest -Type Restart
     }
 }
 
@@ -1680,30 +1682,30 @@ function Get-PodeServerState {
     }
 
     # Check if the server is in the process of terminating
-    if ($PodeContext.Tokens.Terminate.IsCancellationRequested) {
+    if (Test-PodeCancellationTokenRequest -Type Terminate) {
         return 'Terminating'
     }
 
     # Check if the server is resuming from a suspended state
-    if ($PodeContext.Tokens.Resume.IsCancellationRequested) {
+    if (Test-PodeCancellationTokenRequest -Type Resume) {
         return 'Resuming'
     }
 
     # Check if the server is suspending or already suspended
-    if ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
-        if ($PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+    if (Test-PodeCancellationTokenRequest -Type Suspend) {
+        if (Test-PodeCancellationTokenRequest -Type Cancellation) {
             return 'Suspending'
         }
         return 'Suspended'
     }
 
     # Check if the server is in the process of restarting
-    if ($PodeContext.Tokens.Restart.IsCancellationRequested) {
+    if (Test-PodeCancellationTokenRequest -Type Restart) {
         return 'Restarting'
     }
 
     # Check if the server is starting
-    if (!$PodeContext.Tokens.Start.IsCancellationRequested) {
+    if (!(Test-PodeCancellationTokenRequest -Type Start)) {
         return 'Starting'
     }
 

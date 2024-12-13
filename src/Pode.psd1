@@ -324,6 +324,7 @@
         'Test-PodeOADefinitionTag',
         'Test-PodeOADefinition',
         'Rename-PodeOADefinitionTag',
+        'Test-PodeOAEnabled',
 
         # properties
         'New-PodeOAIntProperty',

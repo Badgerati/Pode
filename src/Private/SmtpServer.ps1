@@ -90,7 +90,7 @@ function Start-PodeSmtpServer {
         )
 
         # Waits for the Pode server to fully start before proceeding with further operations.
-Wait-PodeStartToken
+        Wait-PodeCancellationTokenRequest -Type Start
 
         do {
             try {

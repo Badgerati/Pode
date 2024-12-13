@@ -61,7 +61,7 @@ function Start-PodeFileWatcherRunspace {
             $ThreadId
         )
         # Waits for the Pode server to fully start before proceeding with further operations.
-        Wait-PodeStartToken
+        Wait-PodeCancellationTokenRequest -Type Start
         do {
             try {
                 while ($Watcher.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {

@@ -13,7 +13,7 @@ function Start-PodeGuiRunspace {
 
     $script = {
         # Waits for the Pode server to fully start before proceeding with further operations.
-        Wait-PodeStartToken
+        Wait-PodeCancellationTokenRequest -Type Start
 
         try {
             # if there are multiple endpoints, flag warning we're only using the first - unless explicitly set
@@ -134,8 +134,8 @@ function Start-PodeGuiRunspace {
             throw $_.Exception
         }
         finally {
-            # invoke the cancellation token to close the server
-            $PodeContext.Tokens.Cancellation.Cancel()
+            # invoke the cancellation token to close the server 
+            Set-PodeCancellationTokenRequest -Type Cancellation
         }
     }
 

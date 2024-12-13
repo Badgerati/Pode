@@ -28,7 +28,7 @@
 function Reset-PodeCancellationToken {
     param(
         [Parameter(Mandatory = $true)]
-        [validateset( 'Cancellation' , 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start' )]
+        [validateset( 'Cancellation' , 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable' )]
         [string[]]
         $Type
     )
@@ -89,7 +89,7 @@ function Close-PodeCancellationToken {
     [CmdletBinding()]
     param(
         [Parameter()]
-        [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start' )]
+        [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable' )]
         [string[]]
         $Type
     )
@@ -158,6 +158,7 @@ function Test-PodeSuspensionToken {
     - `Resume`: A token for resuming operations after suspension.
     - `Terminate`: A token for managing application termination.
     - `Start`: A token for monitoring application startup.
+    - `Disable`: A token for denying web access.
 
 .EXAMPLE
     $tokens = New-PodeSuspensionToken
@@ -190,39 +191,12 @@ function New-PodeSuspensionToken {
 
         # A cancellation token for monitoring application startup.
         Start        = [System.Threading.CancellationTokenSource]::new()
+
+        # A cancellation token for denying any web request.
+        Disable      = [System.Threading.CancellationTokenSource]::new()
     }
 }
 
-
-
-<#
-.SYNOPSIS
-    Waits for the Pode server to start by monitoring the cancellation token.
-
-.DESCRIPTION
-    This function repeatedly checks the `$PodeContext.Tokens.Start` cancellation token to determine if the Pode server has started.
-    It pauses execution using `Start-Sleep` until the cancellation request is received.
-
-.EXAMPLE
-    Wait-PodeStartToken
-
-    This example waits for the Pode server to start before proceeding with the rest of the script.
-
-.NOTES
-    This function is designed for internal use and may change in future releases of Pode.
-
-.PARAMETER None
-    This function does not take any parameters.
-
-.OUTPUTS
-    None
-
-#>
-function Wait-PodeStartToken {
-    while ( !$PodeContext.Tokens.Start.IsCancellationRequested) {
-        Start-Sleep 1
-    }
-}
 
 
 <#
@@ -245,9 +219,7 @@ function Wait-PodeStartToken {
 function Set-PodeResumeToken {
 
     # Ensure the Resume token is in a cancellation requested state
-    if (!$PodeContext.Tokens.Resume.IsCancellationRequested) {
-        $PodeContext.Tokens.Resume.Cancel()
-    }
+    Set-PodeCancellationTokenRequest -Type Resume
 
     # If the Cancellation token is in a requested state, reset it (unexpected scenario)
     if ($PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -257,30 +229,6 @@ function Set-PodeResumeToken {
     # Reset the Suspend token if it is in a cancellation requested state
     if ($PodeContext.Tokens.Suspend.IsCancellationRequested) {
         Reset-PodeCancellationToken -Type Suspend
-    }
-}
-
-<#
-.SYNOPSIS
-    Sets the Restart token for the Pode server to initiate a restart.
-
-.DESCRIPTION
-    The Set-PodeRestartToken function ensures that the Restart token's cancellation is requested to signal that the server should
-    initiate a restart. This function is a key part of managing the Pode server lifecycle and ensures proper state signaling.
-
-.NOTES
-
-    This is an internal function and may change in future releases of Pode.
-
-.EXAMPLE
-    Set-PodeRestartToken
-
-    Signals the Pode server to initiate a restart by setting the Restart token.
-#>
-function Set-PodeRestartToken {
-    # Ensure the Restart token is in a cancellation requested state
-    if (!$PodeContext.Tokens.Restart.IsCancellationRequested) {
-        $PodeContext.Tokens.Restart.Cancel()
     }
 }
 
@@ -303,15 +251,149 @@ function Set-PodeRestartToken {
     Signals the Pode server to transition into a suspended state by setting the Suspend token and the Cancellation token.
 #>
 function Set-PodeSuspendToken {
-    # Ensure the Suspend token is in a cancellation requested state
-    if (!$PodeContext.Tokens.Suspend.IsCancellationRequested) {
-        $PodeContext.Tokens.Suspend.Cancel()
-    }
+    # Ensure the Suspend and Cancellation tokens is in a cancellation requested state
+    Set-PodeCancellationTokenRequest -Type Suspend, Cancellation
+}
 
-    # Ensure the Cancellation token is in a cancellation requested state
-    if (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-        $PodeContext.Tokens.Cancellation.Cancel()
+
+<#
+.SYNOPSIS
+    Sets the cancellation token(s) for the specified Pode server actions.
+
+.DESCRIPTION
+    The `Set-PodeCancellationTokenRequest` function cancels one or more specified tokens within the Pode server.
+    These tokens are used to manage the server's lifecycle actions, such as Restart, Suspend, Resume, or Terminate.
+    The function takes a mandatory parameter `$Type`, which determines the token(s) to be canceled.
+    Supported types include: `Cancellation`, `Restart`, `Suspend`, `Resume`, `Terminate`, `Start`, and `Disable`.
+
+.PARAMETER Type
+    Specifies the token(s) to be canceled. This parameter accepts one or more values from a predefined set.
+    Allowed values: `Cancellation`, `Restart`, `Suspend`, `Resume`, `Terminate`, `Start`, `Disable`.
+
+.EXAMPLE
+    Set-PodeCancellationTokenRequest -Type 'Restart'
+
+    Cancels the Restart token for the Pode server.
+
+.EXAMPLE
+    Set-PodeCancellationTokenRequest -Type 'Suspend','Terminate'
+
+    Cancels both the Suspend and Terminate tokens for the Pode server.
+
+.NOTES
+    This function is an internal utility and may change in future releases of Pode.
+#>
+function Set-PodeCancellationTokenRequest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable')]
+        [string[]]
+        $Type
+    )
+
+    # Iterate over each provided type and cancel its corresponding token if not already canceled
+    $Type.ForEach({
+            if ($PodeContext.Tokens.ContainsKey($_)) {
+                if (!$PodeContext.Tokens[$_].IsCancellationRequested) {
+                    # Cancel the specified token
+                    $PodeContext.Tokens[$_].Cancel()
+                }
+            }
+        })
+}
+
+<#
+.SYNOPSIS
+    Waits for a specific Pode server cancellation token to be reset.
+
+.DESCRIPTION
+    The `Wait-PodeCancellationTokenRequest` function continuously checks the status of a specified cancellation token
+    in the Pode server context. It pauses execution in a loop until the token's cancellation request is cleared.
+
+.PARAMETER Type
+    Specifies the token to wait for. This parameter accepts one value from a predefined set.
+    Allowed values: `Cancellation`, `Restart`, `Suspend`, `Resume`, `Terminate`, `Start`, `Disable`.
+
+.EXAMPLE
+    Wait-PodeCancellationTokenRequest -Type 'Restart'
+
+    Waits until the Restart token is reset and no longer has a cancellation request.
+
+.EXAMPLE
+    Wait-PodeCancellationTokenRequest -Type 'Suspend'
+
+    Waits for the Suspend token to be reset, pausing execution until the token is no longer in a cancellation state.
+
+.NOTES
+    - This function is part of Pode's internal utilities and may change in future releases.
+    - It uses a simple loop with a 1-second sleep interval to reduce CPU usage while waiting.
+
+#>
+function Wait-PodeCancellationTokenRequest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable')]
+        [string]
+        $Type
+    )
+
+    # Wait for the token to be reset
+    while ($PodeContext.Tokens[$Type].IsCancellationRequested) {
+        Start-Sleep -Seconds 1
     }
 }
 
 
+
+
+<#
+.SYNOPSIS
+    Tests whether all specified Pode server tokens have active cancellation requests.
+
+.DESCRIPTION
+    The `Test-PodeCancellationTokenRequest` function iterates over the specified token types
+    within the Pode server context and checks if each has an active cancellation request.
+    The function returns `$true` only if all specified tokens are in the `IsCancellationRequested` state.
+    If any token does not have an active cancellation request, it immediately returns `$false`.
+
+.PARAMETER Type
+    Specifies the token(s) to check. This parameter accepts one or more values from a predefined set.
+    Allowed values: `Cancellation`, `Restart`, `Suspend`, `Resume`, `Terminate`, `Start`, `Disable`.
+
+.OUTPUTS
+    [bool] `$true` if all specified tokens have active cancellation requests, otherwise `$false`.
+
+.EXAMPLE
+    Test-PodeCancellationTokenRequest -Type 'Restart'
+
+    Returns `$true` if the Restart token has an active cancellation request, otherwise `$false`.
+
+.EXAMPLE
+    Test-PodeCancellationTokenRequest -Type 'Suspend', 'Terminate'
+
+    Returns `$true` if both Suspend and Terminate tokens have active cancellation requests, otherwise `$false`.
+
+.NOTES
+    - It is part of Pode's internal utilities and may change in future releases.
+    - The function depends on the `$PodeContext.Tokens` object for token state management.
+
+#>
+function Test-PodeCancellationTokenRequest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable')]
+        [string[]]
+        $Type
+    )
+
+    # Iterate through each specified token
+    foreach ($token in $Type) {
+        # Return false immediately if any token is not in a cancellation state
+        if (-not $PodeContext.Tokens[$token].IsCancellationRequested) {
+            return $false
+        }
+    }
+
+    # Return true if all tokens have cancellation requests
+    return $true
+}

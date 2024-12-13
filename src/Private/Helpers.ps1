@@ -744,11 +744,8 @@ function Test-PodeKeyPressed {
 function Close-PodeServerInternal {
     try {
         # ensure the token is cancelled
-        if ($null -ne $PodeContext.Tokens.Cancellation -and $null -ne $PodeContext.Tokens.Cancellation) {
-            Write-Verbose 'Cancelling main cancellation token'
-            $PodeContext.Tokens.Cancellation.Cancel()
-            $PodeContext.Tokens.Terminate.Cancel()
-        }
+        Write-Verbose 'Cancelling main cancellation token'
+        Set-PodeCancellationTokenRequest -Type Cancellation, Terminate
 
         # stop all current runspaces
         Write-Verbose 'Closing runspaces'
@@ -3951,63 +3948,5 @@ function Copy-PodeObjectDeepClone {
 
         # Deserialize the XML back into a new PSObject, creating a deep clone of the original
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
-    }
-}
-
-
-<#
-.SYNOPSIS
-Writes a visual divider line to the console.
-
-.DESCRIPTION
-The `Write-PodeHostDivider` function outputs a horizontal divider line to the console.
-For modern environments (PowerShell 6 and above or UTF-8 capable consoles),
-it uses the `━` character repeated to form the divider. For older environments
-like PowerShell 5.1, it falls back to the `-` character for compatibility.
-
-.PARAMETER Force
-Forces the output to display the divider even if certain conditions are not met.
-
-.PARAMETER ForegroundColor
-Specifies the foreground color of the divider.
-
-.EXAMPLE
-Write-PodeHostDivider
-
-Writes a divider to the console using the appropriate characters for the environment.
-
-.EXAMPLE
-Write-PodeHostDivider -Force $true
-
-Writes a divider to the console even if conditions for displaying it are not met.
-
-.NOTES
-This function dynamically adapts to the PowerShell version and console encoding, ensuring compatibility across different environments.
-#>
-function Write-PodeHostDivider {
-    param (
-        [bool]$Force = $false
-    )
-
-    if ($PodeContext.Server.Console.ShowDivider) {
-        if ($null -ne $PodeContext.Server.Console.Colors.Divider) {
-            $dividerColor = $PodeContext.Server.Console.Colors.Divider
-        }
-        else {
-            $dividerColor = [System.ConsoleColor]::Yellow
-        }
-        # Determine the divider style based on PowerShell version and encoding support
-        $dividerChar = if ($PSVersionTable.PSVersion.Major -ge 6 ) {
-            '━' * $PodeContext.Server.Console.DividerLength  # Repeat the '━' character
-        }
-        else {
-            '-' * $PodeContext.Server.Console.DividerLength # Repeat the '-' as a fallback
-        }
-
-        # Write the divider with the chosen style
-        Write-PodeHost $dividerChar -ForegroundColor $dividerColor -Force:$Force
-    }
-    else {
-        Write-PodeHost
     }
 }

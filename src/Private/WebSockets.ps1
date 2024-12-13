@@ -50,8 +50,8 @@ function Start-PodeWebSocketRunspace {
             [int]
             $ThreadId
         )
-# Waits for the Pode server to fully start before proceeding with further operations.
-Wait-PodeStartToken
+        # Waits for the Pode server to fully start before proceeding with further operations.
+        Wait-PodeCancellationTokenRequest -Type Start
 
         do {
             try {

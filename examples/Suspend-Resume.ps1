@@ -187,8 +187,6 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
         Write-Verbose "Message2: $($Message2)"
     }
 
-    Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './scripts/schedule.ps1'
-
     # schedule defined using two cron expressions
     Add-PodeSchedule -Name 'two-crons' -Cron @('0/3 * * * *', '0/5 * * * *') -ScriptBlock {
         Write-Verbose  'double cron'

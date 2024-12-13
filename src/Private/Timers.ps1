@@ -20,7 +20,7 @@ function Start-PodeTimerRunspace {
 
     $script = {
         # Waits for the Pode server to fully start before proceeding with further operations.
-Wait-PodeStartToken
+        Wait-PodeCancellationTokenRequest -Type Start
 
         try {
             while (!$PodeContext.Tokens.Terminate.IsCancellationRequested) {
