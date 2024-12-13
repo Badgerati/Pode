@@ -599,3 +599,187 @@ function Show-PodeConsoleOAInfo {
         Write-PodeHostDivider -Force $true
     }
 }
+
+
+
+
+<#
+.SYNOPSIS
+    Clears any remaining keys in the console input buffer.
+
+.DESCRIPTION
+    The `Clear-PodeKeyPressed` function checks if there are any keys remaining in the input buffer
+    and discards them, ensuring that no leftover key presses interfere with subsequent reads.
+
+.EXAMPLE
+    Clear-PodeKeyPressed
+    [Console]::ReadKey($true)
+
+    This example clears the buffer and then reads a new key without interference.
+
+.NOTES
+    This function is useful when using `[Console]::ReadKey($true)` to prevent previous key presses
+    from affecting the input.
+
+#>
+function Clear-PodeKeyPressed {
+    if (!$PodeContext.Server.Console.DisableConsoleInput) {
+
+        # Clear any remaining keys in the input buffer
+        while ([Console]::KeyAvailable) {
+
+            [Console]::ReadKey($true) | Out-Null
+        }
+    }
+}
+
+
+function Test-PodeKeyPressed {
+    param(
+        [Parameter()]
+        $Key = $null,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Character
+    )
+
+    if ($PodeContext.Server.Console.DisableConsoleInput) {
+        return $false
+
+    }
+    if ($null -eq $Key) {
+        $Key = Get-PodeConsoleKey
+    }
+
+    return (($null -ne $Key) -and ($Key.Key -ieq $Character) -and
+        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-PodeIsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
+}
+
+function Get-PodeConsoleKey {
+    if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
+        return $null
+    }
+
+    return [Console]::ReadKey($true)
+}
+
+<#
+.SYNOPSIS
+    Processes console actions and cancellation token triggers for the Pode server.
+
+.DESCRIPTION
+    The `Invoke-PodeConsoleAction` function handles key presses and cancellation token triggers
+    for various server actions, such as restarting, suspending, enabling/disabling, or toggling
+    console displays (e.g., Help, Endpoints, OpenAPI).
+
+.NOTES
+    This function is part of Pode's internal utilities and may change in future releases.
+
+.EXAMPLE
+    Invoke-PodeConsoleAction
+
+    Processes the next key press or cancellation token to execute the corresponding server action.
+#>
+function Invoke-PodeConsoleAction {
+
+    if (!$PodeContext.Server.Console.DisableConsoleInput) {
+        # get the next key presses
+        $key = Get-PodeConsoleKey
+    }
+    # check for open browser
+    if ((Test-PodeKeyPressed -Key $Key -Character 'b')) {
+        Clear-PodeKeyPressed
+        $url = Get-PodeEndpointUrl
+        if (![string]::IsNullOrWhitespace($url)) {
+            Invoke-PodeEvent -Type Browser
+            Start-Process $url
+        }
+    }
+    elseif ((Test-PodeKeyPressed -Key $Key -Character 'h')) {
+        Clear-PodeKeyPressed
+        $PodeContext.Server.Console.ShowHelp = !$PodeContext.Server.Console.ShowHelp
+        Show-PodeConsoleInfo -ShowTopSeparator
+    }
+    elseif ((Test-PodeKeyPressed -Key $Key -Character 'o')) {
+        Clear-PodeKeyPressed
+        $PodeContext.Server.Console.ShowOpenAPI = !$PodeContext.Server.Console.ShowOpenAPI
+        Show-PodeConsoleInfo -ShowTopSeparator
+    }
+    elseif ((Test-PodeKeyPressed -Key $Key -Character 'e')) {
+        Clear-PodeKeyPressed
+        $PodeContext.Server.Console.ShowEndpoints = !$PodeContext.Server.Console.ShowEndpoints
+        Show-PodeConsoleInfo -ShowTopSeparator
+    }
+    elseif ((Test-PodeKeyPressed -Key $Key -Character 'l')) {
+        Clear-PodeKeyPressed
+        Show-PodeConsoleInfo -ClearHost
+    }
+    elseif ((Test-PodeKeyPressed -Key $Key -Character 't')) {
+        Clear-PodeKeyPressed
+        $PodeContext.Server.Console.Quiet = !$PodeContext.Server.Console.Quiet
+        Show-PodeConsoleInfo -ClearHost -Force
+    }
+    elseif ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character 'c')) {
+        Clear-PodeKeyPressed
+        break
+    }
+
+    # check for internal restart
+
+    if ($PodeContext.Server.AllowedActions.Restart) {
+        if ((Test-PodeKeyPressed -Key $Key -Character 'r')) {
+            Clear-PodeKeyPressed
+            Set-PodeCancellationTokenRequest -Type Restart
+            Restart-PodeInternalServer
+        }
+        elseif ((Test-PodeCancellationTokenRequest -Type Restart)) {
+            Restart-PodeInternalServer
+        }
+    }
+
+    if ($PodeContext.Server.AllowedActions.Disable) {
+        if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character 'd')) {
+            Clear-PodeKeyPressed
+            if (Test-PodeServerIsEnabled) {
+                Set-PodeCancellationTokenRequest -Type Disable
+                Disable-PodeServer
+            }
+            else {
+                Reset-PodeCancellationToken -Type Disable
+                Enable-PodeServer
+            }
+            Show-PodeConsoleInfo -ShowTopSeparator
+        }
+        elseif (Test-PodeCancellationTokenRequest -Type Disable) {
+            if (Test-PodeServerIsEnabled) {
+                Disable-PodeServer
+                Show-PodeConsoleInfo -ShowTopSeparator
+            }
+        }
+        elseif (! (Test-PodeServerIsEnabled)) {
+            Enable-PodeServer
+            Show-PodeConsoleInfo -ShowTopSeparator
+        }
+    }
+
+    if ($PodeContext.Server.AllowedActions.Suspend) {
+        if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character 'u')) {
+            Clear-PodeKeyPressed
+            if ((Get-PodeServerState) -eq 'Suspended') {
+                Set-PodeResumeToken
+                Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
+            }
+            elseif ((Get-PodeServerState) -eq 'Running') {
+                Set-PodeSuspendToken
+                Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
+            }
+        }
+        elseif (((Test-PodeCancellationTokenRequest -Type Resume) -and (Get-PodeServerState) -eq 'Suspended')) {
+            Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
+        }
+        elseif (((Test-PodeCancellationTokenRequest -Type  Suspend) -and (Get-PodeServerState) -eq 'Running')) {
+            Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
+        }
+    }
+}

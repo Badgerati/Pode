@@ -345,23 +345,31 @@ function Wait-PodeCancellationTokenRequest {
 
 
 
-
 <#
 .SYNOPSIS
-    Tests whether all specified Pode server tokens have active cancellation requests.
+    Tests whether specified Pode server tokens have active cancellation requests using logical operations.
 
 .DESCRIPTION
-    The `Test-PodeCancellationTokenRequest` function iterates over the specified token types
-    within the Pode server context and checks if each has an active cancellation request.
-    The function returns `$true` only if all specified tokens are in the `IsCancellationRequested` state.
-    If any token does not have an active cancellation request, it immediately returns `$false`.
+    The `Test-PodeCancellationTokenRequest` function checks the cancellation state of one or more tokens
+    within the Pode server context based on the specified logical operation (`AND`, `OR`, `XOR`, `NAND`, `NOR`, `XNOR`).
+    - `AND` (default): Returns `$true` if all tokens have active cancellation requests.
+    - `OR`: Returns `$true` if at least one token has an active cancellation request.
+    - `XOR`: Returns `$true` if exactly one token has an active cancellation request.
+    - `NAND`: Returns `$true` if not all tokens have active cancellation requests.
+    - `NOR`: Returns `$true` if none of the tokens have active cancellation requests.
+    - `XNOR`: Returns `$true` if an even number of tokens have active cancellation requests.
 
 .PARAMETER Type
     Specifies the token(s) to check. This parameter accepts one or more values from a predefined set.
     Allowed values: `Cancellation`, `Restart`, `Suspend`, `Resume`, `Terminate`, `Start`, `Disable`.
 
+.PARAMETER Operation
+    Specifies the logical operation to apply when evaluating the token states.
+    Allowed values: `AND`, `OR`, `XOR`, `NAND`, `NOR`, `XNOR`.
+    Default is `AND`.
+
 .OUTPUTS
-    [bool] `$true` if all specified tokens have active cancellation requests, otherwise `$false`.
+    [bool] The result of the logical operation on the token cancellation states.
 
 .EXAMPLE
     Test-PodeCancellationTokenRequest -Type 'Restart'
@@ -369,31 +377,62 @@ function Wait-PodeCancellationTokenRequest {
     Returns `$true` if the Restart token has an active cancellation request, otherwise `$false`.
 
 .EXAMPLE
+    Test-PodeCancellationTokenRequest -Type 'Suspend', 'Terminate' -Operation 'NAND'
+
+    Returns `$true` if not all of Suspend and Terminate tokens have active cancellation requests.
+
+.EXAMPLE
     Test-PodeCancellationTokenRequest -Type 'Suspend', 'Terminate'
 
-    Returns `$true` if both Suspend and Terminate tokens have active cancellation requests, otherwise `$false`.
+    Defaults to `AND` operation. Returns `$true` if both Suspend and Terminate tokens have active cancellation requests.
 
 .NOTES
-    - It is part of Pode's internal utilities and may change in future releases.
-    - The function depends on the `$PodeContext.Tokens` object for token state management.
-
+    This function is part of Pode's internal utilities and may change in future releases.
 #>
 function Test-PodeCancellationTokenRequest {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable')]
         [string[]]
-        $Type
+        $Type,
+
+        [Parameter()]
+        [ValidateSet('AND', 'OR', 'XOR', 'NAND', 'NOR', 'XNOR')]
+        [string]
+        $Operation = 'AND'  # Default operation is AND
     )
 
-    # Iterate through each specified token
-    foreach ($token in $Type) {
-        # Return false immediately if any token is not in a cancellation state
-        if (-not $PodeContext.Tokens[$token].IsCancellationRequested) {
-            return $false
-        }
+    # Collect the state of each token
+    $states = $Type | ForEach-Object {
+        $PodeContext.Tokens[$_].IsCancellationRequested
     }
 
-    # Return true if all tokens have cancellation requests
-    return $true
+    # Evaluate based on the specified operation
+    switch ($Operation) {
+        'AND' {
+            # Return true if all tokens have cancellation requests
+            return ($states -notcontains $false)
+        }
+        'OR' {
+            # Return true if at least one token has a cancellation request
+            return ($states -contains $true)
+        }
+        'XOR' {
+            # Return true if exactly one token has a cancellation request
+            return ($states | Where-Object { $_ -eq $true }).Count -eq 1
+        }
+        'NAND' {
+            # Return true if not all tokens have cancellation requests
+            return ($states -contains $false)
+        }
+        'NOR' {
+            # Return true if none of the tokens have cancellation requests
+            return ($states -notcontains $true)
+        }
+        'XNOR' {
+            # Return true if an even number of tokens have cancellation requests
+            return (($states | Where-Object { $_ -eq $true }).Count % 2) -eq 0
+        } 
+    }
 }
+

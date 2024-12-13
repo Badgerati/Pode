@@ -367,8 +367,8 @@ function Suspend-PodeServerInternal {
         $Timeout = 30
     )
 
-    # Exit early if no suspension request is pending.
-    if (!(Test-PodeCancellationTokenRequest -Type Suspend)) {
+    # Exit early if no suspension request is pending or if the server is already suspended.
+    if (!(Test-PodeCancellationTokenRequest -Type Suspend) -or ((Get-PodeServerState) -eq 'Suspended')) {
         return
     }
 
