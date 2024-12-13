@@ -945,7 +945,7 @@ function Set-PodeServerConfiguration {
         }
     }
 
-    $tmpConsole = @{
+    $Context.Server.Console = @{
         DisableTermination  = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableTermination -Default $Context.Server.Console.DisableTermination)
         DisableConsoleInput = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableConsoleInput -Default $Context.Server.Console.DisableConsoleInput)
         Quiet               = [bool](Protect-PodeValue -Value  $Configuration.Console.Quiet -Default $Context.Server.Console.Quiet)
@@ -956,10 +956,7 @@ function Set-PodeServerConfiguration {
         ShowDivider         = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowDivider -Default $Context.Server.Console.ShowDivider)
         ShowTimeStamp       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowTimeStamp -Default $Context.Server.Console.ShowTimeStamp)
         DividerLength       = [int](Protect-PodeValue -Value  $Configuration.Console.DividerLength -Default $Context.Server.Console.DividerLength)
-    }
-
-    try {
-        $tmpConsole.Colors = @{
+        Colors              = @{
             Header          = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Header -Default $Context.Server.Console.Colors.Header), $true)
             EndpointsHeader = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.EndpointsHeader -Default $Context.Server.Console.Colors.EndpointsHeader), $true)
             Endpoints       = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Endpoints -Default $Context.Server.Console.Colors.Endpoints), $true)
@@ -972,13 +969,7 @@ function Set-PodeServerConfiguration {
             HelpDivider     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDivider -Default $Context.Server.Console.Colors.HelpDivider), $true)
             Divider         = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Divider -Default $Context.Server.Console.Colors.Divider), $true)
         }
-    }
-    catch {
-        $_ | Write-PodeErrorLog
-    }
-
-    try {
-        $tmpConsole.KeyBindings = @{
+        KeyBindings         = @{
             Browser   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Browser -Default $Context.Server.Console.KeyBindings.Browser)
             Help      = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Help -Default $Context.Server.Console.KeyBindings.Help)
             OpenAPI   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.OpenAPI -Default $Context.Server.Console.KeyBindings.OpenAPI)
@@ -991,10 +982,8 @@ function Set-PodeServerConfiguration {
             Suspend   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Suspend -Default $Context.Server.Console.KeyBindings.Suspend)
         }
     }
-    catch {
-        $_ | Write-PodeErrorLog
-    }
-    $Context.Server.Console = $tmpConsole
+
+
 }
 
 function Set-PodeWebConfiguration {

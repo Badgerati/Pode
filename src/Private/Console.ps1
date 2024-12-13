@@ -793,3 +793,64 @@ function Invoke-PodeConsoleAction {
         }
     }
 }
+
+<#
+.SYNOPSIS
+    Retrieves the default console settings for Pode.
+
+.DESCRIPTION
+    The `Get-PodeDefaultConsole` function returns a hashtable containing the default console configuration for Pode. This includes settings for termination, console input, output formatting, timestamps, and color themes, as well as key bindings for console navigation.
+
+.OUTPUTS
+    [hashtable]
+        A hashtable representing the default console settings, including termination behavior, display options, colors, and key bindings.
+
+.EXAMPLE
+    $consoleSettings = Get-PodeDefaultConsole
+    Write-Output $consoleSettings
+
+    This example retrieves the default console settings and displays them.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeDefaultConsole {
+    return            @{
+        DisableTermination  = $false
+        DisableConsoleInput = $false
+        Quiet               = $false
+        ClearHost           = $false
+        ShowOpenAPI         = $true
+        ShowEndpoints       = $true
+        ShowHelp            = $false
+        ShowDivider         = $true
+        DividerLength       = 75
+        ShowTimeStamp       = $true
+        Colors              = @{
+            Header           = [System.ConsoleColor]::White
+            EndpointsHeader  = [System.ConsoleColor]::Yellow
+            Endpoints        = [System.ConsoleColor]::Cyan
+            OpenApiUrls      = [System.ConsoleColor]::Cyan
+            OpenApiHeaders   = [System.ConsoleColor]::Yellow
+            OpenApiTitles    = [System.ConsoleColor]::White
+            OpenApiSubtitles = [System.ConsoleColor]::Yellow
+            HelpHeader       = [System.ConsoleColor]::Yellow
+            HelpKey          = [System.ConsoleColor]::Green
+            HelpDescription  = [System.ConsoleColor]::White
+            HelpDivider      = [System.ConsoleColor]::Gray
+            Divider          = [System.ConsoleColor]::DarkGray
+        }
+        KeyBindings         = @{
+            Browser   = 'b'
+            Help      = 'h'
+            OpenAPI   = 'o'
+            Endpoints = 'e'
+            Clear     = 'l'
+            Quiet     = 't'
+            Terminate = 'c'
+            Restart   = 'r'
+            Disable   = 'd'
+            Suspend   = 'u'
+        }
+    }
+}

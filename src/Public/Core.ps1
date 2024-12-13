@@ -233,48 +233,18 @@ function Start-PodeServer {
                 ListenerType         = $ListenerType
                 EnablePool           = $EnablePool
                 StatusPageExceptions = $StatusPageExceptions
-                Console              = @{
-                    DisableTermination  = $DisableTermination.IsPresent
-                    DisableConsoleInput = $DisableConsoleInput.IsPresent
-                    Quiet               = $Quiet.IsPresent
-                    ClearHost           = $ClearHost.IsPresent
-                    ShowOpenAPI         = !$HideOpenAPI.IsPresent
-                    ShowEndpoints       = !$HideEndpoints.IsPresent
-                    ShowHelp            = $ShowHelp.IsPresent
-                    ShowDivider         = $true
-                    DividerLength       = 75
-                    ShowTimeStamp       = $true
-                    Colors              = @{
-                        Header           = [System.ConsoleColor]::White
-                        EndpointsHeader  = [System.ConsoleColor]::Yellow
-                        Endpoints        = [System.ConsoleColor]::Cyan
-                        OpenApiUrls      = [System.ConsoleColor]::Cyan
-                        OpenApiHeaders   = [System.ConsoleColor]::Yellow
-                        OpenApiTitles    = [System.ConsoleColor]::White
-                        OpenApiSubtitles = [System.ConsoleColor]::Yellow
-                        HelpHeader       = [System.ConsoleColor]::Yellow
-                        HelpKey          = [System.ConsoleColor]::Green
-                        HelpDescription  = [System.ConsoleColor]::White
-                        HelpDivider      = [System.ConsoleColor]::Gray
-                        Divider          = [System.ConsoleColor]::DarkGray
-                    }
-                    KeyBindings         = @{
-                        Browser   = 'b'
-                        Help      = 'h'
-                        OpenAPI   = 'o'
-                        Endpoints = 'e'
-                        Clear     = 'l'
-                        Quiet     = 't'
-                        Terminate = 'c'
-                        Restart   = 'r'
-                        Disable   = 'd'
-                        Suspend   = 'u'
-                    }
-                }
+                Console              = Get-PodeDefaultConsole
                 EnableBreakpoints    = $EnableBreakpoints
                 IgnoreServerPsConfig = $IgnoreServerPsConfig
             }
-
+            $ContextParams.Console.DisableTermination = $DisableTermination.IsPresent
+            $ContextParams.Console.DisableConsoleInput = $DisableConsoleInput.IsPresent
+            $ContextParams.Console.Quiet = $Quiet.IsPresent
+            $ContextParams.Console.ClearHost = $ClearHost.IsPresent
+            $ContextParams.Console.ShowOpenAPI = !$HideOpenAPI.IsPresent
+            $ContextParams.Console.ShowEndpoints = !$HideEndpoints.IsPresent
+            $ContextParams.Console.ShowHelp = $ShowHelp.IsPresent
+            
             # Create main context object
             $PodeContext = New-PodeContext @ContextParams
 
