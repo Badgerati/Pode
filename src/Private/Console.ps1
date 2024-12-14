@@ -752,22 +752,22 @@ function Invoke-PodeConsoleAction {
             Clear-PodeKeyPressed
             if (Test-PodeServerIsEnabled) {
                 Set-PodeCancellationTokenRequest -Type Disable
-                Disable-PodeServer
+                Disable-PodeServerInternal
             }
             else {
                 Reset-PodeCancellationToken -Type Disable
-                Enable-PodeServer
+                Enable-PodeServerInternal
             }
             Show-PodeConsoleInfo -ShowTopSeparator
         }
         elseif (Test-PodeCancellationTokenRequest -Type Disable) {
             if (Test-PodeServerIsEnabled) {
-                Disable-PodeServer
+                Disable-PodeServerInternal
                 Show-PodeConsoleInfo -ShowTopSeparator
             }
         }
         elseif (! (Test-PodeServerIsEnabled)) {
-            Enable-PodeServer
+            Enable-PodeServerInternal
             Show-PodeConsoleInfo -ShowTopSeparator
         }
     }

@@ -312,6 +312,8 @@
         'Suspend-PodeServer',
         'Resume-PodeServer',
         'Get-PodeServerState',
+        'Enable-PodeServer',
+        'Disable-PodeServer',
 
         # openapi
         'Enable-PodeOpenApi',

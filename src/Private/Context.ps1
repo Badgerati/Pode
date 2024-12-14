@@ -388,7 +388,7 @@ function New-PodeContext {
         Restart         = $true
         Disable         = $true
         DisableSettings = @{
-            ServiceRecoveryTime = 3600
+            RetryAfter = 3600
             MiddlewareName      = '__Pode_Midleware_Code_503'
         }
         Timeout         = @{
@@ -936,7 +936,7 @@ function Set-PodeServerConfiguration {
         Restart         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Restart -Default $Context.Server.AllowedActions.Restart)
         Disable         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Disable -Default $Context.Server.AllowedActions.Disable)
         DisableSettings = @{
-            ServiceRecoveryTime = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.ServiceRecoveryTime -Default $Context.Server.AllowedActions.DisableSettings.ServiceRecoveryTime)
+            RetryAfter = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.RetryAfter -Default $Context.Server.AllowedActions.DisableSettings.RetryAfter)
             MiddlewareName      = (Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.MiddlewareName -Default $Context.Server.AllowedActions.DisableSettings.MiddlewareName)
         }
         Timeout         = @{
