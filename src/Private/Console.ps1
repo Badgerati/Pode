@@ -126,7 +126,7 @@ function Show-PodeConsoleInfo {
             break
         }
         'Terminated' {
-            $status = 'Terminated'
+            $status = $Podelocale.terminatedMessage
             $statusColor = [System.ConsoleColor]::Red
             $showHelp = $false
             $noHeaderNewLine = $false
@@ -600,9 +600,6 @@ function Show-PodeConsoleOAInfo {
     }
 }
 
-
-
-
 <#
 .SYNOPSIS
     Clears any remaining keys in the console input buffer.
@@ -633,7 +630,27 @@ function Clear-PodeKeyPressed {
     }
 }
 
+<#
+.SYNOPSIS
+	Tests if a specific key combination is pressed in the Pode console.
 
+.DESCRIPTION
+	This function checks if a key press matches a specified character and modifier combination. It supports detecting Control key presses on all platforms and Shift key presses on Unix systems.
+
+.PARAMETER Key
+	Optional. Specifies the key to test. If not provided, the function retrieves the key using `Get-PodeConsoleKey`.
+
+.PARAMETER Character
+	Mandatory. Specifies the character to test against the key press.
+
+.EXAMPLE
+	Test-PodeKeyPressed -Character 'C'
+
+	Checks if the Control+C combination is pressed.
+
+.NOTES
+	This function is intended for use in scenarios where Pode's console input is enabled.
+#>
 function Test-PodeKeyPressed {
     param(
         [Parameter()]
@@ -644,18 +661,36 @@ function Test-PodeKeyPressed {
         $Character
     )
 
+    # If console input is disabled, return false
     if ($PodeContext.Server.Console.DisableConsoleInput) {
         return $false
-
     }
+
+    # Retrieve the key if not provided
     if ($null -eq $Key) {
         $Key = Get-PodeConsoleKey
     }
 
+    # Test the key press against the character and modifiers
     return (($null -ne $Key) -and ($Key.Key -ieq $Character) -and
         (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-PodeIsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
+<#
+.SYNOPSIS
+	Gets the next key press from the Pode console.
+
+.DESCRIPTION
+	This function checks if a key is available in the console input buffer and retrieves it. If the console input is redirected or no key is available, the function returns `$null`.
+
+.EXAMPLE
+	Get-PodeConsoleKey
+
+	Retrieves the next key press from the Pode console input buffer.
+
+.NOTES
+	This function is useful for scenarios requiring real-time console key handling.
+#>
 function Get-PodeConsoleKey {
     if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
         return $null
@@ -663,6 +698,7 @@ function Get-PodeConsoleKey {
 
     return [Console]::ReadKey($true)
 }
+
 <#
 .SYNOPSIS
     Processes console actions and cancellation token triggers for the Pode server using a centralized key mapping.
@@ -815,42 +851,44 @@ function Invoke-PodeConsoleAction {
     This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeDefaultConsole {
-    return            @{
-        DisableTermination  = $false
-        DisableConsoleInput = $false
-        Quiet               = $false
-        ClearHost           = $false
-        ShowOpenAPI         = $true
-        ShowEndpoints       = $true
-        ShowHelp            = $false
-        ShowDivider         = $true
-        DividerLength       = 75
-        ShowTimeStamp       = $true
-        Colors              = @{
-            Header           = [System.ConsoleColor]::White
-            EndpointsHeader  = [System.ConsoleColor]::Yellow
-            Endpoints        = [System.ConsoleColor]::Cyan
-            OpenApiUrls      = [System.ConsoleColor]::Cyan
-            OpenApiHeaders   = [System.ConsoleColor]::Yellow
-            OpenApiTitles    = [System.ConsoleColor]::White
-            OpenApiSubtitles = [System.ConsoleColor]::Yellow
-            HelpHeader       = [System.ConsoleColor]::Yellow
-            HelpKey          = [System.ConsoleColor]::Green
-            HelpDescription  = [System.ConsoleColor]::White
-            HelpDivider      = [System.ConsoleColor]::Gray
-            Divider          = [System.ConsoleColor]::DarkGray
+    return @{
+        DisableTermination  = $false    # Prevent Ctrl+C from terminating the server.
+        DisableConsoleInput = $false    # Disable all console input controls.
+        Quiet               = $false    # Suppress console output.
+        ClearHost           = $false    # Clear the console output at startup.
+        ShowOpenAPI         = $true     # Display OpenAPI information.
+        ShowEndpoints       = $true     # Display listening endpoints.
+        ShowHelp            = $false    # Show help instructions in the console.
+        ShowDivider         = $true     # Display dividers between sections.
+        DividerLength       = 75        # Length of dividers in the console.
+        ShowTimeStamp       = $true     # Display timestamp in the header.
+
+        Colors              = @{            # Customize console colors.
+            Header           = 'White'      # The server's header section, including the Pode version and timestamp.
+            EndpointsHeader  = 'Yellow'     # The header for the endpoints list.
+            Endpoints        = 'Cyan'       # The endpoints themselves, including protocol and URLs.
+            OpenApiUrls      = 'Cyan'       # URLs listed under the OpenAPI information section.
+            OpenApiHeaders   = 'Yellow'     # Section headers for OpenAPI information.
+            OpenApiTitles    = 'White'      # The OpenAPI "default" title.
+            OpenApiSubtitles = 'Yellow'     # Subtitles under OpenAPI (e.g., Specification, Documentation).
+            HelpHeader       = 'Yellow'     # Header for the Help section.
+            HelpKey          = 'Green'      # Key bindings listed in the Help section (e.g., Ctrl+c).
+            HelpDescription  = 'White'      # Descriptions for each Help section key binding.
+            HelpDivider      = 'Gray'       # Dividers used in the Help section.
+            Divider          = 'DarkGray'   # Dividers between console sections.
         }
-        KeyBindings         = @{
-            Browser   = 'b'
-            Help      = 'h'
-            OpenAPI   = 'o'
-            Endpoints = 'e'
-            Clear     = 'l'
-            Quiet     = 't'
-            Terminate = 'c'
-            Restart   = 'r'
-            Disable   = 'd'
-            Suspend   = 'u'
+
+        KeyBindings         = @{        # Define custom key bindings for controls.
+            Browser   = 'b'             # Open the default browser.
+            Help      = 'h'             # Show/hide help instructions.
+            OpenAPI   = 'o'             # Show/hide OpenAPI information.
+            Endpoints = 'e'             # Show/hide endpoints.
+            Clear     = 'l'             # Clear the console output.
+            Quiet     = 't'             # Toggle quiet mode.
+            Terminate = 'c'             # Terminate the server.
+            Restart   = 'r'             # Restart the server.
+            Disable   = 'd'             # Disable the server.
+            Suspend   = 'u'             # Suspend the server.
         }
     }
 }

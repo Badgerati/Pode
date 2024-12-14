@@ -308,4 +308,5 @@
     resumingRunspaceMessage                                           = 'ランスペースの再開'
     waitingforSuspendingMessage                                       = '停止待機中...'
     waitingforResumingMessage                                         = '再開待機中...'
+    terminatedMessage                                                 = '終了しました'
 }

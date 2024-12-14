@@ -308,4 +308,5 @@
     resumingRunspaceMessage                                           = '런스페이스 재개'
     waitingforSuspendingMessage                                       = '일시 정지 대기 중...'
     waitingforResumingMessage                                         = '재개 대기 중...'
+    terminatedMessage                                                 = '종료됨'
 }

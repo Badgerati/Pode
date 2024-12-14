@@ -308,4 +308,5 @@
     resumingRunspaceMessage                                           = 'استئناف تنفيذ المسارات'
     waitingforSuspendingMessage                                       = 'انتظار الإيقاف...'
     waitingforResumingMessage                                         = 'انتظار الاستئناف...'
+    terminatedMessage                                                 = 'تم الإنهاء'
 }

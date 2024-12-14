@@ -308,4 +308,5 @@
     resumingRunspaceMessage                                           = 'Wznawianie przestrzeni roboczych'
     waitingforSuspendingMessage                                       = 'Oczekiwanie na zawieszenie ...'
     waitingforResumingMessage                                         = 'Oczekiwanie na wznowienie ...'
+    terminatedMessage                                                 = 'Zakończono'
 }

@@ -308,4 +308,5 @@
     resumingRunspaceMessage                                           = '恢复运行空间'
     waitingforSuspendingMessage                                       = '等待暂停...'
     waitingforResumingMessage                                         = '等待恢复...'
+    terminatedMessage                                                 = '已终止'
 }

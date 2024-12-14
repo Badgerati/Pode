@@ -308,4 +308,5 @@
     resumingRunspaceMessage                                           = 'Resuming Runspaces'
     waitingforSuspendingMessage                                       = 'Waiting for suspending ...'
     waitingforResumingMessage                                         = 'Waiting for resuming ...'
+    terminatedMessage                                                 = 'Terminated'
 }
