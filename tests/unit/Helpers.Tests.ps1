@@ -1146,16 +1146,19 @@ Describe 'Close-PodeRunspace' {
 
 Describe 'Close-PodeServerInternal' {
     BeforeAll {
-        Mock Close-PodeRunspace { }
-        Mock Stop-PodeFileMonitor { }
-        Mock Close-PodeDisposable { }
-        Mock Remove-PodePSDrive { }
-        Mock Write-Host { } }
+        Mock Close-PodeRunspace {}
+        Mock Stop-PodeFileMonitor {}
+        Mock Close-PodeDisposable {}
+        Mock Remove-PodePSDrive {}
+        Mock Write-PodeHost {}
+        Mock Set-PodeCancellationTokenRequest {}
+    }
+
 
     It 'Closes out pode, but with no done flag' {
         $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }
         Close-PodeServerInternal
-        Assert-MockCalled Write-Host -Times 0 -Scope It
+        Assert-MockCalled Write-PodeHost -Times 0 -Scope It
     }
 
 }
