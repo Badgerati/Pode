@@ -309,4 +309,10 @@
     waitingforSuspendingMessage                                       = '等待暂停...'
     waitingforResumingMessage                                         = '等待恢复...'
     terminatedMessage                                                 = '已终止'
+    showMetricsMessage                                                = '显示指标'
+    clearConsoleMessage                                               = '清除控制台'
+    serverMetricsMessage                                              = '服务器指标'
+    totalUptimeMessage                                                = '总运行时间:'
+    uptimeSinceLastRestartMessage                                     = '自上次重启后的运行时间:'
+    totalRestartMessage                                               = '重启总次数:'
 }

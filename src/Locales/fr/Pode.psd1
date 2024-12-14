@@ -309,4 +309,10 @@
     waitingforSuspendingMessage                                       = 'En attente de la suspension ...'
     waitingforResumingMessage                                         = 'En attente de la reprise ...'
     terminatedMessage                                                 = 'Terminé'
+    showMetricsMessage                                                = 'Afficher les métriques'
+    clearConsoleMessage                                               = 'Effacer la console'
+    serverMetricsMessage                                              = 'Métriques du serveur'
+    totalUptimeMessage                                                = 'Temps de fonctionnement total :'
+    uptimeSinceLastRestartMessage                                     = 'Temps de fonctionnement depuis le dernier redémarrage :'
+    totalRestartMessage                                               = 'Nombre total de redémarrages :'
 }

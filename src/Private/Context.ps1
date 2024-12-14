@@ -388,8 +388,8 @@ function New-PodeContext {
         Restart         = $true
         Disable         = $true
         DisableSettings = @{
-            RetryAfter = 3600
-            MiddlewareName      = '__Pode_Midleware_Code_503'
+            RetryAfter     = 3600
+            MiddlewareName = '__Pode_Midleware_Code_503'
         }
         Timeout         = @{
             Suspend = 30
@@ -936,8 +936,8 @@ function Set-PodeServerConfiguration {
         Restart         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Restart -Default $Context.Server.AllowedActions.Restart)
         Disable         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Disable -Default $Context.Server.AllowedActions.Disable)
         DisableSettings = @{
-            RetryAfter = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.RetryAfter -Default $Context.Server.AllowedActions.DisableSettings.RetryAfter)
-            MiddlewareName      = (Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.MiddlewareName -Default $Context.Server.AllowedActions.DisableSettings.MiddlewareName)
+            RetryAfter     = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.RetryAfter -Default $Context.Server.AllowedActions.DisableSettings.RetryAfter)
+            MiddlewareName = (Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.MiddlewareName -Default $Context.Server.AllowedActions.DisableSettings.MiddlewareName)
         }
         Timeout         = @{
             Suspend = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Suspend -Default $Context.Server.AllowedActions.Timeout.Suspend)
@@ -968,6 +968,9 @@ function Set-PodeServerConfiguration {
             HelpDescription = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDescription -Default $Context.Server.Console.Colors.HelpDescription), $true)
             HelpDivider     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDivider -Default $Context.Server.Console.Colors.HelpDivider), $true)
             Divider         = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Divider -Default $Context.Server.Console.Colors.Divider), $true)
+            MetricsHeader   = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsHeader -Default $Context.Server.Console.Colors.MetricsHeader), $true)
+            MetricsLabel    = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsLabel -Default $Context.Server.Console.Colors.MetricsLabel), $true)
+            MetricsValue    = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsValue -Default $Context.Server.Console.Colors.MetricsValue), $true)
         }
         KeyBindings         = @{
             Browser   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Browser -Default $Context.Server.Console.KeyBindings.Browser)
@@ -980,6 +983,7 @@ function Set-PodeServerConfiguration {
             Restart   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Restart -Default $Context.Server.Console.KeyBindings.Restart)
             Disable   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Disable -Default $Context.Server.Console.KeyBindings.Disable)
             Suspend   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Suspend -Default $Context.Server.Console.KeyBindings.Suspend)
+            Metrics   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Metrics -Default $Context.Server.Console.KeyBindings.Metrics)
         }
     }
 

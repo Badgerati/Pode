@@ -84,18 +84,21 @@
             DividerLength       = 75        # Length of dividers in the console.
             ShowTimeStamp       = $true     # Display timestamp in the header.
             Colors              = @{        # Customize console colors.
-                Header           = 'White'
-                EndpointsHeader  = 'Yellow'
-                Endpoints        = 'Cyan'
-                OpenApiUrls      = 'Cyan'
-                OpenApiHeaders   = 'Yellow'
-                OpenApiTitles    = 'White'
-                OpenApiSubtitles = 'Yellow'
-                HelpHeader       = 'Yellow'
-                HelpKey          = 'Green'
-                HelpDescription  = 'White'
-                HelpDivider      = 'Gray'
-                Divider          = 'DarkGray'
+                Header           = 'White'      # The server's header section, including the Pode version and timestamp.
+                EndpointsHeader  = 'Yellow'     # The header for the endpoints list.
+                Endpoints        = 'Cyan'       # The endpoints themselves, including protocol and URLs.
+                OpenApiUrls      = 'Cyan'       # URLs listed under the OpenAPI information section.
+                OpenApiHeaders   = 'Yellow'     # Section headers for OpenAPI information.
+                OpenApiTitles    = 'White'      # The OpenAPI "default" title.
+                OpenApiSubtitles = 'Yellow'     # Subtitles under OpenAPI (e.g., Specification, Documentation).
+                HelpHeader       = 'Yellow'     # Header for the Help section.
+                HelpKey          = 'Green'      # Key bindings listed in the Help section (e.g., Ctrl+c).
+                HelpDescription  = 'White'      # Descriptions for each Help section key binding.
+                HelpDivider      = 'Gray'       # Dividers used in the Help section.
+                Divider          = 'DarkGray'   # Dividers between console sections.
+                MetricsHeader    = 'Yellow'     # Header for the Metric section.
+                MetricsLabel     = 'White'      # Labels for values displayed in the Metrics section.
+                MetricsValue     = 'Green'      # The actual values displayed in the Metrics section.
             }
             KeyBindings         = @{        # Define custom key bindings for controls.
                 Browser   = 'b'             # Open the default browser.
@@ -108,6 +111,7 @@
                 Restart   = 'r'             # Restart the server.
                 Disable   = 'd'             # Disable the server.
                 Suspend   = 'u'             # Suspend the server.
+                Metrics   = 'm'             # Show Metrics.
             }
         }
     }

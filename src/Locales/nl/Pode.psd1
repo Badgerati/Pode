@@ -309,4 +309,10 @@
     waitingforSuspendingMessage                                       = 'Oczekiwanie na zawieszenie ...'
     waitingforResumingMessage                                         = 'Oczekiwanie na wznowienie ...'
     terminatedMessage                                                 = 'Beëindigd'
+    showMetricsMessage                                                = 'Toon statistieken'
+    clearConsoleMessage                                               = 'Console wissen'
+    serverMetricsMessage                                              = 'Serverstatistieken'
+    totalUptimeMessage                                                = 'Totale uptime:'
+    uptimeSinceLastRestartMessage                                     = 'Uptime sinds laatste herstart:'
+    totalRestartMessage                                               = 'Totaal aantal herstarts:'
 }

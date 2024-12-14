@@ -309,4 +309,10 @@
     waitingforSuspendingMessage                                       = 'Waiting for suspending ...'
     waitingforResumingMessage                                         = 'Waiting for resuming ...'
     terminatedMessage                                                 = 'Terminated'
+    showMetricsMessage                                                = 'Show Metrics'
+    clearConsoleMessage                                               = 'Clear the Console'
+    serverMetricsMessage                                              = 'Server Metrics'
+    totalUptimeMessage                                                = 'Total Uptime:'
+    uptimeSinceLastRestartMessage                                     = 'Uptime Since Last Restart:'
+    totalRestartMessage                                               = 'Total Number of Restart:'
 }

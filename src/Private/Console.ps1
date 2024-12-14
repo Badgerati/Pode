@@ -215,10 +215,10 @@ function Show-PodeConsoleHelp {
         [switch]
         $Hide
     )
-    # Centralized key mapping
+    # Retrieve centralized key mapping for keyboard shortcuts
     $KeyBindings = $PodeContext.Server.Console.KeyBindings
 
-    # Define help section color variables
+    # Define help section color variables with fallback defaults
     $helpHeaderColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpHeader) {
         $PodeContext.Server.Console.Colors.HelpHeader
     }
@@ -247,13 +247,14 @@ function Show-PodeConsoleHelp {
         [System.ConsoleColor]::Gray
     }
 
-    # Show concise "Show Help" option if $Hide is true
+    # Display the "Show Help" option if the $Hide parameter is specified
     if ($Hide) {
         Write-PodeHost "    Ctrl+$($KeyBindings.Help)  : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost 'Show Help'  -ForegroundColor $helpDescriptionColor -Force:$Force
     }
     else {
-        # Determine resume or suspend message based on server state
+        # Determine the text for resuming or suspending the server based on its state
+
         $resumeOrSuspend = if ($serverState -eq 'Suspended') {
             $Podelocale.ResumeServerMessage
         }
@@ -261,10 +262,10 @@ function Show-PodeConsoleHelp {
             $Podelocale.SuspendServerMessage
         }
 
-        # Enable or disable server state message
+        # Determine whether to display "Enable" or "Disable Server" based on the server state
         $enableOrDisable = if (Test-PodeServerIsEnabled) { 'Disable Server' } else { 'Enable Server' }
 
-        # Display help header
+        # Display the header for the help section
         Write-PodeHost $Podelocale.serverControlCommandsTitle -ForegroundColor $helpHeaderColor -Force:$Force
 
         if ($headerSeparator) {
@@ -272,7 +273,7 @@ function Show-PodeConsoleHelp {
             Write-PodeHostDivider -Force $true
         }
 
-        # Display help commands
+        # Display key bindings and their descriptions
         if (!$PodeContext.Server.Console.DisableTermination) {
             Write-PodeHost "    Ctrl+$($KeyBindings.Terminate)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
             Write-PodeHost "$($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
@@ -296,26 +297,36 @@ function Show-PodeConsoleHelp {
         Write-PodeHost "    Ctrl+$($KeyBindings.Help)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost 'Hide Help' -ForegroundColor $helpDescriptionColor -Force:$Force
 
+        # If an HTTP endpoint exists and the server is running, display the browser shortcut
         if ((Get-PodeEndpointUrl) -and ($serverState -ne 'Suspended')) {
             Write-PodeHost "    Ctrl+$($KeyBindings.Browser)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
-            Write-PodeHost "$($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
+            Write-PodeHost $Podelocale.OpenHttpEndpointMessage -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
+        # Display a divider for grouping commands
         Write-PodeHost '    ----' -ForegroundColor $helpDividerColor -Force:$Force
 
+        # Show metrics only if the server is running or suspended
+        if (('Running', 'Suspended') -contains $serverState ) {
+            Write-PodeHost "    Ctrl+$($KeyBindings.Metrics)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeHost $Podelocale.showMetricsMessage -ForegroundColor $helpDescriptionColor -Force:$Force
+        }
+
+        # Show endpoints and OpenAPI only if the server is running
         if ($serverState -eq 'Running') {
             Write-PodeHost "    Ctrl+$($KeyBindings.Endpoints)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
             Write-PodeHost "$(if ($PodeContext.Server.Console.ShowEndpoints) { 'Hide' } else { 'Show' }) Endpoints" -ForegroundColor $helpDescriptionColor -Force:$Force
 
-            # Check if OpenApi are in use
+            # Check if OpenAPI is enabled and display its toggle option
             if (Test-PodeOAEnabled) {
                 Write-PodeHost "    Ctrl+$($KeyBindings.Quiet)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
                 Write-PodeHost "$(if ($PodeContext.Server.Console.ShowOpenAPI) { 'Hide' } else { 'Show' }) OpenAPI" -ForegroundColor $helpDescriptionColor -Force:$Force
             }
         }
 
+        # Display the Clear Console and Quiet Mode options
         Write-PodeHost "    Ctrl+$($KeyBindings.Clear)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
-        Write-PodeHost 'Clear the Console' -ForegroundColor $helpDescriptionColor -Force:$Force
+        Write-PodeHost $Podelocale.clearConsoleMessage -ForegroundColor $helpDescriptionColor -Force:$Force
 
         Write-PodeHost "    Ctrl+$($KeyBindings.Quiet)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
         Write-PodeHost "$(if ($PodeContext.Server.Console.Quiet) { 'Disable' } else { 'Enable' }) Quiet Mode" -ForegroundColor $helpDescriptionColor -Force:$Force
@@ -478,6 +489,78 @@ function Show-PodeConsoleEndpointsInfo {
     Write-PodeHostDivider -Force $true
 }
 
+<#
+.SYNOPSIS
+    Displays metrics for the Pode server in the console.
+
+.DESCRIPTION
+    This function outputs various server metrics, such as uptime and restart counts,
+    to the Pode console with styled colors based on the Pode context. The function
+    ensures a visually clear representation of the metrics for quick monitoring.
+
+.EXAMPLE
+    Show-PodeConsoleMetric
+
+    This command displays the Pode server metrics in the console with the
+    appropriate headers, labels, and values styled using Pode-defined colors.
+
+.NOTES
+    This function depends on the PodeContext and related server configurations
+    for retrieving metrics and console colors. Ensure that Pode is running and
+    configured correctly.
+
+.OUTPUTS
+    None. This function writes output directly to the console.
+
+#>
+function Show-PodeConsoleMetric {
+    # Determine the color for the metrics header
+    if ($null -ne $PodeContext.Server.Console.Colors.EndpointsHeader) {
+        $headerColor = $PodeContext.Server.Console.Colors.MetricsHeader
+    }
+    else {
+        $headerColor = [System.ConsoleColor]::White
+    }
+
+    # Determine the color for the metrics labels
+    if ($null -ne $PodeContext.Server.Console.Colors.Endpoints) {
+        $labelColor = $PodeContext.Server.Console.Colors.MetricsLabel
+    }
+    else {
+        $labelColor = [System.ConsoleColor]::Yellow
+    }
+
+    # Determine the color for the metrics values
+    if ($null -ne $PodeContext.Server.Console.Colors.Endpoints) {
+        $valueColor = $PodeContext.Server.Console.Colors.MetricsValue
+    }
+    else {
+        $valueColor = [System.ConsoleColor]::Green
+    }
+
+    # Write a horizontal divider line to separate the header
+    Write-PodeHostDivider -Force $true
+
+    # Write the metrics header with the current timestamp
+    Write-PodeHost "$($Podelocale.serverMetricsMessage) [$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')]" -ForegroundColor $headerColor
+
+    # Write another horizontal divider line for separation
+    Write-PodeHostDivider -Force $true
+
+    # Display the total uptime
+    Write-PodeHost $Podelocale.totalUptimeMessage -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost (Get-PodeServerUptime -Total -Readable -OutputType Verbose -ExcludeMilliseconds) -ForegroundColor $valueColor
+
+    # If uptime exceeds 1000 seconds, display uptime since last restart
+    if ((Get-PodeServerUptime) -gt 1000) {
+        Write-PodeHost $Podelocale.uptimeSinceLastRestartMessage -ForegroundColor $labelColor -NoNewLine
+        Write-PodeHost (Get-PodeServerUptime -Readable -OutputType Verbose -ExcludeMilliseconds) -ForegroundColor $valueColor
+    }
+
+    # Display the total number of server restarts
+    Write-PodeHost $Podelocale.totalRestartMessage -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost (Get-PodeServerRestartCount) -ForegroundColor $valueColor
+}
 
 
 <#
@@ -771,6 +854,10 @@ function Invoke-PodeConsoleAction {
         Set-PodeCancellationTokenRequest -Type Terminate
         return
     }
+    elseif ( (('Running', 'Suspended') -contains $serverState ) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Metrics)) {
+        Clear-PodeKeyPressed
+        Show-PodeConsoleMetric
+    }
 
     # Handle restart actions
     if ($PodeContext.Server.AllowedActions.Restart) {
@@ -878,6 +965,9 @@ function Get-PodeDefaultConsole {
             HelpDescription  = 'White'      # Descriptions for each Help section key binding.
             HelpDivider      = 'Gray'       # Dividers used in the Help section.
             Divider          = 'DarkGray'   # Dividers between console sections.
+            MetricsHeader    = 'Yellow'     # Header for the Metric section.
+            MetricsLabel     = 'White'      # Labels for values displayed in the Metrics section.
+            MetricsValue     = 'Green'      # The actual values displayed in the Metrics section.
         }
 
         KeyBindings         = @{        # Define custom key bindings for controls.
@@ -891,6 +981,7 @@ function Get-PodeDefaultConsole {
             Restart   = 'r'             # Restart the server.
             Disable   = 'd'             # Disable the server.
             Suspend   = 'u'             # Suspend the server.
+            Metrics   = 'm'             # Show Metrics.
         }
     }
 }

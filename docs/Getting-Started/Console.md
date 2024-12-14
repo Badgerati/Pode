@@ -48,6 +48,7 @@ Server Control Commands:
     Ctrl+h   : Hide Help
     Ctrl+b   : Open the first HTTP endpoint in the default browser.
     ----
+    Ctrl+m   : Show Metrics
     Ctrl+e   : Hide Endpoints
     Ctrl+t   : Hide OpenAPI
     Ctrl+l   : Clear the Console
@@ -62,15 +63,15 @@ The behavior, appearance, and functionality of the console are highly customizab
 
 ### Configurable Settings via `Start-PodeServer`
 
-| **Parameter**           | **Description**                                                                                      |
-|-------------------------|-----------------------------------------------------------------------------------------------------|
-| `DisableTermination`    | Prevents termination, suspension, or resumption of the server via keyboard interactive commands.    |
-| `DisableConsoleInput`   | Disables all console keyboard interactions for the server.                                          |
-| `ClearHost`             | Clears the console whenever the server changes state (e.g., running → suspend → resume).           |
-| `Quiet`                 | Suppresses all console output for a clean execution experience.                                     |
-| `HideOpenAPI`           | Hides OpenAPI details such as specification and documentation URLs in the console output.           |
-| `HideEndpoints`         | Hides the list of active endpoints in the console output.                                           |
-| `ShowHelp`              | Displays a help menu in the console with available control commands.                                |
+| **Parameter**         | **Description**                                                                                  |
+|-----------------------|--------------------------------------------------------------------------------------------------|
+| `DisableTermination`  | Prevents termination, suspension, or resumption of the server via keyboard interactive commands. |
+| `DisableConsoleInput` | Disables all console keyboard interactions for the server.                                       |
+| `ClearHost`           | Clears the console whenever the server changes state (e.g., running → suspend → resume).         |
+| `Quiet`               | Suppresses all console output for a clean execution experience.                                  |
+| `HideOpenAPI`         | Hides OpenAPI details such as specification and documentation URLs in the console output.        |
+| `HideEndpoints`       | Hides the list of active endpoints in the console output.                                        |
+| `ShowHelp`            | Displays a help menu in the console with available control commands.                             |
 
 #### Example Usage
 
@@ -120,6 +121,9 @@ Here is the default `Server.Console` configuration:
                 HelpDescription  = 'White'      # Descriptions for each Help section key binding.
                 HelpDivider      = 'Gray'       # Dividers used in the Help section.
                 Divider          = 'DarkGray'   # Dividers between console sections.
+                MetricsHeader    = 'Yellow'     # Header for the Metric section.
+                MetricsLabel     = 'White'      # Labels for values displayed in the Metrics section.
+                MetricsValue     = 'Green'      # The actual values displayed in the Metrics section.
             }
 
             KeyBindings         = @{        # Define custom key bindings for controls.
@@ -133,6 +137,7 @@ Here is the default `Server.Console` configuration:
                 Restart   = 'r'             # Restart the server.
                 Disable   = 'd'             # Disable the server.
                 Suspend   = 'u'             # Suspend the server.
+                Metrics   = 'm'             # Show Metrics.
             }
         }
     }
@@ -190,20 +195,23 @@ The console colors are fully customizable via the `Colors` section of the config
 
 ### Color Settings
 
-| **Key**               | **Default Value** | **Description**                                                                 |
-|-----------------------|-------------------|---------------------------------------------------------------------------------|
-| `Header`             | `White`          | The server's header section, including the Pode version and timestamp.         |
-| `EndpointsHeader`    | `Yellow`         | The header for the endpoints list.                                             |
-| `Endpoints`          | `Cyan`           | The endpoints themselves, including protocol and URLs.                         |
-| `OpenApiUrls`        | `Cyan`           | URLs listed under the OpenAPI information section.                             |
-| `OpenApiHeaders`     | `Yellow`         | Section headers for OpenAPI information.                                       |
-| `OpenApiTitles`      | `White`          | The OpenAPI "default" title.                                                   |
-| `OpenApiSubtitles`   | `Yellow`         | Subtitles under OpenAPI (e.g., Specification, Documentation).                  |
-| `HelpHeader`         | `Yellow`         | Header for the Help section.                                                   |
-| `HelpKey`            | `Green`          | Key bindings listed in the Help section (e.g., `Ctrl+c`).                      |
-| `HelpDescription`    | `White`          | Descriptions for each Help section key binding.                                |
-| `HelpDivider`        | `Gray`           | Dividers used in the Help section.                                             |
-| `Divider`            | `DarkGray`       | Dividers between console sections.                                             |
+| **Key**            | **Default Value** | **Description**                                                        |
+|--------------------|-------------------|------------------------------------------------------------------------|
+| `Header`           | `White`           | The server's header section, including the Pode version and timestamp. |
+| `EndpointsHeader`  | `Yellow`          | The header for the endpoints list.                                     |
+| `Endpoints`        | `Cyan`            | The endpoints themselves, including protocol and URLs.                 |
+| `OpenApiUrls`      | `Cyan`            | URLs listed under the OpenAPI information section.                     |
+| `OpenApiHeaders`   | `Yellow`          | Section headers for OpenAPI information.                               |
+| `OpenApiTitles`    | `White`           | The OpenAPI "default" title.                                           |
+| `OpenApiSubtitles` | `Yellow`          | Subtitles under OpenAPI (e.g., Specification, Documentation).          |
+| `HelpHeader`       | `Yellow`          | Header for the Help section.                                           |
+| `HelpKey`          | `Green`           | Key bindings listed in the Help section (e.g., `Ctrl+c`).              |
+| `HelpDescription`  | `White`           | Descriptions for each Help section key binding.                        |
+| `HelpDivider`      | `Gray`            | Dividers used in the Help section.                                     |
+| `Divider`          | `DarkGray`        | Dividers between console sections.                                     |
+| `MetricsHeader`    | `Yellow`          | Header for the Metrics section.                                        |
+| `MetricsLabel`     | `White`           | Labels for values displayed in the Metrics section.                    |
+| `MetricsValue`     | `Green`           | The actual values displayed in the Metrics section.                    |
 
 > **Tip:** Test your chosen colors against your terminal's background to ensure readability.
 
@@ -230,6 +238,7 @@ The console colors are fully customizable via the `Colors` section of the config
   - **Ctrl+d**: Disable the server, preventing new requests.
   - **Ctrl+u**: Suspend the server temporarily.
   - **Ctrl+h**: Display or hide help instructions.
+  - **Ctrl+m**: Display the server metrics.
 
 ### **4. OpenAPI Integration**
 
@@ -279,6 +288,18 @@ Reduce the use of vibrant colors for a subtle appearance:
         Endpoints       = 'White'
         OpenApiUrls     = 'White'
         Divider         = 'White'
+    }
+}
+```
+
+### **Change Metrics Section Colors**
+
+```powershell
+@{
+    Colors = @{
+        MetricsHeader = 'Blue'   # Change the header color to Blue
+        MetricsLabel  = 'Gray'   # Use Gray for the value labels
+        MetricsValue  = 'Red'    # Display metric values in Red
     }
 }
 ```

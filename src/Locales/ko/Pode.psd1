@@ -309,4 +309,10 @@
     waitingforSuspendingMessage                                       = '일시 정지 대기 중...'
     waitingforResumingMessage                                         = '재개 대기 중...'
     terminatedMessage                                                 = '종료됨'
+    showMetricsMessage                                                = '메트릭 표시'
+    clearConsoleMessage                                               = '콘솔 지우기'
+    serverMetricsMessage                                              = '서버 메트릭'
+    totalUptimeMessage                                                = '총 가동 시간:'
+    uptimeSinceLastRestartMessage                                     = '마지막 재시작 이후 가동 시간:'
+    totalRestartMessage                                               = '총 재시작 횟수:'
 }

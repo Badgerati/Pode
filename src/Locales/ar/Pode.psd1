@@ -309,4 +309,10 @@
     waitingforSuspendingMessage                                       = 'انتظار الإيقاف...'
     waitingforResumingMessage                                         = 'انتظار الاستئناف...'
     terminatedMessage                                                 = 'تم الإنهاء'
+    showMetricsMessage                                                = 'عرض المقاييس'
+    clearConsoleMessage                                               = 'مسح وحدة التحكم'
+    serverMetricsMessage                                              = 'مقاييس الخادم'
+    totalUptimeMessage                                                = 'إجمالي وقت التشغيل:'
+    uptimeSinceLastRestartMessage                                     = 'وقت التشغيل منذ آخر إعادة تشغيل:'
+    totalRestartMessage                                               = 'إجمالي عدد عمليات إعادة التشغيل:'
 }
