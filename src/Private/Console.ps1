@@ -720,6 +720,8 @@ function Invoke-PodeConsoleAction {
     # Centralized key mapping
     $KeyBindings = $PodeContext.Server.Console.KeyBindings
 
+    $serverState = Get-PodeServerState
+
     # Get the next key press if console input is enabled
     if (!$PodeContext.Server.Console.DisableConsoleInput) {
         $Key = Get-PodeConsoleKey
@@ -783,7 +785,7 @@ function Invoke-PodeConsoleAction {
     }
 
     # Handle enable/disable server actions
-    if ($PodeContext.Server.AllowedActions.Disable) {
+    if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq 'Running')) {
         if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Disable)) {
             Clear-PodeKeyPressed
             if (Test-PodeServerIsEnabled) {
@@ -812,19 +814,19 @@ function Invoke-PodeConsoleAction {
     if ($PodeContext.Server.AllowedActions.Suspend) {
         if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Suspend)) {
             Clear-PodeKeyPressed
-            if ((Get-PodeServerState) -eq 'Suspended') {
+            if ($serverState -eq 'Suspended') {
                 Set-PodeResumeToken
                 Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
             }
-            elseif ((Get-PodeServerState) -eq 'Running') {
+            elseif ($serverState -eq 'Running') {
                 Set-PodeSuspendToken
                 Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
             }
         }
-        elseif ((Test-PodeCancellationTokenRequest -Type Resume) -and (Get-PodeServerState) -eq 'Suspended') {
+        elseif ((Test-PodeCancellationTokenRequest -Type Resume) -and ($serverState -eq 'Suspended')) {
             Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
         }
-        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and (Get-PodeServerState) -eq 'Running') {
+        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($serverState -eq 'Running')) {
             Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
         }
     }

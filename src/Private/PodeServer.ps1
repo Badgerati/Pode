@@ -131,7 +131,7 @@ function Start-PodeWebServer {
             Wait-PodeCancellationTokenRequest -Type Start
             do {
                 try {
-                    while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                    while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
                         # get request and response
                         $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
@@ -316,7 +316,7 @@ function Start-PodeWebServer {
 
             do {
                 try {
-                    while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                    while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
                         $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
                         try {
@@ -402,7 +402,7 @@ function Start-PodeWebServer {
 
             do {
                 try {
-                    while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                    while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
                         $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
                         try {
@@ -485,7 +485,7 @@ function Start-PodeWebServer {
         )
 
         try {
-            while ($Listener.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+            while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
                 Start-Sleep -Seconds 1
             }
         }

@@ -376,7 +376,7 @@ function Start-PodeLoggingRunspace {
 
     $script = {
         try {
-            while (!$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
 
                 # Check for suspension token and wait for the debugger to reset if active
                 Test-PodeSuspensionToken

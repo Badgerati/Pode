@@ -538,10 +538,11 @@ function Resume-PodeServerInternal {
     This function is used internally to manage Watchdog monitoring and may change in future releases of Pode.
 #>
 function Enable-PodeServerInternal {
-
-    # Check if the Watchdog middleware exists and remove it if found to allow new requests
-    if (! (Test-PodeServerIsEnabled)) {
-        Remove-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName
+    if (Get-PodeServerState -eq 'Running') {
+        # Check if the Watchdog middleware exists and remove it if found to allow new requests
+        if (! (Test-PodeServerIsEnabled)) {
+            Remove-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName
+        }
     }
 }
 
@@ -557,18 +558,19 @@ function Enable-PodeServerInternal {
     This function is used internally to manage Watchdog monitoring and may change in future releases of Pode.
 #>
 function Disable-PodeServerInternal {
+    if (Get-PodeServerState -eq 'Running') {
+        if (Test-PodeServerIsEnabled) {
+            # Add middleware to block new requests and respond with 503 Service Unavailable
+            Add-PodeMiddleware -Name  $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName -ScriptBlock {
+                # Set HTTP response header for retrying after a certain time (RFC7231)
+                Set-PodeHeader -Name 'Retry-After' -Value $PodeContext.Server.AllowedActions.DisableSettings.RetryAfter
 
-    if (Test-PodeServerIsEnabled) {
-        # Add middleware to block new requests and respond with 503 Service Unavailable
-        Add-PodeMiddleware -Name  $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName -ScriptBlock {
-            # Set HTTP response header for retrying after a certain time (RFC7231)
-            Set-PodeHeader -Name 'Retry-After' -Value $PodeContext.Server.AllowedActions.DisableSettings.RetryAfter
+                # Set HTTP status to 503 Service Unavailable
+                Set-PodeResponseStatus -Code 503
 
-            # Set HTTP status to 503 Service Unavailable
-            Set-PodeResponseStatus -Code 503
-
-            # Stop further processing
-            return $false
+                # Stop further processing
+                return $false
+            }
         }
     }
 }

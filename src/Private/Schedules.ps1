@@ -69,7 +69,7 @@ function Start-PodeScheduleRunspace {
             # first, sleep for a period of time to get to 00 seconds (start of minute)
             Start-PodeSleep -Seconds (60 - [DateTime]::Now.Second)
 
-            while (!$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
 
                 # Check for suspension token and wait for the debugger to reset if active
                 Test-PodeSuspensionToken

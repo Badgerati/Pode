@@ -55,7 +55,7 @@ function Start-PodeWebSocketRunspace {
 
         do {
             try {
-                while ($Receiver.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+                while ($Receiver.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
                     # get request
                     $request = (Wait-PodeTask -Task $Receiver.GetWebSocketRequestAsync($PodeContext.Tokens.Cancellation.Token))
 
@@ -126,7 +126,7 @@ function Start-PodeWebSocketRunspace {
         )
 
         try {
-            while ($Receiver.IsConnected -and !$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+            while ($Receiver.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
                 Start-Sleep -Seconds 1
             }
 

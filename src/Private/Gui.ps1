@@ -30,7 +30,7 @@ function Start-PodeGuiRunspace {
             # poll the server for a response
             $count = 0
 
-            while (!$PodeContext.Tokens.Terminate.IsCancellationRequested) {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
                 try {
                     $null = Invoke-WebRequest -Method Get -Uri $uri -UseBasicParsing -ErrorAction Stop
                     if (!$?) {
@@ -134,7 +134,7 @@ function Start-PodeGuiRunspace {
             throw $_.Exception
         }
         finally {
-            # invoke the cancellation token to close the server 
+            # invoke the cancellation token to close the server
             Set-PodeCancellationTokenRequest -Type Cancellation
         }
     }
