@@ -73,17 +73,17 @@
             }
         }
         Console        = @{
-            DisableTermination  = $false
-            DisableConsoleInput = $false
-            Quiet               = $false
-            ClearHost           = $false
-            ShowOpenAPI         = $true
-            ShowEndpoints       = $true
-            ShowHelp            = $false
-            ShowDivider         = $true
-            DividerLength       = 75
-            ShowTimeStamp       = $true
-            Colors              = @{
+            DisableTermination  = $false    # Prevent Ctrl+C from terminating the server.
+            DisableConsoleInput = $false    # Disable all console input controls.
+            Quiet               = $false    # Suppress console output.
+            ClearHost           = $false    # Clear the console output at startup.
+            ShowOpenAPI         = $true     # Display OpenAPI information.
+            ShowEndpoints       = $true     # Display listening endpoints.
+            ShowHelp            = $false    # Show help instructions in the console.
+            ShowDivider         = $true     # Display dividers between sections.
+            DividerLength       = 75        # Length of dividers in the console.
+            ShowTimeStamp       = $true     # Display timestamp in the header.
+            Colors              = @{        # Customize console colors.
                 Header           = 'White'
                 EndpointsHeader  = 'Yellow'
                 Endpoints        = 'Cyan'
@@ -97,19 +97,18 @@
                 HelpDivider      = 'Gray'
                 Divider          = 'DarkGray'
             }
-            KeyBindings         = @{
-                Browser   = 'b'
-                Help      = 'h'
-                OpenAPI   = 'o'
-                Endpoints = 'e'
-                Clear     = 'l'
-                Quiet     = 't'
-                Terminate = 'c'
-                Restart   = 'r'
-                Disable   = 'd'
-                Suspend   = 'u'
+            KeyBindings         = @{        # Define custom key bindings for controls.
+                Browser   = 'b'             # Open the default browser.
+                Help      = 'h'             # Show/hide help instructions.
+                OpenAPI   = 'o'             # Show/hide OpenAPI information.
+                Endpoints = 'e'             # Show/hide endpoints.
+                Clear     = 'l'             # Clear the console output.
+                Quiet     = 't'             # Toggle quiet mode.
+                Terminate = 'c'             # Terminate the server.
+                Restart   = 'r'             # Restart the server.
+                Disable   = 'd'             # Disable the server.
+                Suspend   = 'u'             # Suspend the server.
             }
-
         }
     }
 }
