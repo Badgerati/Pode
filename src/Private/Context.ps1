@@ -973,17 +973,17 @@ function Set-PodeServerConfiguration {
             MetricsValue    = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsValue -Default $Context.Server.Console.Colors.MetricsValue), $true)
         }
         KeyBindings         = @{
-            Browser   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Browser -Default $Context.Server.Console.KeyBindings.Browser)
-            Help      = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Help -Default $Context.Server.Console.KeyBindings.Help)
-            OpenAPI   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.OpenAPI -Default $Context.Server.Console.KeyBindings.OpenAPI)
-            Endpoints = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Endpoints -Default $Context.Server.Console.KeyBindings.Endpoints)
-            Clear     = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Clear -Default $Context.Server.Console.KeyBindings.Clear)
-            Quiet     = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Quiet -Default $Context.Server.Console.KeyBindings.Quiet)
-            Terminate = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Terminate -Default $Context.Server.Console.KeyBindings.Terminate)
-            Restart   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Restart -Default $Context.Server.Console.KeyBindings.Restart)
-            Disable   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Disable -Default $Context.Server.Console.KeyBindings.Disable)
-            Suspend   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Suspend -Default $Context.Server.Console.KeyBindings.Suspend)
-            Metrics   = (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Metrics -Default $Context.Server.Console.KeyBindings.Metrics)
+            Browser   = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Browser -Default $Context.Server.Console.KeyBindings.Browser), $true)
+            Help      = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Help -Default $Context.Server.Console.KeyBindings.Help), $true)
+            OpenAPI   = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.OpenAPI -Default $Context.Server.Console.KeyBindings.OpenAPI), $true)
+            Endpoints = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Endpoints -Default $Context.Server.Console.KeyBindings.Endpoints), $true)
+            Clear     = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Clear -Default $Context.Server.Console.KeyBindings.Clear), $true)
+            Quiet     = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Quiet -Default $Context.Server.Console.KeyBindings.Quiet), $true)
+            Terminate = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Terminate -Default $Context.Server.Console.KeyBindings.Terminate), $true)
+            Restart   = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Restart -Default $Context.Server.Console.KeyBindings.Restart), $true)
+            Disable   = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Disable -Default $Context.Server.Console.KeyBindings.Disable), $true)
+            Suspend   = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Suspend -Default $Context.Server.Console.KeyBindings.Suspend), $true)
+            Metrics   = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Metrics -Default $Context.Server.Console.KeyBindings.Metrics), $true)
         }
     }
 

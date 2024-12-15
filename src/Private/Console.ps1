@@ -249,7 +249,7 @@ function Show-PodeConsoleHelp {
 
     # Display the "Show Help" option if the $Hide parameter is specified
     if ($Hide) {
-        Write-PodeHost "    Ctrl+$($KeyBindings.Help)  : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeKeyBinding -Key $KeyBindings.Help -ForegroundColor $helpKeyColor -Force:$Force
         Write-PodeHost 'Show Help'  -ForegroundColor $helpDescriptionColor -Force:$Force
     }
     else {
@@ -275,31 +275,31 @@ function Show-PodeConsoleHelp {
 
         # Display key bindings and their descriptions
         if (!$PodeContext.Server.Console.DisableTermination) {
-            Write-PodeHost "    Ctrl+$($KeyBindings.Terminate)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeKeyBinding -Key $KeyBindings.Terminate -ForegroundColor $helpKeyColor -Force:$Force
             Write-PodeHost "$($Podelocale.GracefullyTerminateMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         if ($PodeContext.Server.AllowedActions.Restart) {
-            Write-PodeHost "    Ctrl+$($KeyBindings.Restart)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeKeyBinding -Key $KeyBindings.Restart -ForegroundColor $helpKeyColor -Force:$Force
             Write-PodeHost "$($Podelocale.RestartServerMessage)" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         if ($PodeContext.Server.AllowedActions.Suspend) {
-            Write-PodeHost "    Ctrl+$($KeyBindings.Suspend)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeKeyBinding -Key $KeyBindings.Suspend -ForegroundColor $helpKeyColor -Force:$Force
             Write-PodeHost "$resumeOrSuspend" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         if (($serverState -eq 'Running') -and $PodeContext.Server.AllowedActions.Disable) {
-            Write-PodeHost "    Ctrl+$($KeyBindings.Disable)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeKeyBinding -Key $KeyBindings.Disable -ForegroundColor $helpKeyColor -Force:$Force
             Write-PodeHost "$enableOrDisable" -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
-        Write-PodeHost "    Ctrl+$($KeyBindings.Help)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeKeyBinding -Key $KeyBindings.Help -ForegroundColor $helpKeyColor -Force:$Force
         Write-PodeHost 'Hide Help' -ForegroundColor $helpDescriptionColor -Force:$Force
 
         # If an HTTP endpoint exists and the server is running, display the browser shortcut
         if ((Get-PodeEndpointUrl) -and ($serverState -ne 'Suspended')) {
-            Write-PodeHost "    Ctrl+$($KeyBindings.Browser)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeKeyBinding -Key $KeyBindings.Browser -ForegroundColor $helpKeyColor -Force:$Force
             Write-PodeHost $Podelocale.OpenHttpEndpointMessage -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
@@ -308,33 +308,98 @@ function Show-PodeConsoleHelp {
 
         # Show metrics only if the server is running or suspended
         if (('Running', 'Suspended') -contains $serverState ) {
-            Write-PodeHost "    Ctrl+$($KeyBindings.Metrics)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeKeyBinding -Key $KeyBindings.Metrics -ForegroundColor $helpKeyColor -Force:$Force
             Write-PodeHost $Podelocale.showMetricsMessage -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         # Show endpoints and OpenAPI only if the server is running
         if ($serverState -eq 'Running') {
-            Write-PodeHost "    Ctrl+$($KeyBindings.Endpoints)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+            Write-PodeKeyBinding -Key $KeyBindings.Endpoints -ForegroundColor $helpKeyColor -Force:$Force
             Write-PodeHost "$(if ($PodeContext.Server.Console.ShowEndpoints) { 'Hide' } else { 'Show' }) Endpoints" -ForegroundColor $helpDescriptionColor -Force:$Force
 
             # Check if OpenAPI is enabled and display its toggle option
             if (Test-PodeOAEnabled) {
-                Write-PodeHost "    Ctrl+$($KeyBindings.Quiet)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+                Write-PodeKeyBinding -Key $KeyBindings.OpenAPI -ForegroundColor $helpKeyColor -Force:$Force
                 Write-PodeHost "$(if ($PodeContext.Server.Console.ShowOpenAPI) { 'Hide' } else { 'Show' }) OpenAPI" -ForegroundColor $helpDescriptionColor -Force:$Force
             }
         }
 
         # Display the Clear Console and Quiet Mode options
-        Write-PodeHost "    Ctrl+$($KeyBindings.Clear)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeKeyBinding -Key $KeyBindings.Clear -ForegroundColor $helpKeyColor -Force:$Force
         Write-PodeHost $Podelocale.clearConsoleMessage -ForegroundColor $helpDescriptionColor -Force:$Force
 
-        Write-PodeHost "    Ctrl+$($KeyBindings.Quiet)   : " -ForegroundColor $helpKeyColor -NoNewLine -Force:$Force
+        Write-PodeKeyBinding -Key $KeyBindings.Quiet -ForegroundColor $helpKeyColor -Force:$Force
         Write-PodeHost "$(if ($PodeContext.Server.Console.Quiet) { 'Disable' } else { 'Enable' }) Quiet Mode" -ForegroundColor $helpDescriptionColor -Force:$Force
 
         # Final blank line for spacing
         Write-PodeHost
     }
 }
+
+<#
+.SYNOPSIS
+    Writes a formatted key binding with "Ctrl+" prefix to the console.
+
+.DESCRIPTION
+    The `Write-PodeKeyBinding` function formats and displays a key binding in the console.
+    For digit keys (e.g., `D1`, `D2`), it removes the `D` prefix for better readability,
+    displaying them as `Ctrl+1`, `Ctrl+2`, etc. Other keys (e.g., `B`, `R`) are displayed as-is.
+    The output is colorized based on the provided foreground color.
+
+.PARAMETER Key
+    The key binding to display, as a string. Examples include `D1` for the `1` key,
+    or `B` for the `B` key.
+
+.PARAMETER ForegroundColor
+    The color to use for the key binding text in the console.
+
+.PARAMETER Force
+    Forces the console output to bypass any restrictions. This is useful for ensuring
+    the output is always displayed regardless of console constraints.
+
+.EXAMPLE
+    Write-PodeKeyBinding -Key 'D1' -ForegroundColor Yellow -Force
+
+    Writes: "Ctrl+1   : " to the console in yellow text.
+
+.EXAMPLE
+    Write-PodeKeyBinding -Key 'B' -ForegroundColor Green
+
+    Writes: "Ctrl+B   : " to the console in green text.
+
+.NOTES
+    This function is specifically designed for Pode's internal console display system.
+    It simplifies the formatting of key bindings for easier understanding by end users.
+    Adjustments for non-standard keys can be added as needed.
+#>
+function Write-PodeKeyBinding {
+    param (
+        # The key binding to display (e.g., 'D1', 'B')
+        [string]$Key,
+
+        # The foreground color for the console text
+        [System.ConsoleColor]
+        $ForegroundColor,
+
+        # Force writing to the console, even in restricted environments
+        [switch]
+        $Force
+    )
+
+    # Format the key binding:
+    # - Remove the "D" prefix for digit keys (D0-D9), displaying them as "Ctrl+1" instead of "Ctrl+D1"
+    # - Leave other keys (e.g., 'B', 'R') unchanged
+    $k = if ($Key -like 'D[0-9]') {
+        $Key.Substring(1)  # Extract the digit part of the key (e.g., '1' from 'D1')
+    }
+    else {
+        $Key  # Use the key as-is for non-digit keys
+    }
+
+    # Write the formatted key binding to the console
+    Write-PodeHost "    Ctrl+$k   : " -ForegroundColor $ForegroundColor -NoNewLine -Force:$Force
+}
+
 
 <#
 .SYNOPSIS
@@ -560,6 +625,9 @@ function Show-PodeConsoleMetric {
     # Display the total number of server restarts
     Write-PodeHost $Podelocale.totalRestartMessage -ForegroundColor $labelColor -NoNewLine
     Write-PodeHost (Get-PodeServerRestartCount) -ForegroundColor $valueColor
+
+    Write-PodeHost 'Active Requests' -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost (Get-PodeServerActiveRequestMetric) -ForegroundColor $valueColor
 }
 
 
@@ -740,18 +808,13 @@ function Test-PodeKeyPressed {
         $Key = $null,
 
         [Parameter(Mandatory = $true)]
-        [string]
+        [System.ConsoleKey]
         $Character
     )
 
     # If console input is disabled, return false
-    if ($PodeContext.Server.Console.DisableConsoleInput) {
+    if (($null -eq $Key) -or $PodeContext.Server.Console.DisableConsoleInput) {
         return $false
-    }
-
-    # Retrieve the key if not provided
-    if ($null -eq $Key) {
-        $Key = Get-PodeConsoleKey
     }
 
     # Test the key press against the character and modifiers
@@ -800,15 +863,23 @@ function Get-PodeConsoleKey {
 #>
 function Invoke-PodeConsoleAction {
 
+    # Get the next key press if console input is enabled
+    if (!$PodeContext.Server.Console.DisableConsoleInput) {
+        $Key = Get-PodeConsoleKey
+        if ($null -ne $key) {
+            if ($key.Modifiers -ne 'Control') {
+                return
+            }
+            else {
+                Write-Verbose "The Console received CTRL+$($key.Key)"
+            }
+        }
+    }
+
     # Centralized key mapping
     $KeyBindings = $PodeContext.Server.Console.KeyBindings
 
     $serverState = Get-PodeServerState
-
-    # Get the next key press if console input is enabled
-    if (!$PodeContext.Server.Console.DisableConsoleInput) {
-        $Key = Get-PodeConsoleKey
-    }
 
     # Browser action
     if (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Browser) {
@@ -917,6 +988,9 @@ function Invoke-PodeConsoleAction {
             Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
         }
     }
+
+    # Wait before to process the next action
+    Start-Sleep -Seconds 1
 }
 
 <#
@@ -969,19 +1043,19 @@ function Get-PodeDefaultConsole {
             MetricsLabel     = 'White'      # Labels for values displayed in the Metrics section.
             MetricsValue     = 'Green'      # The actual values displayed in the Metrics section.
         }
-
+        # Refer to https://learn.microsoft.com/en-us/dotnet/api/system.consolekey?view=net-9.0 for ConsoleKey Enum
         KeyBindings         = @{        # Define custom key bindings for controls.
-            Browser   = 'B'             # Open the default browser.
-            Help      = 'H'             # Show/hide help instructions.
-            OpenAPI   = 'O'             # Show/hide OpenAPI information.
-            Endpoints = 'E'             # Show/hide endpoints.
-            Clear     = 'L'             # Clear the console output.
-            Quiet     = 'Q'             # Toggle quiet mode.
-            Terminate = 'C'             # Terminate the server.
-            Restart   = 'R'             # Restart the server.
-            Disable   = 'D'             # Disable the server.
-            Suspend   = 'P'             # Suspend the server.
-            Metrics   = 'M'             # Show Metrics.
+            Browser   = [System.ConsoleKey]::B            # Open the default browser.
+            Help      = [System.ConsoleKey]::H            # Show/hide help instructions.
+            OpenAPI   = [System.ConsoleKey]::O            # Show/hide OpenAPI information.
+            Endpoints = [System.ConsoleKey]::E            # Show/hide endpoints.
+            Clear     = [System.ConsoleKey]::L            # Clear the console output.
+            Quiet     = [System.ConsoleKey]::Q            # Toggle quiet mode.
+            Terminate = [System.ConsoleKey]::C            # Terminate the server.
+            Restart   = [System.ConsoleKey]::R            # Restart the server.
+            Disable   = [System.ConsoleKey]::D            # Disable the server.
+            Suspend   = [System.ConsoleKey]::P            # Suspend the server.
+            Metrics   = [System.ConsoleKey]::M            # Show Metrics.
         }
     }
 }

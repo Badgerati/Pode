@@ -274,7 +274,6 @@ function Start-PodeServer {
 
             # sit here waiting for termination/cancellation, or to restart the server
             while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
-                Start-Sleep -Seconds 1
                 Invoke-PodeConsoleAction
             }
 

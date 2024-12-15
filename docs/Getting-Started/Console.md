@@ -144,6 +144,8 @@ Here is the default `Server.Console` configuration:
 }
 ```
 
+> **Tip:** The `KeyBindings` property uses the `[System.ConsoleKey]` type. For a complete list of valid values, refer to the [ConsoleKey Enum documentation](https://learn.microsoft.com/en-us/dotnet/api/system.consolekey?view=net-9.0). This resource provides all possible keys that can be used with `KeyBindings`.
+
 ## Examples
 
 ### **Enable Quiet Mode**

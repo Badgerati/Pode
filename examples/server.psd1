@@ -105,9 +105,9 @@
                 MetricsLabel     = 'White'      # Labels for values displayed in the Metrics section.
                 MetricsValue     = 'Green'      # The actual values displayed in the Metrics section.
             }
-            KeyBindings         = @{        # Define custom key bindings for controls.
+            KeyBindings         = @{        # Define custom key bindings for controls. Refer to https://learn.microsoft.com/en-us/dotnet/api/system.consolekey?view=net-9.0
                 Browser   = 'B'             # Open the default browser.
-                Help      = 'H'             # Show/hide help instructions.
+                Help      = 'D1'             # Show/hide help instructions.
                 OpenAPI   = 'O'             # Show/hide OpenAPI information.
                 Endpoints = 'E'             # Show/hide endpoints.
                 Clear     = 'L'             # Clear the console output.
