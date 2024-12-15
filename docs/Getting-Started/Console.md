@@ -168,6 +168,11 @@ Change the divider length and disable dividers via the `server.psd1` file:
         Console = @{
             ShowDivider   = $false
             DividerLength = 100
+             KeyBindings         = @{
+                Browser   = 'D9'             # Open the default browser with the nmumber 9.
+                Metrics   = 'NumPad5'             # Show Metrics with the 5 key on the numeric keypad.
+                Restart   = 'F7'             # Restart the server with the F7 key.
+             }
         }
     }
 }
