@@ -41,18 +41,18 @@ OpenAPI Information:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Server Control Commands:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    Ctrl+c   : Gracefully terminate the server.
-    Ctrl+r   : Restart the server and reload configurations.
-    Ctrl+u   : Suspend the server.
-    Ctrl+d   : Disable Server
-    Ctrl+h   : Hide Help
-    Ctrl+b   : Open the first HTTP endpoint in the default browser.
+    Ctrl+C   : Gracefully terminate the server.
+    Ctrl+R   : Restart the server and reload configurations.
+    Ctrl+P   : Suspend the server.
+    Ctrl+D   : Disable Server
+    Ctrl+H   : Hide Help
+    Ctrl+B   : Open the first HTTP endpoint in the default browser.
     ----
-    Ctrl+m   : Show Metrics
-    Ctrl+e   : Hide Endpoints
-    Ctrl+t   : Hide OpenAPI
-    Ctrl+l   : Clear the Console
-    Ctrl+t   : Enable Quiet Mode
+    Ctrl+M   : Show Metrics
+    Ctrl+E   : Hide Endpoints
+    Ctrl+Q   : Hide OpenAPI
+    Ctrl+L   : Clear the Console
+    Ctrl+Q   : Enable Quiet Mode
 ```
 
 ---
@@ -127,17 +127,17 @@ Here is the default `Server.Console` configuration:
             }
 
             KeyBindings         = @{        # Define custom key bindings for controls.
-                Browser   = 'b'             # Open the default browser.
-                Help      = 'h'             # Show/hide help instructions.
-                OpenAPI   = 'o'             # Show/hide OpenAPI information.
-                Endpoints = 'e'             # Show/hide endpoints.
-                Clear     = 'l'             # Clear the console output.
-                Quiet     = 't'             # Toggle quiet mode.
-                Terminate = 'c'             # Terminate the server.
-                Restart   = 'r'             # Restart the server.
-                Disable   = 'd'             # Disable the server.
-                Suspend   = 'u'             # Suspend the server.
-                Metrics   = 'm'             # Show Metrics.
+                Browser   = 'B'             # Open the default browser.
+                Help      = 'H'             # Show/hide help instructions.
+                OpenAPI   = 'O'             # Show/hide OpenAPI information.
+                Endpoints = 'E'             # Show/hide endpoints.
+                Clear     = 'L'             # Clear the console output.
+                Quiet     = 'Q'             # Toggle quiet mode.
+                Terminate = 'C'             # Terminate the server.
+                Restart   = 'R'             # Restart the server.
+                Disable   = 'D'             # Disable the server.
+                Suspend   = 'P'             # Suspend the server.
+                Metrics   = 'M'             # Show Metrics.
             }
         }
     }
@@ -233,12 +233,12 @@ The console colors are fully customizable via the `Colors` section of the config
 ### **3. Interactive Controls**
 
 - Control server behavior using keyboard shortcuts. For example:
-  - **Ctrl+c**: Gracefully terminate the server.
-  - **Ctrl+r**: Restart the server.
-  - **Ctrl+d**: Disable the server, preventing new requests.
-  - **Ctrl+u**: Suspend the server temporarily.
-  - **Ctrl+h**: Display or hide help instructions.
-  - **Ctrl+m**: Display the server metrics.
+  - **Ctrl+C**: Gracefully terminate the server.
+  - **Ctrl+R**: Restart the server.
+  - **Ctrl+D**: Disable the server, preventing new requests.
+  - **Ctrl+P**: Suspend the server temporarily.
+  - **Ctrl+H**: Display or hide help instructions.
+  - **Ctrl+M**: Display the server metrics.
 
 ### **4. OpenAPI Integration**
 

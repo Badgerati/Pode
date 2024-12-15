@@ -971,17 +971,17 @@ function Get-PodeDefaultConsole {
         }
 
         KeyBindings         = @{        # Define custom key bindings for controls.
-            Browser   = 'b'             # Open the default browser.
-            Help      = 'h'             # Show/hide help instructions.
-            OpenAPI   = 'o'             # Show/hide OpenAPI information.
-            Endpoints = 'e'             # Show/hide endpoints.
-            Clear     = 'l'             # Clear the console output.
-            Quiet     = 't'             # Toggle quiet mode.
-            Terminate = 'c'             # Terminate the server.
-            Restart   = 'r'             # Restart the server.
-            Disable   = 'd'             # Disable the server.
-            Suspend   = 'u'             # Suspend the server.
-            Metrics   = 'm'             # Show Metrics.
+            Browser   = 'B'             # Open the default browser.
+            Help      = 'H'             # Show/hide help instructions.
+            OpenAPI   = 'O'             # Show/hide OpenAPI information.
+            Endpoints = 'E'             # Show/hide endpoints.
+            Clear     = 'L'             # Clear the console output.
+            Quiet     = 'Q'             # Toggle quiet mode.
+            Terminate = 'C'             # Terminate the server.
+            Restart   = 'R'             # Restart the server.
+            Disable   = 'D'             # Disable the server.
+            Suspend   = 'P'             # Suspend the server.
+            Metrics   = 'M'             # Show Metrics.
         }
     }
 }

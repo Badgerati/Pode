@@ -65,11 +65,16 @@
             }
         }
         AllowedActions = @{
-            Suspend = $true
-            Restart = $true
-            Timeout = @{
-                Suspend = 30
-                Resume  = 30
+            Suspend         = $true       # Enable or disable the suspend operation
+            Restart         = $true       # Enable or disable the restart operation
+            Disable         = $true       # Enable or disable the disable operation
+            DisableSettings = @{
+                RetryAfter     = 3600                               # Default retry time (in seconds) for Disable-PodeServer
+                MiddlewareName = '__Pode_Midleware_Code_503'    # Name of the middleware scriptblock
+            }
+            Timeout         = @{
+                Suspend = 30       # Maximum seconds to wait before suspending
+                Resume  = 30       # Maximum seconds to wait before resuming
             }
         }
         Console        = @{
@@ -101,17 +106,17 @@
                 MetricsValue     = 'Green'      # The actual values displayed in the Metrics section.
             }
             KeyBindings         = @{        # Define custom key bindings for controls.
-                Browser   = 'b'             # Open the default browser.
-                Help      = 'h'             # Show/hide help instructions.
-                OpenAPI   = 'o'             # Show/hide OpenAPI information.
-                Endpoints = 'e'             # Show/hide endpoints.
-                Clear     = 'l'             # Clear the console output.
-                Quiet     = 't'             # Toggle quiet mode.
-                Terminate = 'c'             # Terminate the server.
-                Restart   = 'r'             # Restart the server.
-                Disable   = 'd'             # Disable the server.
-                Suspend   = 'u'             # Suspend the server.
-                Metrics   = 'm'             # Show Metrics.
+                Browser   = 'B'             # Open the default browser.
+                Help      = 'H'             # Show/hide help instructions.
+                OpenAPI   = 'O'             # Show/hide OpenAPI information.
+                Endpoints = 'E'             # Show/hide endpoints.
+                Clear     = 'L'             # Clear the console output.
+                Quiet     = 'Q'             # Toggle quiet mode.
+                Terminate = 'C'             # Terminate the server.
+                Restart   = 'R'             # Restart the server.
+                Disable   = 'D'             # Disable the server.
+                Suspend   = 'P'             # Suspend the server.
+                Metrics   = 'M'             # Show Metrics.
             }
         }
     }
