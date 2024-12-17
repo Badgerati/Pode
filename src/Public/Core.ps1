@@ -249,7 +249,7 @@ function Start-PodeServer {
             $PodeContext = New-PodeContext @ContextParams
 
             # set it so ctrl-c can terminate, unless serverless/iis, or disabled
-            if (!$PodeContext.Server.Console.DisableTermination -and ($null -eq $psISE)) {
+            if (!$PodeContext.Server.Console.DisableTermination -and ($host.Name -eq 'ConsoleHost')) {
                 [Console]::TreatControlCAsInput = $true
             }
 
