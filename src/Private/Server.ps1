@@ -8,9 +8,10 @@ function Start-PodeInternalServer {
     )
 
     try {
-        Show-PodeConsoleInfo
-
         $null = Test-PodeVersionPwshEOL -ReportUntested
+
+        #Show starting console
+        Show-PodeConsoleInfo
 
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrive
