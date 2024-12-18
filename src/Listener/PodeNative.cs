@@ -12,7 +12,8 @@ namespace Pode
 
         // Import the GetStdHandle function from kernel32.dll
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr GetStdHandle(int nStdHandle);
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = "<Pending>")]
+        private static extern IntPtr GetStdHandle(int nStdHandle);
 
         // Helper method to check if a handle is valid
         public static bool IsHandleValid(int handleType)
