@@ -103,7 +103,7 @@ function Add-PodeRunspace {
                 throw
             }
         }
-        
+
         # Create a PowerShell pipeline.
         $ps = [powershell]::Create()
         $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
@@ -347,10 +347,10 @@ function Reset-PodeRunspaceName {
     $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
 
     # Check if the runspace name starts with 'Pode_'
-    if (-not $currentRunspace.Name.StartsWith('Pode_')) {
+    if (! $currentRunspace.Name.StartsWith('Pode_')) {
         return
     }
 
     # Update the runspace name with the required format
-    $currentRunspace.Name = "_$($currentRunspace.Name -replace '(^[^_]*_[^_]*_)[^_]*_(\d+)$', '${1}waiting_${2}')"
+    $currentRunspace.Name = "_$($currentRunspace.Name -replace '^(Pode_[^_]+_).+?(_\d+)$', '${1}idle${2}')" 
 }

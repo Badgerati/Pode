@@ -1496,12 +1496,11 @@ function Invoke-PodeGC {
 
 <#
 .SYNOPSIS
-    A function to pause execution for a specified duration with an optional progress bar.
+    A function to pause execution for a specified duration.
+    This function should be used in Pode as replacement for Start-Sleep
 
 .DESCRIPTION
     The `Start-PodeSleep` function pauses script execution for a given duration specified in seconds, milliseconds, or a TimeSpan.
-    It includes an optional progress bar that displays the elapsed time and completion percentage.
-    The progress bar can also display a custom activity name and allows grouping with a ParentId.
 
 .PARAMETER Seconds
     Specifies the duration to pause execution in seconds. Default is 1 second.
@@ -1525,19 +1524,9 @@ function Invoke-PodeGC {
     None.
 
 .EXAMPLE
-    Start-PodeSleep -Seconds 5 -ShowProgress
+    Start-PodeSleep -Seconds 5
 
-    Pauses execution for 5 seconds and displays a progress bar.
-
-.EXAMPLE
-    Start-PodeSleep -Milliseconds 3000 -ShowProgress -Activity "Processing Task" -ParentId 1
-
-    Pauses execution for 3000 milliseconds, showing a progress bar with the custom activity grouped under ParentId 1.
-
-.EXAMPLE
-    Start-PodeSleep -Duration (New-TimeSpan -Seconds 10) -ShowProgress -Activity "Running Script"
-
-    Pauses execution for 10 seconds using a TimeSpan object and displays a progress bar.
+    Pauses execution for 5 seconds.
 
 .NOTES
     This function is useful for scenarios where tracking the remaining wait time visually is helpful.
@@ -1546,64 +1535,36 @@ function Start-PodeSleep {
     [CmdletBinding()]
     param (
         [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Seconds')]
-        [int]$Seconds = 1,
+        [int]
+        $Seconds = 1,
 
         [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Milliseconds')]
-        [int]$Milliseconds,
+        [int]
+        $Milliseconds,
 
         [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Duration')]
-        [TimeSpan]$Duration,
-
-        [Parameter(Position = 1, Mandatory = $false)]
-        [string]$Activity = 'Sleeping...',
-
-        [Parameter(Mandatory = $false)]
-        [int]$ParentId,
-
-        [Parameter(Mandatory = $false)]
-        [Switch]$ShowProgress
+        [TimeSpan]
+        $Duration
     )
 
-    # Determine total duration and end time
-    switch ($PSCmdlet.ParameterSetName) {
-        'Seconds' {
-            $totalDuration = [TimeSpan]::FromSeconds($Seconds)
-        }
-        'Milliseconds' {
-            $totalDuration = [TimeSpan]::FromMilliseconds($Milliseconds)
-        }
-        'Duration' {
-            $totalDuration = $Duration
-        }
-    }
-    $endTime = (Get-Date).Add($totalDuration)
-
-    # Start the timer
-    $startTime = Get-Date
-
-    while ((Get-Date) -lt $endTime) {
-        if ($ShowProgress) {
-            # Calculate progress and build Write-Progress parameters
-            $progressParams = @{
-                Activity        = $Activity
-                Status          = "$([math]::Round((($(Get-Date) - $startTime).TotalMilliseconds / $totalDuration.TotalMilliseconds) * 100, 1))%"
-                PercentComplete = [math]::Min((($(Get-Date) - $startTime).TotalMilliseconds / $totalDuration.TotalMilliseconds) * 100, 100)
-            }
-            if ($ParentId) {
-                $progressParams.ParentId = $ParentId
-            }
-
-            # Write the progress with dynamic parameters
-            Write-Progress @progressParams
-        }
-
-        # Sleep for a short duration to prevent high CPU usage
-        Start-Sleep -Milliseconds 200
+    # Determine the total duration
+    $totalDuration = switch ($PSCmdlet.ParameterSetName) {
+        'Seconds' { [TimeSpan]::FromSeconds($Seconds) }
+        'Milliseconds' { [TimeSpan]::FromMilliseconds($Milliseconds) }
+        'Duration' { $Duration }
     }
 
-    # Clear the progress bar after completion
-    if ($ShowProgress) {
-        Write-Progress -Activity $Activity -Completed
+    # Calculate end time
+    $startTime = [DateTime]::UtcNow
+    $endTime = $startTime.Add($totalDuration)
+
+    # Precompute sleep interval (total duration divided by 100 - ie 100%)
+    $sleepInterval = [math]::Max($totalDuration.TotalMilliseconds / 100, 10)
+
+    # Main loop
+    while ([DateTime]::UtcNow -lt $endTime) {
+        # Sleep for the interval
+        Start-Sleep -Milliseconds $sleepInterval
     }
 }
 

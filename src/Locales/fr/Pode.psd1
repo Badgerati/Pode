@@ -304,10 +304,6 @@
     suspendedMessage                                                  = 'Suspendu'
     runningMessage                                                    = "En cours d'exécution"
     openHttpEndpointMessage                                           = 'Ouvrez le premier point de terminaison HTTP dans le navigateur par défaut.'
-    suspendingRunspaceMessage                                         = 'Suspension des Runspaces'
-    resumingRunspaceMessage                                           = 'Reprise des Runspaces'
-    waitingforSuspendingMessage                                       = 'En attente de la suspension ...'
-    waitingforResumingMessage                                         = 'En attente de la reprise ...'
     terminatedMessage                                                 = 'Terminé'
     showMetricsMessage                                                = 'Afficher les métriques'
     clearConsoleMessage                                               = 'Effacer la console'

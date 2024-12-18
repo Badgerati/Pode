@@ -50,7 +50,7 @@ function New-PodeContext {
         $EnableBreakpoints,
 
         [switch]
-        $IgnoreServerPsConfig
+        $IgnoreServerConfig
     )
 
     # set a random server name if one not supplied
@@ -195,7 +195,22 @@ function New-PodeContext {
         }
     }
 
-    if (!$IgnoreServerPsConfig) {
+    $ctx.Server.AllowedActions = @{
+        Suspend         = $true
+        Restart         = $true
+        Disable         = $true
+        DisableSettings = @{
+            RetryAfter     = 3600
+            MiddlewareName = '__Pode_Midleware_Code_503__'
+        }
+        Timeout         = @{
+            Suspend = 30
+            Resume  = 30
+        }
+    }
+
+
+    if (!$IgnoreServerConfig) {
         # check if there is any global configuration
         $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
     }
@@ -383,20 +398,6 @@ function New-PodeContext {
     #OpenApi Definition Tag
     $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
-    $ctx.Server.AllowedActions = @{
-        Suspend         = $true
-        Restart         = $true
-        Disable         = $true
-        DisableSettings = @{
-            RetryAfter     = 3600
-            MiddlewareName = '__Pode_Midleware_Code_503'
-        }
-        Timeout         = @{
-            Suspend = 30
-            Resume  = 30
-        }
-    }
-
 
     # server metrics
     $ctx.Metrics = @{
@@ -424,7 +425,7 @@ function New-PodeContext {
     }
 
     # create new cancellation tokens
-    $ctx.Tokens = New-PodeSuspensionToken
+    $ctx.Tokens = Initialize-PodeCancellationToken
 
     # requests that should be logged
     $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
@@ -957,20 +958,21 @@ function Set-PodeServerConfiguration {
         ShowTimeStamp       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowTimeStamp -Default $Context.Server.Console.ShowTimeStamp)
         DividerLength       = [int](Protect-PodeValue -Value  $Configuration.Console.DividerLength -Default $Context.Server.Console.DividerLength)
         Colors              = @{
-            Header          = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Header -Default $Context.Server.Console.Colors.Header), $true)
-            EndpointsHeader = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.EndpointsHeader -Default $Context.Server.Console.Colors.EndpointsHeader), $true)
-            Endpoints       = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Endpoints -Default $Context.Server.Console.Colors.Endpoints), $true)
-            OpenApiUrls     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiUrls -Default $Context.Server.Console.Colors.OpenApiUrls), $true)
-            OpenApiHeaders  = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiHeaders -Default $Context.Server.Console.Colors.OpenApiHeaders), $true)
-            OpenApiTitles   = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiTitles -Default $Context.Server.Console.Colors.OpenApiTitles), $true)
-            HelpHeader      = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpHeader -Default $Context.Server.Console.Colors.HelpHeader), $true)
-            HelpKey         = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpKey -Default $Context.Server.Console.Colors.HelpKey), $true)
-            HelpDescription = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDescription -Default $Context.Server.Console.Colors.HelpDescription), $true)
-            HelpDivider     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDivider -Default $Context.Server.Console.Colors.HelpDivider), $true)
-            Divider         = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Divider -Default $Context.Server.Console.Colors.Divider), $true)
-            MetricsHeader   = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsHeader -Default $Context.Server.Console.Colors.MetricsHeader), $true)
-            MetricsLabel    = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsLabel -Default $Context.Server.Console.Colors.MetricsLabel), $true)
-            MetricsValue    = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsValue -Default $Context.Server.Console.Colors.MetricsValue), $true)
+            Header           = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Header -Default $Context.Server.Console.Colors.Header), $true)
+            EndpointsHeader  = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.EndpointsHeader -Default $Context.Server.Console.Colors.EndpointsHeader), $true)
+            Endpoints        = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Endpoints -Default $Context.Server.Console.Colors.Endpoints), $true)
+            OpenApiUrls      = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiUrls -Default $Context.Server.Console.Colors.OpenApiUrls), $true)
+            OpenApiHeaders   = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiHeaders -Default $Context.Server.Console.Colors.OpenApiHeaders), $true)
+            OpenApiTitles    = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiTitles -Default $Context.Server.Console.Colors.OpenApiTitles), $true)
+            OpenApiSubtitles = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.OpenApiSubtitles -Default $Context.Server.Console.Colors.OpenApiSubtitles), $true)
+            HelpHeader       = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpHeader -Default $Context.Server.Console.Colors.HelpHeader), $true)
+            HelpKey          = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpKey -Default $Context.Server.Console.Colors.HelpKey), $true)
+            HelpDescription  = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDescription -Default $Context.Server.Console.Colors.HelpDescription), $true)
+            HelpDivider      = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.HelpDivider -Default $Context.Server.Console.Colors.HelpDivider), $true)
+            Divider          = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.Divider -Default $Context.Server.Console.Colors.Divider), $true)
+            MetricsHeader    = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsHeader -Default $Context.Server.Console.Colors.MetricsHeader), $true)
+            MetricsLabel     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsLabel -Default $Context.Server.Console.Colors.MetricsLabel), $true)
+            MetricsValue     = [System.ConsoleColor]::parse([System.ConsoleColor], (Protect-PodeValue -Value  $Configuration.Console.Colors.MetricsValue -Default $Context.Server.Console.Colors.MetricsValue), $true)
         }
         KeyBindings         = @{
             Browser   = [System.Enum]::Parse([System.ConsoleKey], (Protect-PodeValue -Value  $Configuration.Console.KeyBindings.Browser -Default $Context.Server.Console.KeyBindings.Browser), $true)
@@ -1077,7 +1079,7 @@ function New-PodeAutoRestartServer {
     $period = [int]$restart.period
     if ($period -gt 0) {
         Add-PodeTimer -Name '__pode_restart_period__' -Interval ($period * 60) -ScriptBlock {
-            Set-PodeCancellationTokenRequest -Type Restart
+            Close-PodeCancellationTokenRequest -Type Restart
         }
     }
 
@@ -1092,7 +1094,7 @@ function New-PodeAutoRestartServer {
         }
 
         Add-PodeSchedule -Name '__pode_restart_times__' -Cron @($crons) -ScriptBlock {
-            Set-PodeCancellationTokenRequest -Type Restart
+            Close-PodeCancellationTokenRequest -Type Restart
         }
     }
 
@@ -1100,7 +1102,7 @@ function New-PodeAutoRestartServer {
     $crons = @(@($restart.crons) -ne $null)
     if (($crons | Measure-Object).Count -gt 0) {
         Add-PodeSchedule -Name '__pode_restart_crons__' -Cron @($crons) -ScriptBlock {
-            Set-PodeCancellationTokenRequest -Type Restart
+            Close-PodeCancellationTokenRequest -Type Restart
         }
     }
 }

@@ -27,25 +27,18 @@ function Show-PodeConsoleInfo {
         $ShowTopSeparator
     )
 
-
+    # Exit the function if PodeContext is not initialized
+    # or if the console is in quiet mode and the Force switch is not used
+    if (!$PodeContext -or ($PodeContext.Server.Console.Quiet -and !$Force)) {
+        return
+    }
 
     # Get the current server state and timestamp
     $serverState = Get-PodeServerState
-    $timestamp = if ($PodeContext.Server.Console.ShowTimeStamp ) { "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')]" } else { '' }
-
-    if (!$PodeContext) { return }
+    $timestamp = if ($PodeContext.Server.Console.ShowTimeStamp ) { "[$([datetime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))]" } else { '' }
 
     # Define color variables with fallback
-    $headerColor = if ($null -ne $PodeContext.Server.Console.Colors.Header) {
-        $PodeContext.Server.Console.Colors.Header
-    }
-    else {
-        [System.ConsoleColor]::White
-    }
-
-    if ($PodeContext.Server.Console.Quiet -and !$Force) {
-        return
-    }
+    $headerColor = $PodeContext.Server.Console.Colors.Header
 
     switch ($serverState) {
         'Suspended' {
@@ -218,34 +211,11 @@ function Show-PodeConsoleHelp {
     # Retrieve centralized key mapping for keyboard shortcuts
     $KeyBindings = $PodeContext.Server.Console.KeyBindings
 
-    # Define help section color variables with fallback defaults
-    $helpHeaderColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpHeader) {
-        $PodeContext.Server.Console.Colors.HelpHeader
-    }
-    else {
-        [System.ConsoleColor]::Yellow
-    }
-
-    $helpKeyColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpKey) {
-        $PodeContext.Server.Console.Colors.HelpKey
-    }
-    else {
-        [System.ConsoleColor]::Green
-    }
-
-    $helpDescriptionColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpDescription) {
-        $PodeContext.Server.Console.Colors.HelpDescription
-    }
-    else {
-        [System.ConsoleColor]::White
-    }
-
-    $helpDividerColor = if ($null -ne $PodeContext.Server.Console.Colors.HelpDivider) {
-        $PodeContext.Server.Console.Colors.HelpDivider
-    }
-    else {
-        [System.ConsoleColor]::Gray
-    }
+    # Define help section color variables
+    $helpHeaderColor = $PodeContext.Server.Console.Colors.HelpHeader
+    $helpKeyColor = $PodeContext.Server.Console.Colors.HelpKey
+    $helpDescriptionColor = $PodeContext.Server.Console.Colors.HelpDescription
+    $helpDividerColor = $PodeContext.Server.Console.Colors.HelpDivider
 
     # Display the "Show Help" option if the $Hide parameter is specified
     if ($Hide) {
@@ -579,29 +549,10 @@ function Show-PodeConsoleEndpointsInfo {
 
 #>
 function Show-PodeConsoleMetric {
-    # Determine the color for the metrics header
-    if ($null -ne $PodeContext.Server.Console.Colors.EndpointsHeader) {
-        $headerColor = $PodeContext.Server.Console.Colors.MetricsHeader
-    }
-    else {
-        $headerColor = [System.ConsoleColor]::White
-    }
-
-    # Determine the color for the metrics labels
-    if ($null -ne $PodeContext.Server.Console.Colors.Endpoints) {
-        $labelColor = $PodeContext.Server.Console.Colors.MetricsLabel
-    }
-    else {
-        $labelColor = [System.ConsoleColor]::Yellow
-    }
-
-    # Determine the color for the metrics values
-    if ($null -ne $PodeContext.Server.Console.Colors.Endpoints) {
-        $valueColor = $PodeContext.Server.Console.Colors.MetricsValue
-    }
-    else {
-        $valueColor = [System.ConsoleColor]::Green
-    }
+    # Determine the color for the labels
+    $headerColor = $PodeContext.Server.Console.Colors.MetricsHeader
+    $labelColor = $PodeContext.Server.Console.Colors.MetricsLabel
+    $valueColor = $PodeContext.Server.Console.Colors.MetricsValue
 
     # Write a horizontal divider line to separate the header
     Write-PodeHostDivider -Force $true
@@ -614,20 +565,26 @@ function Show-PodeConsoleMetric {
 
     # Display the total uptime
     Write-PodeHost $Podelocale.totalUptimeMessage -ForegroundColor $labelColor -NoNewLine
-    Write-PodeHost (Get-PodeServerUptime -Total -Readable -OutputType Verbose -ExcludeMilliseconds) -ForegroundColor $valueColor
+    Write-PodeHost (Get-PodeServerUptime  -Format Verbose -Total -ExcludeMilliseconds) -ForegroundColor $valueColor
 
-    # If uptime exceeds 1000 seconds, display uptime since last restart
-    if ((Get-PodeServerUptime) -gt 1000) {
+    # If the server restarted, display uptime since last restart
+    if ((Get-PodeServerRestartCount) -gt 0) {
         Write-PodeHost $Podelocale.uptimeSinceLastRestartMessage -ForegroundColor $labelColor -NoNewLine
-        Write-PodeHost (Get-PodeServerUptime -Readable -OutputType Verbose -ExcludeMilliseconds) -ForegroundColor $valueColor
+        Write-PodeHost (Get-PodeServerUptime -Format Verbose -ExcludeMilliseconds) -ForegroundColor $valueColor
     }
 
     # Display the total number of server restarts
     Write-PodeHost $Podelocale.totalRestartMessage -ForegroundColor $labelColor -NoNewLine
     Write-PodeHost (Get-PodeServerRestartCount) -ForegroundColor $valueColor
 
-    Write-PodeHost 'Active Requests' -ForegroundColor $labelColor -NoNewLine
-    Write-PodeHost (Get-PodeServerActiveRequestMetric) -ForegroundColor $valueColor
+    Write-PodeHost 'Requests' -ForegroundColor $labelColor
+    Write-PodeHost '  Total       :' -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost (Get-PodeServerActiveRequestMetric -CountType Total) -ForegroundColor $valueColor
+    Write-PodeHost '  Queued      :' -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost (Get-PodeServerActiveRequestMetric -CountType Queued) -ForegroundColor $valueColor
+    Write-PodeHost '  Processing  :' -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost (Get-PodeServerActiveRequestMetric -CountType Processing) -ForegroundColor $valueColor
+
 }
 
 
@@ -662,35 +619,11 @@ function Show-PodeConsoleOAInfo {
     # Default header initialization
     $openAPIHeader = $false
 
-    # Fallback colors
-
-    $headerColor = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiHeaders) {
-        $PodeContext.Server.Console.Colors.OpenApiHeaders
-    }
-    else {
-        [System.ConsoleColor]::Yellow
-    }
-
-    $titleColor = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiTitles) {
-        $PodeContext.Server.Console.Colors.OpenApiTitles
-    }
-    else {
-        [System.ConsoleColor]::White
-    }
-
-    $subtitleColor = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiSubtitles) {
-        $PodeContext.Server.Console.Colors.OpenApiSubtitles
-    }
-    else {
-        [System.ConsoleColor]::Yellow
-    }
-
-    $urlColor = if ($null -ne $PodeContext.Server.Console.Colors.OpenApiUrls) {
-        $PodeContext.Server.Console.Colors.OpenApiUrls
-    }
-    else {
-        [System.ConsoleColor]::Cyan
-    }
+    # Determine the color for the labels
+    $headerColor = $PodeContext.Server.Console.Colors.OpenApiHeaders
+    $titleColor = $PodeContext.Server.Console.Colors.OpenApiTitles
+    $subtitleColor = $PodeContext.Server.Console.Colors.OpenApiSubtitles
+    $urlColor = $PodeContext.Server.Console.Colors.OpenApiUrls
 
     # Iterate through OpenAPI definitions
     foreach ($key in $PodeContext.Server.OpenAPI.Definitions.Keys) {
@@ -771,13 +704,9 @@ function Show-PodeConsoleOAInfo {
 
 #>
 function Clear-PodeKeyPressed {
-    if (!$PodeContext.Server.Console.DisableConsoleInput) {
-
-        # Clear any remaining keys in the input buffer
-        while ([Console]::KeyAvailable) {
-
-            [Console]::ReadKey($true) | Out-Null
-        }
+    # Clear any remaining keys in the input buffer
+    while ([Console]::KeyAvailable) {
+        $null = [Console]::ReadKey($true)
     }
 }
 
@@ -838,11 +767,16 @@ function Test-PodeKeyPressed {
 	This function is useful for scenarios requiring real-time console key handling.
 #>
 function Get-PodeConsoleKey {
-    if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
-        return $null
-    }
+    try {
+        if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
+            return $null
+        }
 
-    return [Console]::ReadKey($true)
+        return [Console]::ReadKey($true)
+    }
+    finally {
+        Clear-PodeKeyPressed
+    }
 }
 
 <#
@@ -883,7 +817,6 @@ function Invoke-PodeConsoleAction {
 
     # Browser action
     if (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Browser) {
-        Clear-PodeKeyPressed
         $url = Get-PodeEndpointUrl
         if (![string]::IsNullOrWhitespace($url)) {
             Invoke-PodeEvent -Type Browser
@@ -892,49 +825,41 @@ function Invoke-PodeConsoleAction {
     }
     # Toggle help display
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Help) {
-        Clear-PodeKeyPressed
         $PodeContext.Server.Console.ShowHelp = !$PodeContext.Server.Console.ShowHelp
         Show-PodeConsoleInfo -ShowTopSeparator
     }
     # Toggle OpenAPI display
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.OpenAPI) {
-        Clear-PodeKeyPressed
         $PodeContext.Server.Console.ShowOpenAPI = !$PodeContext.Server.Console.ShowOpenAPI
         Show-PodeConsoleInfo -ShowTopSeparator
     }
     # Toggle endpoints display
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Endpoints) {
-        Clear-PodeKeyPressed
         $PodeContext.Server.Console.ShowEndpoints = !$PodeContext.Server.Console.ShowEndpoints
         Show-PodeConsoleInfo -ShowTopSeparator
     }
     # Clear console
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Clear) {
-        Clear-PodeKeyPressed
         Show-PodeConsoleInfo -ClearHost
     }
     # Toggle quiet mode
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Quiet) {
-        Clear-PodeKeyPressed
         $PodeContext.Server.Console.Quiet = !$PodeContext.Server.Console.Quiet
         Show-PodeConsoleInfo -ClearHost -Force
     }
     # Terminate server
     elseif ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Terminate)) {
-        Clear-PodeKeyPressed
-        Set-PodeCancellationTokenRequest -Type Terminate
+        Close-PodeCancellationTokenRequest -Type Terminate
         return
     }
     elseif ( (('Running', 'Suspended') -contains $serverState ) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Metrics)) {
-        Clear-PodeKeyPressed
         Show-PodeConsoleMetric
     }
 
     # Handle restart actions
     if ($PodeContext.Server.AllowedActions.Restart) {
         if (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Restart) {
-            Clear-PodeKeyPressed
-            Set-PodeCancellationTokenRequest -Type Restart
+            Close-PodeCancellationTokenRequest -Type Restart
             Restart-PodeInternalServer
         }
         elseif (Test-PodeCancellationTokenRequest -Type Restart) {
@@ -945,9 +870,8 @@ function Invoke-PodeConsoleAction {
     # Handle enable/disable server actions
     if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq 'Running')) {
         if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Disable)) {
-            Clear-PodeKeyPressed
             if (Test-PodeServerIsEnabled) {
-                Set-PodeCancellationTokenRequest -Type Disable
+                Close-PodeCancellationTokenRequest -Type Disable
                 Disable-PodeServerInternal
             }
             else {
@@ -971,7 +895,6 @@ function Invoke-PodeConsoleAction {
     # Handle suspend/resume actions
     if ($PodeContext.Server.AllowedActions.Suspend) {
         if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Suspend)) {
-            Clear-PodeKeyPressed
             if ($serverState -eq 'Suspended') {
                 Set-PodeResumeToken
                 Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume

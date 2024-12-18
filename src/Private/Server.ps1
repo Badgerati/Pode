@@ -143,7 +143,7 @@ function Start-PodeInternalServer {
         }
 
         # Trigger the start
-        Set-PodeCancellationTokenRequest -Type Start
+        Close-PodeCancellationTokenRequest -Type Start
 
         # set the start time of the server (start and after restart)
         $PodeContext.Metrics.Server.StartTime = [datetime]::UtcNow
@@ -176,7 +176,7 @@ function Restart-PodeInternalServer {
         Invoke-PodeEvent -Type Restart
 
         # cancel the session token
-        Set-PodeCancellationTokenRequest -Type Cancellation, Terminate
+        Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
 
         # close all current runspaces
         Close-PodeRunspace -ClosePool
@@ -369,7 +369,7 @@ function Suspend-PodeServerInternal {
     )
 
     # Exit early if no suspension request is pending or if the server is already suspended.
-    if (!(Test-PodeCancellationTokenRequest -Type Suspend) -or ((Get-PodeServerState) -eq 'Suspended')) {
+    if (!(Test-PodeCancellationTokenRequest -Type Suspend) -or (Test-PodeServerState -State Suspended)) {
         return
     }
 
@@ -380,9 +380,8 @@ function Suspend-PodeServerInternal {
         # Trigger the 'Suspend' event for the server.
         Invoke-PodeEvent -Type Suspend
 
-        # Retrieve and sort all Pode-related runspaces.
-        # Main runspaces are suspended first to avoid potential hangs.
-        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Tasks_*' -or $_.Name -like 'Pode_Schedules_*' } | Sort-Object Name
+        # Retrieve all Pode-related runspaces for tasks and schedules.
+        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Tasks_*' -or $_.Name -like 'Pode_Schedules_*' }
 
         # Iterate over each runspace to initiate suspension.
         $runspaces | Foreach-Object {
@@ -479,7 +478,7 @@ function Resume-PodeServerInternal {
         Start-Sleep -Seconds 1
 
         # Retrieve all runspaces currently in a suspended (debug) state.
-        $runspaces = Get-Runspace | Where-Object { $_.Debugger.InBreakpoint }
+        $runspaces = Get-Runspace | Where-Object { ($_.Name -like 'Pode_Tasks_*' -or $_.Name -like 'Pode_Schedules_*') -and $_.Debugger.InBreakpoint }
 
         # Iterate over each suspended runspace to restore normal execution.
         $runspaces | ForEach-Object {
@@ -514,7 +513,7 @@ function Resume-PodeServerInternal {
         $_ | Write-PodeErrorLog
 
         # Force a restart action to recover the server.
-        Set-PodeCancellationTokenRequest -Type Restart
+        Close-PodeCancellationTokenRequest -Type Restart
     }
     finally {
         # Reset the resume cancellation token for future suspension/resumption cycles.
@@ -539,12 +538,13 @@ function Resume-PodeServerInternal {
     This function is used internally to manage Watchdog monitoring and may change in future releases of Pode.
 #>
 function Enable-PodeServerInternal {
-    if (Get-PodeServerState -eq 'Running') {
-        # Check if the Watchdog middleware exists and remove it if found to allow new requests
-        if (! (Test-PodeServerIsEnabled)) {
-            Remove-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName
-        }
+
+    # Check if the Watchdog middleware exists and remove it if found to allow new requests
+    if (!(Test-PodeServerState -State Running) -or (Test-PodeServerIsEnabled) ) {
+        return
     }
+
+    Remove-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName
 }
 
 <#
@@ -559,20 +559,20 @@ function Enable-PodeServerInternal {
     This function is used internally to manage Watchdog monitoring and may change in future releases of Pode.
 #>
 function Disable-PodeServerInternal {
-    if (Get-PodeServerState -eq 'Running') {
-        if (Test-PodeServerIsEnabled) {
-            # Add middleware to block new requests and respond with 503 Service Unavailable
-            Add-PodeMiddleware -Name  $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName -ScriptBlock {
-                # Set HTTP response header for retrying after a certain time (RFC7231)
-                Set-PodeHeader -Name 'Retry-After' -Value $PodeContext.Server.AllowedActions.DisableSettings.RetryAfter
 
-                # Set HTTP status to 503 Service Unavailable
-                Set-PodeResponseStatus -Code 503
+    if (!(Test-PodeServerState -State Running) -or (!( Test-PodeServerIsEnabled)) ) {
+        return
+    }
+    # Add middleware to block new requests and respond with 503 Service Unavailable
+    Add-PodeMiddleware -Name  $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName -ScriptBlock {
+        # Set HTTP response header for retrying after a certain time (RFC7231)
+        Set-PodeHeader -Name 'Retry-After' -Value $PodeContext.Server.AllowedActions.DisableSettings.RetryAfter
 
-                # Stop further processing
-                return $false
-            }
-        }
+        # Set HTTP status to 503 Service Unavailable
+        Set-PodeResponseStatus -Code 503
+
+        # Stop further processing
+        return $false
     }
 }
 

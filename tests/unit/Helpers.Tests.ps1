@@ -1062,7 +1062,7 @@ Describe 'Get-PodeRelativePath' {
     }
 
     It 'Returns path for a relative path joined to default root normalized' {
-        Get-PodeRelativePath -Path './path' -JoinRoot -NormalizeRelativePath | Should -Be 'c:/path'
+        Get-PodeRelativePath -Path './path' -JoinRoot -NormaliseRelativePath | Should -Be 'c:/path'
     }
 
     It 'Returns resolved path for a relative path joined to default root when resolving' {
@@ -1080,7 +1080,7 @@ Describe 'Get-PodeRelativePath' {
     }
 
     It 'Returns path for a relative path joined to passed root normalized' {
-        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' -NormalizeRelativePath | Should -Be 'e:/path'
+        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' -NormaliseRelativePath | Should -Be 'e:/path'
     }
 
     It 'Throws error for path ot existing' {
@@ -1151,7 +1151,7 @@ Describe 'Close-PodeServerInternal' {
         Mock Close-PodeDisposable {}
         Mock Remove-PodePSDrive {}
         Mock Write-PodeHost {}
-        Mock Set-PodeCancellationTokenRequest {}
+        Mock Close-PodeCancellationTokenRequest {}
     }
 
 

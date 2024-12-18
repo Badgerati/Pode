@@ -19,7 +19,7 @@
 .PARAMETER DisableTermination
     Prevents the server from being terminated.
 
-.PARAMETER IgnoreServerPsConfig
+.PARAMETER IgnoreServerConfig
     Ignores the server.psd1 configuration file when starting the server.
     This parameter ensures the server does not load or apply any settings defined in the server.psd1 file, allowing for a fully manual configuration at runtime.
 
@@ -55,7 +55,7 @@ param(
     $DisableTermination,
 
     [switch]
-    $IgnoreServerPsConfig
+    $IgnoreServerConfig
 )
 
 try {
@@ -73,7 +73,7 @@ try {
 }
 catch { throw }
 
-Start-PodeServer  -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination -IgnoreServerPsConfig:$IgnoreServerPsConfig -ScriptBlock {
+Start-PodeServer  -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination -IgnoreServerConfig:$IgnoreServerConfig -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port $PortV3 -Protocol Http -Default -Name 'endpoint_v3'
     Add-PodeEndpoint -Address localhost -Port $PortV3_1 -Protocol Http -Default -Name 'endpoint_v3.1'
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

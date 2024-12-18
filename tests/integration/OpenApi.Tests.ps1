@@ -19,7 +19,7 @@ Describe 'OpenAPI integration tests' {
         $PortV3 = 8080
         $PortV3_1 = 8081
         $scriptPath = "$($PSScriptRoot)\..\..\examples\OpenApi-TuttiFrutti.ps1"
-        Start-Process (Get-Process -Id $PID).Path -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -PortV3 $PortV3 -PortV3_1 $PortV3_1 -DisableTermination -IgnoreServerPsConfig"   -NoNewWindow
+        Start-Process (Get-Process -Id $PID).Path -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -PortV3 $PortV3 -PortV3_1 $PortV3_1 -DisableTermination -IgnoreServerConfig"   -NoNewWindow
 
         function Compare-StringRnLn {
             param (

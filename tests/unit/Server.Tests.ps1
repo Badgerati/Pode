@@ -45,7 +45,7 @@ Describe 'Start-PodeInternalServer' {
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {}; Console = @{Quiet = $true } }
-        $PodeContext.Tokens = New-PodeSuspensionToken
+        $PodeContext.Tokens = Initialize-PodeCancellationToken
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -60,7 +60,7 @@ Describe 'Start-PodeInternalServer' {
 
     It 'Calls smtp server logic' {
         $PodeContext.Server = @{ Types = 'SMTP'; Logic = {}; Console = @{Quiet = $true } }
-        $PodeContext.Tokens = New-PodeSuspensionToken
+        $PodeContext.Tokens = Initialize-PodeCancellationToken
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -75,7 +75,7 @@ Describe 'Start-PodeInternalServer' {
 
     It 'Calls tcp server logic' {
         $PodeContext.Server = @{ Types = 'TCP'; Logic = {}; Console = @{Quiet = $true } }
-        $PodeContext.Tokens = New-PodeSuspensionToken
+        $PodeContext.Tokens = Initialize-PodeCancellationToken
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -90,7 +90,7 @@ Describe 'Start-PodeInternalServer' {
 
     It 'Calls http web server logic' {
         $PodeContext.Server = @{ Types = 'HTTP'; Logic = {}; Console = @{Quiet = $true } }
-        $PodeContext.Tokens = New-PodeSuspensionToken
+        $PodeContext.Tokens = Initialize-PodeCancellationToken
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -118,7 +118,7 @@ Describe 'Restart-PodeInternalServer' {
 
     It 'Resetting the server values' {
         $PodeContext = @{
-            Tokens    = New-PodeSuspensionToken
+            Tokens    = Initialize-PodeCancellationToken
             Server    = @{
                 Routes          = @{
                     GET  = @{ 'key' = 'value' }

@@ -312,6 +312,7 @@
         'Suspend-PodeServer',
         'Resume-PodeServer',
         'Get-PodeServerState',
+        'Test-PodeServerState',
         'Enable-PodeServer',
         'Disable-PodeServer',
 

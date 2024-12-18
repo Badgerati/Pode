@@ -555,7 +555,7 @@ function Close-PodeServerInternal {
     try {
         # ensure the token is cancelled
         Write-Verbose 'Cancelling main cancellation token'
-        Set-PodeCancellationTokenRequest -Type Cancellation, Terminate
+        Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
 
         # stop all current runspaces
         Write-Verbose 'Closing runspaces'
@@ -2423,7 +2423,7 @@ function Find-PodeFileForContentType {
 .PARAMETER TestPath
 	Verifies if the resolved path exists. Throws an exception if the path does not exist.
 
-.PARAMETER NormalizeRelativePath
+.PARAMETER NormaliseRelativePath
 	(Optional) Removes any leading './' or '../' segments from the relative path when used with -JoinRoot. This ensures that the path is normalized before being joined with the root path.
 
 .OUTPUTS
@@ -2436,7 +2436,7 @@ function Find-PodeFileForContentType {
 
 .EXAMPLE
 	# Example 2: Resolve and normalize a relative path
-	Get-PodeRelativePath -Path '../example' -RootPath 'C:\Root' -JoinRoot -NormalizeRelativePath
+	Get-PodeRelativePath -Path '../example' -RootPath 'C:\Root' -JoinRoot -NormaliseRelativePath
 
 .EXAMPLE
 	# Example 3: Test if a path exists
@@ -2465,7 +2465,7 @@ function Get-PodeRelativePath {
         $TestPath,
 
         [switch]
-        $NormalizeRelativePath
+        $NormaliseRelativePath
 
     )
 
@@ -2475,7 +2475,7 @@ function Get-PodeRelativePath {
             $RootPath = $PodeContext.Server.Root
         }
 
-        if ($NormalizeRelativePath) {
+        if ($NormaliseRelativePath) {
             $Path = [System.IO.Path]::Combine($RootPath, ($Path -replace '^\.{1,2}([\\\/])?', ''))
         }
         else {
@@ -3761,28 +3761,29 @@ function Copy-PodeObjectDeepClone {
     }
 }
 
-
 <#
 .SYNOPSIS
     Converts a duration in milliseconds into a human-readable time format.
 
 .DESCRIPTION
-    This function takes an input duration in milliseconds and converts it into
-    a readable time format. It supports multiple output styles, such as verbose
-    (detailed text), compact (`dd:hh:mm:ss`), and concise (short notation).
-    Optionally, milliseconds can be excluded from the output.
+    The `Convert-PodeMillisecondsToReadable` function converts a specified duration in milliseconds into
+    a readable time format. The output can be formatted in three styles:
+    - `Concise`: A short and simple format (e.g., "1d 2h 3m").
+    - `Compact`: A compact representation (e.g., "01:02:03:04").
+    - `Verbose`: A detailed, descriptive format (e.g., "1 day, 2 hours, 3 minutes").
+    The function also provides an option to exclude milliseconds from the output for all formats.
 
 .PARAMETER Milliseconds
-    The duration in milliseconds to be converted.
+    Specifies the duration in milliseconds to be converted into a human-readable format.
 
-.PARAMETER VerboseOutput
-    If specified, outputs a detailed, descriptive format (e.g., "1 day, 2 hours, 3 minutes").
-
-.PARAMETER CompactOutput
-    If specified, outputs a compact format (e.g., "dd:hh:mm:ss").
+.PARAMETER Format
+    Specifies the desired format for the output. Valid options are:
+    - `Concise` (default): Short and simple (e.g., "1d 2h 3m").
+    - `Compact`: Condensed form (e.g., "01:02:03:04").
+    - `Verbose`: Detailed description (e.g., "1 day, 2 hours, 3 minutes, 4 seconds").
 
 .PARAMETER ExcludeMilliseconds
-    If specified, excludes milliseconds from the output.
+    If specified, milliseconds will be excluded from the output for all formats.
 
 .EXAMPLE
     Convert-PodeMillisecondsToReadable -Milliseconds 123456789
@@ -3791,13 +3792,13 @@ function Copy-PodeObjectDeepClone {
     1d 10h 17m 36s
 
 .EXAMPLE
-    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -VerboseOutput
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -Format Verbose
 
     Output:
     1 day, 10 hours, 17 minutes, 36 seconds, 789 milliseconds
 
 .EXAMPLE
-    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -CompactOutput -ExcludeMilliseconds
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -Format Compact -ExcludeMilliseconds
 
     Output:
     01:10:17:36
@@ -3805,67 +3806,71 @@ function Copy-PodeObjectDeepClone {
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-
 function Convert-PodeMillisecondsToReadable {
-    param (
-        [Parameter(Mandatory)]
-        [long]$Milliseconds,
+    param(
+        # The duration in milliseconds to convert
+        [Parameter(Mandatory = $true)]
+        [long]
+        $Milliseconds,
 
-        [switch]$VerboseOutput, # Provide detailed descriptions
-        [switch]$CompactOutput, # Provide compact format like dd:hh:mm:ss or mm:ss:ms
-        [switch]$ExcludeMilliseconds # Exclude milliseconds from the output
+        # Specifies the desired output format
+        [Parameter()]
+        [ValidateSet('Concise', 'Compact', 'Verbose')]
+        [string]
+        $Format = 'Concise',
+
+        # Omits milliseconds from the output
+        [switch]
+        $ExcludeMilliseconds
     )
 
+    # Convert the milliseconds input into a TimeSpan object
     $timeSpan = [timespan]::FromMilliseconds($Milliseconds)
 
-    if ($CompactOutput) {
-        # Dynamically build compact format
-        $components = @()
+    # Generate the formatted output based on the selected format
+    switch ($Format.ToLower()) {
+        'concise' {
+            # Concise format: "1d 2h 3m 4s"
+            $output = @()
+            if ($timeSpan.Days -gt 0) { $output += "$($timeSpan.Days)d" }
+            if ($timeSpan.Hours -gt 0) { $output += "$($timeSpan.Hours)h" }
+            if ($timeSpan.Minutes -gt 0) { $output += "$($timeSpan.Minutes)m" }
+            if ($timeSpan.Seconds -gt 0) { $output += "$($timeSpan.Seconds)s" }
 
-        # Include days only if greater than 0
-        if ($timeSpan.Days -gt 0) { $components += '{0:D2}' -f $timeSpan.Days }
+            # Include milliseconds if they exist and are not excluded
+            if ((($timeSpan.Milliseconds -gt 0) -and !$ExcludeMilliseconds) -or ($output.Count -eq 0)) {
+                $output += "$($timeSpan.Milliseconds)ms"
+            }
 
-        # Include hours only if greater than 0 or days are included
-        if ($timeSpan.Hours -gt 0 -or $components.Count -gt 0) { $components += '{0:D2}' -f $timeSpan.Hours }
-
-        # Include minutes if relevant
-        if ($timeSpan.Minutes -gt 0 -or $components.Count -gt 0) { $components += '{0:D2}' -f $timeSpan.Minutes }
-
-        # Add seconds as the final required time component
-        $components += '{0:D2}' -f $timeSpan.Seconds
-
-        # Append milliseconds if not excluded
-        if (-not $ExcludeMilliseconds) {
-            $components[-1] += ':{0:D3}' -f $timeSpan.Milliseconds
+            return $output -join ' '
         }
 
-        # Join with ":" and return
-        return $components -join ':'
-    }
+        'compact' {
+            # Compact format: "dd:hh:mm:ss"
+            $output = "{0:D2}:{1:D2}:{2:D2}:{3:D2}" -f $timeSpan.Days, $timeSpan.Hours, $timeSpan.Minutes, $timeSpan.Seconds
 
-    # Default or verbose format
-    if ($VerboseOutput) {
-        $verboseParts = @()
-        if ($timeSpan.Days -gt 0) { $verboseParts += "$($timeSpan.Days) day$(if ($timeSpan.Days -ne 1) { 's' })" }
-        if ($timeSpan.Hours -gt 0) { $verboseParts += "$($timeSpan.Hours) hour$(if ($timeSpan.Hours -ne 1) { 's' })" }
-        if ($timeSpan.Minutes -gt 0) { $verboseParts += "$($timeSpan.Minutes) minute$(if ($timeSpan.Minutes -ne 1) { 's' })" }
-        if ($timeSpan.Seconds -gt 0) { $verboseParts += "$($timeSpan.Seconds) second$(if ($timeSpan.Seconds -ne 1) { 's' })" }
-        if (-not $ExcludeMilliseconds -and $timeSpan.Milliseconds -gt 0) {
-            $verboseParts += "$($timeSpan.Milliseconds) millisecond$(if ($timeSpan.Milliseconds -ne 1) { 's' })"
+            # Append milliseconds if not excluded
+            if (!$ExcludeMilliseconds) {
+                $output += ".{0:D3}" -f $timeSpan.Milliseconds
+            }
+
+            return $output
         }
 
-        return $verboseParts -join ' '
-    }
+        'verbose' {
+            # Verbose format: "1 day, 2 hours, 3 minutes, 4 seconds"
+            $output = @()
+            if ($timeSpan.Days -gt 0) { $output += "$($timeSpan.Days) day$(if ($timeSpan.Days -ne 1) { 's' })" }
+            if ($timeSpan.Hours -gt 0) { $output += "$($timeSpan.Hours) hour$(if ($timeSpan.Hours -ne 1) { 's' })" }
+            if ($timeSpan.Minutes -gt 0) { $output += "$($timeSpan.Minutes) minute$(if ($timeSpan.Minutes -ne 1) { 's' })" }
+            if ($timeSpan.Seconds -gt 0) { $output += "$($timeSpan.Seconds) second$(if ($timeSpan.Seconds -ne 1) { 's' })" }
 
-    # Default concise format
-    $parts = @()
-    if ($timeSpan.Days -gt 0) { $parts += "$($timeSpan.Days)d" }
-    if ($timeSpan.Hours -gt 0 -or $parts.Count -gt 0) { $parts += "$($timeSpan.Hours)h" }
-    if ($timeSpan.Minutes -gt 0 -or $parts.Count -gt 0) { $parts += "$($timeSpan.Minutes)m" }
-    if ($timeSpan.Seconds -gt 0 -or $parts.Count -gt 0) { $parts += "$($timeSpan.Seconds)s" }
-    if (-not $ExcludeMilliseconds -and $timeSpan.Milliseconds -gt 0 -or $parts.Count -gt 0) {
-        $parts += "$($timeSpan.Milliseconds)ms"
-    }
+            # Include milliseconds if they exist and are not excluded
+            if ((($timeSpan.Milliseconds -gt 0) -and !$ExcludeMilliseconds) -or ($output.Count -eq 0)) {
+                $output += "$($timeSpan.Milliseconds) millisecond$(if ($timeSpan.Milliseconds -ne 1) { 's' })"
+            }
 
-    return $parts -join ':'
+            return $output -join ', '
+        }
+    }
 }

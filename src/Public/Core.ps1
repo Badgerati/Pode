@@ -77,7 +77,7 @@
 .PARAMETER ShowHelp
     Displays a help menu in the console with control commands..
 
-.PARAMETER IgnoreServerPsConfig
+.PARAMETER IgnoreServerConfig
     Ignores the server.psd1 configuration file when starting the server.
     This parameter ensures the server does not load or apply any settings defined in the server.psd1 file, allowing for a fully manual configuration at runtime.
 
@@ -178,7 +178,7 @@ function Start-PodeServer {
         $ShowHelp,
 
         [switch]
-        $IgnoreServerPsConfig
+        $IgnoreServerConfig
     )
     begin {
         $pipelineItemCount = 0
@@ -235,7 +235,7 @@ function Start-PodeServer {
                 StatusPageExceptions = $StatusPageExceptions
                 Console              = Get-PodeDefaultConsole
                 EnableBreakpoints    = $EnableBreakpoints
-                IgnoreServerPsConfig = $IgnoreServerPsConfig
+                IgnoreServerConfig   = $IgnoreServerConfig
             }
             $ContextParams.Console.DisableTermination = $DisableTermination.IsPresent
             $ContextParams.Console.DisableConsoleInput = $DisableConsoleInput.IsPresent
@@ -284,7 +284,6 @@ function Start-PodeServer {
             }
 
             # Terminating...
-            #  Write-PodeHost $PodeLocale.terminatingMessage -NoNewLine -ForegroundColor Yellow
             Invoke-PodeEvent -Type Terminate
             Close-PodeServer
             Show-PodeConsoleInfo
@@ -337,7 +336,7 @@ function Close-PodeServer {
     [CmdletBinding()]
     param()
 
-    Set-PodeCancellationTokenRequest -Type Cancellation, Terminate
+    Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
 }
 
 <#
@@ -356,7 +355,7 @@ function Restart-PodeServer {
 
     # Only if the Restart feature is anabled
     if ($PodeContext.Server.AllowedActions.Restart) {
-        Set-PodeCancellationTokenRequest -Type Restart
+        Close-PodeCancellationTokenRequest -Type Restart
     }
 }
 
@@ -389,7 +388,7 @@ function Resume-PodeServer {
             $PodeContext.Server.AllowedActions.Timeout.Resume = $Timeout
         }
 
-        if ((Get-PodeServerState) -eq 'Suspended') {
+        if ((Test-PodeServerState -State Suspended)) {
             Set-PodeResumeToken
         }
     }
@@ -423,7 +422,7 @@ function Suspend-PodeServer {
         if ($Timeout) {
             $PodeContext.Server.AllowedActions.Timeout.Suspend = $Timeout
         }
-        if ((Get-PodeServerState) -ne 'Suspended') {
+        if (!(Test-PodeServerState -State Suspended)) {
             Set-PodeSuspendToken
         }
     }
@@ -1030,6 +1029,55 @@ function Get-PodeServerState {
 
 <#
 .SYNOPSIS
+    Tests whether the Pode server is in a specified state.
+
+.DESCRIPTION
+    The `Test-PodeServerState` function checks the current state of the Pode server
+    by calling `Get-PodeServerState` and comparing the result to the specified state.
+    The function returns `$true` if the server is in the specified state and `$false` otherwise.
+
+.PARAMETER State
+    Specifies the server state to test. Allowed values are:
+    - `Terminated`: The server is not running, and the context is null.
+    - `Terminating`: The server is in the process of shutting down.
+    - `Resuming`: The server is resuming from a suspended state.
+    - `Suspending`: The server is in the process of entering a suspended state.
+    - `Suspended`: The server is fully suspended.
+    - `Restarting`: The server is restarting.
+    - `Starting`: The server is in the process of starting up.
+    - `Running`: The server is actively running.
+
+.EXAMPLE
+    Test-PodeServerState -State 'Running'
+
+    Returns `$true` if the server is currently running, otherwise `$false`.
+
+.EXAMPLE
+    Test-PodeServerState -State 'Suspended'
+
+    Returns `$true` if the server is fully suspended, otherwise `$false`.
+
+.NOTES
+    This function is part of Pode's server state management utilities.
+    It relies on the `Get-PodeServerState` function to determine the current state.
+#>
+function Test-PodeServerState {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Terminated', 'Terminating', 'Resuming', 'Suspending', 'Suspended', 'Restarting', 'Starting', 'Running')]
+        [string]
+        $State
+    )
+
+    # Call Get-PodeServerState to retrieve the current server state
+    $currentState = Get-PodeServerState
+
+    # Return true if the current state matches the provided state, otherwise false
+    return $currentState -eq $State
+}
+
+<#
+.SYNOPSIS
 	Enables new incoming requests by removing the middleware that blocks requests when the Pode Watchdog client is active.
 
 .DESCRIPTION
@@ -1060,7 +1108,7 @@ function Disable-PodeServer {
 
     $PodeContext.Server.AllowedActions.DisableSettings.RetryAfter = $RetryAfter
     if (! (Test-PodeCancellationTokenRequest -Type Disable)) {
-        Set-PodeCancellationTokenRequest -Type Disable -RetryAfter $RetryAfter
+        Close-PodeCancellationTokenRequest -Type Disable
     }
 }
 

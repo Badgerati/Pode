@@ -135,7 +135,7 @@ function Start-PodeGuiRunspace {
         }
         finally {
             # invoke the cancellation token to close the server
-            Set-PodeCancellationTokenRequest -Type Cancellation
+            Close-PodeCancellationTokenRequest -Type Cancellation
         }
     }
 
