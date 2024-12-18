@@ -3904,10 +3904,10 @@ function Test-PodeHasConsole {
         # On Windows, validate standard input and output handles
         return [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output)
     }
-
+    return ([Pode.NativeMethods]::IsTerminal)
     # Supported hosts for non-Windows environments
-    $supportedHosts = @('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host')
-    return $supportedHosts -contains $Host.Name
+    #$supportedHosts = @('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host')
+    # return $supportedHosts -contains $Host.Name
 }
 
 

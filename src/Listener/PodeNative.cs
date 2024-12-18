@@ -5,10 +5,17 @@ namespace Pode
 {
     public static class NativeMethods
     {
-        // Constants for standard handles
+        // Constants for standard Windows handles
         public const int STD_INPUT_HANDLE = -10;
         public const int STD_OUTPUT_HANDLE = -11;
         public const int STD_ERROR_HANDLE = -12;
+
+
+          // Constants for standard UNIX file descriptors
+        public const int STDIN_FILENO = 0;
+        public const int STDOUT_FILENO = 1;
+        public const int STDERR_FILENO = 2;
+
 
         // Import the GetStdHandle function from kernel32.dll
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -21,5 +28,17 @@ namespace Pode
             IntPtr handle = GetStdHandle(handleType);
             return handle != IntPtr.Zero;
         }
+
+
+        // Import the isatty function from libc
+        [DllImport("libc")]
+        private static extern int isatty(int fd);
+
+        // Method to check if a file descriptor is a terminal
+        public static bool IsTerminal(int fileDescriptor)
+        {
+            return isatty(fileDescriptor) == 1;
+        }
     }
+
 }
