@@ -1,30 +1,31 @@
 <#
 .SYNOPSIS
-    Starts a Pode Server with the supplied ScriptBlock.
+    Starts a Pode server with the supplied script block or file containing the server logic.
 
 .DESCRIPTION
-    Starts a Pode Server with the supplied ScriptBlock or file containing server logic.
-    This function initializes and configures the server, enabling customization of its behavior
-    and console interaction.
+    This function initializes and starts a Pode server based on the provided configuration.
+    It supports both inline script blocks and external files for defining server logic.
+    The server's behavior, console output, and various features can be customized using parameters.
+    Additionally, it manages server termination, cancellation, and cleanup processes.
 
 .PARAMETER ScriptBlock
-    The main logic for the server, provided as a ScriptBlock.
+    The main logic for the server, provided as a script block.
 
 .PARAMETER FilePath
-    A literal or relative path to a file containing a ScriptBlock for the server's logic.
+    A literal or relative path to a file containing the server's logic.
     The directory of this file will be used as the server's root path unless a specific -RootPath is supplied.
 
 .PARAMETER Interval
-    For 'Service' type servers, specifies the interval in seconds for invoking the ScriptBlock.
+    Specifies the interval in seconds for invoking the script block in 'Service' type servers.
 
 .PARAMETER Name
-    An optional name for the server, useful for identification and future extensions.
+    An optional name for the server, useful for identification in logs and future extensions.
 
 .PARAMETER Threads
-    The number of threads to use for Web, SMTP, and TCP servers. Defaults to 1.
+    The number of threads to allocate for Web, SMTP, and TCP servers. Defaults to 1.
 
 .PARAMETER RootPath
-    Overrides the server's root path.
+    Overrides the server's root path. If not provided, the root path will be derived from the file path or the current working directory.
 
 .PARAMETER Request
     Provides request details for serverless environments that Pode can parse and use.
@@ -35,76 +36,83 @@
     - AwsLambda
 
 .PARAMETER StatusPageExceptions
-    Controls whether stack traces are shown in the status pages. Valid values are:
+    Controls the visibility of stack traces on status pages. Valid values are:
     - Show
     - Hide
-    If supplied this value will override the ShowExceptions setting in the server.psd1 file.
 
 .PARAMETER ListenerType
     Specifies a custom socket listener. Defaults to Pode's inbuilt listener.
-    Example: Set to "Kestrel" for the Pode.Kestrel module.
-
-.PARAMETER DisableTermination
-    Disables the ability to terminate, suspend, or resume the server using the keyboard interactive commands.
-
-.PARAMETER DisableConsoleInput
-    Disables any console keyboard interaction for the server.
-
-.PARAMETER ClearHost
-    Clears the console screen whenever the server changes state (e.g., running → suspend → resume).
-
-.PARAMETER Quiet
-    Disables all output from the server.
-
-.PARAMETER Browse
-    Opens the web server's default endpoint in your default browser.
-
-.PARAMETER CurrentPath
-    Sets the server's root path to the current working directory. Applicable only when -FilePath is used.
 
 .PARAMETER EnablePool
     Configures specific runspace pools (e.g., Timers, Schedules, Tasks, WebSockets, Files) for ad-hoc usage.
 
+.PARAMETER Browse
+    Opens the default web endpoint in the browser upon server start.
+
+.PARAMETER CurrentPath
+    Sets the server's root path to the current working directory. Only applicable when -FilePath is used.
+
 .PARAMETER EnableBreakpoints
-    Enables breakpoints created by `Wait-PodeDebugger`.
+    Enables breakpoints created using `Wait-PodeDebugger`.
+
+.PARAMETER DisableTermination
+    Prevents termination, suspension, or resumption of the server via console commands.
+
+.PARAMETER DisableConsoleInput
+    Disables all console interactions for the server.
+
+.PARAMETER ClearHost
+    Clears the console screen whenever the server state changes (e.g., running → suspend → resume).
+
+.PARAMETER Quiet
+    Suppresses all output from the server.
 
 .PARAMETER HideOpenAPI
-    Hides OpenAPI details in the console output, such as specification and documentation URLs.
+    Hides OpenAPI details such as specification and documentation URLs from the console output.
 
 .PARAMETER HideEndpoints
-    Hides the list of active endpoints in the console output.
+    Hides the list of active endpoints from the console output.
 
 .PARAMETER ShowHelp
-    Displays a help menu in the console with control commands..
+    Displays a help menu in the console with available control commands.
 
 .PARAMETER IgnoreServerConfig
-    Ignores the server.psd1 configuration file when starting the server.
-    This parameter ensures the server does not load or apply any settings defined in the server.psd1 file, allowing for a fully manual configuration at runtime.
+    Prevents the server from loading settings from the server.psd1 configuration file.
+
+.PARAMETER Daemon
+    Configures the server to run as a daemon with minimal console interaction and output.
 
 .EXAMPLE
-    Start-PodeServer { /* logic */ }
-    Starts a Pode server using the provided ScriptBlock.
+    Start-PodeServer { /* server logic */ }
+    Starts a Pode server using the supplied script block.
 
 .EXAMPLE
-    Start-PodeServer -Interval 10 { /* logic */ }
-    Starts a Pode server that invokes the ScriptBlock every 10 seconds.
+    Start-PodeServer -FilePath './server.ps1' -Browse
+    Starts a Pode server using the logic defined in an external file and opens the default endpoint in the browser.
 
 .EXAMPLE
-    Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda { /* logic */ }
+    Start-PodeServer -ServerlessType AwsLambda -Request $LambdaInput { /* server logic */ }
     Starts a Pode server in a serverless environment, using AWS Lambda input.
 
 .EXAMPLE
-    Start-PodeServer -HideEndpoints -HideOpenAPI -ClearHost { /* logic */ }
-    Starts a Pode server with customized console behavior to hide endpoints and OpenAPI details and clear the console on state changes.
+    Start-PodeServer -HideOpenAPI -ClearHost { /* server logic */ }
+    Starts a Pode server with console output configured to hide OpenAPI details and clear the console on state changes.
+
+.NOTES
+    This function is part of the Pode framework and is responsible for server initialization, configuration,
+    request handling, and cleanup. It supports both standalone and serverless deployments, and provides
+    extensive customization options for developers.
 #>
 function Start-PodeServer {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptDaemon')]
         [scriptblock]
         $ScriptBlock,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileDaemon')]
         [string]
         $FilePath,
 
@@ -146,22 +154,33 @@ function Start-PodeServer {
         [string[]]
         $EnablePool,
 
+        [Parameter(ParameterSetName = 'File')]
+        [Parameter(ParameterSetName = 'Script')]
         [switch]
         $Browse,
 
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileDaemon')]
         [Parameter(ParameterSetName = 'File')]
         [switch]
         $CurrentPath,
 
+        [Parameter(ParameterSetName = 'File')]
+        [Parameter(ParameterSetName = 'Script')]
         [switch]
         $EnableBreakpoints,
 
+        [Parameter(ParameterSetName = 'File')]
+        [Parameter(ParameterSetName = 'Script')]
         [switch]
         $DisableTermination,
 
+        [Parameter(ParameterSetName = 'File')]
+        [Parameter(ParameterSetName = 'Script')]
         [switch]
         $Quiet,
 
+        [Parameter(ParameterSetName = 'File')]
+        [Parameter(ParameterSetName = 'Script')]
         [switch]
         $DisableConsoleInput,
 
@@ -178,7 +197,12 @@ function Start-PodeServer {
         $ShowHelp,
 
         [switch]
-        $IgnoreServerConfig
+        $IgnoreServerConfig,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileDaemon')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptDaemon')]
+        [switch]
+        $Daemon
     )
     begin {
         $pipelineItemCount = 0
@@ -246,25 +270,30 @@ function Start-PodeServer {
             if ($DisableTermination.IsPresent) {
                 $PodeContext.Server.Console.DisableTermination = $true
             }
-            if ($DisableTermination.DisableConsoleInput) {
+            if ($DisableConsoleInput.IsPresent) {
                 $PodeContext.Server.Console.DisableConsoleInput = $true
             }
-            if ($DisableTermination.Quiet) {
+            if ($Quiet.IsPresent) {
                 $PodeContext.Server.Console.Quiet = $true
             }
-            if ($DisableTermination.ClearHost) {
+            if ($ClearHost.IsPresent) {
                 $PodeContext.Server.Console.ClearHost = $true
             }
-            if ($DisableTermination.ShowOpenAPI) {
+            if ($ShowOpenAPI.IsPresent) {
                 $PodeContext.Server.Console.ShowOpenAPI = $false
             }
-            if ($DisableTermination.ShowEndpoints) {
+            if ($ShowEndpoints.IsPresent) {
                 $PodeContext.Server.Console.ShowEndpoints = $false
             }
-            if ($DisableTermination.ShowHelp) {
+            if ($ShowHelp.IsPresent) {
                 $PodeContext.Server.Console.ShowHelp = $true
             }
-
+            if ($Daemon.IsPresent) {
+                $PodeContext.Server.Console.Quiet = $true
+                $PodeContext.Server.Console.DisableConsoleInput = $true
+                $PodeContext.Server.Console.DisableTermination = $true
+            }
+            
             # start the file monitor for interally restarting
             Start-PodeFileMonitor
 
@@ -274,7 +303,6 @@ function Start-PodeServer {
             # at this point, if it's just a one-one off script, return
             if (!(Test-PodeServerKeepOpen)) {
                 return
-
             }
 
             # sit here waiting for termination/cancellation, or to restart the server
@@ -329,13 +357,13 @@ function Start-PodeServer {
 
 <#
 .SYNOPSIS
-Closes the Pode server.
+    Closes the Pode server.
 
 .DESCRIPTION
-Closes the Pode server.
+    Closes the Pode server.
 
 .EXAMPLE
-Close-PodeServer
+    Close-PodeServer
 #>
 function Close-PodeServer {
     [CmdletBinding()]

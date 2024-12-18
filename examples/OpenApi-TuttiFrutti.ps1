@@ -13,11 +13,8 @@
 .PARAMETER PortV3_1
     The port on which the Pode server will listen for OpenAPI v3_1. Default is 8081.
 
-.PARAMETER Quiet
-    Suppresses output when the server is running.
-
-.PARAMETER DisableTermination
-    Prevents the server from being terminated.
+.PARAMETER Daemon
+    Configures the server to run as a daemon with minimal console interaction and output.
 
 .PARAMETER IgnoreServerConfig
     Ignores the server.psd1 configuration file when starting the server.
@@ -49,10 +46,7 @@ param(
     $PortV3_1 = 8081,
 
     [switch]
-    $Quiet,
-
-    [switch]
-    $DisableTermination,
+    $Daemon,
 
     [switch]
     $IgnoreServerConfig
@@ -73,7 +67,7 @@ try {
 }
 catch { throw }
 
-Start-PodeServer  -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination -IgnoreServerConfig:$IgnoreServerConfig -ScriptBlock {
+Start-PodeServer  -Threads 1 -Daemon:$Daemon  -IgnoreServerConfig:$IgnoreServerConfig -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port $PortV3 -Protocol Http -Default -Name 'endpoint_v3'
     Add-PodeEndpoint -Address localhost -Port $PortV3_1 -Protocol Http -Default -Name 'endpoint_v3.1'
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
