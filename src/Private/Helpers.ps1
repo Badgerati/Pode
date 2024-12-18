@@ -3847,11 +3847,11 @@ function Convert-PodeMillisecondsToReadable {
 
         'compact' {
             # Compact format: "dd:hh:mm:ss"
-            $output = "{0:D2}:{1:D2}:{2:D2}:{3:D2}" -f $timeSpan.Days, $timeSpan.Hours, $timeSpan.Minutes, $timeSpan.Seconds
+            $output = '{0:D2}:{1:D2}:{2:D2}:{3:D2}' -f $timeSpan.Days, $timeSpan.Hours, $timeSpan.Minutes, $timeSpan.Seconds
 
             # Append milliseconds if not excluded
             if (!$ExcludeMilliseconds) {
-                $output += ".{0:D3}" -f $timeSpan.Milliseconds
+                $output += '.{0:D3}' -f $timeSpan.Milliseconds
             }
 
             return $output
@@ -3873,4 +3873,46 @@ function Convert-PodeMillisecondsToReadable {
             return $output -join ', '
         }
     }
+}
+
+<#
+.SYNOPSIS
+    Checks if the current PowerShell session supports console-like features.
+
+.DESCRIPTION
+    This function determines if the current PowerShell session is running in a host
+    that typically indicates a console-like environment where `Ctrl+C` can interrupt.
+
+.OUTPUTS
+    [bool]
+    Returns `$true` if running in a console-like environment, `$false` otherwise.
+
+.EXAMPLE
+    Test-PodeHasConsole
+    # Returns `$true` if the session supports console-like behavior.
+#>
+function Test-PodeHasConsole {
+    $supportedHosts = @('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host')
+    return $supportedHosts -contains $Host.Name
+}
+
+
+<#
+.SYNOPSIS
+    Determines if the current PowerShell session is running in the ConsoleHost.
+
+.DESCRIPTION
+    This function checks if the session's host name matches 'ConsoleHost',
+    which typically represents a native terminal environment in PowerShell.
+
+.OUTPUTS
+    [bool]
+    Returns `$true` if the current host is 'ConsoleHost', otherwise `$false`.
+
+.EXAMPLE
+    Test-PodeIsConsoleHost
+    # Returns `$true` if running in ConsoleHost, `$false` otherwise.
+#>
+function Test-PodeIsConsoleHost {
+    return $Host.Name -eq 'ConsoleHost'
 }

@@ -237,29 +237,34 @@ function Start-PodeServer {
                 EnableBreakpoints    = $EnableBreakpoints
                 IgnoreServerConfig   = $IgnoreServerConfig
             }
-            $ContextParams.Console.DisableTermination = $DisableTermination.IsPresent
-            $ContextParams.Console.DisableConsoleInput = $DisableConsoleInput.IsPresent
-            $ContextParams.Console.Quiet = $Quiet.IsPresent
-            $ContextParams.Console.ClearHost = $ClearHost.IsPresent
-            $ContextParams.Console.ShowOpenAPI = !$HideOpenAPI.IsPresent
-            $ContextParams.Console.ShowEndpoints = !$HideEndpoints.IsPresent
-            $ContextParams.Console.ShowHelp = $ShowHelp.IsPresent
+
 
             # Create main context object
             $PodeContext = New-PodeContext @ContextParams
 
-            # set it so ctrl-c can terminate, unless serverless/iis, or disabled
-            if (!$PodeContext.Server.Console.DisableTermination -and ($host.Name -eq 'ConsoleHost')) {
-                [Console]::TreatControlCAsInput = $true
+            # Override the configuration
+            if ($DisableTermination.IsPresent) {
+                $PodeContext.Server.Console.DisableTermination = $true
+            }
+            if ($DisableTermination.DisableConsoleInput) {
+                $PodeContext.Server.Console.DisableConsoleInput = $true
+            }
+            if ($DisableTermination.Quiet) {
+                $PodeContext.Server.Console.Quiet = $true
+            }
+            if ($DisableTermination.ClearHost) {
+                $PodeContext.Server.Console.ClearHost = $true
+            }
+            if ($DisableTermination.ShowOpenAPI) {
+                $PodeContext.Server.Console.ShowOpenAPI = $false
+            }
+            if ($DisableTermination.ShowEndpoints) {
+                $PodeContext.Server.Console.ShowEndpoints = $false
+            }
+            if ($DisableTermination.ShowHelp) {
+                $PodeContext.Server.Console.ShowHelp = $true
             }
 
-            # Hide the cursor
-            if (!$PodeContext.Server.Console.Quiet) {
-                [System.Console]::CursorVisible = $false
-            }
-            if ($PodeContext.Server.Console.ShowDivider) {
-                [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-            }
             # start the file monitor for interally restarting
             Start-PodeFileMonitor
 

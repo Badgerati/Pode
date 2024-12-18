@@ -286,9 +286,30 @@ function New-PodeContext {
     # is the server running under Heroku?
     $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-PodeIsEmpty $env:PORT)) -and (!(Test-PodeIsEmpty $env:DYNO)))
 
-    # if we're inside a remote host, stop termination
-    if ($Host.Name -ieq 'ServerRemoteHost') {
-        $ctx.Server.Console.DisableTermination = $true
+    # Check if the current session is running in a console-like environment
+    if (Test-PodeHasConsole) {
+        # If the session is not configured for quiet mode, modify console behavior
+        if (!$ctx.Server.Console.Quiet) {
+            # Hide the cursor to improve the console appearance
+            [System.Console]::CursorVisible = $false
+
+            # If the divider line should be shown, configure UTF-8 output encoding
+            if ($ctx.Server.Console.ShowDivider) {
+                [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+            }
+        }
+        if (Test-PodeIsConsoleHost) {
+            # Treat Ctrl+C as input instead of terminating the process
+            [Console]::TreatControlCAsInput = $true
+        }
+
+    }
+    else {
+        # If not running in a console-like environment, configure the context for non-console behavior
+        $ctx.Server.Console.DisableTermination = $true  # Prevent termination
+        $ctx.Server.Console.DisableConsoleInput = $true # Disable console input
+        $ctx.Server.Console.Quiet = $true               # Silence the console
+        $ctx.Server.Console.ShowDivider = $false        # Disable divider display
     }
 
     # set the IP address details
