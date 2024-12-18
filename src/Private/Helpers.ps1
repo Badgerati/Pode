@@ -3882,6 +3882,8 @@ function Convert-PodeMillisecondsToReadable {
 .DESCRIPTION
     This function determines if the current PowerShell session is running in a host
     that typically indicates a console-like environment where `Ctrl+C` can interrupt.
+    On Windows, it validates the standard input and output handles.
+    On non-Windows systems, it checks against known supported hosts.
 
 .OUTPUTS
     [bool]
@@ -3892,6 +3894,18 @@ function Convert-PodeMillisecondsToReadable {
     # Returns `$true` if the session supports console-like behavior.
 #>
 function Test-PodeHasConsole {
+    $handleTypeMap = @{
+        Input  = -10
+        Output = -11
+        Error  = -12
+    }
+
+    if (Test-PodeIsWindows) {
+        # On Windows, validate standard input and output handles
+        return [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output)
+    }
+
+    # Supported hosts for non-Windows environments
     $supportedHosts = @('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host')
     return $supportedHosts -contains $Host.Name
 }
