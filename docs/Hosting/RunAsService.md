@@ -2,6 +2,8 @@
 
 Rather than having to manually invoke your Pode server script each time, it's best if you can have it start automatically when your computer/server starts. Below you'll see how to set your script to run as either a Windows or a Linux service.
 
+> **Note**: When running Pode as a service, it is recommended to use `Start-PodeServer` with the `-Daemon` parameter. This ensures the server operates in a detached and background-friendly mode suitable for long-running processes. The `-Daemon` parameter optimizes Pode's behavior for service execution by suppressing interactive output and allowing the process to run seamlessly in the background.
+
 ## Windows
 
 To run your Pode server as a Windows service, we recommend using the [`NSSM`](https://nssm.cc) tool. To install on Windows you can use Chocolatey:
