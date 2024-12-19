@@ -274,7 +274,7 @@ function Show-PodeConsoleHelp {
         }
 
         # Display a divider for grouping commands
-        Write-PodeHost '    ----' -ForegroundColor $helpDividerColor -Force:$Force
+        Write-PodeHost ' ----' -ForegroundColor $helpDividerColor -Force:$Force
 
         # Show metrics only if the server is running or suspended
         if (('Running', 'Suspended') -contains $serverState ) {
@@ -365,9 +365,8 @@ function Write-PodeKeyBinding {
     else {
         $Key  # Use the key as-is for non-digit keys
     }
-
     # Write the formatted key binding to the console
-    Write-PodeHost "    Ctrl+$k   : " -ForegroundColor $ForegroundColor -NoNewLine -Force:$Force
+    Write-PodeHost "$("Ctrl-$k".PadRight(8)): " -ForegroundColor $ForegroundColor -NoNewLine -Force:$Force
 }
 
 
@@ -503,18 +502,20 @@ function Show-PodeConsoleEndpointsInfo {
         }
 
         # Handle flags like DualMode
-        $flags = @()
-        if ($_.DualMode) {
-            $flags += 'DualMode'
-        }
 
+        $dualMode = if ($_.DualMode) { $dualMode = 'DualMode' }else { [string]::Empty }
+
+        # Display endpoint details
+        Write-PodeHost "   - $protocolLabel : $($_.Url) `t$dualmode" -ForegroundColor $endpointsColor -Force:$Force -NoNewLine
         if ($disabled -and ('HTTP', 'HTTPS' -contains $protocol)) {
             $flags += 'Disabled'
         }
-        $flagString = if ($flags.Length -gt 0) { "[$($flags -join ',')]" } else { [string]::Empty }
-
-        # Display endpoint details
-        Write-PodeHost "   - $protocolLabel : $($_.Url) `t$flagString" -ForegroundColor $endpointsColor -Force:$Force
+        if ($disabled -and ('HTTP', 'HTTPS' -contains $protocol)) {
+            Write-PodeHost 'Disabled' -ForegroundColor Yellow -Force:$Force
+        }
+        else {
+            Write-PodeHost -Force:$Force
+        }
     }
 
     # Footer
@@ -564,25 +565,25 @@ function Show-PodeConsoleMetric {
     Write-PodeHostDivider -Force $true
 
     # Display the total uptime
-    Write-PodeHost $Podelocale.totalUptimeMessage -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost "$($Podelocale.totalUptimeMessage) " -ForegroundColor $labelColor -NoNewLine
     Write-PodeHost (Get-PodeServerUptime  -Format Verbose -Total -ExcludeMilliseconds) -ForegroundColor $valueColor
 
     # If the server restarted, display uptime since last restart
     if ((Get-PodeServerRestartCount) -gt 0) {
-        Write-PodeHost $Podelocale.uptimeSinceLastRestartMessage -ForegroundColor $labelColor -NoNewLine
+        Write-PodeHost "$($Podelocale.uptimeSinceLastRestartMessage) "-ForegroundColor $labelColor -NoNewLine
         Write-PodeHost (Get-PodeServerUptime -Format Verbose -ExcludeMilliseconds) -ForegroundColor $valueColor
     }
 
     # Display the total number of server restarts
-    Write-PodeHost $Podelocale.totalRestartMessage -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost "$($Podelocale.totalRestartMessage) " -ForegroundColor $labelColor -NoNewLine
     Write-PodeHost (Get-PodeServerRestartCount) -ForegroundColor $valueColor
 
     Write-PodeHost 'Requests' -ForegroundColor $labelColor
-    Write-PodeHost '  Total       :' -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost '  Total       : ' -ForegroundColor $labelColor -NoNewLine
     Write-PodeHost (Get-PodeServerActiveRequestMetric -CountType Total) -ForegroundColor $valueColor
-    Write-PodeHost '  Queued      :' -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost '  Queued      : ' -ForegroundColor $labelColor -NoNewLine
     Write-PodeHost (Get-PodeServerActiveRequestMetric -CountType Queued) -ForegroundColor $valueColor
-    Write-PodeHost '  Processing  :' -ForegroundColor $labelColor -NoNewLine
+    Write-PodeHost '  Processing  : ' -ForegroundColor $labelColor -NoNewLine
     Write-PodeHost (Get-PodeServerActiveRequestMetric -CountType Processing) -ForegroundColor $valueColor
 
 }
@@ -870,14 +871,23 @@ function Invoke-PodeConsoleAction {
     # Handle enable/disable server actions
     if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq 'Running')) {
         if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Disable)) {
+            # Write a horizontal divider line to the console.
+            Write-PodeHostDivider -Force $true
+            # Write the header line with dynamic status color
+            $timestamp = if ($PodeContext.Server.Console.ShowTimeStamp ) { "[$([datetime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))]" } else { '' }
+            Write-PodeHost "`r$timestamp Pode $(Get-PodeVersion) (PID: $($PID)) - HTTP " -ForegroundColor $PodeContext.Server.Console.Colors.Header -Force:$Force -NoNewLine
+
             if (Test-PodeServerIsEnabled) {
                 Close-PodeCancellationTokenRequest -Type Disable
                 Disable-PodeServerInternal
+                Write-PodeHost 'Disabled' -ForegroundColor Yellow -Force:$Force
             }
             else {
                 Reset-PodeCancellationToken -Type Disable
                 Enable-PodeServerInternal
+                Write-PodeHost 'Enabled' -ForegroundColor Green  -Force:$Force
             }
+
             Show-PodeConsoleInfo -ShowTopSeparator
         }
         elseif (Test-PodeCancellationTokenRequest -Type Disable) {
