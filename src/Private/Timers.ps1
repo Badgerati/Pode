@@ -19,14 +19,22 @@ function Start-PodeTimerRunspace {
     }
 
     $script = {
-        try {
+        # Waits for the Pode server to fully start before proceeding with further operations.
+        Wait-PodeCancellationTokenRequest -Type Start
 
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+        try {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                # Check for suspension token and wait for the debugger to reset if active
+                Test-PodeSuspensionToken
                 try {
                     $_now = [DateTime]::Now
 
                     # only run timers that haven't completed, and have a next trigger in the past
                     foreach ($timer in $PodeContext.Timers.Items.Values) {
+
+                        # Check for suspension token and wait for the debugger to reset if active
+                        Test-PodeSuspensionToken
+
                         if ($timer.Completed -or (!$timer.OnStart -and ($timer.NextTriggerTime -gt $_now))) {
                             continue
                         }

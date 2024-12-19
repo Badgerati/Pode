@@ -551,106 +551,43 @@ function Get-PodeSubnetRange {
     }
 }
 
-
-function Get-PodeConsoleKey {
-    if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
-        return $null
-    }
-
-    return [Console]::ReadKey($true)
-}
-
-function Test-PodeTerminationPressed {
-    param(
-        [Parameter()]
-        $Key = $null
-    )
-
-    if ($PodeContext.Server.DisableTermination) {
-        return $false
-    }
-
-    return (Test-PodeKeyPressed -Key $Key -Character 'c')
-}
-
-function Test-PodeRestartPressed {
-    param(
-        [Parameter()]
-        $Key = $null
-    )
-
-    return (Test-PodeKeyPressed -Key $Key -Character 'r')
-}
-
-function Test-PodeOpenBrowserPressed {
-    param(
-        [Parameter()]
-        $Key = $null
-    )
-
-    return (Test-PodeKeyPressed -Key $Key -Character 'b')
-}
-
-function Test-PodeKeyPressed {
-    param(
-        [Parameter()]
-        $Key = $null,
-
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Character
-    )
-
-    if ($null -eq $Key) {
-        $Key = Get-PodeConsoleKey
-    }
-
-    return (($null -ne $Key) -and ($Key.Key -ieq $Character) -and
-        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-PodeIsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
-}
-
 function Close-PodeServerInternal {
-    param(
-        [switch]
-        $ShowDoneMessage
-    )
-
-    # ensure the token is cancelled
-    if ($null -ne $PodeContext.Tokens.Cancellation) {
-        Write-Verbose 'Cancelling main cancellation token'
-        $PodeContext.Tokens.Cancellation.Cancel()
-    }
-
-    # stop all current runspaces
-    Write-Verbose 'Closing runspaces'
-    Close-PodeRunspace -ClosePool
-
-    # stop the file monitor if it's running
-    Write-Verbose 'Stopping file monitor'
-    Stop-PodeFileMonitor
-
     try {
-        # remove all the cancellation tokens
-        Write-Verbose 'Disposing cancellation tokens'
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
+        # ensure the token is cancelled
+        Write-Verbose 'Cancelling main cancellation token'
+        Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
 
-        # dispose mutex/semaphores
-        Write-Verbose 'Diposing mutex and semaphores'
-        Clear-PodeMutexes
-        Clear-PodeSemaphores
+        # stop all current runspaces
+        Write-Verbose 'Closing runspaces'
+        Close-PodeRunspace -ClosePool
+
+        # stop the file monitor if it's running
+        Write-Verbose 'Stopping file monitor'
+        Stop-PodeFileMonitor
+
+        try {
+            # remove all the cancellation tokens
+            Write-Verbose 'Disposing cancellation tokens'
+            Close-PodeCancellationToken #-Type Cancellation, Terminate, Restart, Suspend, Resume, Start
+
+            # dispose mutex/semaphores
+            Write-Verbose 'Diposing mutex and semaphores'
+            Clear-PodeMutexes
+            Clear-PodeSemaphores
+        }
+        catch {
+            $_ | Out-Default
+        }
+
+        # remove all of the pode temp drives
+        Write-Verbose 'Removing internal PSDrives'
+        Remove-PodePSDrive
     }
-    catch {
-        $_ | Out-Default
+    finally {
+        # Remove any tokens
+        $PodeContext.Tokens = $null
     }
 
-    # remove all of the pode temp drives
-    Write-Verbose 'Removing internal PSDrives'
-    Remove-PodePSDrive
-
-    if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
-        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
-    }
 }
 
 function New-PodePSDrive {
@@ -2464,7 +2401,50 @@ function Find-PodeFileForContentType {
     # no file was found
     return $null
 }
+<#
+.SYNOPSIS
+	Resolves and processes a relative or absolute file system path based on the specified parameters.
 
+.DESCRIPTION
+	This function processes a given path and applies various transformations and checks based on the provided parameters. It supports resolving relative paths, joining them with a root path, normalizing relative paths, and verifying path existence.
+
+.PARAMETER Path
+	The file system path to be processed. This can be relative or absolute.
+
+.PARAMETER RootPath
+	(Optional) The root path to join with if the provided path is relative and the -JoinRoot switch is enabled.
+
+.PARAMETER JoinRoot
+	Indicates that the relative path should be joined to the specified root path. If no RootPath is provided, the Pode context server root will be used.
+
+.PARAMETER Resolve
+	Resolves the path to its absolute, full path.
+
+.PARAMETER TestPath
+	Verifies if the resolved path exists. Throws an exception if the path does not exist.
+
+.PARAMETER NormaliseRelativePath
+	(Optional) Removes any leading './' or '../' segments from the relative path when used with -JoinRoot. This ensures that the path is normalized before being joined with the root path.
+
+.OUTPUTS
+	System.String
+	Returns the resolved and processed path as a string.
+
+.EXAMPLE
+	# Example 1: Resolve a relative path and join it with a root path
+	Get-PodeRelativePath -Path './example' -RootPath 'C:\Root' -JoinRoot
+
+.EXAMPLE
+	# Example 2: Resolve and normalize a relative path
+	Get-PodeRelativePath -Path '../example' -RootPath 'C:\Root' -JoinRoot -NormaliseRelativePath
+
+.EXAMPLE
+	# Example 3: Test if a path exists
+	Get-PodeRelativePath -Path 'C:\Root\example.txt' -TestPath
+
+.NOTES
+	This is an internal function and may change in future releases of Pode
+#>
 function Get-PodeRelativePath {
     param(
         [Parameter(Mandatory = $true)]
@@ -2482,7 +2462,11 @@ function Get-PodeRelativePath {
         $Resolve,
 
         [switch]
-        $TestPath
+        $TestPath,
+
+        [switch]
+        $NormaliseRelativePath
+
     )
 
     # if the path is relative, join to root if flagged
@@ -2491,7 +2475,12 @@ function Get-PodeRelativePath {
             $RootPath = $PodeContext.Server.Root
         }
 
-        $Path = [System.IO.Path]::Combine($RootPath, $Path)
+        if ($NormaliseRelativePath) {
+            $Path = [System.IO.Path]::Combine($RootPath, ($Path -replace '^\.{1,2}([\\\/])?', ''))
+        }
+        else {
+            $Path = [System.IO.Path]::Combine($RootPath, $Path)
+        }
     }
 
     # if flagged, resolve the path
@@ -2598,6 +2587,10 @@ function Get-PodeEndpointUrl {
         if ($null -eq $Endpoint) {
             $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') })[0]
         }
+    }
+
+    if ($null -eq $Endpoint) {
+        return $null
     }
 
     $url = $Endpoint.Url
@@ -3766,4 +3759,174 @@ function Copy-PodeObjectDeepClone {
         # Deserialize the XML back into a new PSObject, creating a deep clone of the original
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
+}
+
+<#
+.SYNOPSIS
+    Converts a duration in milliseconds into a human-readable time format.
+
+.DESCRIPTION
+    The `Convert-PodeMillisecondsToReadable` function converts a specified duration in milliseconds into
+    a readable time format. The output can be formatted in three styles:
+    - `Concise`: A short and simple format (e.g., "1d 2h 3m").
+    - `Compact`: A compact representation (e.g., "01:02:03:04").
+    - `Verbose`: A detailed, descriptive format (e.g., "1 day, 2 hours, 3 minutes").
+    The function also provides an option to exclude milliseconds from the output for all formats.
+
+.PARAMETER Milliseconds
+    Specifies the duration in milliseconds to be converted into a human-readable format.
+
+.PARAMETER Format
+    Specifies the desired format for the output. Valid options are:
+    - `Concise` (default): Short and simple (e.g., "1d 2h 3m").
+    - `Compact`: Condensed form (e.g., "01:02:03:04").
+    - `Verbose`: Detailed description (e.g., "1 day, 2 hours, 3 minutes, 4 seconds").
+
+.PARAMETER ExcludeMilliseconds
+    If specified, milliseconds will be excluded from the output for all formats.
+
+.EXAMPLE
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789
+
+    Output:
+    1d 10h 17m 36s
+
+.EXAMPLE
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -Format Verbose
+
+    Output:
+    1 day, 10 hours, 17 minutes, 36 seconds, 789 milliseconds
+
+.EXAMPLE
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -Format Compact -ExcludeMilliseconds
+
+    Output:
+    01:10:17:36
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Convert-PodeMillisecondsToReadable {
+    param(
+        # The duration in milliseconds to convert
+        [Parameter(Mandatory = $true)]
+        [long]
+        $Milliseconds,
+
+        # Specifies the desired output format
+        [Parameter()]
+        [ValidateSet('Concise', 'Compact', 'Verbose')]
+        [string]
+        $Format = 'Concise',
+
+        # Omits milliseconds from the output
+        [switch]
+        $ExcludeMilliseconds
+    )
+
+    # Convert the milliseconds input into a TimeSpan object
+    $timeSpan = [timespan]::FromMilliseconds($Milliseconds)
+
+    # Generate the formatted output based on the selected format
+    switch ($Format.ToLower()) {
+        'concise' {
+            # Concise format: "1d 2h 3m 4s"
+            $output = @()
+            if ($timeSpan.Days -gt 0) { $output += "$($timeSpan.Days)d" }
+            if ($timeSpan.Hours -gt 0) { $output += "$($timeSpan.Hours)h" }
+            if ($timeSpan.Minutes -gt 0) { $output += "$($timeSpan.Minutes)m" }
+            if ($timeSpan.Seconds -gt 0) { $output += "$($timeSpan.Seconds)s" }
+
+            # Include milliseconds if they exist and are not excluded
+            if ((($timeSpan.Milliseconds -gt 0) -and !$ExcludeMilliseconds) -or ($output.Count -eq 0)) {
+                $output += "$($timeSpan.Milliseconds)ms"
+            }
+
+            return $output -join ' '
+        }
+
+        'compact' {
+            # Compact format: "dd:hh:mm:ss"
+            $output = '{0:D2}:{1:D2}:{2:D2}:{3:D2}' -f $timeSpan.Days, $timeSpan.Hours, $timeSpan.Minutes, $timeSpan.Seconds
+
+            # Append milliseconds if not excluded
+            if (!$ExcludeMilliseconds) {
+                $output += '.{0:D3}' -f $timeSpan.Milliseconds
+            }
+
+            return $output
+        }
+
+        'verbose' {
+            # Verbose format: "1 day, 2 hours, 3 minutes, 4 seconds"
+            $output = @()
+            if ($timeSpan.Days -gt 0) { $output += "$($timeSpan.Days) day$(if ($timeSpan.Days -ne 1) { 's' })" }
+            if ($timeSpan.Hours -gt 0) { $output += "$($timeSpan.Hours) hour$(if ($timeSpan.Hours -ne 1) { 's' })" }
+            if ($timeSpan.Minutes -gt 0) { $output += "$($timeSpan.Minutes) minute$(if ($timeSpan.Minutes -ne 1) { 's' })" }
+            if ($timeSpan.Seconds -gt 0) { $output += "$($timeSpan.Seconds) second$(if ($timeSpan.Seconds -ne 1) { 's' })" }
+
+            # Include milliseconds if they exist and are not excluded
+            if ((($timeSpan.Milliseconds -gt 0) -and !$ExcludeMilliseconds) -or ($output.Count -eq 0)) {
+                $output += "$($timeSpan.Milliseconds) millisecond$(if ($timeSpan.Milliseconds -ne 1) { 's' })"
+            }
+
+            return $output -join ', '
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    Checks if the current PowerShell session supports console-like features.
+
+.DESCRIPTION
+    This function determines if the current PowerShell session is running in a host
+    that typically indicates a console-like environment where `Ctrl+C` can interrupt.
+    On Windows, it validates the standard input and output handles.
+    On non-Windows systems, it checks against known supported hosts.
+
+.OUTPUTS
+    [bool]
+    Returns `$true` if running in a console-like environment, `$false` otherwise.
+
+.EXAMPLE
+    Test-PodeHasConsole
+    # Returns `$true` if the session supports console-like behavior.
+#>
+function Test-PodeHasConsole {
+    if (@('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host') -contains $Host.Name) {
+        if (Test-PodeIsWindows) {
+            $handleTypeMap = @{
+                Input  = -10
+                Output = -11
+                Error  = -12
+            }
+            # On Windows, validate standard input and output handles
+            return [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output)
+        }
+        # On Linux or Mac
+        return ([Pode.NativeMethods]::IsTerminal)
+    }
+    return $false
+}
+
+
+<#
+.SYNOPSIS
+    Determines if the current PowerShell session is running in the ConsoleHost.
+
+.DESCRIPTION
+    This function checks if the session's host name matches 'ConsoleHost',
+    which typically represents a native terminal environment in PowerShell.
+
+.OUTPUTS
+    [bool]
+    Returns `$true` if the current host is 'ConsoleHost', otherwise `$false`.
+
+.EXAMPLE
+    Test-PodeIsConsoleHost
+    # Returns `$true` if running in ConsoleHost, `$false` otherwise.
+#>
+function Test-PodeIsConsoleHost {
+    return $Host.Name -eq 'ConsoleHost'
 }
