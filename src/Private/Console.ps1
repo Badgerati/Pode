@@ -947,6 +947,37 @@ function Invoke-PodeConsoleAction {
     This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeDefaultConsole {
+    # Refer to https://learn.microsoft.com/en-us/dotnet/api/system.consolekey?view=net-9.0 for ConsoleKey Enum
+    if ($Host.Name -eq 'Visual Studio Code Host' ) {
+        $KeyBindings = @{        # Define custom key bindings for controls.
+            Browser   = [System.ConsoleKey]::B            # Open the default browser.
+            Help      = [System.ConsoleKey]::F2           # Show/hide help instructions.
+            OpenAPI   = [System.ConsoleKey]::F3            # Show/hide OpenAPI information.
+            Endpoints = [System.ConsoleKey]::F4            # Show/hide endpoints.
+            Clear     = [System.ConsoleKey]::L            # Clear the console output.
+            Quiet     = [System.ConsoleKey]::F12           # Toggle quiet mode.
+            Terminate = [System.ConsoleKey]::C            # Terminate the server.
+            Restart   = [System.ConsoleKey]::F6            # Restart the server.
+            Disable   = [System.ConsoleKey]::F7            # Disable the server.
+            Suspend   = [System.ConsoleKey]::F9          # Suspend the server.
+            Metrics   = [System.ConsoleKey]::F10            # Show Metrics.
+        }
+    }
+    else {
+        $KeyBindings = @{        # Define custom key bindings for controls.
+            Browser   = [System.ConsoleKey]::B            # Open the default browser.
+            Help      = [System.ConsoleKey]::H            # Show/hide help instructions.
+            OpenAPI   = [System.ConsoleKey]::O            # Show/hide OpenAPI information.
+            Endpoints = [System.ConsoleKey]::E            # Show/hide endpoints.
+            Clear     = [System.ConsoleKey]::L            # Clear the console output.
+            Quiet     = [System.ConsoleKey]::Q            # Toggle quiet mode.
+            Terminate = [System.ConsoleKey]::C            # Terminate the server.
+            Restart   = [System.ConsoleKey]::R            # Restart the server.
+            Disable   = [System.ConsoleKey]::D            # Disable the server.
+            Suspend   = [System.ConsoleKey]::P            # Suspend the server.
+            Metrics   = [System.ConsoleKey]::M            # Show Metrics.
+        }
+    }
     return @{
         DisableTermination  = $false    # Prevent Ctrl+C from terminating the server.
         DisableConsoleInput = $false    # Disable all console input controls.
@@ -976,19 +1007,7 @@ function Get-PodeDefaultConsole {
             MetricsLabel     = 'White'      # Labels for values displayed in the Metrics section.
             MetricsValue     = 'Green'      # The actual values displayed in the Metrics section.
         }
-        # Refer to https://learn.microsoft.com/en-us/dotnet/api/system.consolekey?view=net-9.0 for ConsoleKey Enum
-        KeyBindings         = @{        # Define custom key bindings for controls.
-            Browser   = [System.ConsoleKey]::B            # Open the default browser.
-            Help      = [System.ConsoleKey]::H            # Show/hide help instructions.
-            OpenAPI   = [System.ConsoleKey]::O            # Show/hide OpenAPI information.
-            Endpoints = [System.ConsoleKey]::E            # Show/hide endpoints.
-            Clear     = [System.ConsoleKey]::L            # Clear the console output.
-            Quiet     = [System.ConsoleKey]::Q            # Toggle quiet mode.
-            Terminate = [System.ConsoleKey]::C            # Terminate the server.
-            Restart   = [System.ConsoleKey]::R            # Restart the server.
-            Disable   = [System.ConsoleKey]::D            # Disable the server.
-            Suspend   = [System.ConsoleKey]::P            # Suspend the server.
-            Metrics   = [System.ConsoleKey]::M            # Show Metrics.
-        }
+        KeyBindings         = $KeyBindings
     }
+
 }

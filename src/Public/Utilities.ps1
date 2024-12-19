@@ -422,19 +422,46 @@ function Import-PodeSnapin {
 
 <#
 .SYNOPSIS
-Protects a value, by returning a default value is the main one is null/empty.
+    Resolves and protects a value by ensuring it defaults to a specified fallback and optionally parses it as an enum.
 
 .DESCRIPTION
-Protects a value, by returning a default value is the main one is null/empty.
+    The `Protect-PodeValue` function ensures that a given value is resolved. If the value is empty, a default value is used instead.
+    Additionally, the function can parse the resolved value as an enum type with optional case sensitivity.
 
 .PARAMETER Value
-The main value to use.
+    The input value to be resolved.
 
 .PARAMETER Default
-A default value to return should the main value be null/empty.
+    The default value to fall back to if the input value is empty.
+
+.PARAMETER EnumType
+    The type of enum to parse the resolved value into. If specified, the resolved value must be a valid enum member.
+
+.PARAMETER CaseSensitive
+    Specifies whether the enum parsing should be case-sensitive. By default, parsing is case-insensitive.
+
+.OUTPUTS
+    [object]
+    Returns the resolved value, either as the original value, the default value, or a parsed enum.
 
 .EXAMPLE
-$Name = Protect-PodeValue -Value $Name -Default 'Rick'
+    # Example 1: Resolve a value with a default fallback
+    $resolved = Protect-PodeValue -Value $null -Default "Fallback"
+    Write-Output $resolved  # Output: Fallback
+
+.EXAMPLE
+    # Example 2: Resolve and parse a value as a case-insensitive enum
+    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([type][System.ConsoleColor])
+    Write-Output $resolvedEnum  # Output: Red
+
+.EXAMPLE
+    # Example 3: Resolve and parse a value as a case-sensitive enum
+    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([type][System.ConsoleColor]) -CaseSensitive
+    # Throws an error if "red" does not match an enum member exactly (case-sensitive).
+
+.NOTES
+    This function resolves values using `Resolve-PodeValue` and validates enums using `[enum]::IsDefined`.
+
 #>
 function Protect-PodeValue {
     [CmdletBinding()]
@@ -444,10 +471,24 @@ function Protect-PodeValue {
         $Value,
 
         [Parameter()]
-        $Default
+        $Default,
+
+        [Parameter()]
+        [Type]
+        $EnumType,
+
+        [switch]
+        $CaseSensitive
     )
 
-    return (Resolve-PodeValue -Check (Test-PodeIsEmpty $Value) -TrueValue $Default -FalseValue $Value)
+    $resolvedValue = Resolve-PodeValue -Check (Test-PodeIsEmpty $Value) -TrueValue $Default -FalseValue $Value
+
+    if ($null -ne $EnumType -and [enum]::IsDefined($EnumType, $resolvedValue)) {
+        # Use $CaseSensitive to determine if case sensitivity should apply
+        return [enum]::Parse($EnumType, $resolvedValue, !$CaseSensitive.IsPresent)
+    }
+
+    return $resolvedValue
 }
 
 <#

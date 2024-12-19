@@ -52,7 +52,7 @@ try {
 catch { throw }
 
 # Start Pode server with specified script block
-Start-PodeServer -Threads 4 -EnablePool Tasks -ScriptBlock {
+Start-PodeServer -Threads 4 -EnablePool Tasks -IgnoreServerConfig -ScriptBlock {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
