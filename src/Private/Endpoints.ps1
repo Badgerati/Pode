@@ -386,3 +386,4 @@ function Get-PodeEndpointByName {
 
     return $null
 }
+ 

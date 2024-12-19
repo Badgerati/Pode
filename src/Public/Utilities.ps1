@@ -20,7 +20,7 @@ Close-PodeDisposable -Disposable $stream -Close
 function Close-PodeDisposable {
     [CmdletBinding()]
     param(
-        [Parameter()]
+        [Parameter(ValueFromPipeline = $true)]
         [System.IDisposable]
         $Disposable,
 
@@ -30,26 +30,27 @@ function Close-PodeDisposable {
         [switch]
         $CheckNetwork
     )
-
-    if ($null -eq $Disposable) {
-        return
-    }
-
-    try {
-        if ($Close) {
-            $Disposable.Close()
-        }
-    }
-    catch [exception] {
-        if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
+    process {
+        if ($null -eq $Disposable) {
             return
         }
 
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
-    }
-    finally {
-        $Disposable.Dispose()
+        try {
+            if ($Close) {
+                $Disposable.Close()
+            }
+        }
+        catch [exception] {
+            if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
+                return
+            }
+
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+        finally {
+            $Disposable.Dispose()
+        }
     }
 }
 
@@ -814,7 +815,7 @@ function Out-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet) {
             return
         }
         # Set InputObject to the array of values
@@ -855,6 +856,9 @@ Show the Object Type
 .PARAMETER Label
 Show a label for the object
 
+.PARAMETER Force
+Overrides the -Quiet flag of the server.
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
@@ -883,7 +887,10 @@ function Write-PodeHost {
 
         [Parameter( Mandatory = $false, ParameterSetName = 'object')]
         [string]
-        $Label
+        $Label,
+
+        [switch]
+        $Force
     )
     begin {
         # Initialize an array to hold piped-in values
@@ -896,7 +903,7 @@ function Write-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet -and !($Force.IsPresent)) {
             return
         }
         # Set Object to the array of values
@@ -1486,3 +1493,80 @@ function Invoke-PodeGC {
 
     [System.GC]::Collect()
 }
+
+<#
+.SYNOPSIS
+    A function to pause execution for a specified duration.
+    This function should be used in Pode as replacement for Start-Sleep
+
+.DESCRIPTION
+    The `Start-PodeSleep` function pauses script execution for a given duration specified in seconds, milliseconds, or a TimeSpan.
+
+.PARAMETER Seconds
+    Specifies the duration to pause execution in seconds. Default is 1 second.
+
+.PARAMETER Milliseconds
+    Specifies the duration to pause execution in milliseconds.
+
+.PARAMETER Duration
+    Specifies the duration to pause execution using a TimeSpan object.
+
+.PARAMETER Activity
+    Specifies the activity name displayed in the progress bar. Default is "Sleeping...".
+
+.PARAMETER ParentId
+    Optional parameter to specify the ParentId for the progress bar, enabling hierarchical grouping.
+
+.PARAMETER ShowProgress
+    Switch to enable the progress bar during the sleep duration.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Start-PodeSleep -Seconds 5
+
+    Pauses execution for 5 seconds.
+
+.NOTES
+    This function is useful for scenarios where tracking the remaining wait time visually is helpful.
+#>
+function Start-PodeSleep {
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Seconds')]
+        [int]
+        $Seconds = 1,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Milliseconds')]
+        [int]
+        $Milliseconds,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Duration')]
+        [TimeSpan]
+        $Duration
+    )
+
+    # Determine the total duration
+    $totalDuration = switch ($PSCmdlet.ParameterSetName) {
+        'Seconds' { [TimeSpan]::FromSeconds($Seconds) }
+        'Milliseconds' { [TimeSpan]::FromMilliseconds($Milliseconds) }
+        'Duration' { $Duration }
+    }
+
+    # Calculate end time
+    $startTime = [DateTime]::UtcNow
+    $endTime = $startTime.Add($totalDuration)
+
+    # Precompute sleep interval (total duration divided by 100 - ie 100%)
+    $sleepInterval = [math]::Max($totalDuration.TotalMilliseconds / 100, 10)
+
+    # Main loop
+    while ([DateTime]::UtcNow -lt $endTime) {
+        # Sleep for the interval
+        Start-Sleep -Milliseconds $sleepInterval
+    }
+}
+
+
+
