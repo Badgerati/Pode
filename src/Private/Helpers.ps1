@@ -3894,20 +3894,20 @@ function Convert-PodeMillisecondsToReadable {
     # Returns `$true` if the session supports console-like behavior.
 #>
 function Test-PodeHasConsole {
-    $handleTypeMap = @{
-        Input  = -10
-        Output = -11
-        Error  = -12
+    if (@('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host') -contains $Host.Name) {
+        if (Test-PodeIsWindows) {
+            $handleTypeMap = @{
+                Input  = -10
+                Output = -11
+                Error  = -12
+            }
+            # On Windows, validate standard input and output handles
+            return [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output)
+        }
+        # On Linux or Mac
+        return ([Pode.NativeMethods]::IsTerminal)
     }
-
-    if (Test-PodeIsWindows) {
-        # On Windows, validate standard input and output handles
-        return [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output)
-    }
-    return ([Pode.NativeMethods]::IsTerminal)
-    # Supported hosts for non-Windows environments
-    #$supportedHosts = @('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host')
-    # return $supportedHosts -contains $Host.Name
+    return $false
 }
 
 
