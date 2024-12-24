@@ -50,6 +50,12 @@ function Start-PodeScheduleRunspace {
     $script = {
         try {
 
+            # Waits for the Pode server to fully start before proceeding with further operations.
+            Wait-PodeCancellationTokenRequest -Type Start
+
+            # Waits 2 seconds to allow the UI to be visible
+            Start-Sleep -Seconds 2
+
             # select the schedules that trigger on-start
             $_now = [DateTime]::Now
 
@@ -64,9 +70,13 @@ function Start-PodeScheduleRunspace {
             Complete-PodeInternalSchedule -Now $_now
 
             # first, sleep for a period of time to get to 00 seconds (start of minute)
-            Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
+            Start-PodeSleep -Seconds (60 - [DateTime]::Now.Second)
 
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+
+                # Check for suspension token and wait for the debugger to reset if active
+                Test-PodeSuspensionToken
+
                 try {
                     $_now = [DateTime]::Now
 
@@ -90,7 +100,7 @@ function Start-PodeScheduleRunspace {
                     Complete-PodeInternalSchedule -Now $_now
 
                     # cron expression only goes down to the minute, so sleep for 1min
-                    Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
+                    Start-PodeSleep -Seconds (60 - [DateTime]::Now.Second)
                 }
                 catch {
                     $_ | Write-PodeErrorLog
@@ -325,6 +335,7 @@ function Get-PodeScheduleScriptBlock {
             $_ | Write-PodeErrorLog
         }
         finally {
+            Reset-PodeRunspaceName
             Invoke-PodeGC
         }
     }

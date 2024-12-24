@@ -1,34 +1,92 @@
 <#
 .SYNOPSIS
-Returns the uptime of the server in milliseconds.
+    Retrieves the server uptime in milliseconds or a human-readable format.
 
 .DESCRIPTION
-Returns the uptime of the server in milliseconds. You can optionally return the total uptime regardless of server restarts.
+    The `Get-PodeServerUptime` function calculates the server's uptime since its last start or total uptime since initial load, depending on the `-Total` switch.
+    By default, the uptime is returned in milliseconds. When the `-Format` parameter is used, the uptime can be returned in various human-readable styles:
+    - `Milliseconds` (default): Raw uptime in milliseconds.
+    - `Concise`: A short format like "1d 2h 3m".
+    - `Compact`: A condensed format like "01:10:17:36".
+    - `Verbose`: A detailed format like "1 day, 2 hours, 3 minutes, 5 seconds, 200 milliseconds".
+    The `-ExcludeMilliseconds` switch allows removal of milliseconds from human-readable output.
 
 .PARAMETER Total
-If supplied, the total uptime of the server will be returned, regardless of restarts.
+    Retrieves the total server uptime since the initial load, regardless of any restarts.
+
+.PARAMETER Format
+    Specifies the desired output format for the uptime.
+    Allowed values:
+    - `Milliseconds` (default): Uptime in raw milliseconds.
+    - `Concise`: Human-readable in a short form (e.g., "1d 2h 3m").
+    - `Compact`: Condensed form (e.g., "01:10:17:36").
+    - `Verbose`: Detailed format (e.g., "1 day, 2 hours, 3 minutes, 5 seconds").
+
+.PARAMETER ExcludeMilliseconds
+    Omits milliseconds from the human-readable output when `-Format` is not `Milliseconds`.
 
 .EXAMPLE
-$currentUptime = Get-PodeServerUptime
+    $currentUptime = Get-PodeServerUptime
+    # Output: 123456789 (milliseconds)
 
 .EXAMPLE
-$totalUptime = Get-PodeServerUptime -Total
+    $totalUptime = Get-PodeServerUptime -Total
+    # Output: 987654321 (milliseconds)
+
+.EXAMPLE
+    $readableUptime = Get-PodeServerUptime -Format Concise
+    # Output: "1d 10h 17m"
+
+.EXAMPLE
+    $verboseUptime = Get-PodeServerUptime -Format Verbose
+    # Output: "1 day, 10 hours, 17 minutes, 36 seconds, 789 milliseconds"
+
+.EXAMPLE
+    $compactUptime = Get-PodeServerUptime -Format Compact
+    # Output: "01:10:17:36"
+
+.EXAMPLE
+    $compactUptimeNoMs = Get-PodeServerUptime -Format Compact -ExcludeMilliseconds
+    # Output: "01:10:17:36"
+
+.NOTES
+    This function is part of Pode's utility metrics to monitor server uptime.
 #>
 function Get-PodeServerUptime {
     [CmdletBinding()]
-    [OutputType([long])]
+    [OutputType([long], [string])]
     param(
         [switch]
-        $Total
+        $Total,
+
+        [Parameter()]
+        [ValidateSet('Milliseconds', 'Concise', 'Compact', 'Verbose')]
+        [string]
+        $Format = 'Milliseconds',
+ 
+        [switch]
+        $ExcludeMilliseconds
     )
 
+    # Determine the start time based on the -Total switch
+    # Default: Uses the last start time; -Total: Uses the initial load time
     $time = $PodeContext.Metrics.Server.StartTime
     if ($Total) {
         $time = $PodeContext.Metrics.Server.InitialLoadTime
     }
 
-    return [long]([datetime]::UtcNow - $time).TotalMilliseconds
+    # Calculate uptime in milliseconds
+    $uptimeMilliseconds = [long]([datetime]::UtcNow - $time).TotalMilliseconds
+
+    # Return uptime in milliseconds if no readable format is requested
+    if ($Format -ieq 'Milliseconds') {
+        return $uptimeMilliseconds
+    }
+
+    # Convert uptime to a human-readable format
+    return Convert-PodeMillisecondsToReadable -Milliseconds $uptimeMilliseconds -Format $Format -ExcludeMilliseconds:$ExcludeMilliseconds
 }
+
 
 <#
 .SYNOPSIS

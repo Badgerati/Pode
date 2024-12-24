@@ -211,6 +211,7 @@ function Get-PodeTaskScriptBlock {
             $_ | Write-PodeErrorLog
         }
         finally {
+            Reset-PodeRunspaceName
             Invoke-PodeGC
         }
     }

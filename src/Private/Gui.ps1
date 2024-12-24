@@ -12,6 +12,9 @@ function Start-PodeGuiRunspace {
     }
 
     $script = {
+        # Waits for the Pode server to fully start before proceeding with further operations.
+        Wait-PodeCancellationTokenRequest -Type Start
+
         try {
             # if there are multiple endpoints, flag warning we're only using the first - unless explicitly set
             if ($null -eq $PodeContext.Server.Gui.Endpoint) {
@@ -27,7 +30,7 @@ function Start-PodeGuiRunspace {
             # poll the server for a response
             $count = 0
 
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
                 try {
                     $null = Invoke-WebRequest -Method Get -Uri $uri -UseBasicParsing -ErrorAction Stop
                     if (!$?) {
@@ -132,7 +135,7 @@ function Start-PodeGuiRunspace {
         }
         finally {
             # invoke the cancellation token to close the server
-            $PodeContext.Tokens.Cancellation.Cancel()
+            Close-PodeCancellationTokenRequest -Type Cancellation
         }
     }
 

@@ -8,9 +8,10 @@ function Start-PodeInternalServer {
     )
 
     try {
-        # Check if the running version of Powershell is EOL
-        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID))" -ForegroundColor Cyan
         $null = Test-PodeVersionPwshEOL -ReportUntested
+
+        #Show starting console
+        Show-PodeConsoleInfo
 
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrive
@@ -83,7 +84,7 @@ function Start-PodeInternalServer {
         }
 
         # start the appropriate server
-        $endpoints = @()
+        $PodeContext.Server.EndpointsInfo = @()
 
         # - service
         if ($PodeContext.Server.IsService) {
@@ -109,21 +110,21 @@ function Start-PodeInternalServer {
             foreach ($_type in $PodeContext.Server.Types) {
                 switch ($_type.ToUpperInvariant()) {
                     'SMTP' {
-                        $endpoints += (Start-PodeSmtpServer)
+                        $PodeContext.Server.EndpointsInfo += (Start-PodeSmtpServer)
                     }
 
                     'TCP' {
-                        $endpoints += (Start-PodeTcpServer)
+                        $PodeContext.Server.EndpointsInfo += (Start-PodeTcpServer)
                     }
 
                     'HTTP' {
-                        $endpoints += (Start-PodeWebServer -Browse:$Browse)
+                        $PodeContext.Server.EndpointsInfo += (Start-PodeWebServer -Browse:$Browse)
                     }
                 }
             }
 
             # now go back through, and wait for each server type's runspace pool to be ready
-            foreach ($pool in ($endpoints.Pool | Sort-Object -Unique)) {
+            foreach ($pool in ($PodeContext.Server.EndpointsInfo.Pool | Sort-Object -Unique)) {
                 $start = [datetime]::Now
                 Write-Verbose "Waiting for the $($pool) RunspacePool to be Ready"
 
@@ -141,89 +142,41 @@ function Start-PodeInternalServer {
             }
         }
 
+        # Trigger the start
+        Close-PodeCancellationTokenRequest -Type Start
+
         # set the start time of the server (start and after restart)
         $PodeContext.Metrics.Server.StartTime = [datetime]::UtcNow
 
         # run running event hooks
         Invoke-PodeEvent -Type Running
 
-        # state what endpoints are being listened on
-        if ($endpoints.Length -gt 0) {
+        Show-PodeConsoleInfo
 
-            # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
-            Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $endpoints.Length, $PodeContext.Threads.General) -ForegroundColor Yellow
-            $endpoints | ForEach-Object {
-                $flags = @()
-                if ($_.DualMode) {
-                    $flags += 'DualMode'
-                }
-
-                if ($flags.Length -eq 0) {
-                    $flags = [string]::Empty
-                }
-                else {
-                    $flags = "[$($flags -join ',')]"
-                }
-
-                Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
-            }
-            # state the OpenAPI endpoints for each definition
-            foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
-                $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
-                if ( $bookmarks) {
-                    Write-PodeHost
-                    if (!$OpenAPIHeader) {
-                        # OpenAPI Info
-                        Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor Yellow
-                        $OpenAPIHeader = $true
-                    }
-                    Write-PodeHost " '$key':" -ForegroundColor Yellow
-
-                    if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
-                        # Specification
-                        Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
-                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor Yellow
-                        }
-                        # Documentation
-                        Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
-                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor Yellow
-                        }
-                    }
-                    else {
-                        # Specification
-                        Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
-                        $endpoints | ForEach-Object {
-                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
-                            Write-PodeHost "     . $url" -ForegroundColor Yellow
-                        }
-                        Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
-                        $endpoints | ForEach-Object {
-                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
-                            Write-PodeHost "     . $url" -ForegroundColor Yellow
-                        }
-                    }
-                }
-            }
-        }
     }
     catch {
         throw
     }
 }
 
+
 function Restart-PodeInternalServer {
+
+    if (!$PodeContext.Tokens.Restart.IsCancellationRequested) {
+        return
+    }
+
     try {
+        Reset-PodeCancellationToken -Type Start
         # inform restart
         # Restarting server...
-        Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Cyan
+        Show-PodeConsoleInfo
 
         # run restart event hooks
         Invoke-PodeEvent -Type Restart
 
         # cancel the session token
-        $PodeContext.Tokens.Cancellation.Cancel()
+        Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
 
         # close all current runspaces
         Close-PodeRunspace -ClosePool
@@ -329,20 +282,25 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Types = @()
 
         # recreate the session tokens
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        $PodeContext.Tokens.Cancellation = [System.Threading.CancellationTokenSource]::new()
-
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
+        Reset-PodeCancellationToken -Type Cancellation, Restart, Suspend, Resume, Terminate
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
         # done message
-        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
+        #     Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
+
+        # reset tokens if needed
+        if (Test-PodeCancellationTokenRequest -Type Cancellation) {
+            Reset-PodeCancellationToken -Type Cancellation
+        }
+        if (Test-PodeCancellationTokenRequest -Type Suspend) {
+            Reset-PodeCancellationToken -Type Suspend
+        }
+
         Start-PodeInternalServer
     }
     catch {
@@ -351,6 +309,24 @@ function Restart-PodeInternalServer {
     }
 }
 
+<#
+.SYNOPSIS
+    Determines whether the Pode server should remain open based on its configuration and active components.
+
+.DESCRIPTION
+    The `Test-PodeServerKeepOpen` function evaluates the current server state and configuration
+    to decide whether to keep the Pode server running. It considers the existence of timers,
+    schedules, file watchers, service mode, and server types to make this determination.
+
+    - If any timers, schedules, or file watchers are active, the server remains open.
+    - If the server is not running as a service and is either serverless or has no types defined,
+      the server will close.
+    - In other cases, the server will stay open.
+
+ .NOTES
+    This function is primarily used internally by Pode to manage the server lifecycle.
+    It helps ensure the server remains active only when necessary based on its current state.
+#>
 function Test-PodeServerKeepOpen {
     # if we have any timers/schedules/fim - keep open
     if ((Test-PodeTimersExist) -or (Test-PodeSchedulesExist) -or (Test-PodeFileWatchersExist)) {
@@ -364,4 +340,242 @@ function Test-PodeServerKeepOpen {
 
     # keep server open
     return $true
+}
+
+<#
+.SYNOPSIS
+    Suspends the Pode server and its associated runspaces.
+
+.DESCRIPTION
+    This function suspends the Pode server by pausing all associated runspaces and ensuring they enter a debug state.
+    It triggers the 'Suspend' event, updates the server's suspension status, and provides progress and feedback during the suspension process.
+    This is primarily used internally by the Pode framework to handle server suspension.
+
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to be suspended before timing out.
+    The default timeout is 30 seconds.
+
+.EXAMPLE
+    Suspend-PodeServerInternal -Timeout 60
+    # Suspends the Pode server with a timeout of 60 seconds.
+
+.NOTES
+    This is an internal function used within the Pode framework and is subject to change in future releases.
+#>
+function Suspend-PodeServerInternal {
+    param(
+        [int]
+        $Timeout = 30
+    )
+
+    # Exit early if no suspension request is pending or if the server is already suspended.
+    if (!(Test-PodeCancellationTokenRequest -Type Suspend) -or (Test-PodeServerState -State Suspended)) {
+        return
+    }
+
+    try {
+        # Display suspension initiation message in the console.
+        Show-PodeConsoleInfo
+
+        # Trigger the 'Suspend' event for the server.
+        Invoke-PodeEvent -Type Suspend
+
+        # Retrieve all Pode-related runspaces for tasks and schedules.
+        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Tasks_*' -or $_.Name -like 'Pode_Schedules_*' }
+
+        # Iterate over each runspace to initiate suspension.
+        $runspaces | Foreach-Object {
+            $originalName = $_.Name
+            $startTime = [DateTime]::UtcNow
+            $elapsedTime = 0
+
+            # Activate debug mode on the runspace to suspend it.
+            Enable-RunspaceDebug -BreakAll -Runspace $_
+
+            while (! $_.Debugger.InBreakpoint) {
+                # Calculate elapsed suspension time.
+                $elapsedTime = ([DateTime]::UtcNow - $startTime).TotalSeconds
+
+                # Exit loop if the runspace is already completed.
+                if ($_.Name.StartsWith('_')) {
+                    Write-Verbose "$originalName runspace has been completed."
+                    break
+                }
+
+                # Handle timeout scenario and raise an error if exceeded.
+                if ($elapsedTime -ge $Timeout) {
+                    $errorMsg = "$($_.Name) failed to suspend (Timeout reached after $Timeout seconds)."
+                    Write-PodeHost $errorMsg -ForegroundColor Red
+                    throw $errorMsg
+                }
+
+                # Pause briefly before rechecking the runspace state.
+                Start-Sleep -Milliseconds 200
+            }
+        }
+    }
+    catch {
+        # Log any errors encountered during suspension.
+        $_ | Write-PodeErrorLog
+
+        # Force a resume action to ensure server continuity.
+        Set-PodeResumeToken
+    }
+    finally {
+        # Reset cancellation token if a cancellation request was made.
+        if ($PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            Reset-PodeCancellationToken -Type Cancellation
+        }
+
+        # Brief pause before refreshing console output.
+        Start-Sleep -Seconds 1
+
+        # Refresh the console and display updated information.
+        Show-PodeConsoleInfo
+    }
+}
+
+<#
+.SYNOPSIS
+    Resumes the Pode server from a suspended state.
+
+.DESCRIPTION
+    This function resumes the Pode server, ensuring all associated runspaces are restored to their normal execution state.
+    It triggers the 'Resume' event, updates the server's status, and clears the console for a refreshed view.
+    The function also provides timeout handling and progress feedback during the resumption process.
+
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to exit its suspended state before timing out.
+    The default timeout is 30 seconds.
+
+.EXAMPLE
+    Resume-PodeServerInternal
+    # Resumes the Pode server after being suspended.
+
+.NOTES
+    This is an internal function used within the Pode framework and may change in future releases.
+#>
+function Resume-PodeServerInternal {
+
+    param(
+        [int]
+        $Timeout = 30
+    )
+
+    # Exit early if no resumption request is pending.
+    if (!(Test-PodeCancellationTokenRequest -Type Resume)) {
+        return
+    }
+
+    try {
+        # Display resumption initiation message in the console.
+        Show-PodeConsoleInfo
+
+        # Trigger the 'Resume' event for the server.
+        Invoke-PodeEvent -Type Resume
+
+        # Pause briefly to allow processes to stabilize.
+        Start-Sleep -Seconds 1
+
+        # Retrieve all runspaces currently in a suspended (debug) state.
+        $runspaces = Get-Runspace | Where-Object { ($_.Name -like 'Pode_Tasks_*' -or $_.Name -like 'Pode_Schedules_*') -and $_.Debugger.InBreakpoint }
+
+        # Iterate over each suspended runspace to restore normal execution.
+        $runspaces | ForEach-Object {
+            # Track the start time for timeout calculations.
+            $startTime = [DateTime]::UtcNow
+            $elapsedTime = 0
+
+            # Disable debug mode on the runspace to resume it.
+            Disable-RunspaceDebug -Runspace $_
+
+            while ($_.Debugger.InBreakpoint) {
+                # Calculate the elapsed time since resumption started.
+                $elapsedTime = ([DateTime]::UtcNow - $startTime).TotalSeconds
+
+                # Handle timeout scenario and raise an error if exceeded.
+                if ($elapsedTime -ge $Timeout) {
+                    $errorMsg = "$($_.Name) failed to resume (Timeout reached after $Timeout seconds)."
+                    Write-PodeHost $errorMsg -ForegroundColor Red
+                    throw $errorMsg
+                }
+
+                # Pause briefly before rechecking the runspace state.
+                Start-Sleep -Milliseconds 200
+            }
+        }
+
+        # Pause briefly before refreshing the console view.
+        Start-Sleep -Seconds 1
+    }
+    catch {
+        # Log any errors encountered during the resumption process.
+        $_ | Write-PodeErrorLog
+
+        # Force a restart action to recover the server.
+        Close-PodeCancellationTokenRequest -Type Restart
+    }
+    finally {
+        # Reset the resume cancellation token for future suspension/resumption cycles.
+        Reset-PodeCancellationToken -Type Resume
+
+        # Clear the console and display refreshed header information.
+        Show-PodeConsoleInfo
+    }
+}
+
+
+
+<#
+.SYNOPSIS
+    Enables new requests by removing the middleware that blocks requests when the Pode Watchdog service is active.
+
+.DESCRIPTION
+    This function checks if the middleware associated with the Pode Watchdog client is present, and if so, it removes it to allow new requests.
+    This effectively re-enables access to the service by removing the request blocking.
+
+.NOTES
+    This function is used internally to manage Watchdog monitoring and may change in future releases of Pode.
+#>
+function Enable-PodeServerInternal {
+
+    # Check if the Watchdog middleware exists and remove it if found to allow new requests
+    if (!(Test-PodeServerState -State Running) -or (Test-PodeServerIsEnabled) ) {
+        return
+    }
+
+    Remove-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName
+}
+
+<#
+.SYNOPSIS
+    Disables new requests by adding middleware that blocks incoming requests when the Pode Watchdog service is active.
+
+.DESCRIPTION
+    This function adds middleware to the Pode server to block new incoming requests while the Pode Watchdog client is active.
+    It responds to all new requests with a 503 Service Unavailable status and sets a 'Retry-After' header, indicating when the service will be available again.
+
+.NOTES
+    This function is used internally to manage Watchdog monitoring and may change in future releases of Pode.
+#>
+function Disable-PodeServerInternal {
+
+    if (!(Test-PodeServerState -State Running) -or (!( Test-PodeServerIsEnabled)) ) {
+        return
+    }
+    # Add middleware to block new requests and respond with 503 Service Unavailable
+    Add-PodeMiddleware -Name  $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName -ScriptBlock {
+        # Set HTTP response header for retrying after a certain time (RFC7231)
+        Set-PodeHeader -Name 'Retry-After' -Value $PodeContext.Server.AllowedActions.DisableSettings.RetryAfter
+
+        # Set HTTP status to 503 Service Unavailable
+        Set-PodeResponseStatus -Code 503
+
+        # Stop further processing
+        return $false
+    }
+}
+
+function Test-PodeServerIsEnabled {
+    return !(Test-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName)
 }
