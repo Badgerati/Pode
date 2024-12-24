@@ -53,6 +53,9 @@ function Start-PodeScheduleRunspace {
             # Waits for the Pode server to fully start before proceeding with further operations.
             Wait-PodeCancellationTokenRequest -Type Start
 
+            # Waits 2 seconds to allow the UI to be visible
+            Start-Sleep -Seconds 2
+
             # select the schedules that trigger on-start
             $_now = [DateTime]::Now
 
