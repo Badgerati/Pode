@@ -284,14 +284,11 @@ function Restart-PodeInternalServer {
         # recreate the session tokens
         Reset-PodeCancellationToken -Type Cancellation, Restart, Suspend, Resume, Terminate, Disable
 
-        $PodeContext.Server.Console = Get-PodeDefaultConsole
-        if ( $PodeContext.Server.Configuration) {
+        # if the configuration is enable reload it
+        if ( $PodeContext.Server.Configuration.Enabled) {
             # reload the configuration
             $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
         }
-
-        # done message
-        #     Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++

@@ -433,8 +433,7 @@ function Test-PodeCancellationTokenRequest {
 function Resolve-PodeCancellationToken {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Terminated', 'Terminating', 'Resuming', 'Suspending', 'Suspended', 'Restarting', 'Starting', 'Running' )]
-        [string]
+        [Pode.PodeServerState]
         $ServerState
     )
 
@@ -443,7 +442,7 @@ function Resolve-PodeCancellationToken {
     }
 
     # Handle enable/disable server actions
-    if ($PodeContext.Server.AllowedActions.Disable -and ($ServerState -eq 'Running')) {
+    if ($PodeContext.Server.AllowedActions.Disable -and ($ServerState -eq [Pode.PodeServerState]::Running)) {
         if (Test-PodeServerIsEnabled) {
             if (Test-PodeCancellationTokenRequest -Type Disable) {
                 Disable-PodeServerInternal
@@ -461,10 +460,10 @@ function Resolve-PodeCancellationToken {
     }
     # Handle suspend/resume actions
     if ($PodeContext.Server.AllowedActions.Suspend) {
-        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq 'Suspended')) {
+        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq [Pode.PodeServerState]::Suspended)) {
             Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
         }
-        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq 'Running')) {
+        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq [Pode.PodeServerState]::Running)) {
             Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
         }
     }

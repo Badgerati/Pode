@@ -40,7 +40,7 @@ function Show-PodeConsoleInfo {
     # Define color variables with fallback
     $headerColor = $PodeContext.Server.Console.Colors.Header
 
-    switch ($serverState) {
+    switch ($serverState.ToString()) {
         'Suspended' {
             $status = $Podelocale.suspendedMessage
             $statusColor = [System.ConsoleColor]::Yellow
@@ -152,7 +152,7 @@ function Show-PodeConsoleInfo {
         Write-PodeHostDivider -Force $true
     }
 
-    if ($serverState -eq 'Running') {
+    if ($serverState -eq [Pode.PodeServerState]::Running) {
         if ($PodeContext.Server.Console.ShowEndpoints) {
             # state what endpoints are being listened on
             Show-PodeConsoleEndpointsInfo -Force:$Force
@@ -803,8 +803,7 @@ function Get-PodeConsoleKey {
 function Invoke-PodeConsoleAction {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet(   'Terminated', 'Terminating', 'Resuming', 'Suspending', 'Suspended', 'Restarting', 'Starting', 'Running' )]
-        [string]
+        [Pode.PodeServerState]
         $ServerState
     )
     # Get the next key press if console input is enabled
@@ -854,7 +853,7 @@ function Invoke-PodeConsoleAction {
         Show-PodeConsoleInfo -ClearHost -Force
     }
     # Show metrics
-    elseif ( (('Running', 'Suspended') -contains $serverState ) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Metrics)) {
+    elseif ((([Pode.PodeServerState]::Running, [Pode.PodeServerState]::Suspended) -contains $serverState ) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Metrics)) {
         Show-PodeConsoleMetric
     }
 
@@ -876,7 +875,7 @@ function Invoke-PodeConsoleAction {
         }
         elseif ((Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Disable)) {
             # Handle enable/disable server actions
-            if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq 'Running')) {
+            if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq [Pode.PodeServerState]::Running)) {
                 # Write a horizontal divider line to the console.
                 Write-PodeHostDivider -Force $true
                 # Write the header line with dynamic status color
@@ -895,10 +894,10 @@ function Invoke-PodeConsoleAction {
         elseif ((Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Suspend)) {
             # Handle suspend/resume actions
             if ($PodeContext.Server.AllowedActions.Suspend) {
-                if ($serverState -eq 'Suspended') {
+                if ($serverState -eq [Pode.PodeServerState]::Suspended) {
                     Set-PodeResumeToken
                 }
-                elseif ($serverState -eq 'Running') {
+                elseif ($serverState -eq [Pode.PodeServerState]::Running) {
                     Set-PodeSuspendToken
                 }
             }

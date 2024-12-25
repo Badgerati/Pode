@@ -211,6 +211,7 @@ function New-PodeContext {
 
     # check if there is any global configuration
     $ctx.Server.Configuration = if ( $IgnoreServerConfig) { @{} } else { Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx }
+    $ctx.Server.Configuration.Enabled = ! $IgnoreServerConfig.IsPresent
 
     # over status page exceptions
     if (!(Test-PodeIsEmpty $StatusPageExceptions)) {

@@ -1036,41 +1036,44 @@ function Wait-PodeDebugger {
     Retrieves the current state of the Pode server and returns it as a string.
 #>
 function Get-PodeServerState {
+    [CmdletBinding()]
+    [OutputType([Pode.PodeServerState])]
+    param()
     # Check if PodeContext or its Tokens property is null; if so, consider the server terminated
     if ($null -eq $PodeContext -or $null -eq $PodeContext.Tokens) {
-        return 'Terminated'
+        return [Pode.PodeServerState]::Terminated
     }
 
     # Check if the server is in the process of terminating
     if (Test-PodeCancellationTokenRequest -Type Terminate) {
-        return 'Terminating'
+        return [Pode.PodeServerState]::Terminating
     }
 
     # Check if the server is resuming from a suspended state
     if (Test-PodeCancellationTokenRequest -Type Resume) {
-        return 'Resuming'
+        return [Pode.PodeServerState]::Resuming
     }
 
     # Check if the server is suspending or already suspended
     if (Test-PodeCancellationTokenRequest -Type Suspend) {
         if (Test-PodeCancellationTokenRequest -Type Cancellation) {
-            return 'Suspending'
+            return [Pode.PodeServerState]::Suspending
         }
-        return 'Suspended'
+        return [Pode.PodeServerState]::Suspended
     }
 
     # Check if the server is in the process of restarting
     if (Test-PodeCancellationTokenRequest -Type Restart) {
-        return 'Restarting'
+        return [Pode.PodeServerState]::Restarting
     }
 
     # Check if the server is starting
     if (!(Test-PodeCancellationTokenRequest -Type Start)) {
-        return 'Starting'
+        return [Pode.PodeServerState]::Starting
     }
 
     # If none of the above, assume the server is running
-    return 'Running'
+    return [Pode.PodeServerState]::Running
 }
 
 <#
@@ -1110,8 +1113,7 @@ function Get-PodeServerState {
 function Test-PodeServerState {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Terminated', 'Terminating', 'Resuming', 'Suspending', 'Suspended', 'Restarting', 'Starting', 'Running')]
-        [string]
+        [Pode.PodeServerState]
         $State
     )
 
