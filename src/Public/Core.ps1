@@ -293,7 +293,7 @@ function Start-PodeServer {
                 $PodeContext.Server.Console.DisableConsoleInput = $true
                 $PodeContext.Server.Console.DisableTermination = $true
             }
-            
+
             # start the file monitor for interally restarting
             Start-PodeFileMonitor
 
@@ -305,10 +305,23 @@ function Start-PodeServer {
                 return
             }
 
-            # sit here waiting for termination/cancellation, or to restart the server
+            # Sit in a loop waiting for server termination/cancellation or a restart request.
             while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
-                Invoke-PodeConsoleAction
+                # Retrieve the current state of the server (e.g., Running, Suspended).
+                $serverState = Get-PodeServerState
+
+                # If console input is not disabled, invoke any actions based on console commands.
+                if (!$PodeContext.Server.Console.DisableConsoleInput) {
+                    Invoke-PodeConsoleAction -ServerState $serverState
+                }
+
+                # Resolve cancellation token requests (e.g., Restart, Enable/Disable, Suspend/Resume).
+                Resolve-PodeCancellationToken -ServerState $serverState
+
+                # Pause for 1 second before re-checking the state and processing the next action.
+                Start-Sleep -Seconds 1
             }
+
 
             if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Shutdown) {
                 # (IIS Shutdown)

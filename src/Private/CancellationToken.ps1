@@ -57,13 +57,14 @@ function Reset-PodeCancellationToken {
     - `Resume`
     - `Terminate`
     - `Start`
+    - `Disable`
 
     This function is essential for managing resources during the lifecycle of a Pode application,
     especially when cleaning up during shutdown or restarting.
 
 .PARAMETER Type
     Specifies the type(s) of cancellation tokens to close. Valid values are:
-    `Cancellation`, `Restart`, `Suspend`, `Resume`, `Terminate`, `Start`.
+    `Cancellation`, `Restart`, `Suspend`, `Resume`, `Terminate`, `Start`,'Disable'.
 
     If this parameter is not specified, all tokens in `$PodeContext.Tokens` will be disposed of.
 
@@ -404,4 +405,67 @@ function Test-PodeCancellationTokenRequest {
     }
 
     return $cancelled
+}
+
+
+<#
+.SYNOPSIS
+    Resolves cancellation token requests and executes corresponding server actions.
+
+.DESCRIPTION
+    This internal function evaluates cancellation token requests to handle actions
+    such as restarting the server, enabling/disabling the server, or suspending/resuming
+    its operations. It interacts with the Pode server's context and state to perform
+    the necessary operations based on the allowed actions and current state.
+
+.PARAMETER serverState
+    The current state of the Pode server, retrieved using Get-PodeServerState,
+    which determines whether actions like suspend, disable, or restart can be executed.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+
+.EXAMPLE
+    Resolve-PodeCancellationToken
+    Evaluates any pending cancellation token requests and applies the appropriate server actions.
+#>
+
+function Resolve-PodeCancellationToken {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Terminated', 'Terminating', 'Resuming', 'Suspending', 'Suspended', 'Restarting', 'Starting', 'Running' )]
+        [string]
+        $ServerState
+    )
+
+    if ($PodeContext.Server.AllowedActions.Restart -and (Test-PodeCancellationTokenRequest -Type Restart)) {
+        Restart-PodeInternalServer
+    }
+
+    # Handle enable/disable server actions
+    if ($PodeContext.Server.AllowedActions.Disable -and ($ServerState -eq 'Running')) {
+        if (Test-PodeServerIsEnabled) {
+            if (Test-PodeCancellationTokenRequest -Type Disable) {
+                Disable-PodeServerInternal
+                Write-PodeHost 'Disabled' -ForegroundColor Yellow
+                Show-PodeConsoleInfo -ShowTopSeparator
+            }
+        }
+        else {
+            if (! (Test-PodeCancellationTokenRequest -Type Disable)) {
+                Enable-PodeServerInternal
+                Write-PodeHost 'Enabled' -ForegroundColor Green
+                Show-PodeConsoleInfo -ShowTopSeparator
+            }
+        }
+    }
+    # Handle suspend/resume actions
+    if ($PodeContext.Server.AllowedActions.Suspend) {
+        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq 'Suspended')) {
+            Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
+        }
+        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq 'Running')) {
+            Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
+        }
+    }
 }

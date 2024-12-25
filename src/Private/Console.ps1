@@ -788,6 +788,10 @@ function Get-PodeConsoleKey {
     The `Invoke-PodeConsoleAction` function uses a hashtable to define and centralize key mappings,
     allowing for easier updates and a cleaner implementation.
 
+.PARAMETER serverState
+    The current state of the Pode server, retrieved using Get-PodeServerState,
+    which determines whether actions like suspend, disable, or restart can be executed.
+
 .NOTES
     This function is part of Pode's internal utilities and may change in future releases.
 
@@ -797,24 +801,25 @@ function Get-PodeConsoleKey {
     Processes the next key press or cancellation token to execute the corresponding server action.
 #>
 function Invoke-PodeConsoleAction {
-
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet(   'Terminated', 'Terminating', 'Resuming', 'Suspending', 'Suspended', 'Restarting', 'Starting', 'Running' )]
+        [string]
+        $ServerState
+    )
     # Get the next key press if console input is enabled
-    if (!$PodeContext.Server.Console.DisableConsoleInput) {
-        $Key = Get-PodeConsoleKey
-        if ($null -ne $key) {
-            if ($key.Modifiers -ne 'Control') {
-                return
-            }
-            else {
-                Write-Verbose "The Console received CTRL+$($key.Key)"
-            }
+    $Key = Get-PodeConsoleKey
+    if ($null -ne $key) {
+        if ($key.Modifiers -ne 'Control') {
+            return
+        }
+        else {
+            Write-Verbose "The Console received CTRL+$($key.Key)"
         }
     }
 
     # Centralized key mapping
     $KeyBindings = $PodeContext.Server.Console.KeyBindings
-
-    $serverState = Get-PodeServerState
 
     # Browser action
     if (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Browser) {
@@ -848,11 +853,7 @@ function Invoke-PodeConsoleAction {
         $PodeContext.Server.Console.Quiet = !$PodeContext.Server.Console.Quiet
         Show-PodeConsoleInfo -ClearHost -Force
     }
-    # Terminate server
-    elseif ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Terminate)) {
-        Close-PodeCancellationTokenRequest -Type Terminate
-        return
-    }
+    # Show metrics
     elseif ( (('Running', 'Suspended') -contains $serverState ) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Metrics)) {
         Show-PodeConsoleMetric
     }
@@ -867,63 +868,42 @@ function Invoke-PodeConsoleAction {
             Restart-PodeInternalServer
         }
     }
-
-    # Handle enable/disable server actions
-    if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq 'Running')) {
-        if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Disable)) {
-            # Write a horizontal divider line to the console.
-            Write-PodeHostDivider -Force $true
-            # Write the header line with dynamic status color
-            $timestamp = if ($PodeContext.Server.Console.ShowTimeStamp ) { "[$([datetime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))]" } else { '' }
-            Write-PodeHost "`r$timestamp Pode $(Get-PodeVersion) (PID: $($PID)) - HTTP " -ForegroundColor $PodeContext.Server.Console.Colors.Header -Force:$Force -NoNewLine
-
-            if (Test-PodeServerIsEnabled) {
-                Close-PodeCancellationTokenRequest -Type Disable
-                Disable-PodeServerInternal
-                Write-PodeHost 'Disabled' -ForegroundColor Yellow -Force:$Force
-            }
-            else {
-                Reset-PodeCancellationToken -Type Disable
-                Enable-PodeServerInternal
-                Write-PodeHost 'Enabled' -ForegroundColor Green  -Force:$Force
-            }
-
-            Show-PodeConsoleInfo -ShowTopSeparator
+    if (! $PodeContext.Server.Console.DisableTermination) {
+        # Terminate server
+        if ( (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Terminate)) {
+            Close-PodeCancellationTokenRequest -Type Terminate
+            return
         }
-        elseif (Test-PodeCancellationTokenRequest -Type Disable) {
-            if (Test-PodeServerIsEnabled) {
-                Disable-PodeServerInternal
-                Show-PodeConsoleInfo -ShowTopSeparator
+        elseif ((Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Disable)) {
+            # Handle enable/disable server actions
+            if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq 'Running')) {
+                # Write a horizontal divider line to the console.
+                Write-PodeHostDivider -Force $true
+                # Write the header line with dynamic status color
+                $timestamp = if ($PodeContext.Server.Console.ShowTimeStamp ) { "[$([datetime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))]" } else { '' }
+                Write-PodeHost "`r$timestamp Pode $(Get-PodeVersion) (PID: $($PID)) - HTTP " -ForegroundColor $PodeContext.Server.Console.Colors.Header -Force:$Force -NoNewLine
+
+                if (Test-PodeServerIsEnabled) {
+                    Close-PodeCancellationTokenRequest -Type Disable
+                }
+                else {
+                    Reset-PodeCancellationToken -Type Disable
+                }
+
             }
         }
-        elseif (! (Test-PodeServerIsEnabled)) {
-            Enable-PodeServerInternal
-            Show-PodeConsoleInfo -ShowTopSeparator
+        elseif ((Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Suspend)) {
+            # Handle suspend/resume actions
+            if ($PodeContext.Server.AllowedActions.Suspend) {
+                if ($serverState -eq 'Suspended') {
+                    Set-PodeResumeToken
+                }
+                elseif ($serverState -eq 'Running') {
+                    Set-PodeSuspendToken
+                }
+            }
         }
     }
-
-    # Handle suspend/resume actions
-    if ($PodeContext.Server.AllowedActions.Suspend) {
-        if ((! $PodeContext.Server.Console.DisableTermination) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Suspend)) {
-            if ($serverState -eq 'Suspended') {
-                Set-PodeResumeToken
-                Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
-            }
-            elseif ($serverState -eq 'Running') {
-                Set-PodeSuspendToken
-                Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
-            }
-        }
-        elseif ((Test-PodeCancellationTokenRequest -Type Resume) -and ($serverState -eq 'Suspended')) {
-            Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
-        }
-        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($serverState -eq 'Running')) {
-            Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
-        }
-    }
-
-    # Wait before to process the next action
-    Start-Sleep -Seconds 1
 }
 
 <#
