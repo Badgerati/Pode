@@ -40,6 +40,29 @@ BeforeAll {
     Get-ChildItem "$($src)/Private/*.ps1" | ForEach-Object { . $_ }
     $privateFuncs = Get-ChildItem Function: | Where-Object { $sysFuncs -notcontains $_ }
     $privateAliases = Get-ChildItem Alias: | Where-Object { $sysAliases -notcontains $_ }
+
+    if (!([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' })) {
+
+        # fetch the .net version and the libs path
+        $version = [System.Environment]::Version.Major
+        $libsPath = Join-Path -Path $src -ChildPath 'Libs'
+
+        # filter .net dll folders based on version above, and get path for latest version found
+        if (![string]::IsNullOrWhiteSpace($version)) {
+            $netFolder = Get-ChildItem -Path $libsPath -Directory -Force |
+                Where-Object { $_.Name -imatch "net[1-$($version)]" } |
+                Sort-Object -Property Name -Descending |
+                Select-Object -First 1 -ExpandProperty FullName
+        }
+
+        # use netstandard if no folder found
+        if ([string]::IsNullOrWhiteSpace($netFolder)) {
+            $netFolder = "$($libsPath)/netstandard2.0"
+        }
+
+        # append Pode.dll and mount
+        Add-Type -LiteralPath "$($netFolder)/Pode.dll" -ErrorAction Stop
+    }
 }
 
 Describe 'Exported Functions' {
