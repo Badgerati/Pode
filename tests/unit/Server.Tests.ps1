@@ -155,7 +155,7 @@ Describe 'Restart-PodeInternalServer' {
                 Output          = @{
                     Variables = @{ 'key' = 'value' }
                 }
-                Configuration   = @{ 'key' = 'value' }
+                Configuration   = @{ Enabled = $false; Server = @{'key' = 'value' } }
                 Sockets         = @{
                     Listeners = @()
                     Queues    = @{
@@ -274,7 +274,9 @@ Describe 'Restart-PodeInternalServer' {
         $PodeContext.Server.Sessions.Count | Should -Be 0
         $PodeContext.Server.Authentications.Methods.Count | Should -Be 0
         $PodeContext.Server.State.Count | Should -Be 0
-        $PodeContext.Server.Configuration | Should -Be $null
+        $PodeContext.Server.Configuration.Count | Should -Be 2
+        $PodeContext.Server.Configuration.Enabled |Should -BeFalse
+        $PodeContext.Server.Configuration.Server.Key |Should -Be 'value'
 
         $PodeContext.Timers.Items.Count | Should -Be 0
         $PodeContext.Schedules.Items.Count | Should -Be 0
