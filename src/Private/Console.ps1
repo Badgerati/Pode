@@ -1,19 +1,26 @@
 
 <#
 .SYNOPSIS
-    Displays Pode server information on the console, including version, PID, status, endpoints, and control commands.
+    Displays key information about the Pode server on the console.
 
 .DESCRIPTION
-    The Show-PodeConsoleInfo function displays key information about the current Pode server instance.
-    It optionally clears the console before displaying server details such as version, process ID (PID), and running status.
-    If the server is running, it also displays information about active endpoints and OpenAPI definitions.
-    Additionally, it provides server control commands like restart, suspend.
+    The Show-PodeConsoleInfo function provides detailed information about the current Pode server instance,
+    including version, process ID (PID), server state, active endpoints, and OpenAPI definitions.
+    The function supports clearing the console before displaying the details and can conditionally show additional
+    server control commands depending on the server state and configuration.
 
 .PARAMETER ClearHost
     Clears the console screen before displaying server information.
 
+.PARAMETER Force
+    Overrides the console's quiet mode to display the server information.
+
+.PARAMETER ShowTopSeparator
+    Adds a horizontal divider line at the top of the console output.
+
 .NOTES
     This is an internal function and may change in future releases of Pode.
+    It is intended for displaying real-time server information during runtime.
 #>
 function Show-PodeConsoleInfo {
     param(
@@ -33,105 +40,90 @@ function Show-PodeConsoleInfo {
         return
     }
 
-    # Get the current server state and timestamp
+    # Retrieve the current server state and optionally include a timestamp.
     $serverState = Get-PodeServerState
-    $timestamp = if ($PodeContext.Server.Console.ShowTimeStamp ) { "[$([datetime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))]" } else { '' }
 
-    # Define color variables with fallback
-    $headerColor = $PodeContext.Server.Console.Colors.Header
+    # Determine status and additional display options based on the server state.
+    if ($serverState -eq [Pode.PodeServerState]::Suspended) {
+        $status = $Podelocale.suspendedMessage
+        $statusColor = [System.ConsoleColor]::Yellow
+        $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
+        $noHeaderNewLine = $false
+        $ctrlH = !$showHelp
+        $footerSeparator = $false
+        $topSeparator = $ShowTopSeparator.IsPresent
+        $headerSeparator = $true
+    }
+    elseif ($serverState -eq [Pode.PodeServerState]::Suspending) {
+        $status = $Podelocale.suspendingMessage
+        $statusColor = [System.ConsoleColor]::Yellow
+        $showHelp = $false
+        $noHeaderNewLine = $true
+        $ctrlH = $false
+        $footerSeparator = $false
+        $topSeparator = $true
+        $headerSeparator = $false
+    }
+    elseif ($serverState -eq [Pode.PodeServerState]::Resuming) {
 
-    switch ($serverState.ToString()) {
-        'Suspended' {
-            $status = $Podelocale.suspendedMessage
-            $statusColor = [System.ConsoleColor]::Yellow
-            $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
-            $noHeaderNewLine = $false
-            $ctrlH = !$showHelp
-            $footerSeparator = $false
-            $topSeparator = $ShowTopSeparator.IsPresent
-            $headerSeparator = $true
-            break
-        }
-        'Suspending' {
-            $status = $Podelocale.suspendingMessage
-            $statusColor = [System.ConsoleColor]::Yellow
-            $showHelp = $false
-            $noHeaderNewLine = $true
-            $ctrlH = $false
-            $footerSeparator = $false
-            $topSeparator = $true
-            $headerSeparator = $false
-            break
-        }
-        'Resuming' {
-            $status = $Podelocale.resumingMessage
-            $statusColor = [System.ConsoleColor]::Yellow
-            $showHelp = $false
-            $noHeaderNewLine = $true
-            $ctrlH = $false
-            $footerSeparator = $false
-            $topSeparator = $true
-            $headerSeparator = $false
-            break
-        }
-        'Restarting' {
-            $status = $Podelocale.restartingMessage
-            $statusColor = [System.ConsoleColor]::Yellow
-            $showHelp = $false
-            $noHeaderNewLine = $false
-            $ctrlH = $false
-            $footerSeparator = $false
-            $topSeparator = $true
-            $headerSeparator = $false
-            break
-        }
-        'Starting' {
-            $status = $Podelocale.startingMessage
-            $statusColor = [System.ConsoleColor]::Yellow
-            $showHelp = $false
-            $noHeaderNewLine = $true
-            $ctrlH = $false
-            $footerSeparator = $false
-            $topSeparator = $true
-            $headerSeparator = $false
-            break
-        }
-        'Running' {
-            $status = $Podelocale.runningMessage
-            $statusColor = [System.ConsoleColor]::Green
-            $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
-            $noHeaderNewLine = $false
-            $ctrlH = !$showHelp
-            $footerSeparator = $false
-            $topSeparator = $ShowTopSeparator.IsPresent
-            $headerSeparator = $true
-            break
-        }
-        'Terminating' {
-            $status = $Podelocale.terminatingMessage
-            $statusColor = [System.ConsoleColor]::Red
-            $showHelp = $false
-            $noHeaderNewLine = $true
-            $ctrlH = $false
-            $footerSeparator = $false
-            $topSeparator = $true
-            $headerSeparator = $false
-            break
-        }
-        'Terminated' {
-            $status = $Podelocale.terminatedMessage
-            $statusColor = [System.ConsoleColor]::Red
-            $showHelp = $false
-            $noHeaderNewLine = $false
-            $ctrlH = $false
-            $footerSeparator = $false
-            $topSeparator = $ShowTopSeparator.IsPresent
-            $headerSeparator = $true
-            break
-        }
-        default {
-            return
-        }
+        $status = $Podelocale.resumingMessage
+        $statusColor = [System.ConsoleColor]::Yellow
+        $showHelp = $false
+        $noHeaderNewLine = $true
+        $ctrlH = $false
+        $footerSeparator = $false
+        $topSeparator = $true
+        $headerSeparator = $false
+    }
+    elseif ($serverState -eq [Pode.PodeServerState]::Restarting) {
+        $status = $Podelocale.restartingMessage
+        $statusColor = [System.ConsoleColor]::Yellow
+        $showHelp = $false
+        $noHeaderNewLine = $false
+        $ctrlH = $false
+        $footerSeparator = $false
+        $topSeparator = $true
+        $headerSeparator = $false
+    }
+    elseif ($serverState -eq [Pode.PodeServerState]::Starting) {
+        $status = $Podelocale.startingMessage
+        $statusColor = [System.ConsoleColor]::Yellow
+        $showHelp = $false
+        $noHeaderNewLine = $true
+        $ctrlH = $false
+        $footerSeparator = $false
+        $topSeparator = $true
+        $headerSeparator = $false
+    }
+    elseif ($serverState -eq [Pode.PodeServerState]::Running) {
+        $status = $Podelocale.runningMessage
+        $statusColor = [System.ConsoleColor]::Green
+        $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
+        $noHeaderNewLine = $false
+        $ctrlH = !$showHelp
+        $footerSeparator = $false
+        $topSeparator = $ShowTopSeparator.IsPresent
+        $headerSeparator = $true
+    }
+    elseif ($serverState -eq [Pode.PodeServerState]::Terminating) {
+        $status = $Podelocale.terminatingMessage
+        $statusColor = [System.ConsoleColor]::Red
+        $showHelp = $false
+        $noHeaderNewLine = $true
+        $ctrlH = $false
+        $footerSeparator = $false
+        $topSeparator = $true
+        $headerSeparator = $false
+    }
+    elseif ($serverState -eq [Pode.PodeServerState]::Terminated) {
+        $status = $Podelocale.terminatedMessage
+        $statusColor = [System.ConsoleColor]::Red
+        $showHelp = $false
+        $noHeaderNewLine = $false
+        $ctrlH = $false
+        $footerSeparator = $false
+        $topSeparator = $ShowTopSeparator.IsPresent
+        $headerSeparator = $true
     }
 
     if ($ClearHost -or $PodeContext.Server.Console.ClearHost) {
@@ -143,15 +135,15 @@ function Show-PodeConsoleInfo {
     }
 
     # Write the header line with dynamic status color
-    Write-PodeHost "`r$timestamp Pode $(Get-PodeVersion) (PID: $($PID)) [" -ForegroundColor $headerColor -Force:$Force -NoNewLine
-    Write-PodeHost "$status" -ForegroundColor $statusColor -Force:$Force -NoNewLine
-    Write-PodeHost ']              ' -ForegroundColor $headerColor -Force:$Force -NoNewLine:$noHeaderNewLine
+    Write-PodeConsoleHeader -Status $Status -StatusColor $StatusColor -Force:$Force -NoNewLine:$noHeaderNewLine
 
+    # Optionally display a horizontal divider after the header.
     if ($headerSeparator) {
         # Write a horizontal divider line to the console.
         Write-PodeHostDivider -Force $true
     }
 
+    # Display endpoints and OpenAPI information if the server is running.
     if ($serverState -eq [Pode.PodeServerState]::Running) {
         if ($PodeContext.Server.Console.ShowEndpoints) {
             # state what endpoints are being listened on
@@ -163,13 +155,16 @@ function Show-PodeConsoleInfo {
         }
     }
 
+    # Show help commands if enabled or hide them conditionally.
     if ($showHelp) {
         Show-PodeConsoleHelp
     }
+
     elseif ($ctrlH ) {
         Show-PodeConsoleHelp -Hide
     }
 
+    # Optionally display a footer separator.
     if ($footerSeparator) {
         # Write a horizontal divider line to the console.
         Write-PodeHostDivider -Force $true
@@ -878,10 +873,6 @@ function Invoke-PodeConsoleAction {
             if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq [Pode.PodeServerState]::Running)) {
                 # Write a horizontal divider line to the console.
                 Write-PodeHostDivider -Force $true
-                # Write the header line with dynamic status color
-                $timestamp = if ($PodeContext.Server.Console.ShowTimeStamp ) { "[$([datetime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))]" } else { '' }
-                Write-PodeHost "`r$timestamp Pode $(Get-PodeVersion) (PID: $($PID)) - HTTP " -ForegroundColor $PodeContext.Server.Console.Colors.Header -Force:$Force -NoNewLine
-
                 if (Test-PodeServerIsEnabled) {
                     Close-PodeCancellationTokenRequest -Type Disable
                 }
@@ -889,6 +880,7 @@ function Invoke-PodeConsoleAction {
                     Reset-PodeCancellationToken -Type Disable
                 }
 
+                Write-PodeConsoleHeader -DisableHttp
             }
         }
         elseif ((Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Suspend)) {
@@ -989,4 +981,88 @@ function Get-PodeDefaultConsole {
         KeyBindings         = $KeyBindings
     }
 
+}
+
+
+<#
+.SYNOPSIS
+    Writes a formatted header to the Pode console with server details and status.
+
+.DESCRIPTION
+    The Write-PodeConsoleHeader function writes a customizable header line to the Pode console.
+    The header includes server details such as version, process ID (PID), and current status,
+    along with optional HTTP status information. It dynamically adjusts its output based on
+    the provided parameters and Pode context settings, including timestamp and colors.
+
+.PARAMETER Status
+    The status message to display in the header (e.g., Running, Suspended).
+
+.PARAMETER StatusColor
+    The color to use for the status message in the console.
+
+.PARAMETER NoNewLine
+    Prevents the addition of a newline after the header output.
+
+.PARAMETER Force
+    Forces the header to be written even if console restrictions are active.
+
+.PARAMETER DisableHttp
+    Displays HTTP status in the header, indicating whether HTTP is enabled or disabled.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+    It is used to format and display the header for the Pode server in the console.
+#>
+function Write-PodeConsoleHeader {
+    [CmdletBinding(DefaultParameterSetName = 'Status')]
+    param(
+        [Parameter(Mandatory = $true, ParameterSetName = 'Status')]
+        [string] $Status,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Status')]
+        [System.ConsoleColor] $StatusColor,
+
+        [switch] $NoNewLine,
+
+        [switch] $Force,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'DisableHttp')]
+        [switch] $DisableHttp
+    )
+
+    # Get the configured header color from Pode context.
+    $headerColor = $PodeContext.Server.Console.Colors.Header
+
+    # If DisableHttp is set, override the Status and StatusColor parameters.
+    if ($DisableHttp) {
+        $Status = $Podelocale.runningMessage
+        $StatusColor = [System.ConsoleColor]::Green
+    }
+
+    # Generate a timestamp if enabled in the Pode context.
+    $timestamp = if ($PodeContext.Server.Console.ShowTimeStamp) {
+        "[$([datetime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))]"
+    }
+    else {
+        ''
+    }
+
+    # Write the header with timestamp, Pode version, and status.
+    Write-PodeHost "`r$timestamp Pode $(Get-PodeVersion) (PID: $($PID)) [" -ForegroundColor $headerColor -Force:$Force -NoNewLine
+    Write-PodeHost "$Status" -ForegroundColor $StatusColor -Force:$Force -NoNewLine
+
+    if ($DisableHttp) {
+        # Append HTTP status to the header if DisableHttp is enabled.
+        Write-PodeHost '] - HTTP ' -ForegroundColor $headerColor -Force:$Force -NoNewLine
+        if (Test-PodeCancellationTokenRequest -Type Disable) {
+            Write-PodeHost 'Disabled' -ForegroundColor Yellow
+        }
+        else {
+            Write-PodeHost 'Enabled' -ForegroundColor Green
+        }
+    }
+    else {
+        # Close the header without HTTP status.
+        Write-PodeHost ']' -ForegroundColor $headerColor -Force:$Force -NoNewLine:$NoNewLine
+    }
 }

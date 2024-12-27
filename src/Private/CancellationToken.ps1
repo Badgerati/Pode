@@ -439,6 +439,7 @@ function Resolve-PodeCancellationToken {
 
     if ($PodeContext.Server.AllowedActions.Restart -and (Test-PodeCancellationTokenRequest -Type Restart)) {
         Restart-PodeInternalServer
+        return
     }
 
     # Handle enable/disable server actions
@@ -446,15 +447,15 @@ function Resolve-PodeCancellationToken {
         if (Test-PodeServerIsEnabled) {
             if (Test-PodeCancellationTokenRequest -Type Disable) {
                 Disable-PodeServerInternal
-                Write-PodeHost 'Disabled' -ForegroundColor Yellow
                 Show-PodeConsoleInfo -ShowTopSeparator
+                return
             }
         }
         else {
             if (! (Test-PodeCancellationTokenRequest -Type Disable)) {
                 Enable-PodeServerInternal
-                Write-PodeHost 'Enabled' -ForegroundColor Green
                 Show-PodeConsoleInfo -ShowTopSeparator
+                return
             }
         }
     }
@@ -462,9 +463,11 @@ function Resolve-PodeCancellationToken {
     if ($PodeContext.Server.AllowedActions.Suspend) {
         if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq [Pode.PodeServerState]::Suspended)) {
             Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
+            return
         }
         elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq [Pode.PodeServerState]::Running)) {
             Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
+            return
         }
     }
 }
