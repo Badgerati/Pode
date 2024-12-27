@@ -3930,3 +3930,41 @@ function Test-PodeHasConsole {
 function Test-PodeIsConsoleHost {
     return $Host.Name -eq 'ConsoleHost'
 }
+
+<#
+.SYNOPSIS
+    Converts all instances of 'Start-Sleep' to 'Start-PodeSleep' within a scriptblock.
+
+.DESCRIPTION
+    The `Convert-PodeSleep` function processes a given scriptblock and replaces every occurrence
+    of 'Start-Sleep' with 'Start-PodeSleep'. This is useful for adapting scripts that need to use
+    Pode-specific sleep functionality.
+
+.PARAMETER ScriptBlock
+    The scriptblock to be processed. The function will replace 'Start-Sleep' with 'Start-PodeSleep'
+    in the provided scriptblock.
+
+.EXAMPLE
+  # Example 1: Replace Start-Sleep in a ScriptBlock
+    $Original = { Write-Host "Starting"; Start-Sleep -Seconds 5; Write-Host "Done" }
+    $Modified = $Original | Convert-PodeSleep
+    & $Modified
+
+.EXAMPLE
+    # Example 2: Process a ScriptBlock inline
+    Convert-PodeSleep -ScriptBlock { Start-Sleep -Seconds 2 } | Invoke-Command
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Convert-PodeSleep {
+    param(
+        [Parameter(ValueFromPipeline = $true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+    process {
+        # Modify the ScriptBlock to replace 'Start-Sleep' with 'Start-PodeSleep'
+        return [scriptblock]::Create(("$($ScriptBlock)" -replace 'Start-Sleep ', 'Start-PodeSleep '))
+    }
+}
