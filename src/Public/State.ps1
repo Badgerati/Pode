@@ -60,7 +60,7 @@ function Set-PodeState {
                 return
             }
             # Convert the current state to a concurrent dictionary for thread safety
-            $PodeContext.Server.State = ConvertTo-PodeConcurrentStructure -Hashtable $PodeContext.Server.State
+            $PodeContext.Server.State = ConvertTo-PodeConcurrentStructure -InputObject $PodeContext.Server.State
             return
         }
 
@@ -91,7 +91,7 @@ function Set-PodeState {
 
             # If the value is an ordered dictionary or hashtable, convert it to a concurrent dictionary
             if (($Value -is [System.Collections.Specialized.OrderedDictionary]) -or ($Value -is [hashtable])) {
-                $Value = (ConvertTo-PodeConcurrentStructure -Hashtable $Value)
+                $Value = (ConvertTo-PodeConcurrentStructure -InputObject $Value)
             }
 
             # Add the value to the dictionary
@@ -337,7 +337,7 @@ function Save-PodeState {
 
     # contruct the state to save (excludes, etc)
     if (Test-PodeStateIsThreadSafe) {
-        $state = ConvertFrom-PodeConcurrentStructure -concurrentDictionary $PodeContext.Server.State
+        $state = ConvertFrom-PodeConcurrentStructure -InputObject $PodeContext.Server.State
     }
     else {
         $state = $PodeContext.Server.State.Clone()
@@ -345,7 +345,9 @@ function Save-PodeState {
 
     # scopes
     if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
-        foreach ($_key in $state.Clone().Keys) {
+        # Create a snapshot of keys to avoid issues with modification
+        $keySnapshot = @($state.Keys)
+        foreach ($_key in $keySnapshot) {
             # remove if no scope
             if (($null -eq $state[$_key].Scope) -or ($state[$_key].Scope.Length -eq 0)) {
                 $null = $state.Remove($_key)
