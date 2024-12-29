@@ -1,3 +1,33 @@
+<#
+.SYNOPSIS
+    Starts the internal Pode server, initializing configurations, middleware, routes, and runspaces.
+
+.DESCRIPTION
+    This function sets up and starts the internal Pode server. It initializes the server's configurations, routes, middleware, runspace pools, logging, and schedules. It also handles different server modes, such as normal, service, or serverless (Azure Functions, AWS Lambda). The function ensures all necessary components are ready and operational before triggering the server's start.
+
+.PARAMETER Request
+    Provides request data for serverless execution scenarios.
+
+.PARAMETER Browse
+    A switch to enable browsing capabilities for HTTP servers.
+
+.EXAMPLE
+    Start-PodeInternalServer
+        Starts the Pode server in the normal mode with all necessary components initialized.
+
+.EXAMPLE
+    Start-PodeInternalServer -Request $RequestData
+        Starts the Pode server in serverless mode, passing the required request data.
+
+.EXAMPLE
+    Start-PodeInternalServer -Browse
+        Starts the Pode HTTP server with browsing capabilities enabled.
+
+.NOTES
+    - This function is used to start the Pode server, either initially or after a restart.
+    - Handles specific setup for serverless types like Azure Functions and AWS Lambda.
+    - This is an internal function used within the Pode framework and is subject to change in future releases.
+#>
 function Start-PodeInternalServer {
     param(
         [Parameter()]
@@ -159,7 +189,21 @@ function Start-PodeInternalServer {
     }
 }
 
+<#
+.SYNOPSIS
+    Restarts the internal Pode server by clearing all configurations, contexts, and states, and reinitializing the server.
 
+.DESCRIPTION
+    This function performs a comprehensive restart of the internal Pode server. It resets all contexts, clears caches, schedules, timers, middleware, and security configurations, and reinitializes the server state. It also reloads the server configuration if enabled and increments the server restart count.
+
+.EXAMPLE
+    Restart-PodeInternalServer
+        Restarts the Pode server, clearing all configurations and states before starting it again.
+.NOTES
+    - This function is called internally to restart the Pode server gracefully.
+    - Handles cancellation tokens, clean-up processes, and reinitialization.
+    - This is an internal function used within the Pode framework and is subject to change in future releases.
+#>
 function Restart-PodeInternalServer {
 
     if (!$PodeContext.Tokens.Restart.IsCancellationRequested) {
@@ -316,8 +360,7 @@ function Restart-PodeInternalServer {
     - In other cases, the server will stay open.
 
  .NOTES
-    This function is primarily used internally by Pode to manage the server lifecycle.
-    It helps ensure the server remains active only when necessary based on its current state.
+    This is an internal function used within the Pode framework and is subject to change in future releases.
 #>
 function Test-PodeServerKeepOpen {
     # if we have any timers/schedules/fim - keep open
@@ -516,8 +559,6 @@ function Resume-PodeServerInternal {
     }
 }
 
-
-
 <#
 .SYNOPSIS
     Enables new requests by removing the middleware that blocks requests when the Pode Watchdog service is active.
@@ -535,6 +576,9 @@ function Enable-PodeServerInternal {
     if (!(Test-PodeServerState -State Running) -or (Test-PodeServerIsEnabled) ) {
         return
     }
+
+    # Trigger the 'Enable' event for the server.
+    Invoke-PodeEvent -Type Enable
 
     Remove-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName
 }
@@ -555,6 +599,10 @@ function Disable-PodeServerInternal {
     if (!(Test-PodeServerState -State Running) -or (!( Test-PodeServerIsEnabled)) ) {
         return
     }
+
+    # Trigger the 'Enable' event for the server.
+    Invoke-PodeEvent -Type Disable
+
     # Add middleware to block new requests and respond with 503 Service Unavailable
     Add-PodeMiddleware -Name  $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName -ScriptBlock {
         # Set HTTP response header for retrying after a certain time (RFC7231)

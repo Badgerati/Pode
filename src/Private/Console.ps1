@@ -1066,3 +1066,89 @@ function Write-PodeConsoleHeader {
         Write-PodeHost ']' -ForegroundColor $headerColor -Force:$Force -NoNewLine:$NoNewLine
     }
 }
+
+<#
+.SYNOPSIS
+Sets override configurations for the Pode server console.
+
+.DESCRIPTION
+This function updates the Pode server's console configuration by applying override settings based on the specified parameters. These configurations include disabling termination, console input, enabling quiet mode, and more.
+
+.PARAMETER DisableTermination
+Sets an override to disable termination of the Pode server from the console.
+
+.PARAMETER DisableConsoleInput
+Sets an override to disable input from the console for the Pode server.
+
+.PARAMETER Quiet
+Sets an override to enable quiet mode, suppressing console output.
+
+.PARAMETER ClearHost
+Sets an override to clear the host on startup.
+
+.PARAMETER HideOpenAPI
+Sets an override to hide the OpenAPI documentation display.
+
+.PARAMETER HideEndpoints
+Sets an override to hide the endpoints list display.
+
+.PARAMETER ShowHelp
+Sets an override to show help information in the console.
+
+.PARAMETER Daemon
+Sets an override to enable daemon mode, which combines quiet mode, disabled console input, and disabled termination.
+
+.NOTES
+This function is used to dynamically apply override settings for the Pode server console configuration.
+#>
+function Set-PodeConsoleOverrideConfiguration {
+    param (
+        [switch]$DisableTermination,
+        [switch]$DisableConsoleInput,
+        [switch]$Quiet,
+        [switch]$ClearHost,
+        [switch]$HideOpenAPI,
+        [switch]$HideEndpoints,
+        [switch]$ShowHelp,
+        [switch]$Daemon
+    )
+
+    # Apply override settings
+    if ($DisableTermination.IsPresent) {
+        $PodeContext.Server.Console.DisableTermination = $true
+    }
+    if ($DisableConsoleInput.IsPresent) {
+        $PodeContext.Server.Console.DisableConsoleInput = $true
+    }
+    if ($Quiet.IsPresent) {
+        $PodeContext.Server.Console.Quiet = $true
+    }
+    if ($ClearHost.IsPresent) {
+        $PodeContext.Server.Console.ClearHost = $true
+    }
+    if ($HideOpenAPI.IsPresent) {
+        $PodeContext.Server.Console.ShowOpenAPI = $false
+    }
+    if ($HideEndpoints.IsPresent) {
+        $PodeContext.Server.Console.ShowEndpoints = $false
+    }
+    if ($ShowHelp.IsPresent) {
+        $PodeContext.Server.Console.ShowHelp = $true
+    }
+    if ($Daemon.IsPresent) {
+        $PodeContext.Server.Console.Quiet = $true
+        $PodeContext.Server.Console.DisableConsoleInput = $true
+        $PodeContext.Server.Console.DisableTermination = $true
+    }
+
+    # Apply IIS-specific overrides
+    if ($PodeContext.Server.IsIIS) {
+        $PodeContext.Server.Console.DisableTermination = $true
+        $PodeContext.Server.Console.DisableConsoleInput = $true
+
+        # If running under Azure Web App, enforce quiet mode
+        if (!(Test-PodeIsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
+            $PodeContext.Server.Console.Quiet = $true
+        }
+    }
+}

@@ -254,13 +254,6 @@ function New-PodeContext {
     # is the server running under IIS? (also, disable termination)
     $ctx.Server.IsIIS = (!$isServerless -and (!(Test-PodeIsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-PodeIsEmpty $env:ASPNETCORE_TOKEN)))
     if ($ctx.Server.IsIIS) {
-        $ctx.Server.Console.DisableTermination = $true
-
-        # if under IIS and Azure Web App, force quiet
-        if (!(Test-PodeIsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
-            $ctx.Server.Console.Quiet = $true
-        }
-
         # set iis token/settings
         $ctx.Server.IIS = @{
             Token    = $env:ASPNETCORE_TOKEN

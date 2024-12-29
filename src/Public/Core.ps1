@@ -266,33 +266,20 @@ function Start-PodeServer {
             # Create main context object
             $PodeContext = New-PodeContext @ContextParams
 
-            # Override the configuration
-            if ($DisableTermination.IsPresent) {
-                $PodeContext.Server.Console.DisableTermination = $true
+            # Define parameter values with comments explaining each one
+            $ConfigParameters = @{
+                DisableTermination  = $DisableTermination   # Disable termination of the Pode server from the console
+                DisableConsoleInput = $DisableConsoleInput  # Disable input from the console for the Pode server
+                Quiet               = $Quiet                # Enable quiet mode, suppressing console output
+                ClearHost           = $ClearHost            # Clear the host on startup
+                HideOpenAPI         = $HideOpenAPI          # Hide the OpenAPI documentation display
+                HideEndpoints       = $HideEndpoints        # Hide the endpoints list display
+                ShowHelp            = $ShowHelp             # Show help information in the console
+                Daemon              = $Daemon               # Enable daemon mode, combining multiple configurations
             }
-            if ($DisableConsoleInput.IsPresent) {
-                $PodeContext.Server.Console.DisableConsoleInput = $true
-            }
-            if ($Quiet.IsPresent) {
-                $PodeContext.Server.Console.Quiet = $true
-            }
-            if ($ClearHost.IsPresent) {
-                $PodeContext.Server.Console.ClearHost = $true
-            }
-            if ($ShowOpenAPI.IsPresent) {
-                $PodeContext.Server.Console.ShowOpenAPI = $false
-            }
-            if ($ShowEndpoints.IsPresent) {
-                $PodeContext.Server.Console.ShowEndpoints = $false
-            }
-            if ($ShowHelp.IsPresent) {
-                $PodeContext.Server.Console.ShowHelp = $true
-            }
-            if ($Daemon.IsPresent) {
-                $PodeContext.Server.Console.Quiet = $true
-                $PodeContext.Server.Console.DisableConsoleInput = $true
-                $PodeContext.Server.Console.DisableTermination = $true
-            }
+
+            # Call the function using splatting
+            Set-PodeConsoleOverrideConfiguration @ConfigParameters
 
             # start the file monitor for interally restarting
             Start-PodeFileMonitor
@@ -364,6 +351,7 @@ function Start-PodeServer {
 
             # clean the session
             $PodeContext = $null
+            $PodeLocale = $null
         }
     }
 }
