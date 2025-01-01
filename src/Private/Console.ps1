@@ -817,11 +817,8 @@ function Invoke-PodeConsoleAction {
 
     # Browser action
     if (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Browser) {
-        $url = Get-PodeEndpointUrl
-        if (![string]::IsNullOrWhitespace($url)) {
-            Invoke-PodeEvent -Type Browser
-            Start-Process $url
-        }
+        # Open the browser
+        Show-PodeConsoleEndpointUrl
     }
     # Toggle help display
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Help) {
@@ -1069,48 +1066,63 @@ function Write-PodeConsoleHeader {
 
 <#
 .SYNOPSIS
-Sets override configurations for the Pode server console.
+    Sets override configurations for the Pode server console.
 
 .DESCRIPTION
-This function updates the Pode server's console configuration by applying override settings based on the specified parameters. These configurations include disabling termination, console input, enabling quiet mode, and more.
+    This function updates the Pode server's console configuration by applying override settings based on the specified parameters. These configurations include disabling termination, console input, enabling quiet mode, and more.
 
 .PARAMETER DisableTermination
-Sets an override to disable termination of the Pode server from the console.
+    Sets an override to disable termination of the Pode server from the console.
 
 .PARAMETER DisableConsoleInput
-Sets an override to disable input from the console for the Pode server.
+    Sets an override to disable input from the console for the Pode server.
 
 .PARAMETER Quiet
-Sets an override to enable quiet mode, suppressing console output.
+    Sets an override to enable quiet mode, suppressing console output.
 
 .PARAMETER ClearHost
-Sets an override to clear the host on startup.
+    Sets an override to clear the host on startup.
 
 .PARAMETER HideOpenAPI
-Sets an override to hide the OpenAPI documentation display.
+    Sets an override to hide the OpenAPI documentation display.
 
 .PARAMETER HideEndpoints
-Sets an override to hide the endpoints list display.
+    Sets an override to hide the endpoints list display.
 
 .PARAMETER ShowHelp
-Sets an override to show help information in the console.
+    Sets an override to show help information in the console.
 
 .PARAMETER Daemon
-Sets an override to enable daemon mode, which combines quiet mode, disabled console input, and disabled termination.
+    Sets an override to enable daemon mode, which combines quiet mode, disabled console input, and disabled termination.
 
 .NOTES
-This function is used to dynamically apply override settings for the Pode server console configuration.
+    This function is used to dynamically apply override settings for the Pode server console configuration.
 #>
 function Set-PodeConsoleOverrideConfiguration {
     param (
-        [switch]$DisableTermination,
-        [switch]$DisableConsoleInput,
-        [switch]$Quiet,
-        [switch]$ClearHost,
-        [switch]$HideOpenAPI,
-        [switch]$HideEndpoints,
-        [switch]$ShowHelp,
-        [switch]$Daemon
+        [switch]
+        $DisableTermination,
+
+        [switch]
+        $DisableConsoleInput,
+
+        [switch]
+        $Quiet,
+
+        [switch]
+        $ClearHost,
+
+        [switch]
+        $HideOpenAPI,
+
+        [switch]
+        $HideEndpoints,
+
+        [switch]
+        $ShowHelp,
+
+        [switch]
+        $Daemon
     )
 
     # Apply override settings
@@ -1150,5 +1162,31 @@ function Set-PodeConsoleOverrideConfiguration {
         if (!(Test-PodeIsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
             $PodeContext.Server.Console.Quiet = $true
         }
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Launches the Pode endpoint URL in the default browser.
+
+.DESCRIPTION
+    This function retrieves the URL of the Pode endpoint using Get-PodeEndpointUrl. If the URL is valid
+    and not null or whitespace, it triggers a browser event using Invoke-PodeEvent and opens the
+    URL in the system's default web browser using Start-Process.
+
+.EXAMPLE
+    Show-PodeConsoleEndpointUrl
+    This example retrieves the Pode endpoint URL and opens it in the default browser if available.
+
+.NOTES
+    Ensure the Pode endpoint is correctly set up and running. This function relies on the Pode framework.
+#>
+
+function Show-PodeConsoleEndpointUrl {
+    $url = Get-PodeEndpointUrl
+    if (![string]::IsNullOrWhitespace($url)) {
+        Invoke-PodeEvent -Type Browser
+        Start-Process $url
     }
 }
