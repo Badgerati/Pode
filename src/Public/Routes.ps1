@@ -452,8 +452,8 @@ function Add-PodeRoute {
             })
 
 
-        if ($PodeContext.Server.OpenAPI.Routes -notcontains $OpenApiPath ) {
-            $PodeContext.Server.OpenAPI.Routes += $OpenApiPath
+        if ($PodeContext.Server.OpenAPI.Routes -notcontains $Path ) {
+            $PodeContext.Server.OpenAPI.Routes += $Path
         }
 
 
