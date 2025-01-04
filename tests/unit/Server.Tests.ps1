@@ -7,6 +7,10 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
+    # Import Pode Assembly
+    $helperPath = (Split-Path -Parent -Path $path) -ireplace 'unit', 'shared'
+    . "$helperPath/TestHelper.ps1"
+    Import-PodeAssembly -SrcPath $src
 
     $PodeContext = @{
         Server        = $null

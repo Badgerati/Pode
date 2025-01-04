@@ -24,7 +24,8 @@ BeforeDiscovery {
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-
+    
+    # Import Pode Assembly
     $helperPath = (Split-Path -Parent -Path $path) -ireplace 'unit', 'shared'
     . "$helperPath/TestHelper.ps1"
     Import-PodeAssembly -SrcPath $src
