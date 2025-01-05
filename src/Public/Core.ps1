@@ -79,7 +79,7 @@
 .PARAMETER IgnoreServerConfig
     Prevents the server from loading settings from the server.psd1 configuration file.
 
-    .PARAMETER ConfigFile
+.PARAMETER ConfigFile
     Specifies a custom configuration file instead of using the default `server.psd1`.
 
 .PARAMETER Daemon

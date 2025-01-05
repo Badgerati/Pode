@@ -1062,7 +1062,7 @@ Describe 'Get-PodeRelativePath' {
     }
 
     It 'Returns path for a relative path joined to default root normalized' {
-        Get-PodeRelativePath -Path './path' -JoinRoot -NormalisePath | Should -Be 'c:/path'
+        Get-PodeRelativePath -Path './path' -JoinRoot -NormalisePath | Should -Be (Join-Path -Path 'c:'  -ChildPath 'path')
     }
 
     It 'Returns resolved path for a relative path joined to default root when resolving' {
@@ -1080,7 +1080,7 @@ Describe 'Get-PodeRelativePath' {
     }
 
     It 'Returns path for a relative path joined to passed root normalized' {
-        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' -NormalisePath | Should -Be 'e:/path'
+        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' -NormalisePath | Should -Be (Join-Path -Path 'e:'  -ChildPath 'path')
     }
 
     It 'Throws error for path ot existing' {
