@@ -331,7 +331,7 @@ function Restart-PodeInternalServer {
         # if the configuration is enable reload it
         if ( $PodeContext.Server.Configuration.Enabled) {
             # reload the configuration
-            $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
+            $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext -ConfigFile $PodeContext.Server.Configuration.ConfigFile
         }
 
         # restart the server

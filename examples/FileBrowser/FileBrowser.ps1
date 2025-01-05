@@ -41,7 +41,7 @@ catch { throw }
 
 $directoryPath = $podePath
 # Start Pode server
-Start-PodeServer -ScriptBlock {
+Start-PodeServer -ConfigFile '..\Server.psd1' -ScriptBlock {
 
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
 

@@ -552,6 +552,8 @@ function Get-PodeSubnetRange {
 }
 
 function Close-PodeServerInternal {
+    # PodeContext doesn't exist return
+    if ($null -eq $PodeContext) { return }
     try {
         # ensure the token is cancelled
         Write-Verbose 'Cancelling main cancellation token'
@@ -584,8 +586,10 @@ function Close-PodeServerInternal {
         Remove-PodePSDrive
     }
     finally {
-        # Remove any tokens
-        $PodeContext.Tokens = $null
+        if ($null -ne $PodeContext) {
+            # Remove any tokens
+            $PodeContext.Tokens = $null
+        }
     }
 
 }
@@ -2401,6 +2405,7 @@ function Find-PodeFileForContentType {
     # no file was found
     return $null
 }
+
 <#
 .SYNOPSIS
 	Resolves and processes a relative or absolute file system path based on the specified parameters.
@@ -2423,7 +2428,7 @@ function Find-PodeFileForContentType {
 .PARAMETER TestPath
 	Verifies if the resolved path exists. Throws an exception if the path does not exist.
 
-.PARAMETER NormaliseRelativePath
+.PARAMETER NormalisePath
 	(Optional) Removes any leading './' or '../' segments from the relative path when used with -JoinRoot. This ensures that the path is normalized before being joined with the root path.
 
 .OUTPUTS
@@ -2436,7 +2441,7 @@ function Find-PodeFileForContentType {
 
 .EXAMPLE
 	# Example 2: Resolve and normalize a relative path
-	Get-PodeRelativePath -Path '../example' -RootPath 'C:\Root' -JoinRoot -NormaliseRelativePath
+	Get-PodeRelativePath -Path '../example' -RootPath 'C:\Root' -JoinRoot -NormalisePath
 
 .EXAMPLE
 	# Example 3: Test if a path exists
@@ -2465,7 +2470,7 @@ function Get-PodeRelativePath {
         $TestPath,
 
         [switch]
-        $NormaliseRelativePath
+        $NormalisePath
 
     )
 
@@ -2475,8 +2480,8 @@ function Get-PodeRelativePath {
             $RootPath = $PodeContext.Server.Root
         }
 
-        if ($NormaliseRelativePath) {
-            $Path = [System.IO.Path]::Combine($RootPath, ($Path -replace '^\.{1,2}([\\\/])?', ''))
+        if ($NormalisePath) {
+            $Path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($RootPath, $Path))
         }
         else {
             $Path = [System.IO.Path]::Combine($RootPath, $Path)
