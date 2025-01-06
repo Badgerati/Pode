@@ -2428,9 +2428,6 @@ function Find-PodeFileForContentType {
 .PARAMETER TestPath
 	Verifies if the resolved path exists. Throws an exception if the path does not exist.
 
-.PARAMETER NormalisePath
-	(Optional) Removes any leading './' or '../' segments from the relative path when used with -JoinRoot. This ensures that the path is normalized before being joined with the root path.
-
 .OUTPUTS
 	System.String
 	Returns the resolved and processed path as a string.
@@ -2438,10 +2435,6 @@ function Find-PodeFileForContentType {
 .EXAMPLE
 	# Example 1: Resolve a relative path and join it with a root path
 	Get-PodeRelativePath -Path './example' -RootPath 'C:\Root' -JoinRoot
-
-.EXAMPLE
-	# Example 2: Resolve and normalize a relative path
-	Get-PodeRelativePath -Path '../example' -RootPath 'C:\Root' -JoinRoot -NormalisePath
 
 .EXAMPLE
 	# Example 3: Test if a path exists
@@ -2467,10 +2460,7 @@ function Get-PodeRelativePath {
         $Resolve,
 
         [switch]
-        $TestPath,
-
-        [switch]
-        $NormalisePath
+        $TestPath
 
     )
 
@@ -2480,12 +2470,7 @@ function Get-PodeRelativePath {
             $RootPath = $PodeContext.Server.Root
         }
 
-        if ($NormalisePath) {
-            $Path = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($RootPath, $Path))
-        }
-        else {
-            $Path = [System.IO.Path]::Combine($RootPath, $Path)
-        }
+        $Path = [System.IO.Path]::Combine($RootPath, $Path)
     }
 
     # if flagged, resolve the path

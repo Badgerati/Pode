@@ -919,7 +919,7 @@ function Open-PodeConfiguration {
     # Override the configuration path if a valid ConfigFile parameter is provided
     if (!([string]::IsNullOrEmpty($ConfigFile))) {
         #-and (Test-Path -Path $ConfigFile -PathType Leaf)) {
-        $configPath = Get-PodeRelativePath -Path $ConfigFile -JoinRoot -Resolve -RootPath $ServerRoot -NormalisePath -TestPath
+        $configPath = Get-PodeRelativePath -Path $ConfigFile -JoinRoot -Resolve -RootPath $ServerRoot -TestPath
     }
 
     # check the path exists, and load the config

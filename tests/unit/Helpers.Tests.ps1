@@ -1061,9 +1061,6 @@ Describe 'Get-PodeRelativePath' {
         Get-PodeRelativePath -Path './path' -JoinRoot | Should -Be 'c:/./path'
     }
 
-    It 'Returns path for a relative path joined to default root normalized' {
-        Get-PodeRelativePath -Path './path' -JoinRoot -NormalisePath | Should -Be (Join-Path -Path 'c:'  -ChildPath 'path')
-    }
 
     It 'Returns resolved path for a relative path joined to default root when resolving' {
         $PodeContext = @{
@@ -1072,16 +1069,13 @@ Describe 'Get-PodeRelativePath' {
             }
         }
 
-        Get-PodeRelativePath -Path './src' -JoinRoot -Resolve | Should -Be (Join-Path $pwd.Path 'src')
+        Get-PodeRelativePath -Path './src' -JoinRoot -Resolve | Should -Be (Join-Path -Path $PWD  -ChildPath 'src')
     }
 
     It 'Returns path for a relative path joined to passed root' {
-        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' | Should -Be 'e:/./path'
+        Get-PodeRelativePath -Path (Join-Path -Path '.' -ChildPath 'path')-JoinRoot -RootPath $PWD | Should -Be (Join-Path -Path $PWD  -ChildPath '.' -AdditionalChildPath 'path')
     }
 
-    It 'Returns path for a relative path joined to passed root normalized' {
-        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' -NormalisePath | Should -Be (Join-Path -Path 'e:'  -ChildPath 'path')
-    }
 
     It 'Throws error for path ot existing' {
         Mock Test-PodePath { return $false }
