@@ -1073,7 +1073,7 @@ Describe 'Get-PodeRelativePath' {
     }
 
     It 'Returns path for a relative path joined to passed root' {
-        Get-PodeRelativePath -Path (Join-Path -Path '.' -ChildPath 'path')-JoinRoot -RootPath $PWD | Should -Be (Join-Path -Path $PWD  -ChildPath '.' -AdditionalChildPath 'path')
+        Get-PodeRelativePath -Path (Join-Path -Path '.' -ChildPath 'path')-JoinRoot -RootPath $PWD | Should -Be (Join-Path -Path $PWD  -ChildPath (Join-Path -Path '.' -ChildPath 'path'))
     }
 
 
