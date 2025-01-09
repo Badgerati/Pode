@@ -11,22 +11,32 @@ namespace Pode
         Start,
 
         /// <summary>
+        /// Triggered when the server is initializing.
+        /// </summary>
+        Starting,
+
+        /// <summary>
         /// Triggered when the server terminates.
         /// </summary>
         Terminate,
 
         /// <summary>
-        /// Triggered when the server restarts.
+        /// Triggered when the server begins the restart process.
+        /// </summary>
+        Restarting,
+
+        /// <summary>
+        /// Triggered when the server completes the restart process.
         /// </summary>
         Restart,
 
         /// <summary>
-        /// Triggered when the user opens a web page to point to the first HTTP/HTTPS endpoint.
+        /// Triggered when a user opens a web page pointing to the first HTTP/HTTPS endpoint.
         /// </summary>
         Browser,
 
         /// <summary>
-        /// Triggered when the server crashes.
+        /// Triggered when the server crashes unexpectedly.
         /// </summary>
         Crash,
 
@@ -36,17 +46,22 @@ namespace Pode
         Stop,
 
         /// <summary>
-        /// Indicates the server is running (retained for backward compatibility).
+        /// Indicates that the server is running (retained for backward compatibility).
         /// </summary>
         Running,
 
         /// <summary>
-        /// Triggered when the server is suspended.
+        /// Triggered when the server begins the suspension process.
+        /// </summary>
+        Suspending,
+
+        /// <summary>
+        /// Triggered when the server completes the suspension process.
         /// </summary>
         Suspend,
 
         /// <summary>
-        /// Triggered when the server resumes.
+        /// Triggered when the server resumes operation after suspension.
         /// </summary>
         Resume,
 

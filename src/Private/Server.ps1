@@ -43,6 +43,9 @@ function Start-PodeInternalServer {
         #Show starting console
         Show-PodeConsoleInfo
 
+        # run start event hooks
+        Invoke-PodeEvent -Type Starting
+
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrive
 
@@ -77,7 +80,7 @@ function Start-PodeInternalServer {
         # load any functions
         Import-PodeFunctionsIntoRunspaceState -ScriptBlock $_script
 
-        # run start event hooks
+        # run starting event hooks
         Invoke-PodeEvent -Type Start
 
         # start timer for task housekeeping
@@ -216,8 +219,8 @@ function Restart-PodeInternalServer {
         # Restarting server...
         Show-PodeConsoleInfo
 
-        # run restart event hooks
-        Invoke-PodeEvent -Type Restart
+        # run restarting event hooks
+        Invoke-PodeEvent -Type Restarting
 
         # cancel the session token
         Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
@@ -338,6 +341,9 @@ function Restart-PodeInternalServer {
         $PodeContext.Metrics.Server.RestartCount++
 
         Start-PodeInternalServer
+
+        # run restarting event hooks
+        Invoke-PodeEvent -Type Restart
     }
     catch {
         $_ | Write-PodeErrorLog
@@ -412,8 +418,8 @@ function Suspend-PodeServerInternal {
         # Display suspension initiation message in the console.
         Show-PodeConsoleInfo
 
-        # Trigger the 'Suspend' event for the server.
-        Invoke-PodeEvent -Type Suspend
+        # Trigger the 'Suspending' event for the server.
+        Invoke-PodeEvent -Type Suspending
 
         # Retrieve all Pode-related runspaces for tasks and schedules.
         $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_Tasks_*' -or $_.Name -like 'Pode_Schedules_*' }
@@ -462,6 +468,9 @@ function Suspend-PodeServerInternal {
             Reset-PodeCancellationToken -Type Cancellation
         }
 
+        # Trigger the 'Suspend' event for the server.
+        Invoke-PodeEvent -Type Suspend
+
         # Brief pause before refreshing console output.
         Start-Sleep -Seconds 1
 
@@ -506,8 +515,8 @@ function Resume-PodeServerInternal {
         # Display resumption initiation message in the console.
         Show-PodeConsoleInfo
 
-        # Trigger the 'Resume' event for the server.
-        Invoke-PodeEvent -Type Resume
+        # Trigger the 'Resuming' event for the server.
+        Invoke-PodeEvent -Type Resuming
 
         # Pause briefly to allow processes to stabilize.
         Start-Sleep -Seconds 1
@@ -553,6 +562,9 @@ function Resume-PodeServerInternal {
     finally {
         # Reset the resume cancellation token for future suspension/resumption cycles.
         Reset-PodeCancellationToken -Type Resume
+
+        # Trigger the 'Resume' event for the server.
+        Invoke-PodeEvent -Type Resume
 
         # Clear the console and display refreshed header information.
         Show-PodeConsoleInfo
