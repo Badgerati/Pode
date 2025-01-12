@@ -488,7 +488,8 @@ function Show-PodeConsoleEndpointsInfo {
         $protocolLabel = switch ($protocol) {
             'HTTP' { 'HTTP      ' }
             'HTTPS' { 'HTTPS     ' }
-            'WS' { 'WebSocket ' }
+            'WS'    { 'WS        ' }
+            'WSS'    { 'WSS       ' }
             'SMTP' { 'SMTP      ' }
             'SMTPS' { 'SMTPS      ' }
             'TCP' { 'TCP       ' }

@@ -520,6 +520,7 @@ function Start-PodeWebServer {
                 Url      = $endpoint.Url
                 Pool     = $endpoint.Pool
                 DualMode = $endpoint.DualMode
+                Name     = $endpoint.Name
             }
         })
 }
