@@ -52,6 +52,7 @@ function Start-PodeWebServer {
             Pool                   = $_.Runspace.PoolName
             SslProtocols           = $_.Ssl.Protocols
             DualMode               = $_.DualMode
+            Default                = $_.Default
         }
 
         # add endpoint to list
@@ -521,6 +522,7 @@ function Start-PodeWebServer {
                 Pool     = $endpoint.Pool
                 DualMode = $endpoint.DualMode
                 Name     = $endpoint.Name
+                Default  = $endpoint.Default
             }
         })
 }

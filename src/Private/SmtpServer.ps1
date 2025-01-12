@@ -40,6 +40,7 @@ function Start-PodeSmtpServer {
             Acknowledge            = $_.Tcp.Acknowledge
             SslProtocols           = $_.Ssl.Protocols
             DualMode               = $_.DualMode
+            Default                = $_.Default
         }
 
         # add endpoint to list
@@ -222,6 +223,8 @@ function Start-PodeSmtpServer {
                 Url      = $endpoint.Url
                 Pool     = $endpoint.Pool
                 DualMode = $endpoint.DualMode
+                Name     = $endpoint.Name
+                Default  = $endpoint.Default
             }
         })
 }

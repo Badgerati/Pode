@@ -48,7 +48,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls one-off script logic' {
-        $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {}; Console = @{Quiet = $true } }
+        $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {}; Console = @{Quiet = $true }; EndpointsInfo = @() }
         $PodeContext.Tokens = Initialize-PodeCancellationToken
         Start-PodeInternalServer | Out-Null
 
@@ -63,7 +63,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls smtp server logic' {
-        $PodeContext.Server = @{ Types = 'SMTP'; Logic = {}; Console = @{Quiet = $true } }
+        $PodeContext.Server = @{ Types = 'SMTP'; Logic = {}; Console = @{Quiet = $true } ; EndpointsInfo = @() }
         $PodeContext.Tokens = Initialize-PodeCancellationToken
         Start-PodeInternalServer | Out-Null
 
@@ -78,7 +78,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls tcp server logic' {
-        $PodeContext.Server = @{ Types = 'TCP'; Logic = {}; Console = @{Quiet = $true } }
+        $PodeContext.Server = @{ Types = 'TCP'; Logic = {}; Console = @{Quiet = $true } ; EndpointsInfo = @() }
         $PodeContext.Tokens = Initialize-PodeCancellationToken
         Start-PodeInternalServer | Out-Null
 
@@ -93,7 +93,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls http web server logic' {
-        $PodeContext.Server = @{ Types = 'HTTP'; Logic = {}; Console = @{Quiet = $true } }
+        $PodeContext.Server = @{ Types = 'HTTP'; Logic = {}; Console = @{Quiet = $true } ; EndpointsInfo = @() }
         $PodeContext.Tokens = Initialize-PodeCancellationToken
         Start-PodeInternalServer | Out-Null
 
@@ -279,8 +279,8 @@ Describe 'Restart-PodeInternalServer' {
         $PodeContext.Server.Authentications.Methods.Count | Should -Be 0
         $PodeContext.Server.State.Count | Should -Be 0
         $PodeContext.Server.Configuration.Count | Should -Be 2
-        $PodeContext.Server.Configuration.Enabled |Should -BeFalse
-        $PodeContext.Server.Configuration.Server.Key |Should -Be 'value'
+        $PodeContext.Server.Configuration.Enabled | Should -BeFalse
+        $PodeContext.Server.Configuration.Server.Key | Should -Be 'value'
 
         $PodeContext.Timers.Items.Count | Should -Be 0
         $PodeContext.Schedules.Items.Count | Should -Be 0

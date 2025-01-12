@@ -55,11 +55,13 @@ catch { throw }
 Start-PodeServer -Threads 4 -EnablePool Tasks -IgnoreServerConfig -ScriptBlock {
 
     # listen on localhost:8081
-    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Name 'General' -Default
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Https -SelfSigned
-    Add-PodeEndpoint -Address localhost -Port 8083 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8083 -Protocol Http -DualMode
     Add-PodeEndpoint -Address localhost -Port 8025 -Protocol Smtp
+    Add-PodeEndpoint -Address localhost -Port 8026 -Protocol Smtps -SelfSigned
     Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws -Name 'WS1'
+    Add-PodeEndpoint -Address localhost -Port 8093 -Protocol Wss -SelfSigned
     Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Http -Name 'WS'
     Add-PodeEndpoint -Address localhost -Port 8100 -Protocol Tcp
     Add-PodeEndpoint -Address localhost -Port 9002 -Protocol Tcps -SelfSigned

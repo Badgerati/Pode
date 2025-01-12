@@ -1050,17 +1050,17 @@ function Get-PodeServerState {
         return [Pode.PodeServerState]::Resuming
     }
 
+    # Check if the server is in the process of restarting
+    if (Test-PodeCancellationTokenRequest -Type Restart) {
+        return [Pode.PodeServerState]::Restarting
+    }
+
     # Check if the server is suspending or already suspended
     if (Test-PodeCancellationTokenRequest -Type Suspend) {
         if (Test-PodeCancellationTokenRequest -Type Cancellation) {
             return [Pode.PodeServerState]::Suspending
         }
         return [Pode.PodeServerState]::Suspended
-    }
-
-    # Check if the server is in the process of restarting
-    if (Test-PodeCancellationTokenRequest -Type Restart) {
-        return [Pode.PodeServerState]::Restarting
     }
 
     # Check if the server is starting

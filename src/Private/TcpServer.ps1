@@ -35,6 +35,7 @@ function Start-PodeTcpServer {
             CRLFMessageEnd         = $_.Tcp.CRLFMessageEnd
             SslProtocols           = $_.Ssl.Protocols
             DualMode               = $_.DualMode
+            Default                = $_.Default
         }
 
         # add endpoint to list
@@ -239,6 +240,8 @@ function Start-PodeTcpServer {
                 Url      = $endpoint.Url
                 Pool     = $endpoint.Pool
                 DualMode = $endpoint.DualMode
+                Name     = $endpoint.Name
+                Default  = $endpoint.Default
             }
         })
 }

@@ -422,8 +422,6 @@ function Write-PodeHostDivider {
     }
 }
 
-
-
 <#
 .SYNOPSIS
     Displays information about the endpoints the Pode server is listening on.
@@ -453,7 +451,7 @@ function Show-PodeConsoleEndpointsInfo {
         $Force
     )
 
-    # Default colors if not set
+    # Set default colors if not explicitly defined in PodeContext
     if ($null -ne $PodeContext.Server.Console.Colors.EndpointsHeader) {
         $headerColor = $PodeContext.Server.Console.Colors.EndpointsHeader
     }
@@ -468,58 +466,123 @@ function Show-PodeConsoleEndpointsInfo {
         $endpointsColor = [System.ConsoleColor]::Cyan
     }
 
-    # Return early if no endpoints are available
+    if ($null -ne $PodeContext.Server.Console.Colors.EndpointsProtocol) {
+        $protocolsColor = $PodeContext.Server.Console.Colors.EndpointsProtocol
+    }
+    else {
+        $protocolsColor = [System.ConsoleColor]::White
+    }
+
+    if ($null -ne $PodeContext.Server.Console.Colors.EndpointsFlag) {
+        $flagsColor = $PodeContext.Server.Console.Colors.EndpointsFlag
+    }
+    else {
+        $flagsColor = [System.ConsoleColor]::Gray
+    }
+
+    if ($null -ne $PodeContext.Server.Console.Colors.EndpointsName) {
+        $nameColor = $PodeContext.Server.Console.Colors.EndpointsName
+    }
+    else {
+        $nameColor = [System.ConsoleColor]::Magenta
+    }
+
+    # Exit early if no endpoints are available to display
     if ($PodeContext.Server.EndpointsInfo.Length -eq 0) {
         return
     }
 
-    # Display header
+    # Group endpoints by protocol (e.g., HTTP, HTTPS)
+    $groupedEndpoints = $PodeContext.Server.EndpointsInfo | Group-Object {
+        ($_.Url -split ':')[0].ToUpper()
+    }
+
+    # Calculate the maximum URL length for alignment of flags
+    $maxUrlLength = ($PodeContext.Server.EndpointsInfo | ForEach-Object { $_.Url.Length }) | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum
+
+    # Display header with the total number of endpoints and threads
     Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $PodeContext.Server.EndpointsInfo.Length, $PodeContext.Threads.General) -ForegroundColor $headerColor -Force:$Force
 
-    # Write a horizontal divider line to the console.
+    # Write a divider line for visual separation
     Write-PodeHostDivider -Force $true
+
+    # Determine if the server is disabled
     $disabled = ! (Test-PodeServerIsEnabled)
-    # Display each endpoint with extracted protocol
-    $PodeContext.Server.EndpointsInfo | ForEach-Object {
-        # Extract protocol from the URL
-        $protocol = ($_.Url -split ':')[0].ToUpper()
 
-        # Determine protocol label
-        $protocolLabel = switch ($protocol) {
-            'HTTP' { 'HTTP      ' }
-            'HTTPS' { 'HTTPS     ' }
-            'WS'    { 'WS        ' }
-            'WSS'    { 'WSS       ' }
-            'SMTP' { 'SMTP      ' }
-            'SMTPS' { 'SMTPS      ' }
-            'TCP' { 'TCP       ' }
-            'TCPS' { 'TCPS      ' }
-            default { 'UNKNOWN   ' }
+    # Loop through grouped endpoints by protocol
+    foreach ($group in $groupedEndpoints) {
+        # Define the protocol label with consistent spacing
+        $protocolLabel = switch ($group.Name) {
+            'HTTP' { 'HTTP  :' }
+            'HTTPS' { 'HTTPS :' }
+            'WS' { 'WS    :' }
+            'WSS' { 'WSS   :' }
+            'SMTP' { 'SMTP  :' }
+            'SMTPS' { 'SMTPS :' }
+            'TCP' { 'TCP   :' }
+            'TCPS' { 'TCPS  :' }
+            default { 'UNKNOWN' }
         }
 
-        # Handle flags like DualMode
+        # Flag to control whether the protocol label is displayed
+        $showGroupLabel = $true
+        foreach ($item in $group.Group) {
 
-        $dualMode = if ($_.DualMode) { $dualMode = 'DualMode' }else { [string]::Empty }
+            # Display the protocol label only for the first item in the group
+            if ($showGroupLabel) {
+                Write-PodeHost " - $protocolLabel" -ForegroundColor $protocolsColor -Force:$Force -NoNewLine
+                $showGroupLabel = $false
+            }
+            else {
+                Write-PodeHost '          ' -Force:$Force -NoNewLine
+            }
 
-        # Display endpoint details
-        Write-PodeHost "   - $protocolLabel : $($_.Url) `t$dualmode" -ForegroundColor $endpointsColor -Force:$Force -NoNewLine
-        if ($disabled -and ('HTTP', 'HTTPS' -contains $protocol)) {
-            $flags += 'Disabled'
-        }
-        if ($disabled -and ('HTTP', 'HTTPS' -contains $protocol)) {
-            Write-PodeHost 'Disabled' -ForegroundColor Yellow -Force:$Force
-        }
-        else {
-            Write-PodeHost -Force:$Force
+            # Display the URL
+            Write-PodeHost " $($item.Url)" -ForegroundColor $endpointsColor -Force:$Force -NoNewLine
+
+            # Prepare flags for the endpoint
+            $flags = @()
+            if ($disabled -and ('HTTP', 'HTTPS' -contains $group.Name)) { $flags += 'Disabled' }
+            if (![string]::IsNullOrEmpty($item.Name) -and ($item.Name -notmatch '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')) {
+                $flags += "`b$($item.Name)"
+            }
+            if ($item.DualMode) { $flags += 'DualMode' }
+            if ($item.Default) { $flags += 'Default' }
+
+            # Display flags if any are present
+            if ($flags.Count -gt 0) {
+                $urlPadding = $maxUrlLength - ($item.Url.Length) + 4
+                Write-PodeHost "$( ' ' * $urlPadding )[" -ForegroundColor $flagsColor -Force:$Force -NoNewLine
+
+                $index = 0
+                foreach ($flag in $flags) {
+                    if ($flag.StartsWith([char]8)) {
+                        Write-PodeHost 'Name: ' -ForegroundColor $flagsColor -Force:$Force -NoNewLine
+                        Write-PodeHost "$flag" -ForegroundColor $nameColor -Force:$Force -NoNewLine
+                    }
+                    else {
+                        Write-PodeHost "$flag" -ForegroundColor $flagsColor -Force:$Force -NoNewLine
+                    }
+                    if ((++$index) -lt $flags.Length) {
+                        Write-PodeHost ', ' -ForegroundColor $flagsColor -Force:$Force -NoNewLine
+                    }
+
+                }
+                Write-PodeHost ']'  -ForegroundColor $flagsColor -Force:$Force
+            }
+            else {
+                # End line if no flags are present
+                Write-PodeHost
+            }
         }
     }
 
-    # Footer
+    # Add footer for visual separation
     Write-PodeHost
-
-    # Write a horizontal divider line to the console.
     Write-PodeHostDivider -Force $true
 }
+
+
 
 <#
 .SYNOPSIS
@@ -960,21 +1023,24 @@ function Get-PodeDefaultConsole {
         ShowTimeStamp       = $true     # Display timestamp in the header.
 
         Colors              = @{            # Customize console colors.
-            Header           = 'White'      # The server's header section, including the Pode version and timestamp.
-            EndpointsHeader  = 'Yellow'     # The header for the endpoints list.
-            Endpoints        = 'Cyan'       # The endpoints themselves, including protocol and URLs.
-            OpenApiUrls      = 'Cyan'       # URLs listed under the OpenAPI information section.
-            OpenApiHeaders   = 'Yellow'     # Section headers for OpenAPI information.
-            OpenApiTitles    = 'White'      # The OpenAPI "default" title.
-            OpenApiSubtitles = 'Yellow'     # Subtitles under OpenAPI (e.g., Specification, Documentation).
-            HelpHeader       = 'Yellow'     # Header for the Help section.
-            HelpKey          = 'Green'      # Key bindings listed in the Help section (e.g., Ctrl+c).
-            HelpDescription  = 'White'      # Descriptions for each Help section key binding.
-            HelpDivider      = 'Gray'       # Dividers used in the Help section.
-            Divider          = 'DarkGray'   # Dividers between console sections.
-            MetricsHeader    = 'Yellow'     # Header for the Metric section.
-            MetricsLabel     = 'White'      # Labels for values displayed in the Metrics section.
-            MetricsValue     = 'Green'      # The actual values displayed in the Metrics section.
+            Header            = [System.ConsoleColor]::White      # The server's header section, including the Pode version and timestamp.
+            EndpointsHeader   = [System.ConsoleColor]::Yellow     # The header for the endpoints list.
+            Endpoints         = [System.ConsoleColor]::Cyan       # The endpoints URLs.
+            EndpointsProtocol = [System.ConsoleColor]::White     # The endpoints protocol.
+            EndpointsFlag     = [System.ConsoleColor]::Gray     # The endpoints flags.
+            EndpointsName     = [System.ConsoleColor]::Magenta     # The endpoints Name.
+            OpenApiUrls       = [System.ConsoleColor]::Cyan       # URLs listed under the OpenAPI information section.
+            OpenApiHeaders    = [System.ConsoleColor]::Yellow     # Section headers for OpenAPI information.
+            OpenApiTitles     = [System.ConsoleColor]::White      # The OpenAPI "default" title.
+            OpenApiSubtitles  = [System.ConsoleColor]::Yellow     # Subtitles under OpenAPI (e.g., Specification, Documentation).
+            HelpHeader        = [System.ConsoleColor]::Yellow     # Header for the Help section.
+            HelpKey           = [System.ConsoleColor]::Green      # Key bindings listed in the Help section (e.g., Ctrl+c).
+            HelpDescription   = [System.ConsoleColor]::White      # Descriptions for each Help section key binding.
+            HelpDivider       = [System.ConsoleColor]::Gray       # Dividers used in the Help section.
+            Divider           = [System.ConsoleColor]::DarkGray   # Dividers between console sections.
+            MetricsHeader     = [System.ConsoleColor]::Yellow     # Header for the Metric section.
+            MetricsLabel      = [System.ConsoleColor]::White      # Labels for values displayed in the Metrics section.
+            MetricsValue      = [System.ConsoleColor]::Green      # The actual values displayed in the Metrics section.
         }
         KeyBindings         = $KeyBindings
     }
@@ -1061,7 +1127,7 @@ function Write-PodeConsoleHeader {
     }
     else {
         # Close the header without HTTP status.
-        Write-PodeHost ']' -ForegroundColor $headerColor -Force:$Force -NoNewLine:$NoNewLine
+        Write-PodeHost ']    ' -ForegroundColor $headerColor -Force:$Force -NoNewLine:$NoNewLine
     }
 }
 

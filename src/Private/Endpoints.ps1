@@ -436,6 +436,7 @@ function Get-SortedPodeEndpointsInfo {
             Pool     = $_.Pool
             Url      = $_.Url
             Name     = $_.Name
+            Default  = $_.Default
             Order    = $protocolOrder[$protocol] -as [int]
 
         }

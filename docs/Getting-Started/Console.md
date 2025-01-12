@@ -11,48 +11,50 @@ Additionally, several console settings can be configured dynamically when starti
 Below is an example of the console output during server runtime:
 
 ```plaintext
-[2024-12-14 08:50:27] Pode [dev] (PID: 14844) [Running]
+[2025-01-12 10:28:05] Pode [dev] (PID: 29748) [Running]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Listening on 8 endpoint(s) [4 thread(s)]:
+Listening on 10 endpoint(s) [4 thread(s)]:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   - HTTP       : http://localhost:8083/
-   - HTTP       : http://localhost:8081/
-   - HTTPS      : https://localhost:8082/
-   - HTTP       : http://localhost:8091/
-   - WebSocket  : ws://localhost:8091
-   - SMTP       : smtp://localhost:8025
-   - TCPS       : tcps://localhost:9002
-   - TCP        : tcp://localhost:8100
+ - HTTP  : http://localhost:8081/     [Name:General, Default]
+           http://localhost:8083/     [DualMode]
+           http://localhost:8091/     [Name:WS]
+ - HTTPS : https://localhost:8082/
+ - SMTP  : smtp://localhost:8025
+ - SMTPS : smtps://localhost:8026
+ - TCP   : tcp://localhost:8100
+ - TCPS  : tcps://localhost:9002
+ - WS    : ws://localhost:8091        [Name:WS1]
+ - WSS   : wss://localhost:8093
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OpenAPI Information:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  'default':
    Specification:
-     - http://localhost:8083/docs/openapi
      - http://localhost:8081/docs/openapi
-     - https://localhost:8082/docs/openapi
+     - http://localhost:8083/docs/openapi
      - http://localhost:8091/docs/openapi
+     - https://localhost:8082/docs/openapi
    Documentation:
-     - http://localhost:8083/docs
      - http://localhost:8081/docs
-     - https://localhost:8082/docs
+     - http://localhost:8083/docs
      - http://localhost:8091/docs
+     - https://localhost:8082/docs
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Server Control Commands:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    Ctrl+C   : Gracefully terminate the server.
-    Ctrl+R   : Restart the server and reload configurations.
-    Ctrl+P   : Suspend the server.
-    Ctrl+D   : Disable Server
-    Ctrl+H   : Hide Help
-    Ctrl+B   : Open the first HTTP endpoint in the default browser.
-    ----
-    Ctrl+M   : Show Metrics
-    Ctrl+E   : Hide Endpoints
-    Ctrl+Q   : Hide OpenAPI
-    Ctrl+L   : Clear the Console
-    Ctrl+Q   : Enable Quiet Mode
+Ctrl-C  : Gracefully terminate the server.
+Ctrl-R  : Restart the server and reload configurations.
+Ctrl-P  : Suspend the server.
+Ctrl-D  : Disable Server
+Ctrl-H  : Hide Help
+Ctrl-B  : Open the first HTTP endpoint in the default browser.
+ ----
+Ctrl-M  : Show Metrics
+Ctrl-E  : Hide Endpoints
+Ctrl-O  : Hide OpenAPI
+Ctrl-L  : Clear the Console
+Ctrl-Q  : Enable Quiet Mode
 ```
 
 ---
@@ -72,6 +74,7 @@ The behavior, appearance, and functionality of the console are highly customizab
 | `HideOpenAPI`         | Hides OpenAPI details such as specification and documentation URLs in the console output.        |
 | `HideEndpoints`       | Hides the list of active endpoints in the console output.                                        |
 | `ShowHelp`            | Displays a help menu in the console with available control commands.                             |
+| `Daemon`              | Configures the server to run as a daemon with minimal console interaction and output.            |
 
 #### Example Usage
 
@@ -202,23 +205,26 @@ The console colors are fully customizable via the `Colors` section of the config
 
 ### Color Settings
 
-| **Key**            | **Default Value** | **Description**                                                        |
-|--------------------|-------------------|------------------------------------------------------------------------|
-| `Header`           | `White`           | The server's header section, including the Pode version and timestamp. |
-| `EndpointsHeader`  | `Yellow`          | The header for the endpoints list.                                     |
-| `Endpoints`        | `Cyan`            | The endpoints themselves, including protocol and URLs.                 |
-| `OpenApiUrls`      | `Cyan`            | URLs listed under the OpenAPI information section.                     |
-| `OpenApiHeaders`   | `Yellow`          | Section headers for OpenAPI information.                               |
-| `OpenApiTitles`    | `White`           | The OpenAPI "default" title.                                           |
-| `OpenApiSubtitles` | `Yellow`          | Subtitles under OpenAPI (e.g., Specification, Documentation).          |
-| `HelpHeader`       | `Yellow`          | Header for the Help section.                                           |
-| `HelpKey`          | `Green`           | Key bindings listed in the Help section (e.g., `Ctrl+c`).              |
-| `HelpDescription`  | `White`           | Descriptions for each Help section key binding.                        |
-| `HelpDivider`      | `Gray`            | Dividers used in the Help section.                                     |
-| `Divider`          | `DarkGray`        | Dividers between console sections.                                     |
-| `MetricsHeader`    | `Yellow`          | Header for the Metrics section.                                        |
-| `MetricsLabel`     | `White`           | Labels for values displayed in the Metrics section.                    |
-| `MetricsValue`     | `Green`           | The actual values displayed in the Metrics section.                    |
+| **Key**             | **Default Value** | **Description**                                                        |
+|---------------------|-------------------|------------------------------------------------------------------------|
+| `Header`            | `White`           | The server's header section, including the Pode version and timestamp. |
+| `EndpointsHeader`   | `Yellow`          | The header for the endpoints list.                                     |
+| `Endpoints`         | `Cyan`            | The endpoints themselves, including protocol and URLs.                 |
+| `EndpointsProtocol` | `White`           | The endpoints protocol.                                                |
+| `EndpointsFlag`     | `Gray`            | The endpoints flags.                                                   |
+| `EndpointsName`     | `Magenta`         | The endpoints name.                                                    |
+| `OpenApiUrls`       | `Cyan`            | URLs listed under the OpenAPI information section.                     |
+| `OpenApiHeaders`    | `Yellow`          | Section headers for OpenAPI information.                               |
+| `OpenApiTitles`     | `White`           | The OpenAPI "default" title.                                           |
+| `OpenApiSubtitles`  | `Yellow`          | Subtitles under OpenAPI (e.g., Specification, Documentation).          |
+| `HelpHeader`        | `Yellow`          | Header for the Help section.                                           |
+| `HelpKey`           | `Green`           | Key bindings listed in the Help section (e.g., `Ctrl+c`).              |
+| `HelpDescription`   | `White`           | Descriptions for each Help section key binding.                        |
+| `HelpDivider`       | `Gray`            | Dividers used in the Help section.                                     |
+| `Divider`           | `DarkGray`        | Dividers between console sections.                                     |
+| `MetricsHeader`     | `Yellow`          | Header for the Metrics section.                                        |
+| `MetricsLabel`      | `White`           | Labels for values displayed in the Metrics section.                    |
+| `MetricsValue`      | `Green`           | The actual values displayed in the Metrics section.                    |
 
 > **Tip:** Test your chosen colors against your terminal's background to ensure readability.
 

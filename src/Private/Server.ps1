@@ -156,25 +156,30 @@ function Start-PodeInternalServer {
                 }
             }
 
-            # Re-order the endpoints
-            $PodeContext.Server.EndpointsInfo = Get-SortedPodeEndpointsInfo -EndpointsInfo $PodeContext.Server.EndpointsInfo
+            if ($PodeContext.Server.EndpointsInfo) {
+                # Re-order the endpoints
+                $PodeContext.Server.EndpointsInfo = Get-SortedPodeEndpointsInfo -EndpointsInfo $PodeContext.Server.EndpointsInfo
 
-            # now go back through, and wait for each server type's runspace pool to be ready
-            foreach ($pool in ($PodeContext.Server.EndpointsInfo.Pool | Sort-Object -Unique)) {
-                $start = [datetime]::Now
-                Write-Verbose "Waiting for the $($pool) RunspacePool to be Ready"
+                # now go back through, and wait for each server type's runspace pool to be ready
+                foreach ($pool in ($PodeContext.Server.EndpointsInfo.Pool | Sort-Object -Unique)) {
+                    $start = [datetime]::Now
+                    Write-Verbose "Waiting for the $($pool) RunspacePool to be Ready"
 
-                # wait
-                while ($PodeContext.RunspacePools[$pool].State -ieq 'Waiting') {
-                    Start-Sleep -Milliseconds 100
+                    # wait
+                    while ($PodeContext.RunspacePools[$pool].State -ieq 'Waiting') {
+                        Start-Sleep -Milliseconds 100
+                    }
+
+                    Write-Verbose "$($pool) RunspacePool $($PodeContext.RunspacePools[$pool].State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+
+                    # errored?
+                    if ($PodeContext.RunspacePools[$pool].State -ieq 'error') {
+                        throw ($PodeLocale.runspacePoolFailedToLoadExceptionMessage -f $pool) #"$($pool) RunspacePool failed to load"
+                    }
                 }
-
-                Write-Verbose "$($pool) RunspacePool $($PodeContext.RunspacePools[$pool].State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
-
-                # errored?
-                if ($PodeContext.RunspacePools[$pool].State -ieq 'error') {
-                    throw ($PodeLocale.runspacePoolFailedToLoadExceptionMessage -f $pool) #"$($pool) RunspacePool failed to load"
-                }
+            }
+            else {
+                Write-Verbose 'No Endpoints defined.'
             }
         }
 

@@ -61,6 +61,12 @@ namespace Pode
         Suspend,
 
         /// <summary>
+        /// Triggered when the server begins the resume process.
+        /// </summary>
+        ///
+        Resuming,
+        
+        /// <summary>
         /// Triggered when the server resumes operation after suspension.
         /// </summary>
         Resume,
