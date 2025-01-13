@@ -293,19 +293,21 @@ function New-PodeContext {
     # Check if the current session is running in a console-like environment
     if (Test-PodeHasConsole) {
         try {
-            # If the session is not configured for quiet mode, modify console behavior
-            if (!$ctx.Server.Console.Quiet) {
-                # Hide the cursor to improve the console appearance
-                [System.Console]::CursorVisible = $false
+            if (! (Test-PodeIsISEHost)) {
+                # If the session is not configured for quiet mode, modify console behavior
+                if (!$ctx.Server.Console.Quiet) {
+                    # Hide the cursor to improve the console appearance
+                    [System.Console]::CursorVisible = $false
 
-                # If the divider line should be shown, configure UTF-8 output encoding
-                if ($ctx.Server.Console.ShowDivider) {
-                    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+                    # If the divider line should be shown, configure UTF-8 output encoding
+                    if ($ctx.Server.Console.ShowDivider) {
+                        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+                    }
                 }
-            }
-            if (Test-PodeIsConsoleHost) {
-                # Treat Ctrl+C as input instead of terminating the process
-                [Console]::TreatControlCAsInput = $true
+                if (Test-PodeIsConsoleHost) {
+                    # Treat Ctrl+C as input instead of terminating the process
+                    [Console]::TreatControlCAsInput = $true
+                }
             }
         }
         catch {

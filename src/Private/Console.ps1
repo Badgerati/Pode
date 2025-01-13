@@ -1277,7 +1277,13 @@ function Show-PodeConsoleEndpointUrl {
     # Returns `$true` if the session supports console-like behavior.
 #>
 function Test-PodeHasConsole {
-    if (@('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host') -contains $Host.Name) {
+    
+    if (Test-PodeIsISEHost) {
+        return $true
+    }
+
+    if (@('ConsoleHost', 'Visual Studio Code Host') -contains $Host.Name) {
+
         if (Test-PodeIsWindows) {
             $handleTypeMap = @{
                 Input  = -10

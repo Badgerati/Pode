@@ -3865,7 +3865,7 @@ function Convert-PodeMillisecondsToReadable {
     }
 }
 
- 
+
 
 <#
 .SYNOPSIS
@@ -3903,4 +3903,30 @@ function ConvertTo-PodeSleep {
         # Modify the ScriptBlock to replace 'Start-Sleep' with 'Start-PodeSleep'
         return [scriptblock]::Create(("$($ScriptBlock)" -replace 'Start-Sleep ', 'Start-PodeSleep '))
     }
+}
+
+<#
+.SYNOPSIS
+    Tests whether the current PowerShell host is the Integrated Scripting Environment (ISE).
+
+.DESCRIPTION
+    This function checks if the current host is running in the Windows PowerShell ISE
+    by comparing the `$Host.Name` property with the string 'Windows PowerShell ISE Host'.
+
+.PARAMETER None
+    This function does not accept any parameters.
+
+.OUTPUTS
+    [Boolean]
+    Returns `True` if the host is the Windows PowerShell ISE, otherwise `False`.
+
+.EXAMPLE
+    Test-PodeIsISEHost
+    Checks if the current PowerShell session is running in the ISE and returns the result.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeIsISEHost {
+    return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }
