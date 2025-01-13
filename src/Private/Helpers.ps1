@@ -3865,68 +3865,14 @@ function Convert-PodeMillisecondsToReadable {
     }
 }
 
-<#
-.SYNOPSIS
-    Checks if the current PowerShell session supports console-like features.
-
-.DESCRIPTION
-    This function determines if the current PowerShell session is running in a host
-    that typically indicates a console-like environment where `Ctrl+C` can interrupt.
-    On Windows, it validates the standard input and output handles.
-    On non-Windows systems, it checks against known supported hosts.
-
-.OUTPUTS
-    [bool]
-    Returns `$true` if running in a console-like environment, `$false` otherwise.
-
-.EXAMPLE
-    Test-PodeHasConsole
-    # Returns `$true` if the session supports console-like behavior.
-#>
-function Test-PodeHasConsole {
-    if (@('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host') -contains $Host.Name) {
-        if (Test-PodeIsWindows) {
-            $handleTypeMap = @{
-                Input  = -10
-                Output = -11
-                Error  = -12
-            }
-            # On Windows, validate standard input and output handles
-            return [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output)
-        }
-        # On Linux or Mac
-        return ([Pode.NativeMethods]::IsTerminal)
-    }
-    return $false
-}
-
-
-<#
-.SYNOPSIS
-    Determines if the current PowerShell session is running in the ConsoleHost.
-
-.DESCRIPTION
-    This function checks if the session's host name matches 'ConsoleHost',
-    which typically represents a native terminal environment in PowerShell.
-
-.OUTPUTS
-    [bool]
-    Returns `$true` if the current host is 'ConsoleHost', otherwise `$false`.
-
-.EXAMPLE
-    Test-PodeIsConsoleHost
-    # Returns `$true` if running in ConsoleHost, `$false` otherwise.
-#>
-function Test-PodeIsConsoleHost {
-    return $Host.Name -eq 'ConsoleHost'
-}
+ 
 
 <#
 .SYNOPSIS
     Converts all instances of 'Start-Sleep' to 'Start-PodeSleep' within a scriptblock.
 
 .DESCRIPTION
-    The `Convert-PodeSleep` function processes a given scriptblock and replaces every occurrence
+    The `ConvertTo-PodeSleep` function processes a given scriptblock and replaces every occurrence
     of 'Start-Sleep' with 'Start-PodeSleep'. This is useful for adapting scripts that need to use
     Pode-specific sleep functionality.
 
@@ -3937,17 +3883,17 @@ function Test-PodeIsConsoleHost {
 .EXAMPLE
   # Example 1: Replace Start-Sleep in a ScriptBlock
     $Original = { Write-Host "Starting"; Start-Sleep -Seconds 5; Write-Host "Done" }
-    $Modified = $Original | Convert-PodeSleep
+    $Modified = $Original | ConvertTo-PodeSleep
     & $Modified
 
 .EXAMPLE
     # Example 2: Process a ScriptBlock inline
-    Convert-PodeSleep -ScriptBlock { Start-Sleep -Seconds 2 } | Invoke-Command
+    ConvertTo-PodeSleep -ScriptBlock { Start-Sleep -Seconds 2 } | Invoke-Command
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Convert-PodeSleep {
+function ConvertTo-PodeSleep {
     param(
         [Parameter(ValueFromPipeline = $true)]
         [scriptblock]

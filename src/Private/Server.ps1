@@ -158,7 +158,7 @@ function Start-PodeInternalServer {
 
             if ($PodeContext.Server.EndpointsInfo) {
                 # Re-order the endpoints
-                $PodeContext.Server.EndpointsInfo = Get-SortedPodeEndpointsInfo -EndpointsInfo $PodeContext.Server.EndpointsInfo
+                $PodeContext.Server.EndpointsInfo = Get-PodeSortedEndpointsInfo -EndpointsInfo $PodeContext.Server.EndpointsInfo
 
                 # now go back through, and wait for each server type's runspace pool to be ready
                 foreach ($pool in ($PodeContext.Server.EndpointsInfo.Pool | Sort-Object -Unique)) {

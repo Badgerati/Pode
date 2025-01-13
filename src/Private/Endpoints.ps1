@@ -406,7 +406,7 @@ function Get-PodeEndpointByName {
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Get-SortedPodeEndpointsInfo {
+function Get-PodeSortedEndpointsInfo {
     param(
         [Parameter(Mandatory = $true)]
         [array]

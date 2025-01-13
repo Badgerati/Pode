@@ -765,7 +765,7 @@ function Show-PodeConsoleOAInfo {
 #>
 function Clear-PodeKeyPressed {
     # Clear any remaining keys in the input buffer
-    while ([Console]::KeyAvailable) {
+    while (![Console]::IsInputRedirected -and [Console]::KeyAvailable) {
         $null = [Console]::ReadKey($true)
     }
 }
@@ -1256,4 +1256,59 @@ function Show-PodeConsoleEndpointUrl {
         Invoke-PodeEvent -Type Browser
         Start-Process $url
     }
+}
+
+<#
+.SYNOPSIS
+    Checks if the current PowerShell session supports console-like features.
+
+.DESCRIPTION
+    This function determines if the current PowerShell session is running in a host
+    that typically indicates a console-like environment where `Ctrl+C` can interrupt.
+    On Windows, it validates the standard input and output handles.
+    On non-Windows systems, it checks against known supported hosts.
+
+.OUTPUTS
+    [bool]
+    Returns `$true` if running in a console-like environment, `$false` otherwise.
+
+.EXAMPLE
+    Test-PodeHasConsole
+    # Returns `$true` if the session supports console-like behavior.
+#>
+function Test-PodeHasConsole {
+    if (@('ConsoleHost', 'Windows PowerShell ISE Host', 'Visual Studio Code Host') -contains $Host.Name) {
+        if (Test-PodeIsWindows) {
+            $handleTypeMap = @{
+                Input  = -10
+                Output = -11
+                Error  = -12
+            }
+            # On Windows, validate standard input and output handles
+            return [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output)
+        }
+        # On Linux or Mac
+        return ([Pode.NativeMethods]::IsTerminal())
+    }
+    return $false
+}
+
+<#
+.SYNOPSIS
+    Determines if the current PowerShell session is running in the ConsoleHost.
+
+.DESCRIPTION
+    This function checks if the session's host name matches 'ConsoleHost',
+    which typically represents a native terminal environment in PowerShell.
+
+.OUTPUTS
+    [bool]
+    Returns `$true` if the current host is 'ConsoleHost', otherwise `$false`.
+
+.EXAMPLE
+    Test-PodeIsConsoleHost
+    # Returns `$true` if running in ConsoleHost, `$false` otherwise.
+#>
+function Test-PodeIsConsoleHost {
+    return $Host.Name -eq 'ConsoleHost'
 }
