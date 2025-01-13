@@ -184,6 +184,13 @@ function Show-PodeConsoleInfo {
 .PARAMETER Hide
     Switch to display the "Show Help" option instead of the full help section.
 
+.PARAMETER Force
+    Overrides the -Quiet flag of the server.
+
+.PARAMETER Divider
+    Specifies the position of the divider: 'Header' or 'Footer'.
+    Default is 'Footer'.
+
 .NOTES
     This function is designed for Pode's internal console display system and may change in future releases.
 
@@ -201,7 +208,14 @@ function Show-PodeConsoleInfo {
 function Show-PodeConsoleHelp {
     param(
         [switch]
-        $Hide
+        $Hide,
+
+        [switch]
+        $Force,
+
+        [string]
+        [ValidateSet('Header', 'Footer')]
+        $Divider = 'Footer'
     )
     # Retrieve centralized key mapping for keyboard shortcuts
     $KeyBindings = $PodeContext.Server.Console.KeyBindings
@@ -211,6 +225,11 @@ function Show-PodeConsoleHelp {
     $helpKeyColor = $PodeContext.Server.Console.Colors.HelpKey
     $helpDescriptionColor = $PodeContext.Server.Console.Colors.HelpDescription
     $helpDividerColor = $PodeContext.Server.Console.Colors.HelpDivider
+
+    # Add a header divider if specified
+    if ($Divider -eq 'Header') {
+        Write-PodeHostDivider -Force $Force
+    }
 
     # Display the "Show Help" option if the $Hide parameter is specified
     if ($Hide) {
@@ -296,8 +315,11 @@ function Show-PodeConsoleHelp {
         Write-PodeKeyBinding -Key $KeyBindings.Quiet -ForegroundColor $helpKeyColor -Force:$Force
         Write-PodeHost "$(if ($PodeContext.Server.Console.Quiet) { 'Disable' } else { 'Enable' }) Quiet Mode" -ForegroundColor $helpDescriptionColor -Force:$Force
 
-        # Final blank line for spacing
-        Write-PodeHost
+    }
+
+    # Add a footer divider if specified
+    if ($Divider -eq 'Footer') {
+        Write-PodeHostDivider -Force $Force
     }
 }
 
@@ -435,6 +457,10 @@ function Write-PodeHostDivider {
 .PARAMETER Force
     Overrides the -Quiet flag of the server.
 
+.PARAMETER Divider
+    Specifies the position of the divider: 'Header' or 'Footer'.
+    Default is 'Footer'.
+
 .EXAMPLE
     Show-PodeConsoleEndpointsInfo
 
@@ -448,7 +474,11 @@ function Write-PodeHostDivider {
 function Show-PodeConsoleEndpointsInfo {
     param(
         [switch]
-        $Force
+        $Force,
+
+        [string]
+        [ValidateSet('Header', 'Footer')]
+        $Divider = 'Footer'
     )
 
     # Set default colors if not explicitly defined in PodeContext
@@ -490,6 +520,11 @@ function Show-PodeConsoleEndpointsInfo {
     # Exit early if no endpoints are available to display
     if ($PodeContext.Server.EndpointsInfo.Length -eq 0) {
         return
+    }
+
+    # Add a header divider if specified
+    if ($Divider -eq 'Header') {
+        Write-PodeHostDivider -Force $Force
     }
 
     # Group endpoints by protocol (e.g., HTTP, HTTPS)
@@ -577,9 +612,10 @@ function Show-PodeConsoleEndpointsInfo {
         }
     }
 
-    # Add footer for visual separation
-    Write-PodeHost
-    Write-PodeHostDivider -Force $true
+    # Add a footer divider if specified
+    if ($Divider -eq 'Footer') {
+        Write-PodeHostDivider -Force $Force
+    }
 }
 
 
@@ -661,6 +697,10 @@ function Show-PodeConsoleMetric {
 .PARAMETER Force
     Overrides the -Quiet flag of the server.
 
+.PARAMETER Divider
+    Specifies the position of the divider: 'Header' or 'Footer'.
+    Default is 'Footer'.
+
 .EXAMPLE
     Show-PodeConsoleOAInfo
 
@@ -673,8 +713,13 @@ function Show-PodeConsoleMetric {
 function Show-PodeConsoleOAInfo {
     param(
         [switch]
-        $Force
+        $Force,
+
+        [string]
+        [ValidateSet('Header', 'Footer')]
+        $Divider = 'Footer'
     )
+
 
     # Default header initialization
     $openAPIHeader = $false
@@ -684,6 +729,8 @@ function Show-PodeConsoleOAInfo {
     $titleColor = $PodeContext.Server.Console.Colors.OpenApiTitles
     $subtitleColor = $PodeContext.Server.Console.Colors.OpenApiSubtitles
     $urlColor = $PodeContext.Server.Console.Colors.OpenApiUrls
+
+
 
     # Iterate through OpenAPI definitions
     foreach ($key in $PodeContext.Server.OpenAPI.Definitions.Keys) {
@@ -695,6 +742,12 @@ function Show-PodeConsoleOAInfo {
         # Print the header only once
         # Write-PodeHost -Force:$Force
         if (!$openAPIHeader) {
+
+            # Add a header divider if specified
+            if ($Divider -eq 'Header') {
+                Write-PodeHostDivider -Force $Force
+            }
+
             Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor $headerColor -Force:$Force
 
             # Write a horizontal divider line to the console.
@@ -736,9 +789,8 @@ function Show-PodeConsoleOAInfo {
             }
         }
     }
-    if ($openAPIHeader) {
-        # Footer
-
+    # Add a footer divider if specified and OpenAPI is defined
+    if ($openAPIHeader -and ($Divider -eq 'Footer')) {
         # Write a horizontal divider line to the console.
         Write-PodeHostDivider -Force $true
     }
@@ -887,17 +939,43 @@ function Invoke-PodeConsoleAction {
     # Toggle help display
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Help) {
         $PodeContext.Server.Console.ShowHelp = !$PodeContext.Server.Console.ShowHelp
-        Show-PodeConsoleInfo -ShowTopSeparator
+        if ($PodeContext.Server.Console.ShowHelp) {
+            Show-PodeConsoleHelp -Divider Footer
+        }
+        else {
+            Show-PodeConsoleInfo -ShowTopSeparator
+        }
     }
     # Toggle OpenAPI display
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.OpenAPI) {
         $PodeContext.Server.Console.ShowOpenAPI = !$PodeContext.Server.Console.ShowOpenAPI
-        Show-PodeConsoleInfo -ShowTopSeparator
+
+        if ($PodeContext.Server.Console.ShowOpenAPI) {
+            if (Test-PodeServerState -State Running) {
+                if ($PodeContext.Server.Console.ShowOpenAPI) {
+                    # state what endpoints are being listened on
+                    Show-PodeConsoleOAInfo -Force:$Force -Divider Footer
+                }
+            }
+        }
+        else {
+            Show-PodeConsoleInfo -ShowTopSeparator
+        }
     }
     # Toggle endpoints display
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Endpoints) {
         $PodeContext.Server.Console.ShowEndpoints = !$PodeContext.Server.Console.ShowEndpoints
-        Show-PodeConsoleInfo -ShowTopSeparator
+        if ($PodeContext.Server.Console.ShowEndpoints) {
+            if (Test-PodeServerState -State Running) {
+                if ($PodeContext.Server.Console.ShowEndpoints) {
+                    # state what endpoints are being listened on
+                    Show-PodeConsoleEndpointsInfo -Force:$Force -Divider Footer
+                }
+            }
+        }
+        else {
+            Show-PodeConsoleInfo -ShowTopSeparator
+        }
     }
     # Clear console
     elseif (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Clear) {
@@ -1277,7 +1355,7 @@ function Show-PodeConsoleEndpointUrl {
     # Returns `$true` if the session supports console-like behavior.
 #>
 function Test-PodeHasConsole {
-    
+
     if (Test-PodeIsISEHost) {
         return $true
     }
@@ -1291,10 +1369,21 @@ function Test-PodeHasConsole {
                 Error  = -12
             }
             # On Windows, validate standard input and output handles
-            return [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output)
+            return ([Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and `
+                    [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output) -and `
+                    [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Error)
+            )
         }
         # On Linux or Mac
-        return ([Pode.NativeMethods]::IsTerminal())
+        $handleTypeMap = @{
+            Input  = 0
+            Output = 1
+            Error  = 2
+        }
+        return ([Pode.NativeMethods]::IsTerminal($handleTypeMap.Input -and `
+                    [Pode.NativeMethods]::IsTerminal($handleTypeMap.Output) -and `
+                    [Pode.NativeMethods]::IsTerminal($handleTypeMap.Error))
+        )
     }
     return $false
 }

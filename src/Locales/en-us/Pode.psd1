@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = 'Total Uptime:'
     uptimeSinceLastRestartMessage                                     = 'Uptime Since Last Restart:'
     totalRestartMessage                                               = 'Total Number of Restarts:'
+    defaultEndpointAlreadySetExceptionMessage                         = "A default endpoint for the type '{0}' is already set. Only one default endpoint is allowed per type."
 }

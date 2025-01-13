@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = 'Gesamtlaufzeit:'
     uptimeSinceLastRestartMessage                                     = 'Laufzeit seit dem letzten Neustart:'
     totalRestartMessage                                               = 'Gesamtanzahl der Neustarts:'
+    defaultEndpointAlreadySetExceptionMessage                         = "Ein Standardendpunkt für den Typ '{0}' ist bereits festgelegt. Pro Typ ist nur ein Standardendpunkt erlaubt."
 }

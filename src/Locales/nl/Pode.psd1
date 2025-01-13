@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = 'Totale uptime:'
     uptimeSinceLastRestartMessage                                     = 'Uptime sinds laatste herstart:'
     totalRestartMessage                                               = 'Totaal aantal herstarts:'
+    defaultEndpointAlreadySetExceptionMessage                         = "Er is al een standaardendpoint ingesteld voor het type '{0}'. Er is slechts één standaardendpoint per type toegestaan."
 }

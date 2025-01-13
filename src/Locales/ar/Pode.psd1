@@ -304,11 +304,12 @@
     suspendedMessage                                                  = 'معلق'
     runningMessage                                                    = 'يعمل'
     openHttpEndpointMessage                                           = 'افتح أول نقطة نهاية HTTP في المتصفح الافتراضي.'
-     terminatedMessage                                                 = 'تم الإنهاء'
+    terminatedMessage                                                 = 'تم الإنهاء'
     showMetricsMessage                                                = 'عرض المقاييس'
     clearConsoleMessage                                               = 'مسح وحدة التحكم'
     serverMetricsMessage                                              = 'مقاييس الخادم'
     totalUptimeMessage                                                = 'إجمالي وقت التشغيل:'
     uptimeSinceLastRestartMessage                                     = 'وقت التشغيل منذ آخر إعادة تشغيل:'
     totalRestartMessage                                               = 'إجمالي عدد عمليات إعادة التشغيل:'
+    defaultEndpointAlreadySetExceptionMessage                         = "تم تعيين نقطة نهاية افتراضية للنوع '{0}'. يُسمح فقط بنقطة نهاية افتراضية واحدة لكل نوع."
 }

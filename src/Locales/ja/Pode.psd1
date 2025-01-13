@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = '総稼働時間:'
     uptimeSinceLastRestartMessage                                     = '最後の再起動からの稼働時間:'
     totalRestartMessage                                               = '再起動の総数:'
+    defaultEndpointAlreadySetExceptionMessage                         = "タイプ '{0}' のデフォルトエンドポイントは既に設定されています。タイプごとに1つのデフォルトエンドポイントのみ許可されています。"
 }

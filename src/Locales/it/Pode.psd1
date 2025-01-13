@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = 'Tempo totale di attività:'
     uptimeSinceLastRestartMessage                                     = "Tempo di attività dall'ultimo riavvio:"
     totalRestartMessage                                               = 'Numero totale di riavvii:'
+    defaultEndpointAlreadySetExceptionMessage                         = "Un endpoint predefinito per il tipo '{0}' è già impostato. È consentito un solo endpoint predefinito per tipo."
 }

@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = '总运行时间:'
     uptimeSinceLastRestartMessage                                     = '自上次重启后的运行时间:'
     totalRestartMessage                                               = '重启总次数:'
+    defaultEndpointAlreadySetExceptionMessage                         = "类型 '{0}' 的默认端点已设置。每种类型只允许一个默认端点。"
 }

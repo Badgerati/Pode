@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = '총 가동 시간:'
     uptimeSinceLastRestartMessage                                     = '마지막 재시작 이후 가동 시간:'
     totalRestartMessage                                               = '총 재시작 횟수:'
+    defaultEndpointAlreadySetExceptionMessage = "'{0}' 유형에 대한 기본 엔드포인트가 이미 설정되어 있습니다. 유형당 하나의 기본 엔드포인트만 허용됩니다."
 }

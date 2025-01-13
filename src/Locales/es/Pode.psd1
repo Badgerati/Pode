@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = 'Tiempo total de actividad:'
     uptimeSinceLastRestartMessage                                     = 'Tiempo de actividad desde el último reinicio:'
     totalRestartMessage                                               = 'Número total de reinicios:'
+    defaultEndpointAlreadySetExceptionMessage                         = "Ya se ha establecido un punto final predeterminado para el tipo '{0}'. Solo se permite un punto final predeterminado por tipo."
 }

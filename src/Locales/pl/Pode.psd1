@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = 'Całkowity czas działania:'
     uptimeSinceLastRestartMessage                                     = 'Czas działania od ostatniego restartu:'
     totalRestartMessage                                               = 'Całkowita liczba restartów:'
+    defaultEndpointAlreadySetExceptionMessage                         = "Domyślny punkt końcowy dla typu '{0}' został już ustawiony. Dopuszczalny jest tylko jeden domyślny punkt końcowy na typ."
 }

@@ -24,7 +24,23 @@ function Start-PodeWebServer {
     $endpoints = @()
     $endpointsMap = @{}
 
+    # Variable to track if a default endpoint is already defined for the current type.
+    # This ensures that only one default endpoint can be assigned per protocol type (e.g., HTTP, HTTPS).
+    # If multiple default endpoints are detected, an error will be thrown to prevent configuration issues.
+    $defaultEndpoint = $false
+
     @(Get-PodeEndpointByProtocolType -Type Http, Ws) | ForEach-Object {
+
+        # Enforce unicity: only one default endpoint is allowed per type.
+        if ($defaultEndpoint -and $_.Default) {
+            # A default endpoint for the type '{0}' is already set. Only one default endpoint is allowed per type. Please check your configuration.
+            throw ($Podelocale.defaultEndpointAlreadySetExceptionMessage -f $($_.Type))
+        }
+        else {
+            # Assign the current endpoint's Default value for tracking.
+            $defaultEndpoint = $_.Default
+        }
+
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1

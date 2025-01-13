@@ -311,4 +311,5 @@
     totalUptimeMessage                                                = 'Temps de fonctionnement total :'
     uptimeSinceLastRestartMessage                                     = 'Temps de fonctionnement depuis le dernier redémarrage :'
     totalRestartMessage                                               = 'Nombre total de redémarrages :'
+    defaultEndpointAlreadySetExceptionMessage                         = "Un point de terminaison par défaut pour le type '{0}' est déjà défini. Un seul point de terminaison par défaut est autorisé par type."
 }
