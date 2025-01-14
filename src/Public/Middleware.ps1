@@ -645,3 +645,182 @@ function Use-PodeMiddleware {
 
     Use-PodeFolder -Path $Path -DefaultPath 'middleware'
 }
+
+<#
+.SYNOPSIS
+    Checks if a specific middleware is registered in the Pode server.
+
+.DESCRIPTION
+    This function verifies whether a middleware with the specified name is registered in the Pode server by checking the `PodeContext.Server.Middleware` collection.
+    It returns `$true` if the middleware exists, otherwise it returns `$false`.
+
+.PARAMETER Name
+    The name of the middleware to check for.
+
+.OUTPUTS
+    [boolean]
+        Returns $true if the middleware with the specified name is found, otherwise returns $false.
+
+.EXAMPLE
+    Test-PodeMiddleware -Name 'BlockEverything'
+
+    This command checks if a middleware named 'BlockEverything' is registered in the Pode server.
+#>
+function Test-PodeMiddleware {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    # Check if the middleware exists
+    foreach ($middleware in $PodeContext.Server.Middleware) {
+        if ($middleware.Name -ieq $Name) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+<#
+.SYNOPSIS
+    Adds a debounce middleware to a Pode server, ensuring requests are throttled within a specified timeout window.
+
+.DESCRIPTION
+    The `Add-PodeDebounce` function implements a debounce mechanism to limit the frequency of repeated requests
+    from the same client to specific endpoints. It adds a middleware to enforce the debounce timeout and a
+    timer to clean up expired entries in the debounce dictionary.
+
+.PARAMETER DebounceTimeoutMilliseconds
+    Specifies the timeout window (in milliseconds) during which repeated requests are blocked. If a request is
+    received within this window, the server responds with HTTP 429 (Too Many Requests).
+
+.PARAMETER CleanupIntervalSeconds
+    Defines the interval (in seconds) at which the cleanup timer runs to remove expired entries from the debounce dictionary.
+
+.PARAMETER ExpirationSeconds
+    Sets the expiration time (in seconds) for debounce entries. Entries older than this duration will be removed
+    during the cleanup process.
+
+.EXAMPLE
+    # Add a debounce middleware with a 500ms timeout, cleanup every 300 seconds, and entries expire after 60 seconds.
+    Add-PodeDebounce -DebounceTimeoutMilliseconds 500 -CleanupIntervalSeconds 300 -ExpirationSeconds 60
+
+.EXAMPLE
+    # Add a debounce middleware with a 1-second timeout and cleanup every 5 minutes, with expiration after 2 minutes.
+    Add-PodeDebounce -DebounceTimeoutMilliseconds 1000 -CleanupIntervalSeconds 300 -ExpirationSeconds 120
+
+.NOTES
+    - This function uses Pode's middleware and timer features to implement request debouncing and cleanup.
+    - The debounce dictionary is thread-safe, utilizing a `ConcurrentDictionary` for storage.
+    - Expired entries are removed to prevent memory leaks or unnecessary growth of the debounce table.
+
+#>
+function Add-PodeDebounce {
+    param (
+        [int]
+        $DebounceTimeoutMilliseconds = 500,
+        [int]
+        $CleanupIntervalSeconds = 300,
+        [int]
+        $ExpirationSeconds = 60
+    )
+
+    # Middleware to enforce debounce logic
+    Add-PodeMiddleware -Name '__pode_debounce__' -ArgumentList $DebounceTimeoutMilliseconds -ScriptBlock {
+        param ([int]$DebounceTimeoutMilliseconds)
+
+        $RequestTimes = $PodeContext.Server.Limits.Debounce
+        $key = "$($WebEvent.Request.RemoteEndPoint.Address)|$($WebEvent.Request.HttpMethod)|$($WebEvent.Request.Url)"
+        $currentTime = [datetime]::UtcNow
+
+        # Check if the request is within the debounce timeout
+        if ($RequestTimes[$key] -and ($currentTime - $RequestTimes[$key]).TotalMilliseconds -lt $DebounceTimeoutMilliseconds) {
+            # Set HTTP status to 429 Too Many Requests
+            Set-PodeResponseStatus -Code 429
+            return $false
+        }
+
+        # Update the timestamp for this request
+        $RequestTimes[$key] = $currentTime
+        return $true
+    }
+
+    # Timer to clean up expired debounce entries
+    Add-PodeTimer -Name '__pode_debounce_housekeeper__' -Interval $CleanupIntervalSeconds -ArgumentList $ExpirationSeconds -ScriptBlock {
+        param ([int]$ExpirationSeconds)
+
+        try {
+            $debounce = $PodeContext.Server.Limits.Debounce
+            if ($debounce.Count -eq 0) {
+                return
+            }
+
+            $currentTime = [datetime]::UtcNow
+            $removedCount = 0
+
+            foreach ($key in $debounce.Keys) {
+                try {
+                    if ($debounce.ContainsKey($key)) {
+                        if (($currentTime - $debounce[$key]).TotalSeconds -gt $ExpirationSeconds) {
+                            # Remove the expired entry
+                            $value = $null
+                            if ($debounce.TryRemove($key, [ref]$value)) {
+                                $removedCount++
+                            }
+                        }
+                    }
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
+            }
+
+            # Log the number of entries removed
+            if ($removedCount -gt 0) {
+                #  Write-PodeLog -Level Info -Message "Removed $removedCount expired debounce entries."
+                Write-Verbose "Removed $removedCount expired debounce entries."
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Removes the debounce middleware and timer from the Pode server.
+
+.DESCRIPTION
+The `Remove-PodeDebounce` function checks for the existence of the debounce middleware and the associated
+housekeeper timer. If they exist, it removes them, effectively disabling the debounce mechanism.
+
+.NOTES
+- Ensure this is called when the debounce mechanism is no longer required.
+- Logs actions to indicate what was removed.
+
+#>
+function Remove-PodeDebounce {
+    if (Test-PodeMiddleware -Name '__pode_debounce__') {
+        Remove-PodeMiddleware -Name '__pode_debounce__'
+        # Write-PodeLog -Level Info -Message "Removed debounce middleware '__pode_debounce__'."
+        Write-Verbose "Removed debounce middleware '__pode_debounce__'."
+    }
+    else {
+        # Write-PodeLog -Level Info -Message "Debounce middleware '__pode_debounce__' does not exist."
+        Write-Verbose "Debounce middleware '__pode_debounce__' does not exist."
+    }
+
+    if (Test-PodeTimer -Name '__pode_debounce_housekeeper__') {
+        Remove-PodeTimer -Name '__pode_debounce_housekeeper__'
+        #    Write-PodeLog -Level Info -Message "Removed debounce timer '__pode_debounce_housekeeper__'."
+        Write-Verbose  "Removed debounce timer '__pode_debounce_housekeeper__'."
+    }
+    else {
+        #    Write-PodeLog -Level Info -Message "Debounce timer '__pode_debounce_housekeeper__' does not exist."
+        Write-Verbose "Debounce timer '__pode_debounce_housekeeper__' does not exist."
+    }
+
+}

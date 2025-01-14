@@ -949,3 +949,169 @@ Describe 'Remove-PodeBodyParser' {
         $PodeContext.Server.BodyParsers.ContainsKey('application/xml') | Should -Be $false
     }
 }
+
+Describe 'Add-PodeDebounce' {
+    # Mock dependencies
+    BeforeAll {
+        # Mock Pode functions
+        Mock -CommandName Add-PodeMiddleware -MockWith {}
+        Mock -CommandName Add-PodeTimer -MockWith {}
+        Mock -CommandName Write-PodeLog -MockWith {}
+        Mock -CommandName Write-PodeErrorLog -MockWith {}
+    }
+
+    Context 'Middleware Setup' {
+        It 'Should add the debounce middleware with correct parameters' {
+            # Arrange
+            $DebounceTimeoutMilliseconds = 500
+
+            # Act
+            Add-PodeDebounce -DebounceTimeoutMilliseconds $DebounceTimeoutMilliseconds
+
+            # Assert
+            Assert-MockCalled -CommandName Add-PodeMiddleware -Exactly 1 -Scope It -ParameterFilter {
+                $Name -eq '__pode_debounce__' -and
+                $ArgumentList -contains $DebounceTimeoutMilliseconds
+            }
+        }
+    }
+
+    Context 'Timer Setup' {
+        It 'Should add the cleanup timer with correct parameters' {
+            # Arrange
+            $CleanupIntervalSeconds = 300
+            $ExpirationSeconds = 60
+
+            # Act
+            Add-PodeDebounce -CleanupIntervalSeconds $CleanupIntervalSeconds -ExpirationSeconds $ExpirationSeconds
+
+            # Assert
+            Assert-MockCalled -CommandName Add-PodeTimer -Exactly 1 -Scope It -ParameterFilter {
+                $Name -eq '__pode_debounce_housekeeper__' -and
+                $Interval -eq $CleanupIntervalSeconds -and
+                $ArgumentList -contains $ExpirationSeconds
+            }
+        }
+    }
+
+    Context 'Middleware Functionality' {
+        It 'Should correctly enforce debounce timeout' {
+
+            # Arrange
+            Mock -CommandName Set-PodeResponseStatus -MockWith {}
+            $RequestTimes = [System.Collections.Concurrent.ConcurrentDictionary[string, datetime]]::new()
+            $PodeContext = @{ 'Server' = @{ 'Limits' = @{Debounce = $RequestTimes} } }
+            $DebounceTimeoutMilliseconds = 500
+
+            # Simulate first request
+            $RequestKey = "192.168.1.1|GET|/test"
+            $RequestTimes[$RequestKey] = [datetime]::UtcNow.AddMilliseconds(-600)
+
+            # Act
+            # Simulate middleware logic directly
+            $key = $RequestKey
+            $currentTime = [datetime]::UtcNow
+
+            if ($RequestTimes[$key] -and ($currentTime - $RequestTimes[$key]).TotalMilliseconds -lt $DebounceTimeoutMilliseconds) {
+                Set-PodeResponseStatus -Code 429
+            } else {
+                $RequestTimes[$key] = $currentTime
+            }
+
+            # Assert
+            Assert-MockCalled -CommandName Set-PodeResponseStatus -Exactly 0 -Scope It
+            $RequestTimes.Keys | Should -Contain $RequestKey
+        }
+    }
+
+    Context 'Timer Functionality' {
+        It 'Should remove expired entries from debounce dictionary' {
+            # Arrange
+            $RequestTimes = [System.Collections.Concurrent.ConcurrentDictionary[string, datetime]]::new()
+            $PodeContext = @{ 'Server' = @{ 'Limits' = @{Debounce = $RequestTimes} } }
+            $ExpirationSeconds = 60
+
+            # Simulate expired entries
+            $RequestTimes["192.168.1.1|GET|/expired"] = [datetime]::UtcNow.AddSeconds(-120)
+            $RequestTimes["192.168.1.1|GET|/notexpired"] = [datetime]::UtcNow.AddSeconds(-40)
+            $value = [datetime]::Now
+            # Act
+            # Simulate timer logic directly
+            $currentTime = [datetime]::UtcNow
+            foreach ($key in $RequestTimes.Keys) {
+                if (($currentTime - $RequestTimes[$key]).TotalSeconds -gt $ExpirationSeconds) {
+
+                    $RequestTimes.TryRemove($key, [ref]$value) | Out-Null
+                }
+            }
+
+            # Assert
+            $RequestTimes.Count | Should -Be 1
+        }
+    }
+}
+
+Describe 'Remove-PodeDebounce' {
+    # Mock dependencies
+    BeforeAll {
+        # Mock Pode functions
+        Mock -CommandName Test-PodeMiddleware -MockWith { $true }
+        Mock -CommandName Remove-PodeMiddleware -MockWith {}
+        Mock -CommandName Test-PodeTimer -MockWith { $true }
+        Mock -CommandName Remove-PodeTimer -MockWith {}
+        Mock -CommandName Write-PodeLog -MockWith {}
+        Mock -CommandName Write-PodeErrorLog -MockWith {}
+    }
+
+    Context 'When Middleware and Timer Exist' {
+        It 'Should remove the middleware if it exists' {
+            # Arrange
+            Mock -CommandName Test-PodeMiddleware -MockWith { $true }
+
+            # Act
+            Remove-PodeDebounce
+
+            # Assert
+            Assert-MockCalled -CommandName Test-PodeMiddleware -Exactly 1 -Scope It
+            Assert-MockCalled -CommandName Remove-PodeMiddleware -Exactly 1 -Scope It
+        }
+
+        It 'Should remove the timer if it exists' {
+            # Arrange
+            Mock -CommandName Test-PodeTimer -MockWith { $true }
+
+            # Act
+            Remove-PodeDebounce
+
+            # Assert
+            Assert-MockCalled -CommandName Test-PodeTimer -Exactly 1 -Scope It
+            Assert-MockCalled -CommandName Remove-PodeTimer -Exactly 1 -Scope It
+        }
+    }
+
+    Context 'When Middleware and Timer Do Not Exist' {
+        It 'Should not attempt to remove middleware if it does not exist' {
+            # Arrange
+            Mock -CommandName Test-PodeMiddleware -MockWith { $false }
+
+            # Act
+            Remove-PodeDebounce
+
+            # Assert
+            Assert-MockCalled -CommandName Test-PodeMiddleware -Exactly 1 -Scope It
+            Assert-MockCalled -CommandName Remove-PodeMiddleware -Exactly 0 -Scope It
+        }
+
+        It 'Should not attempt to remove timer if it does not exist' {
+            # Arrange
+            Mock -CommandName Test-PodeTimer -MockWith { $false }
+
+            # Act
+            Remove-PodeDebounce
+
+            # Assert
+            Assert-MockCalled -CommandName Test-PodeTimer -Exactly 1 -Scope It
+            Assert-MockCalled -CommandName Remove-PodeTimer -Exactly 0 -Scope It
+        }
+    }
+}

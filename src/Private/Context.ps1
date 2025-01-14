@@ -320,13 +320,13 @@ function New-PodeContext {
 
     # routes for pages and api
     $ctx.Server.Routes = [ordered]@{
-# common methods
+        # common methods
         'get'     = [ordered]@{}
         'post'    = [ordered]@{}
         'put'     = [ordered]@{}
         'patch'   = [ordered]@{}
         'delete'  = [ordered]@{}
-# other methods
+        # other methods
         'connect' = [ordered]@{}
         'head'    = [ordered]@{}
         'merge'   = [ordered]@{}
@@ -363,8 +363,9 @@ function New-PodeContext {
 
     # setup basic limit rules
     $ctx.Server.Limits = @{
-        Rules  = @{}
-        Active = @{}
+        Rules    = @{}
+        Active   = @{}
+        Debounce = [System.Collections.Concurrent.ConcurrentDictionary[string, datetime]]::new()
     }
 
     # cookies and session logic
