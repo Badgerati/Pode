@@ -64,7 +64,6 @@ namespace Pode
 
         private MemoryStream BufferStream;
         private const int BufferSize = 16384;
-        private readonly SemaphoreSlim StreamLock = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Initializes a new instance of the PodeRequest class.
@@ -237,7 +236,6 @@ namespace Pode
         /// <returns>A Task representing the async operation, with a boolean indicating whether the connection should be closed.</returns>
         public async Task<bool> Receive(CancellationToken cancellationToken)
         {
-            await StreamLock.WaitAsync(cancellationToken);
             try
             {
                 if (State != PodeStreamState.Open || InputStream == null)
@@ -323,14 +321,13 @@ namespace Pode
             }
             finally
             {
-                StreamLock.Release();
                 PartialDispose();
             }
             return false;
         }
 
 
-         /// <summary>
+        /// <summary>
         /// Reads data from the input stream until the specified bytes are found.
         /// </summary>
         /// <param name="checkBytes">The bytes to check for in the input stream.</param>
@@ -492,7 +489,6 @@ namespace Pode
                 }
 
                 PartialDispose();
-                StreamLock.Dispose();
             }
         }
 
