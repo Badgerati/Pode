@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = 'Temps de fonctionnement depuis le dernier redémarrage :'
     totalRestartMessage                                               = 'Nombre total de redémarrages :'
     defaultEndpointAlreadySetExceptionMessage                         = "Un point de terminaison par défaut pour le type '{0}' est déjà défini. Un seul point de terminaison par défaut est autorisé par type."
+    enableHttpServerMessage                                           = 'Activer le serveur HTTP'
+    disableHttpServerMessage                                          = 'Désactiver le serveur HTTP'
+    showHelpMessage                                                   = "Afficher l'aide"
+    hideHelpMessage                                                   = "Masquer l'aide"
+    hideEndpointsMessage                                              = 'Masquer les endpoints'
+    showEndpointsMessage                                              = 'Afficher les endpoints'
+    hideOpenAPIMessage                                                = 'Masquer OpenAPI'
+    showOpenAPIMessage                                                = 'Afficher OpenAPI'
+    enableQuietModeMessage                                            = 'Activer le mode silencieux'
+    disableQuietModeMessage                                           = 'Désactiver le mode silencieux'
 }

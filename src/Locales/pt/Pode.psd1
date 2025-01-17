@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = 'Tempo de atividade desde o último reinício:'
     totalRestartMessage                                               = 'Número total de reinicializações:'
     defaultEndpointAlreadySetExceptionMessage                         = "Um endpoint padrão para o tipo '{0}' já está definido. Apenas um endpoint padrão é permitido por tipo."
+    enableHttpServerMessage                                           = 'Ativar servidor HTTP'
+    disableHttpServerMessage                                          = 'Desativar servidor HTTP'
+    showHelpMessage                                                   = 'Mostrar ajuda'
+    hideHelpMessage                                                   = 'Ocultar ajuda'
+    hideEndpointsMessage                                              = 'Ocultar endpoints'
+    showEndpointsMessage                                              = 'Mostrar endpoints'
+    hideOpenAPIMessage                                                = 'Ocultar OpenAPI'
+    showOpenAPIMessage                                                = 'Mostrar OpenAPI'
+    enableQuietModeMessage                                            = 'Ativar modo silencioso'
+    disableQuietModeMessage                                           = 'Desativar modo silencioso'
 }

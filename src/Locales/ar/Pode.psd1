@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = 'وقت التشغيل منذ آخر إعادة تشغيل:'
     totalRestartMessage                                               = 'إجمالي عدد عمليات إعادة التشغيل:'
     defaultEndpointAlreadySetExceptionMessage                         = "تم تعيين نقطة نهاية افتراضية للنوع '{0}'. يُسمح فقط بنقطة نهاية افتراضية واحدة لكل نوع."
+    enableHttpServerMessage                                           = 'تمكين خادم HTTP'
+    disableHttpServerMessage                                          = 'تعطيل خادم HTTP'
+    showHelpMessage                                                   = 'عرض المساعدة'
+    hideHelpMessage                                                   = 'إخفاء المساعدة'
+    hideEndpointsMessage                                              = 'إخفاء نقاط النهاية'
+    showEndpointsMessage                                              = 'عرض نقاط النهاية'
+    hideOpenAPIMessage                                                = 'إخفاء OpenAPI'
+    showOpenAPIMessage                                                = 'عرض OpenAPI'
+    enableQuietModeMessage                                            = 'تمكين الوضع الصامت'
+    disableQuietModeMessage                                           = 'تعطيل الوضع الصامت'
 }

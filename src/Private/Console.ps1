@@ -112,7 +112,7 @@ function Show-PodeConsoleInfo {
         $noHeaderNewLine = $true
         $ctrlH = $false
         $footerSeparator = $false
-        $topSeparator = $true
+        $topSeparator = $false
         $headerSeparator = $false
     }
     elseif ($serverState -eq [Pode.PodeServerState]::Terminated) {
@@ -234,7 +234,8 @@ function Show-PodeConsoleHelp {
     # Display the "Show Help" option if the $Hide parameter is specified
     if ($Hide) {
         Write-PodeKeyBinding -Key $KeyBindings.Help -ForegroundColor $helpKeyColor -Force:$Force
-        Write-PodeHost 'Show Help'  -ForegroundColor $helpDescriptionColor -Force:$Force
+        # Message: 'Show Help'
+        Write-PodeHost $Podelocale.showHelpMessage   -ForegroundColor $helpDescriptionColor -Force:$Force
     }
     else {
         # Determine the text for resuming or suspending the server based on its state
@@ -247,7 +248,7 @@ function Show-PodeConsoleHelp {
         }
 
         # Determine whether to display "Enable" or "Disable Server" based on the server state
-        $enableOrDisable = if (Test-PodeServerIsEnabled) { 'Disable Server' } else { 'Enable Server' }
+        $enableOrDisable = if (Test-PodeServerIsEnabled) { $Podelocale.disableHttpServerMessage } else { $Podelocale.enableHttpServerMessage }
 
         # Display the header for the help section
         Write-PodeHost $Podelocale.serverControlCommandsTitle -ForegroundColor $helpHeaderColor -Force:$Force
@@ -275,15 +276,18 @@ function Show-PodeConsoleHelp {
 
         if (($serverState -eq 'Running') -and $PodeContext.Server.AllowedActions.Disable) {
             Write-PodeKeyBinding -Key $KeyBindings.Disable -ForegroundColor $helpKeyColor -Force:$Force
-            Write-PodeHost "$enableOrDisable" -ForegroundColor $helpDescriptionColor -Force:$Force
+            # Message: 'Enable HTTP Server' or 'Disable HTTP Server'
+            Write-PodeHost $enableOrDisable -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         Write-PodeKeyBinding -Key $KeyBindings.Help -ForegroundColor $helpKeyColor -Force:$Force
-        Write-PodeHost 'Hide Help' -ForegroundColor $helpDescriptionColor -Force:$Force
+        # Message: 'Hide Help'
+        Write-PodeHost $Podelocale.hideHelpMessage -ForegroundColor $helpDescriptionColor -Force:$Force
 
         # If an HTTP endpoint exists and the server is running, display the browser shortcut
         if ((Get-PodeEndpointUrl) -and ($serverState -ne 'Suspended')) {
             Write-PodeKeyBinding -Key $KeyBindings.Browser -ForegroundColor $helpKeyColor -Force:$Force
+            # Message: Open the default HTTP endpoint in the default browser.
             Write-PodeHost $Podelocale.OpenHttpEndpointMessage -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
@@ -293,18 +297,33 @@ function Show-PodeConsoleHelp {
         # Show metrics only if the server is running or suspended
         if (('Running', 'Suspended') -contains $serverState ) {
             Write-PodeKeyBinding -Key $KeyBindings.Metrics -ForegroundColor $helpKeyColor -Force:$Force
+            # Message: Show Metrics
             Write-PodeHost $Podelocale.showMetricsMessage -ForegroundColor $helpDescriptionColor -Force:$Force
         }
 
         # Show endpoints and OpenAPI only if the server is running
         if ($serverState -eq 'Running') {
             Write-PodeKeyBinding -Key $KeyBindings.Endpoints -ForegroundColor $helpKeyColor -Force:$Force
-            Write-PodeHost "$(if ($PodeContext.Server.Console.ShowEndpoints) { 'Hide' } else { 'Show' }) Endpoints" -ForegroundColor $helpDescriptionColor -Force:$Force
+            if ($PodeContext.Server.Console.ShowEndpoints) {
+                # Message: Hide Endpoints
+                Write-PodeHost $Podelocale.hideEndpointsMessage -ForegroundColor $helpDescriptionColor -Force:$Force
+            }
+            else {
+                # Message: Show Endpoints
+                Write-PodeHost $Podelocale.showEndpointsMessage -ForegroundColor $helpDescriptionColor -Force:$Force
+            }
 
             # Check if OpenAPI is enabled and display its toggle option
             if (Test-PodeOAEnabled) {
                 Write-PodeKeyBinding -Key $KeyBindings.OpenAPI -ForegroundColor $helpKeyColor -Force:$Force
-                Write-PodeHost "$(if ($PodeContext.Server.Console.ShowOpenAPI) { 'Hide' } else { 'Show' }) OpenAPI" -ForegroundColor $helpDescriptionColor -Force:$Force
+                if ($PodeContext.Server.Console.ShowOpenAPI) {
+                    # Message: Hide OpenAPI
+                    Write-PodeHost $Podelocale.hideOpenAPIMessage -ForegroundColor $helpDescriptionColor -Force:$Force
+                }
+                else {
+                    # Message: Show OpenAPI
+                    Write-PodeHost $Podelocale.showOpenAPIMessage -ForegroundColor $helpDescriptionColor -Force:$Force
+                }
             }
         }
 
@@ -313,7 +332,14 @@ function Show-PodeConsoleHelp {
         Write-PodeHost $Podelocale.clearConsoleMessage -ForegroundColor $helpDescriptionColor -Force:$Force
 
         Write-PodeKeyBinding -Key $KeyBindings.Quiet -ForegroundColor $helpKeyColor -Force:$Force
-        Write-PodeHost "$(if ($PodeContext.Server.Console.Quiet) { 'Disable' } else { 'Enable' }) Quiet Mode" -ForegroundColor $helpDescriptionColor -Force:$Force
+        if ($PodeContext.Server.Console.Quiet) {
+            # Message: Disable Quiet Mode
+            Write-PodeHost $Podelocale.disableQuietModeMessage   -ForegroundColor $helpDescriptionColor -Force:$Force
+        }
+        else {
+            # Message: Enable Quiet Mode
+            Write-PodeHost $Podelocale.enableQuietModeMessage  -ForegroundColor $helpDescriptionColor -Force:$Force
+        }
 
     }
 
@@ -577,33 +603,53 @@ function Show-PodeConsoleEndpointsInfo {
 
             # Prepare flags for the endpoint
             $flags = @()
-            if ($disabled -and ('HTTP', 'HTTPS' -contains $group.Name)) { $flags += 'Disabled' }
+
+            # Add 'Disabled' flag if applicable
+            if ($disabled -and ('HTTP', 'HTTPS' -contains $group.Name)) {
+                $flags += 'Disabled'
+            }
+
+            # Add Name flag if it doesn't match a GUID
             if (![string]::IsNullOrEmpty($item.Name) -and ($item.Name -notmatch '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')) {
                 $flags += "`b$($item.Name)"
             }
+
+            # Add remaining flags
             if ($item.DualMode) { $flags += 'DualMode' }
             if ($item.Default) { $flags += 'Default' }
 
             # Display flags if any are present
             if ($flags.Count -gt 0) {
-                $urlPadding = $maxUrlLength - ($item.Url.Length) + 4
-                Write-PodeHost "$( ' ' * $urlPadding )[" -ForegroundColor $flagsColor -Force:$Force -NoNewLine
+                # Calculate padding dynamically
+                $urlPadding = $maxUrlLength - $item.Url.Length + 4
+                Write-PodeHost $(' ' * $urlPadding + '[') -ForegroundColor $flagsColor -Force:$Force -NoNewLine
 
                 $index = 0
                 foreach ($flag in $flags) {
-                    if ($flag.StartsWith([char]8)) {
-                        Write-PodeHost 'Name: ' -ForegroundColor $flagsColor -Force:$Force -NoNewLine
-                        Write-PodeHost "$flag" -ForegroundColor $nameColor -Force:$Force -NoNewLine
-                    }
-                    else {
-                        Write-PodeHost "$flag" -ForegroundColor $flagsColor -Force:$Force -NoNewLine
-                    }
-                    if ((++$index) -lt $flags.Length) {
-                        Write-PodeHost ', ' -ForegroundColor $flagsColor -Force:$Force -NoNewLine
+                    switch ($flag) {
+                        { $flag[0] -eq [char]8 } {
+                            # Display Name flag
+                            Write-PodeHost 'Name: ' -ForegroundColor $flagsColor -Force:$Force -NoNewLine
+                            Write-PodeHost "$flag" -ForegroundColor $nameColor -Force:$Force -NoNewLine
+                        }
+                        'Disabled' {
+                            # Display Disabled flag
+                            Write-PodeHost 'Disabled' -ForegroundColor Yellow -Force:$Force -NoNewLine
+                        }
+                        default {
+                            # Display other flags
+                            Write-PodeHost "$flag" -ForegroundColor $flagsColor -Force:$Force -NoNewLine
+                        }
                     }
 
+                    # Append comma if not the last flag
+                    if (++$index -lt $flags.Length) {
+                        Write-PodeHost ', ' -ForegroundColor $flagsColor -Force:$Force -NoNewLine
+                    }
                 }
-                Write-PodeHost ']'  -ForegroundColor $flagsColor -Force:$Force
+
+                # Close the flag block
+                Write-PodeHost ']' -ForegroundColor $flagsColor -Force:$Force
             }
             else {
                 # End line if no flags are present

@@ -311,5 +311,15 @@
     totalUptimeMessage                                                = '총 가동 시간:'
     uptimeSinceLastRestartMessage                                     = '마지막 재시작 이후 가동 시간:'
     totalRestartMessage                                               = '총 재시작 횟수:'
-    defaultEndpointAlreadySetExceptionMessage = "'{0}' 유형에 대한 기본 엔드포인트가 이미 설정되어 있습니다. 유형당 하나의 기본 엔드포인트만 허용됩니다."
+    defaultEndpointAlreadySetExceptionMessage                         = "'{0}' 유형에 대한 기본 엔드포인트가 이미 설정되어 있습니다. 유형당 하나의 기본 엔드포인트만 허용됩니다."
+    enableHttpServerMessage                                           = 'HTTP 서버 활성화'
+    disableHttpServerMessage                                          = 'HTTP 서버 비활성화'
+    showHelpMessage                                                   = '도움말 표시'
+    hideHelpMessage                                                   = '도움말 숨기기'
+    hideEndpointsMessage                                              = '엔드포인트 숨기기'
+    showEndpointsMessage                                              = '엔드포인트 표시'
+    hideOpenAPIMessage                                                = 'OpenAPI 숨기기'
+    showOpenAPIMessage                                                = 'OpenAPI 표시'
+    enableQuietModeMessage                                            = '조용한 모드 활성화'
+    disableQuietModeMessage                                           = '조용한 모드 비활성화'
 }

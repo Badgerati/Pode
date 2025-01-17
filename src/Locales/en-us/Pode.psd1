@@ -303,7 +303,7 @@
     restartingMessage                                                 = 'Restarting'
     suspendedMessage                                                  = 'Suspended'
     runningMessage                                                    = 'Running'
-    openHttpEndpointMessage                                           = 'Open the first HTTP endpoint in the default browser.'
+    openHttpEndpointMessage                                           = 'Open the default HTTP endpoint in the default browser.'
     terminatedMessage                                                 = 'Terminated'
     showMetricsMessage                                                = 'Show Metrics'
     clearConsoleMessage                                               = 'Clear the Console'
@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = 'Uptime Since Last Restart:'
     totalRestartMessage                                               = 'Total Number of Restarts:'
     defaultEndpointAlreadySetExceptionMessage                         = "A default endpoint for the type '{0}' is already set. Only one default endpoint is allowed per type."
+    enableHttpServerMessage                                           = 'Enable HTTP Server'
+    disableHttpServerMessage                                          = 'Disable HTTP Server'
+    showHelpMessage                                                   = 'Show Help'
+    hideHelpMessage                                                   = 'Hide Help'
+    hideEndpointsMessage                                              = 'Hide Endpoints'
+    showEndpointsMessage                                              = 'Show Endpoints'
+    hideOpenAPIMessage                                                = 'Hide OpenAPI'
+    showOpenAPIMessage                                                = 'Show OpenAPI'
+    enableQuietModeMessage                                            = 'Enable Quiet Mode'
+    disableQuietModeMessage                                           = 'Disable Quiet Mode'
 }

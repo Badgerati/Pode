@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = 'Czas działania od ostatniego restartu:'
     totalRestartMessage                                               = 'Całkowita liczba restartów:'
     defaultEndpointAlreadySetExceptionMessage                         = "Domyślny punkt końcowy dla typu '{0}' został już ustawiony. Dopuszczalny jest tylko jeden domyślny punkt końcowy na typ."
+    enableHttpServerMessage                                           = 'Włącz serwer HTTP'
+    disableHttpServerMessage                                          = 'Wyłącz serwer HTTP'
+    showHelpMessage                                                   = 'Pokaż pomoc'
+    hideHelpMessage                                                   = 'Ukryj pomoc'
+    hideEndpointsMessage                                              = 'Ukryj punkty końcowe'
+    showEndpointsMessage                                              = 'Pokaż punkty końcowe'
+    hideOpenAPIMessage                                                = 'Ukryj OpenAPI'
+    showOpenAPIMessage                                                = 'Pokaż OpenAPI'
+    enableQuietModeMessage                                            = 'Włącz tryb cichy'
+    disableQuietModeMessage                                           = 'Wyłącz tryb cichy'
 }

@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = 'Uptime sinds laatste herstart:'
     totalRestartMessage                                               = 'Totaal aantal herstarts:'
     defaultEndpointAlreadySetExceptionMessage                         = "Er is al een standaardendpoint ingesteld voor het type '{0}'. Er is slechts één standaardendpoint per type toegestaan."
+    enableHttpServerMessage                                           = 'HTTP-server inschakelen'
+    disableHttpServerMessage                                          = 'HTTP-server uitschakelen'
+    showHelpMessage                                                   = 'Hulp weergeven'
+    hideHelpMessage                                                   = 'Hulp verbergen'
+    hideEndpointsMessage                                              = 'Endpoints verbergen'
+    showEndpointsMessage                                              = 'Endpoints weergeven'
+    hideOpenAPIMessage                                                = 'OpenAPI verbergen'
+    showOpenAPIMessage                                                = 'OpenAPI weergeven'
+    enableQuietModeMessage                                            = 'Stille modus inschakelen'
+    disableQuietModeMessage                                           = 'Stille modus uitschakelen'
 }

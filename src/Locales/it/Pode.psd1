@@ -303,7 +303,7 @@
     restartingMessage                                                 = 'Riavvio'
     suspendedMessage                                                  = 'Sospeso'
     runningMessage                                                    = 'In esecuzione'
-    openHttpEndpointMessage                                           = 'Apri il primo endpoint HTTP nel browser predefinito.'
+    openHttpEndpointMessage                                           = 'Apri il predefinito endpoint HTTP nel browser predefinito.'
     terminatedMessage                                                 = 'Terminato'
     showMetricsMessage                                                = 'Mostra metriche'
     clearConsoleMessage                                               = 'Cancella la console'
@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = "Tempo di attività dall'ultimo riavvio:"
     totalRestartMessage                                               = 'Numero totale di riavvii:'
     defaultEndpointAlreadySetExceptionMessage                         = "Un endpoint predefinito per il tipo '{0}' è già impostato. È consentito un solo endpoint predefinito per tipo."
+    enableHttpServerMessage                                           = 'Abilita il server HTTP'
+    disableHttpServerMessage                                          = 'Disabilita il server HTTP'
+    showHelpMessage                                                   = 'Mostra aiuto'
+    hideHelpMessage                                                   = 'Nascondi aiuto'
+    hideEndpointsMessage                                              = 'Nascondi gli endpoint'
+    showEndpointsMessage                                              = 'Mostra gli endpoint'
+    hideOpenAPIMessage                                                = 'Nascondi OpenAPI'
+    showOpenAPIMessage                                                = 'Mostra OpenAPI'
+    enableQuietModeMessage                                            = 'Abilita la modalità silenziosa'
+    disableQuietModeMessage                                           = 'Disabilita la modalità silenziosa'
 }

@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = 'Laufzeit seit dem letzten Neustart:'
     totalRestartMessage                                               = 'Gesamtanzahl der Neustarts:'
     defaultEndpointAlreadySetExceptionMessage                         = "Ein Standardendpunkt für den Typ '{0}' ist bereits festgelegt. Pro Typ ist nur ein Standardendpunkt erlaubt."
+    enableHttpServerMessage                                           = 'HTTP-Server aktivieren'
+    disableHttpServerMessage                                          = 'HTTP-Server deaktivieren'
+    showHelpMessage                                                   = 'Hilfe anzeigen'
+    hideHelpMessage                                                   = 'Hilfe ausblenden'
+    hideEndpointsMessage                                              = 'Endpoints ausblenden'
+    showEndpointsMessage                                              = 'Endpoints anzeigen'
+    hideOpenAPIMessage                                                = 'OpenAPI ausblenden'
+    showOpenAPIMessage                                                = 'OpenAPI anzeigen'
+    enableQuietModeMessage                                            = 'Leisemodus aktivieren'
+    disableQuietModeMessage                                           = 'Leisemodus deaktivieren'
 }

@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = '自上次重启后的运行时间:'
     totalRestartMessage                                               = '重启总次数:'
     defaultEndpointAlreadySetExceptionMessage                         = "类型 '{0}' 的默认端点已设置。每种类型只允许一个默认端点。"
+    enableHttpServerMessage                                           = '启用HTTP服务器'
+    disableHttpServerMessage                                          = '禁用HTTP服务器'
+    showHelpMessage                                                   = '显示帮助'
+    hideHelpMessage                                                   = '隐藏帮助'
+    hideEndpointsMessage                                              = '隐藏端点'
+    showEndpointsMessage                                              = '显示端点'
+    hideOpenAPIMessage                                                = '隐藏OpenAPI'
+    showOpenAPIMessage                                                = '显示OpenAPI'
+    enableQuietModeMessage                                            = '启用安静模式'
+    disableQuietModeMessage                                           = '禁用安静模式'
 }

@@ -312,4 +312,14 @@
     uptimeSinceLastRestartMessage                                     = 'Tiempo de actividad desde el último reinicio:'
     totalRestartMessage                                               = 'Número total de reinicios:'
     defaultEndpointAlreadySetExceptionMessage                         = "Ya se ha establecido un punto final predeterminado para el tipo '{0}'. Solo se permite un punto final predeterminado por tipo."
+    enableHttpServerMessage                                           = 'Habilitar servidor HTTP'
+    disableHttpServerMessage                                          = 'Deshabilitar servidor HTTP'
+    showHelpMessage                                                   = 'Mostrar ayuda'
+    hideHelpMessage                                                   = 'Ocultar ayuda'
+    hideEndpointsMessage                                              = 'Ocultar endpoints'
+    showEndpointsMessage                                              = 'Mostrar endpoints'
+    hideOpenAPIMessage                                                = 'Ocultar OpenAPI'
+    showOpenAPIMessage                                                = 'Mostrar OpenAPI'
+    enableQuietModeMessage                                            = 'Activar modo silencioso'
+    disableQuietModeMessage                                           = 'Desactivar modo silencioso'
 }
