@@ -16,33 +16,33 @@ To suspend a running Pode server, use the `Suspend-PodeServer` function. This fu
    The `-Timeout` parameter specifies how long the function should wait (in seconds) for each runspace to be fully suspended. This is optional, with a default timeout of 30 seconds.
 
 2. **Suspension Process**:
-   - When you run `Suspend-PodeServer`, Pode will:
-     - Pause all runspaces associated with the server, putting them into a debug state.
-     - Trigger a "Suspend" event to signify that the server is paused.
-     - Update the server’s status to reflect that it is now suspended.
+      - When you run `Suspend-PodeServer`, Pode will:
+         - Pause all runspaces associated with the server, putting them into a debug state.
+         - Trigger a "Suspend" event to signify that the server is paused.
+         - Update the server’s status to reflect that it is now suspended.
 
 3. **Outcome**:
-   - After suspension, all server operations are halted, and the server will not respond to incoming requests until it is resumed.
+      - After suspension, all server operations are halted, and the server will not respond to incoming requests until it is resumed.
 
 ## Resuming
 
 Once you’ve completed any tasks or troubleshooting, you can resume the server using `Resume-PodeServer`. This will restore the Pode server to its normal operational state:
 
 1. **Run the Resume Command**:
-   - Call `Resume-PodeServer` to bring the server back online.
+      - Call `Resume-PodeServer` to bring the server back online.
 
-   ```powershell
-   Resume-PodeServer
-   ```
+      ```powershell
+      Resume-PodeServer
+      ```
 
 2. **Resumption Process**:
-   - When `Resume-PodeServer` is executed, Pode will:
-     - Restore all paused runspaces back to their active states.
-     - Trigger a "Resume" event, marking the server as active again.
-     - Clear the console, providing a refreshed view of the server status.
+      - When `Resume-PodeServer` is executed, Pode will:
+         - Restore all paused runspaces back to their active states.
+         - Trigger a "Resume" event, marking the server as active again.
+         - Clear the console, providing a refreshed view of the server status.
 
 3. **Outcome**:
-   - The server resumes normal operations and can now handle incoming requests again.
+      - The server resumes normal operations and can now handle incoming requests again.
 
 ## When to Use Suspend and Resume
 

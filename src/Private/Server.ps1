@@ -41,7 +41,7 @@ function Start-PodeInternalServer {
         $null = Test-PodeVersionPwshEOL -ReportUntested
 
         #Show starting console
-        Show-PodeConsoleInfo
+        Show-PodeConsoleInfo -ShowTopSeparator
 
         # run start event hooks
         Invoke-PodeEvent -Type Starting

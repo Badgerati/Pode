@@ -11,11 +11,11 @@ The **Disable** operation blocks new incoming requests to the Pode server by int
 ### How It Works
 
 1. **Blocking Requests**:
-   - All new incoming requests are intercepted and responded to with a `503 Service Unavailable` status.
-   - A `Retry-After` header is included in the response, advising clients when they can attempt to reconnect.
+      - All new incoming requests are intercepted and responded to with a `503 Service Unavailable` status.
+      - A `Retry-After` header is included in the response, advising clients when they can attempt to reconnect.
 
 2. **Customizing Retry Time**:
-   - The retry time (in seconds) can be customized to specify when the service is expected to become available again. By default, this is set to **1 hour**.
+      - The retry time (in seconds) can be customized to specify when the service is expected to become available again. By default, this is set to **1 hour**.
 
 ### Example Usage
 

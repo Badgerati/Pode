@@ -58,21 +58,20 @@ function Show-PodeConsoleInfo {
         $status = $Podelocale.suspendingMessage
         $statusColor = [System.ConsoleColor]::Yellow
         $showHelp = $false
-        $noHeaderNewLine = $true
+        $noHeaderNewLine = $false
         $ctrlH = $false
         $footerSeparator = $false
-        $topSeparator = $true
+        $topSeparator = $false
         $headerSeparator = $false
     }
     elseif ($serverState -eq [Pode.PodeServerState]::Resuming) {
-
         $status = $Podelocale.resumingMessage
         $statusColor = [System.ConsoleColor]::Yellow
         $showHelp = $false
-        $noHeaderNewLine = $true
+        $noHeaderNewLine = $false
         $ctrlH = $false
         $footerSeparator = $false
-        $topSeparator = $true
+        $topSeparator = $false
         $headerSeparator = $false
     }
     elseif ($serverState -eq [Pode.PodeServerState]::Restarting) {
@@ -82,17 +81,17 @@ function Show-PodeConsoleInfo {
         $noHeaderNewLine = $false
         $ctrlH = $false
         $footerSeparator = $false
-        $topSeparator = $true
+        $topSeparator = $false
         $headerSeparator = $false
     }
     elseif ($serverState -eq [Pode.PodeServerState]::Starting) {
         $status = $Podelocale.startingMessage
         $statusColor = [System.ConsoleColor]::Yellow
         $showHelp = $false
-        $noHeaderNewLine = $true
+        $noHeaderNewLine = $false
         $ctrlH = $false
         $footerSeparator = $false
-        $topSeparator = $true
+        $topSeparator = $ShowTopSeparator.IsPresent
         $headerSeparator = $false
     }
     elseif ($serverState -eq [Pode.PodeServerState]::Running) {
@@ -109,7 +108,7 @@ function Show-PodeConsoleInfo {
         $status = $Podelocale.terminatingMessage
         $statusColor = [System.ConsoleColor]::Red
         $showHelp = $false
-        $noHeaderNewLine = $true
+        $noHeaderNewLine = $false
         $ctrlH = $false
         $footerSeparator = $false
         $topSeparator = $false
@@ -1056,8 +1055,6 @@ function Invoke-PodeConsoleAction {
         elseif ((Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Disable)) {
             # Handle enable/disable server actions
             if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq [Pode.PodeServerState]::Running)) {
-                # Write a horizontal divider line to the console.
-                Write-PodeHostDivider -Force $true
                 if (Test-PodeServerIsEnabled) {
                     Close-PodeCancellationTokenRequest -Type Disable
                 }
@@ -1066,6 +1063,7 @@ function Invoke-PodeConsoleAction {
                 }
 
                 Write-PodeConsoleHeader -DisableHttp
+
             }
         }
         elseif ((Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Suspend)) {
@@ -1428,7 +1426,8 @@ function Test-PodeHasConsole {
         }
         return ([Pode.NativeMethods]::IsTerminal($handleTypeMap.Input -and `
                     [Pode.NativeMethods]::IsTerminal($handleTypeMap.Output) -and `
-                    [Pode.NativeMethods]::IsTerminal($handleTypeMap.Error))
+                    [Pode.NativeMethods]::IsTerminal($handleTypeMap.Error)
+            )
         )
     }
     return $false

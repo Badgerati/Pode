@@ -1,4 +1,4 @@
-# Console Feature Overview
+# Console Output
 
 Pode introduces a configurable **console output** feature, enabling you to monitor server activities, control its behavior, and customize the console's appearance and functionality to suit your needs. The console displays key server information such as active endpoints, OpenAPI documentation links, and control commands.
 

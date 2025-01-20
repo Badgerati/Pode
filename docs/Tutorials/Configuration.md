@@ -46,7 +46,7 @@ Start-PodeServer {
 }
 ```
 
-### Explicit Loading with `-ConfigFile`
+### Custom Config Path
 
 Pode also allows you to explicitly specify a configuration file using the `-ConfigFile` parameter when starting the server. This is useful if you want to load a configuration file from a custom location.
 
