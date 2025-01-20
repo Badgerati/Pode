@@ -2237,7 +2237,8 @@ function Find-PodeErrorPage {
         [string]
         $ContentType
     )
-
+write-podehost $Code
+write-podehost $ContentType
     # if a defined content type is supplied, attempt to find an error page for that first
     if (![string]::IsNullOrWhiteSpace($ContentType)) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $ContentType
