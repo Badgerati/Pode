@@ -1173,6 +1173,28 @@ function Test-PodeAuth {
     return $true
 }
 
+
+function Invoke-PodeAuth {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    try {
+        $result = Invoke-PodeAuthValidation -Name $Name
+
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+    }
+
+    return $result
+}
+
+
+
 <#
 .SYNOPSIS
 Adds the inbuilt Windows AD Authentication method for verifying users.
