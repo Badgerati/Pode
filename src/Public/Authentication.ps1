@@ -1214,13 +1214,13 @@ function Invoke-PodeAuth {
     }
     try {
         # Perform authentication validation
-        $result = Test-PodeAuthValidation -Name $Name -RouteScript
+        $WebEvent.Auth = Test-PodeAuthValidation -Name $Name -NoMiddlewareAuthentication
     }
     catch {
         $_ | Write-PodeErrorLog
     }
 
-    return $result
+    return $WebEvent.Auth
 }
 
 

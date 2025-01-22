@@ -10,14 +10,14 @@
 .EXAMPLE
     To run the script:
 
-        ./ManualAuthErrorHandling.ps1
+        ./Web-AuthManualErrorHandling.ps1
 
     Test it using:
 
         Invoke-RestMethod -Uri http://localhost/api/v3/ -Headers @{ 'X-API-KEY' = 'test_user' } -Method Get
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/ManualAuthErrorHandling.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthManualErrorHandling.ps1
 
 .NOTES
     Author: Pode Team

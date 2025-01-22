@@ -1208,8 +1208,8 @@ function Invoke-PodeAuthValidation {
 .PARAMETER Name
     The name of the authentication method to validate. This parameter is mandatory.
 
-.PARAMETER RouteScript
-    A switch to indicate whether the function is being called from a route script, affecting response formatting.
+.PARAMETER NoMiddlewareAuthentication
+    A switch to indicate whether the function has to threat the authentication because no Middleware authentication has been executed.
 
 .OUTPUTS
     A hashtable containing the authentication validation result, including success status, user details,
@@ -1225,7 +1225,7 @@ function Test-PodeAuthValidation {
         $Name,
 
         [switch]
-        $RouteScript
+        $NoMiddlewareAuthentication
     )
 
     try {
@@ -1304,11 +1304,15 @@ function Test-PodeAuthValidation {
         }
 
         # Handle results when invoked from a route script
-        if ($RouteScript -and ($null -ne $result) -and ($result -is [hashtable])) {
+        if ($NoMiddlewareAuthentication -and ($null -ne $result) -and ($result -is [hashtable])) {
             $ret = @{
-                Success = $true
-                User    = ''
-                Headers = ''
+                Success         = $true
+                User            = ''
+                Headers         = ''
+                IsAuthenticated = $result.Success
+                IsAuthorised    = $result.Success
+                Store           = !$auth.Sessionless
+                Name            = $Name
             }
             foreach ($key in $result.Keys) {
                 $ret[$key] = $result[$key]  # Overwrites if key exists
@@ -1492,7 +1496,6 @@ function Test-PodeAuthInternal {
         Store           = !$auth.Sessionless
         Name            = $result.Auth
     }
-
     # successful auth
     $authName = $null
     if ($auth.Merged -and !$auth.PassOne) {
