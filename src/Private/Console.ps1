@@ -1424,11 +1424,10 @@ function Test-PodeHasConsole {
             Output = 1
             Error  = 2
         }
-        return ([Pode.NativeMethods]::IsTerminal($handleTypeMap.Input -and `
-                    [Pode.NativeMethods]::IsTerminal($handleTypeMap.Output) -and `
-                    [Pode.NativeMethods]::IsTerminal($handleTypeMap.Error)
-            )
-        )
+        return ([Pode.NativeMethods]::IsTerminal($handleTypeMap.Input) -and `
+                [Pode.NativeMethods]::IsTerminal($handleTypeMap.Output) -and `
+                [Pode.NativeMethods]::IsTerminal($handleTypeMap.Error)
+        )  
     }
     return $false
 }
