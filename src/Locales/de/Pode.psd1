@@ -292,4 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Die Stream-Komprimierungskodierung wird nicht unterstützt: {0}'
     LocalEndpointConflictExceptionMessage                             = "Sowohl '{0}' als auch '{1}' sind als lokale OpenAPI-Endpunkte definiert, aber es ist nur ein lokaler Endpunkt pro API-Definition erlaubt."
+    authMethodDoesNotExistExceptionMessage                            = 'Authentifizierungsmethode existiert nicht: {0}'
+    authenticationMethodMergedExceptionMessage                        = 'Authentifizierungsmethode {0} wurde zusammengeführt'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "Der Parameter '-NoMiddlewareAuthentication' kann nur verwendet werden, wenn '-Authentication' angegeben ist."
 }

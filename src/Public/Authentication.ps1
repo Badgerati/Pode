@@ -1201,19 +1201,18 @@ function Invoke-PodeAuth {
         $Name
     )
 
+    # Check if the authentication method exists
+    if (! (Test-PodeAuthExists -Name $Name)) {
+        # Authentication method doesn't exist:
+        throw ($PodeLocale.authMethodDoesNotExistExceptionMessage -f $Name)
+    }
+
+    # Ensure the authentication method is not merged
+    if ($PodeContext.Server.Authentications.Methods[$Name].Merged) {
+        # Authentication method {0} is merged
+        throw ($PodeLocale.authenticationMethodMergedExceptionMessage -f $Name)
+    }
     try {
-        # Check if the authentication method exists
-        if (! (Test-PodeAuthExists -Name $Name)) {
-            # Authentication method doesn't exist: 
-            throw ($PodeLocale.authMethodDoesNotExistExceptionMessage -f $Name)
-        }
-
-        # Ensure the authentication method is not merged
-        if ($PodeContext.Server.Authentications.Methods[$Name].Merged) {
-            # Authentication method {0} is merged
-            throw ($PodeLocale.authenticationMethodMergedExceptionMessage -f $Name)
-        }
-
         # Perform authentication validation
         $result = Test-PodeAuthValidation -Name $Name -RouteScript
     }

@@ -292,4 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "함수 '{0}'은(는) 배열을 파이프라인 입력으로 받지 않습니다."
     unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
     LocalEndpointConflictExceptionMessage                             = "'{0}' 와 '{1}' 는 OpenAPI 로컬 엔드포인트로 정의되었지만, API 정의당 하나의 로컬 엔드포인트만 허용됩니다."
+    authMethodDoesNotExistExceptionMessage                            = '인증 방법이 존재하지 않습니다: {0}'
+    authenticationMethodMergedExceptionMessage                        = '인증 방법 {0}이(가) 병합되었습니다'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "매개변수 '-NoMiddlewareAuthentication'은 '-Authentication'이 지정된 경우에만 사용할 수 있습니다."
 }

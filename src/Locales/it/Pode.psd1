@@ -292,4 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La funzione '{0}' non accetta una matrice come input della pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La compressione dello stream non è supportata per la codifica {0}'
     LocalEndpointConflictExceptionMessage                             = "Sia '{0}' che '{1}' sono definiti come endpoint locali OpenAPI, ma è consentito solo un endpoint locale per definizione API."
+    authMethodDoesNotExistExceptionMessage                            = 'Il metodo di autenticazione non esiste: {0}'
+    authenticationMethodMergedExceptionMessage                        = 'Il metodo di autenticazione {0} è stato unito'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "Il parametro '-NoMiddlewareAuthentication' può essere utilizzato solo se '-Authentication' è specificato."
 }

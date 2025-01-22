@@ -292,4 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
     LocalEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
+    authMethodDoesNotExistExceptionMessage                            = '認証方法が存在しません: {0}'
+    authenticationMethodMergedExceptionMessage                        = '認証方法 {0} が統合されました'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "パラメーター '-NoMiddlewareAuthentication' は、'-Authentication' が指定されている場合にのみ使用できます。"
 }

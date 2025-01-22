@@ -292,4 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
     LocalEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."
+    authMethodDoesNotExistExceptionMessage                            = 'Metoda uwierzytelniania nie istnieje: {0}'
+    authenticationMethodMergedExceptionMessage                        = 'Metoda uwierzytelniania {0} została scalona'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "Parametr '-NoMiddlewareAuthentication' można używać tylko, gdy określono '-Authentication'."
 }

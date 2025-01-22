@@ -1,113 +1,117 @@
 <#
 .SYNOPSIS
-Adds a Route for a specific HTTP Method(s).
+    Adds a Route for a specific HTTP Method(s).
 
 .DESCRIPTION
-Adds a Route for a specific HTTP Method(s), with path, that when called with invoke any logic and/or Middleware.
+    Adds a Route for a specific HTTP Method(s) with a given path that, when called, will invoke any specified logic and/or middleware.
 
 .PARAMETER Method
-The HTTP Method of this Route, multiple can be supplied.
+    The HTTP Method(s) of this Route. Multiple methods can be supplied.
 
 .PARAMETER Path
-The URI path for the Route.
+    The URI path for the Route.
 
 .PARAMETER Middleware
-An array of ScriptBlocks for optional Middleware.
+    An array of ScriptBlocks for optional Middleware to be executed before the main route logic.
 
 .PARAMETER ScriptBlock
-A ScriptBlock for the Route's main logic.
-
-.PARAMETER EndpointName
-The EndpointName of an Endpoint(s) this Route should be bound against.
-
-.PARAMETER ContentType
-The content type the Route should use when parsing any payloads.
-
-.PARAMETER TransferEncoding
-The transfer encoding the Route should use when parsing any payloads.
-
-.PARAMETER ErrorContentType
-The content type of any error pages that may get returned.
+    A ScriptBlock containing the main logic for the Route.
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Route's main logic.
+    A literal or relative path to a file containing a ScriptBlock for the Route's main logic.
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Route's ScriptBlock.
+    An array of arguments to supply to the Route's ScriptBlock.
+
+.PARAMETER EndpointName
+    The EndpointName(s) this Route should be bound against.
+
+.PARAMETER ContentType
+    The content type the Route should use when parsing incoming payloads.
+
+.PARAMETER TransferEncoding
+    The transfer encoding the Route should use when processing incoming payloads.
+    Acceptable values: '', 'gzip', 'deflate'.
+
+.PARAMETER ErrorContentType
+    The content type of any error pages that may be returned by this Route.
 
 .PARAMETER Authentication
-The name of an Authentication method which should be used as middleware on this Route.
+    The name of an Authentication method to be used as middleware on this Route.
+
+.PARAMETER NoMiddlewareAuthentication
+    If specified, disables automatic authentication middleware attachment when an authentication method is provided.
 
 .PARAMETER Access
-The name of an Access method which should be used as middleware on this Route.
-
-.PARAMETER AllowAnon
-If supplied, the Route will allow anonymous access for non-authenticated users.
-
-.PARAMETER Login
-If supplied, the Route will be flagged to Authentication as being a Route that handles user logins.
-
-.PARAMETER Logout
-If supplied, the Route will be flagged to Authentication as being a Route that handles users logging out.
-
-.PARAMETER PassThru
-If supplied, the route created will be returned so it can be passed through a pipe.
-
-.PARAMETER IfExists
-Specifies what action to take when a Route already exists. (Default: Default)
+    The name of an Access method to be used as middleware on this Route.
 
 .PARAMETER Role
-One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Roles that are authorised to access this Route when using Authentication with an Access method.
 
 .PARAMETER Group
-One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Groups that are authorised to access this Route when using Authentication with an Access method.
 
 .PARAMETER Scope
-One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Scopes that are authorised to access this Route when using Authentication with an Access method.
 
 .PARAMETER User
-One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Users that are authorised to access this Route when using Authentication with an Access method.
+
+.PARAMETER AllowAnon
+    If specified, the Route will allow anonymous access for non-authenticated users.
+
+.PARAMETER Login
+    If specified, flags the Route to Authentication as handling user logins.
+
+.PARAMETER Logout
+    If specified, flags the Route to Authentication as handling user logouts.
+
+.PARAMETER IfExists
+    Specifies the action to take when a Route already exists.
+    Options: 'Default', 'Error', 'Overwrite', 'Skip'. (Default: Default)
+
+.PARAMETER PassThru
+    If specified, the created Route will be returned, allowing it to be passed through a pipeline.
 
 .PARAMETER OAResponses
-An alternative way to associate OpenApi responses unsing New-PodeOAResponse instead of piping multiple Add-PodeOAResponse
+    Allows associating OpenAPI responses using `New-PodeOAResponse` instead of piping multiple `Add-PodeOAResponse` calls.
 
 .PARAMETER OAReference
-A reference to OpenAPI reusable pathItem component created with Add-PodeOAComponentPathItem
+    A reference to an OpenAPI reusable pathItem component created using `Add-PodeOAComponentPathItem`.
 
 .PARAMETER OADefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+    An array of strings representing unique tags for the API specification.
+    This helps distinguish between different versions or types of API specifications within the application.
 
 .EXAMPLE
-Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (Get-PodeCsrfMiddleware) -ScriptBlock { /* logic */ }
+    Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (Get-PodeCsrfMiddleware) -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -ScriptBlock { /* logic */ }
+    Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -TransferEncoding gzip -ScriptBlock { /* logic */ }
+    Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -TransferEncoding gzip -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeRoute -Method Get -Path '/api/cpu' -ErrorContentType 'application/json' -ScriptBlock { /* logic */ }
+    Add-PodeRoute -Method Get -Path '/api/cpu' -ErrorContentType 'application/json' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
 
 .EXAMPLE
-Add-PodeRoute -Method Get -Path '/' -Role 'Developer', 'QA' -ScriptBlock { /* logic */ }
+    Add-PodeRoute -Method Get -Path '/' -Role 'Developer', 'QA' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-$Responses = New-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' |
-            New-PodeOAResponse -StatusCode 404 -Description 'User not found' |
-            New-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
+    $Responses = New-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' |
+                 New-PodeOAResponse -StatusCode 404 -Description 'User not found' |
+                 New-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
-Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -OAResponses $Responses -ScriptBlock {
-            #code is going here
-        }
+    Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -OAResponses $Responses -ScriptBlock {
+        # Logic here
+    }
 #>
 function Add-PodeRoute {
     [CmdletBinding(DefaultParameterSetName = 'Script')]

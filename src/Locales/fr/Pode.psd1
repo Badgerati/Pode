@@ -292,4 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = "La compression de flux {0} n'est pas prise en charge."
     LocalEndpointConflictExceptionMessage                             = "Les deux '{0}' et '{1}' sont définis comme des points de terminaison locaux pour OpenAPI, mais un seul point de terminaison local est autorisé par définition d'API."
+    authMethodDoesNotExistExceptionMessage                            = "La méthode d'authentification n'existe pas : {0}"
+    authenticationMethodMergedExceptionMessage                        = "La méthode d'authentification {0} est fusionnée"
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "Le paramètre '-NoMiddlewareAuthentication' ne peut être utilisé que lorsque '-Authentication' est spécifié."
 }

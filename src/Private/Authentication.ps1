@@ -1197,6 +1197,27 @@ function Invoke-PodeAuthValidation {
     return $result
 }
 
+<#
+.SYNOPSIS
+    Tests the authentication validation for a specified authentication method.
+
+.DESCRIPTION
+    The `Test-PodeAuthValidation` function processes an authentication method by its name,
+    running the associated scripts, middleware, and validations to determine authentication success or failure.
+
+.PARAMETER Name
+    The name of the authentication method to validate. This parameter is mandatory.
+
+.PARAMETER RouteScript
+    A switch to indicate whether the function is being called from a route script, affecting response formatting.
+
+.OUTPUTS
+    A hashtable containing the authentication validation result, including success status, user details,
+    headers, and redirection information if applicable.
+
+.NOTES
+    This is an internal function and is subject to change in future versions of Pode.
+#>
 function Test-PodeAuthValidation {
     param(
         [Parameter(Mandatory = $true)]
@@ -1208,14 +1229,13 @@ function Test-PodeAuthValidation {
     )
 
     try {
-
-        # get auth method
+        # Retrieve authentication method configuration from Pode context
         $auth = $PodeContext.Server.Authentications.Methods[$Name]
 
-        # auth result
+        # Initialize authentication result variable
         $result = $null
 
-        # run pre-auth middleware
+        # Run pre-authentication middleware if defined
         if ($null -ne $auth.Scheme.Middleware) {
             if (!(Invoke-PodeMiddleware -Middleware $auth.Scheme.Middleware)) {
                 return @{
@@ -1224,28 +1244,28 @@ function Test-PodeAuthValidation {
             }
         }
 
-        Wait-Debugger
-
-        # run auth scheme script to parse request for data
+        # Prepare arguments for the authentication scheme script
         $_args = @(Merge-PodeScriptblockArguments -ArgumentList $auth.Scheme.Arguments -UsingVariables $auth.Scheme.ScriptBlock.UsingVariables)
 
-        # call inner schemes first
+        # Handle inner authentication schemes (if any)
         if ($null -ne $auth.Scheme.InnerScheme) {
             $schemes = @()
-
             $_scheme = $auth.Scheme
+
+            # Traverse through the inner schemes to collect them
             $_inner = @(while ($null -ne $_scheme.InnerScheme) {
                     $_scheme = $_scheme.InnerScheme
                     $_scheme
                 })
 
+            # Process inner schemes in reverse order
             for ($i = $_inner.Length - 1; $i -ge 0; $i--) {
                 $_tmp_args = @(Merge-PodeScriptblockArguments -ArgumentList $_inner[$i].Arguments -UsingVariables $_inner[$i].ScriptBlock.UsingVariables)
-
                 $_tmp_args += , $schemes
+
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $_inner[$i].ScriptBlock.Script -Arguments $_tmp_args -Return -Splat)
                 if ($result -is [hashtable]) {
-                    break
+                    break  # Exit if a valid result is returned
                 }
 
                 $schemes += , $result
@@ -1255,25 +1275,27 @@ function Test-PodeAuthValidation {
             $_args += , $schemes
         }
 
-        if ($null -eq $result -and !$RouteScript ) {
+        # Execute the primary authentication script if no result from inner schemes and not a route script
+        if ($null -eq $result -and !$RouteScript) {
             $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.ScriptBlock.Script -Arguments $_args -Return -Splat)
         }
 
-        # if data is a hashtable, then don't call validator (parser either failed, or forced a success)
+        # If authentication script returns a non-hashtable, perform further validation
         if ($result -isnot [hashtable]) {
             $original = $result
-
             $_args = @($result) + @($auth.Arguments)
+
+            # Run main authentication validation script
             $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -UsingVariables $auth.UsingVariables -Return -Splat)
 
-            # if we have user, then run post validator if present
+            # Run post-authentication validation if applicable
             if ([string]::IsNullOrEmpty($result.Code) -and ($null -ne $auth.Scheme.PostValidator.Script)) {
                 $_args = @($original) + @($result) + @($auth.Scheme.Arguments)
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables -Return -Splat)
             }
         }
 
-        # is the auth trying to redirect ie: oauth?
+        # Handle authentication redirection scenarios (e.g., OAuth)
         if ($result.IsRedirected) {
             return @{
                 Success    = $false
@@ -1281,11 +1303,12 @@ function Test-PodeAuthValidation {
             }
         }
 
+        # Handle results when invoked from a route script
         if ($RouteScript -and ($null -ne $result) -and ($result -is [hashtable])) {
             $ret = @{
                 Success = $true
-                User            = ''
-                Headers         = ''
+                User    = ''
+                Headers = ''
             }
             foreach ($key in $result.Keys) {
                 $ret[$key] = $result[$key]  # Overwrites if key exists
@@ -1293,11 +1316,11 @@ function Test-PodeAuthValidation {
             return $ret
         }
 
-        # if there's no result, or no user, then the auth failed - but allow auth if anon enabled
+        # Authentication failure handling
         if (($null -eq $result) -or ($result.Count -eq 0) -or (Test-PodeIsEmpty $result.User)) {
             $code = (Protect-PodeValue -Value $result.Code -Default 401)
 
-            # set the www-auth header
+            # Set WWW-Authenticate header for appropriate HTTP response
             $validCode = (($code -eq 401) -or ![string]::IsNullOrEmpty($result.Challenge))
 
             if ($validCode) {
@@ -1309,6 +1332,7 @@ function Test-PodeAuthValidation {
                     $result.Headers = @{}
                 }
 
+                # Generate authentication challenge header
                 if (![string]::IsNullOrWhiteSpace($auth.Scheme.Name) -and !$result.Headers.ContainsKey('WWW-Authenticate')) {
                     $authHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Scheme.Name -Realm $auth.Scheme.Realm -Challenge $result.Challenge
                     $result.Headers['WWW-Authenticate'] = $authHeader
@@ -1324,7 +1348,7 @@ function Test-PodeAuthValidation {
             }
         }
 
-        # authentication was successful
+        # Authentication succeeded, return user and headers
         return @{
             Success = $true
             User    = $result.User
@@ -1333,6 +1357,8 @@ function Test-PodeAuthValidation {
     }
     catch {
         $_ | Write-PodeErrorLog
+
+        # Handle unexpected errors and log them
         return @{
             Success    = $false
             StatusCode = 500
@@ -1340,6 +1366,7 @@ function Test-PodeAuthValidation {
         }
     }
 }
+
 
 function Get-PodeAuthMiddlewareScript {
     return {

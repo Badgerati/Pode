@@ -292,4 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La función '{0}' no acepta una matriz como entrada de canalización."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La codificación de compresión de transmisión no es compatible: {0}'
     LocalEndpointConflictExceptionMessage                             = "Tanto '{0}' como '{1}' están definidos como puntos finales locales de OpenAPI, pero solo se permite un punto final local por definición de API."
+    authMethodDoesNotExistExceptionMessage                            = 'El método de autenticación no existe: {0}'
+    authenticationMethodMergedExceptionMessage                        = 'El método de autenticación {0} ha sido fusionado'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "El parámetro '-NoMiddlewareAuthentication' solo se puede usar cuando se especifica '-Authentication'."
 }

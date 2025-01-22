@@ -292,4 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
     LocalEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
+    authMethodDoesNotExistExceptionMessage                            = 'طريقة المصادقة غير موجودة: {0}'
+    authenticationMethodMergedExceptionMessage                        = 'تم دمج طريقة المصادقة {0}'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "المعلمة '-NoMiddlewareAuthentication' يمكن استخدامها فقط عند تحديد '-Authentication'."
 }
