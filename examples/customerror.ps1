@@ -44,28 +44,29 @@ Start-PodeServer {
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
     New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'APIKey' -Sessionless -ScriptBlock {
         param($key)
-        write-podehost $key
-        write-podehost $WebEvent -Explode
-        if ($key -eq 'test_user') {
-            return @{ success=$true; User = 'test_user' }
+        if (!$key) {
+            return @{ success = $false;  reason = 'No X-API-KEY Header found' }
         }
-        return @{ success=$false; User = $key }
+        if ($key -eq 'test_user') {
+            return @{ success = $true; User = 'test_user'; userId = 1 }
+        }
+        return @{ success = $false; User = $key; userId = -1 ;reason = 'Not existing user'}
     }
 
 
 
-    Add-PodeRoute -PassThru -Method 'Get' -Path '/api/v3/' -Authentication 'APIKey' -NoValidation  -ScriptBlock {
+    Add-PodeRoute -PassThru -Method 'Get' -Path '/api/v3/' -Authentication 'APIKey' -NoMiddlewareAuthentication  -ScriptBlock {
         $auth = Invoke-PodeAuth -Name 'APIKey'
 
         write-podehost $auth -Explode
-        if ($auth.Success) {
+        if ($auth.Success ) {
             Write-PodeJsonResponse -Value @{
                 Username = $auth.User
             }
 
         }
         else {
-            Write-PodeJsonResponse -Value @{ message = 'Unauthorized' ; user = $auth.User } -StatusCode 401
+            Write-PodeJsonResponse -Value @{ message =  $auth.reason ; user = $auth.User } -StatusCode 401
         }
 
     } | Set-PodeOARouteInfo -Summary 'Who am I'   -Tags 'auth' -OperationId 'whoami'

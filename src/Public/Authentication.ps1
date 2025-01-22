@@ -1146,6 +1146,10 @@ function Test-PodeAuth {
         $IgnoreSession
     )
 
+    if (! (Test-PodeAuthExists -Name $Name)) {
+        throw ($PodeLocale.authMethodDoesNotExistExceptionMessage -f $Name)
+    }
+
     # if the session already has a user/isAuth'd, then skip auth - or allow anon
     if (!$IgnoreSession -and (Test-PodeSessionsInUse) -and (Test-PodeAuthUser)) {
         return $true
@@ -1173,7 +1177,22 @@ function Test-PodeAuth {
     return $true
 }
 
+<#
+.SYNOPSIS
+    Invokes an authentication method in Pode.
 
+.DESCRIPTION
+    This function attempts to invoke an authentication method by its name,
+    ensuring that it exists and has not been merged. If the authentication
+    method does not exist or is merged, it throws an exception.
+
+.PARAMETER Name
+    The name of the authentication method to invoke. This parameter is mandatory.
+
+.OUTPUTS
+    A hashtable containing the authentication result, including success status,user information, and headers.
+
+#>
 function Invoke-PodeAuth {
     [CmdletBinding()]
     param(
@@ -1183,8 +1202,20 @@ function Invoke-PodeAuth {
     )
 
     try {
-        $result = Invoke-PodeAuthValidation -Name $Name
+        # Check if the authentication method exists
+        if (! (Test-PodeAuthExists -Name $Name)) {
+            # Authentication method doesn't exist: 
+            throw ($PodeLocale.authMethodDoesNotExistExceptionMessage -f $Name)
+        }
 
+        # Ensure the authentication method is not merged
+        if ($PodeContext.Server.Authentications.Methods[$Name].Merged) {
+            # Authentication method {0} is merged
+            throw ($PodeLocale.authenticationMethodMergedExceptionMessage -f $Name)
+        }
+
+        # Perform authentication validation
+        $result = Test-PodeAuthValidation -Name $Name -RouteScript
     }
     catch {
         $_ | Write-PodeErrorLog

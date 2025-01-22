@@ -291,4 +291,8 @@
     getRequestBodyNotAllowedExceptionMessage                          = "'{0}' operations cannot have a Request Body. Use -AllowNonStandardBody to override this restriction."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Unsupported stream compression encoding: {0}'
-    LocalEndpointConflictExceptionMessage                             = "Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition."}
+    LocalEndpointConflictExceptionMessage                             = "Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition."
+    authMethodDoesNotExistExceptionMessage                            = "Authentication method doesn't exist: {0}"
+    authenticationMethodMergedExceptionMessage                        = 'Authentication method {0} is merged'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "The parameter '-NoMiddlewareAuthentication' can only be used when '-Authentication' is specified."
+}

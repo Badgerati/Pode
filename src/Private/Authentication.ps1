@@ -1201,10 +1201,14 @@ function Test-PodeAuthValidation {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $RouteScript
     )
 
     try {
+
         # get auth method
         $auth = $PodeContext.Server.Authentications.Methods[$Name]
 
@@ -1219,6 +1223,8 @@ function Test-PodeAuthValidation {
                 }
             }
         }
+
+        Wait-Debugger
 
         # run auth scheme script to parse request for data
         $_args = @(Merge-PodeScriptblockArguments -ArgumentList $auth.Scheme.Arguments -UsingVariables $auth.Scheme.ScriptBlock.UsingVariables)
@@ -1249,7 +1255,7 @@ function Test-PodeAuthValidation {
             $_args += , $schemes
         }
 
-        if ($null -eq $result) {
+        if ($null -eq $result -and !$RouteScript ) {
             $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.ScriptBlock.Script -Arguments $_args -Return -Splat)
         }
 
@@ -1273,6 +1279,18 @@ function Test-PodeAuthValidation {
                 Success    = $false
                 Redirected = $true
             }
+        }
+
+        if ($RouteScript -and ($null -ne $result) -and ($result -is [hashtable])) {
+            $ret = @{
+                Success = $true
+                User            = ''
+                Headers         = ''
+            }
+            foreach ($key in $result.Keys) {
+                $ret[$key] = $result[$key]  # Overwrites if key exists
+            }
+            return $ret
         }
 
         # if there's no result, or no user, then the auth failed - but allow auth if anon enabled

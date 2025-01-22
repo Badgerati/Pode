@@ -166,7 +166,7 @@ function Add-PodeRoute {
         $Access,
 
         [switch]
-        $NoValidation,
+        $NoMiddlewareAuthentication,
 
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
@@ -320,33 +320,34 @@ function Add-PodeRoute {
 
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
-    if ( ! $NoValidation) {
-        # if an access name was supplied, setup access as middleware first to it's after auth middleware
-        if (![string]::IsNullOrWhiteSpace($Access)) {
-            if ([string]::IsNullOrWhiteSpace($Authentication)) {
-                # Access requires Authentication to be supplied on Routes
-                throw ($PodeLocale.accessRequiresAuthenticationOnRoutesExceptionMessage)
-            }
 
-            if (!(Test-PodeAccessExists -Name $Access)) {
-                # Access method does not exist
-                throw ($PodeLocale.accessMethodDoesNotExistExceptionMessage -f $Access)
-            }
-
-            $options = @{
-                Name = $Access
-            }
-            $Middleware = (@(Get-PodeAccessMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
-
+    # if an access name was supplied, setup access as middleware first to it's after auth middleware
+    if (![string]::IsNullOrWhiteSpace($Access)) {
+        if ([string]::IsNullOrWhiteSpace($Authentication)) {
+            # Access requires Authentication to be supplied on Routes
+            throw ($PodeLocale.accessRequiresAuthenticationOnRoutesExceptionMessage)
         }
 
-        # if an auth name was supplied, setup the auth as the first middleware
-        if (![string]::IsNullOrWhiteSpace($Authentication)) {
-            if (!(Test-PodeAuthExists -Name $Authentication)) {
-                # Authentication method does not exist
-                throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Authentication)
-            }
+        if (!(Test-PodeAccessExists -Name $Access)) {
+            # Access method does not exist
+            throw ($PodeLocale.accessMethodDoesNotExistExceptionMessage -f $Access)
+        }
 
+        $options = @{
+            Name = $Access
+        }
+
+        $Middleware = (@(Get-PodeAccessMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
+
+    }
+
+    # if an auth name was supplied, setup the auth as the first middleware
+    if (![string]::IsNullOrWhiteSpace($Authentication)) {
+        if (!(Test-PodeAuthExists -Name $Authentication)) {
+            # Authentication method does not exist
+            throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Authentication)
+        }
+        if ( ! $NoMiddlewareAuthentication) {
             $options = @{
                 Name   = $Authentication
                 Login  = $Login
@@ -356,12 +357,15 @@ function Add-PodeRoute {
 
             $Middleware = (@(Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
         }
+    }
+    elseif ($NoMiddlewareAuthentication) {
+        throw "Parameter '-NoMiddlewareAuthentication' can be only used with '-Authentication'"
+    }
 
-        # custom access
-        if ($null -eq $CustomAccess) {
-            $CustomAccess = @{}
-        }
-    } 
+    # custom access
+    if ($null -eq $CustomAccess) {
+        $CustomAccess = @{}
+    }
 
     # workout a default content type for the route
     $ContentType = Find-PodeRouteContentType -Path $Path -ContentType $ContentType
@@ -414,8 +418,8 @@ function Add-PodeRoute {
                     Logic            = $ScriptBlock
                     UsingVariables   = $usingVars
                     Middleware       = $Middleware
-                    Authentication   = $(if (!$NoValidation) { $Authentication }else {})
-                    Access           = $(if (!$NoValidation) { $Access }else {})
+                    Authentication   = $(if (!$NoMiddlewareAuthentication) { $Authentication } else {})
+                    Access           = $Access
                     AccessMeta       = @{
                         Role   = $Role
                         Group  = $Group
