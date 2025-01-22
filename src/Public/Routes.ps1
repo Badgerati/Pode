@@ -363,7 +363,7 @@ function Add-PodeRoute {
         }
     }
     elseif ($NoMiddlewareAuthentication) {
-        throw "Parameter '-NoMiddlewareAuthentication' can be only used with '-Authentication'"
+        throw $PodeLocale.parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage
     }
 
     # custom access
