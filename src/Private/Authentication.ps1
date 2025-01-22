@@ -1276,7 +1276,7 @@ function Test-PodeAuthValidation {
         }
 
         # Execute the primary authentication script if no result from inner schemes and not a route script
-        if ($null -eq $result -and !$RouteScript) {
+        if ($null -eq $result) {
             $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.ScriptBlock.Script -Arguments $_args -Return -Splat)
         }
 
