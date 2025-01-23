@@ -1280,6 +1280,11 @@ function Test-PodeAuthValidation {
             $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.ScriptBlock.Script -Arguments $_args -Return -Splat)
         }
 
+        # Remove the Middleware processed data if code is 400 - no token 
+        if ($NoMiddlewareAuthentication -and ($result.Code -eq 400)) {
+            $result = ''
+        }
+
         # If authentication script returns a non-hashtable, perform further validation
         if ($result -isnot [hashtable]) {
             $original = $result
@@ -1305,12 +1310,20 @@ function Test-PodeAuthValidation {
 
         # Handle results when invoked from a route script
         if ($NoMiddlewareAuthentication -and ($null -ne $result) -and ($result -is [hashtable])) {
+            if ($result.Success -is [bool]) {
+                $success = $result.Success
+            }
+            else {
+                $success = $false
+                [System.Exception]::new("The authentication Scriptblock must return an hashtable with a key named 'Success'") | Write-PodeErrorLog
+            }
+
             $ret = @{
-                Success         = $true
+                Success         = $success
                 User            = ''
                 Headers         = ''
-                IsAuthenticated = $result.Success
-                IsAuthorised    = $result.Success
+                IsAuthenticated = $success
+                IsAuthorised    = $success
                 Store           = !$auth.Sessionless
                 Name            = $Name
             }

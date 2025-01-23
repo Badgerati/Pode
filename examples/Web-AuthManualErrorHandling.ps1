@@ -54,10 +54,9 @@ Start-PodeServer {
     # Configure custom API key authentication
     New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'APIKey' -Sessionless -ScriptBlock {
         param($key)
-
         # Handle missing API key
         if (!$key) {
-            return @{ Success = $false; Reason = 'No X-API-KEY Header found' }
+            return @{ Success = $false; Reason = 'No Authentication Header found' }
         }
 
         # Validate API key
@@ -66,7 +65,7 @@ Start-PodeServer {
         }
 
         # Return failure for invalid users
-        return @{ Success = $false; User = $key; UserId = -1; Reason = 'Not existing user' }
+        return @{ Success = $false; User = $key; Reason = 'Not existing user' }
     }
 
     # Define an API route with manual authentication error handling
