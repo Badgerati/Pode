@@ -36,10 +36,10 @@ The **Enable** operation restores the Pode server's ability to accept new incomi
 ### How It Works
 
 1. **Resetting the Cancellation Token**:
-   - The server's internal state is updated to resume normal operations, allowing new incoming requests to be processed.
+      - The server's internal state is updated to resume normal operations, allowing new incoming requests to be processed.
 
 2. **Restoring Functionality**:
-   - Once enabled, the Pode server can handle requests as usual, with no further interruptions.
+      - Once enabled, the Pode server can handle requests as usual, with no further interruptions.
 
 ### Example Usage
 

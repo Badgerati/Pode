@@ -7,11 +7,12 @@ In addition to restarting, Pode provides a way to temporarily **suspend** and **
 To suspend a running Pode server, use the `Suspend-PodeServer` function. This function will pause all active server runspaces, effectively putting the server into a suspended state. Here’s how to do it:
 
 1. **Run the Suspension Command**:
-   - Simply call `Suspend-PodeServer` from within your Pode environment or script.
 
-   ```powershell
-   Suspend-PodeServer -Timeout 60
-   ```
+      - Simply call `Suspend-PodeServer` from within your Pode environment or script.
+
+      ```powershell
+      Suspend-PodeServer -Timeout 60
+      ```
 
    The `-Timeout` parameter specifies how long the function should wait (in seconds) for each runspace to be fully suspended. This is optional, with a default timeout of 30 seconds.
 
