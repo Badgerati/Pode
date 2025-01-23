@@ -9,7 +9,29 @@
 .EXAMPLE
     To run the sample: ./Web-AuthDigest.ps1
 
-    Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
+    # Define the URI and credentials
+    $uri = [System.Uri]::new("http://localhost:8081/users")
+    $username = "morty"
+    $password = "pickle"
+
+    # Create a credential cache and add Digest authentication
+    $credentialCache = [System.Net.CredentialCache]::new()
+    $networkCredential = [System.Net.NetworkCredential]::new($username, $password)
+    $credentialCache.Add($uri, "Digest", $networkCredential)
+
+    # Create the HTTP client handler with the credential cache
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+    $handler.Credentials = $credentialCache
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Send the GET request and capture the response
+    $response = $httpClient.GetStringAsync($uri).Result
+
+    # Display the response
+    $response
+
 
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthDigest.ps1
@@ -45,7 +67,7 @@ Start-PodeServer -Threads 2 {
     # setup digest auth
     New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $params)
-
+write-podehost "username=$username"
         # here you'd check a real user storage, this is just for example
         if ($username -ieq 'morty') {
             return @{
@@ -57,12 +79,13 @@ Start-PodeServer -Threads 2 {
                 Password = 'pickle'
             }
         }
-
+write-podehost 'no auth'
         return $null
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate'   -ScriptBlock {
+        write-podehsot '1'
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{

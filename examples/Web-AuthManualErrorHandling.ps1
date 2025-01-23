@@ -68,8 +68,19 @@ Start-PodeServer {
         return @{ Success = $false; User = $key; Reason = 'Not existing user' }
     }
 
+
+    New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'APIKey_standard' -Sessionless -ScriptBlock {
+        param($key)
+
+        # Validate API key
+        if ($key -eq 'test_user') {
+            return @{ Success = $true; User = 'test_user'; UserId = 1 }
+        }
+
+    }
+
     # Define an API route with manual authentication error handling
-    Add-PodeRoute -PassThru -Method 'Get' -Path '/api/v3/' -Authentication 'APIKey' -NoMiddlewareAuthentication -ScriptBlock {
+    Add-PodeRoute -PassThru -Method 'Get' -Path '/api/v3/whoami' -Authentication 'APIKey' -NoMiddlewareAuthentication -ScriptBlock {
         # Manually invoke authentication
         $auth = Invoke-PodeAuth -Name 'APIKey'
 
@@ -93,6 +104,33 @@ Start-PodeServer {
             }
         }
     } | Set-PodeOARouteInfo -Summary 'Who am I' -Tags 'auth' -OperationId 'whoami' -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{  'application/json' = (New-PodeOABoolProperty -Name 'Success' -Default $true | New-PodeOAStringProperty -Name 'Username' | New-PodeOAIntProperty -Name 'UserId' | New-PodeOAObjectProperty ) } -PassThru |
+        Add-PodeOAResponse -StatusCode 401 -Description 'Authentication failure' -Content @{  'application/json' = (New-PodeOABoolProperty -Name 'Success' -Default $false | New-PodeOAStringProperty -Name 'Username' | New-PodeOAStringProperty -Name 'Message' | New-PodeOAObjectProperty ) }
+
+    Add-PodeRoute -PassThru -Method 'Get' -Path '/api/v3/whoami_standard' -Authentication 'APIKey_standard' -ErrorContentType 'application/json'  -ScriptBlock {
+        # Manually invoke authentication
+      #  $auth = Invoke-PodeAuth -Name 'APIKey'
+
+        # Log authentication details for debugging
+        Write-PodeHost $auth -Explode
+
+        # If authentication succeeds, return user details
+        if ($auth.Success) {
+            Write-PodeJsonResponse -StatusCode 200 -Value @{
+                Success  = $true
+                Username = $auth.User
+                UserId   = $auth.UserId
+            }
+        }
+        else {
+            # Handle authentication failures with a custom error response
+            Write-PodeJsonResponse -StatusCode 401 -Value @{
+                Success  = $false
+                Message  = $auth.Reason
+                Username = $auth.User
+            }
+        }
+    } | Set-PodeOARouteInfo -Summary 'Who am I (default auth)' -Tags 'auth' -OperationId 'whoami_standard' -PassThru |
         Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{  'application/json' = (New-PodeOABoolProperty -Name 'Success' -Default $true | New-PodeOAStringProperty -Name 'Username' | New-PodeOAIntProperty -Name 'UserId' | New-PodeOAObjectProperty ) } -PassThru |
         Add-PodeOAResponse -StatusCode 401 -Description 'Authentication failure' -Content @{  'application/json' = (New-PodeOABoolProperty -Name 'Success' -Default $false | New-PodeOAStringProperty -Name 'Username' | New-PodeOAStringProperty -Name 'Message' | New-PodeOAObjectProperty ) }
 }

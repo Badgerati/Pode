@@ -206,7 +206,7 @@ Describe 'Invoke-PodeAuth Tests' {
                 }
             }
         }
-
+        $WebEvent=@{}
         $PodeLocale = @{
             authMethodDoesNotExistExceptionMessage = "Authentication method {0} does not exist"
             authenticationMethodMergedExceptionMessage = "Authentication method {0} is merged"
@@ -216,6 +216,7 @@ Describe 'Invoke-PodeAuth Tests' {
     It 'Should successfully invoke a valid authentication method' {
         Mock Test-PodeAuthExists { $true } -ParameterFilter { $Name -eq 'ValidAuth' }
         Mock Test-PodeAuthValidation { @{ Success = $true; User = 'TestUser'; Headers = @{} } }
+        Mock Add-PodeHeader {}
 
         $result = Invoke-PodeAuth -Name 'ValidAuth'
 
@@ -233,5 +234,5 @@ Describe 'Invoke-PodeAuth Tests' {
         { Invoke-PodeAuth -Name 'MergedAuth' } | Should -Throw ($PodeLocale.authenticationMethodMergedExceptionMessage -f 'MergedAuth' )
     }
 
-    
+
 }
