@@ -1215,6 +1215,9 @@ function Invoke-PodeAuth {
     try {
         # Perform authentication validation
         $WebEvent.Auth = Test-PodeAuthValidation -Name $Name -NoMiddlewareAuthentication
+        write-podehost (Get-PodeHeader -name 'WWW-Authenticate')
+    #    Add-PodeHeader -Name 'WWW-Authenticate' -Value $WebEvent.Auth.Headers['WWW-Authenticate']
+     #   write-podehost (Get-PodeHeader -name 'WWW-Authenticate')
     }
     catch {
         $_ | Write-PodeErrorLog

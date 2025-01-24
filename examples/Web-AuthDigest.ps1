@@ -26,11 +26,79 @@
     # Create the HTTP client
     $httpClient = [System.Net.Http.HttpClient]::new($handler)
 
-    # Send the GET request and capture the response
-    $response = $httpClient.GetStringAsync($uri).Result
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
 
-    # Display the response
-    $response
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
+
+.EXAMPLE
+    No authentication
+
+    # Define the URI
+    $uri = [System.Uri]::new("http://localhost:8081/users")
+
+    # Create the HTTP client handler (no authentication)
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
+
+.EXAMPLE
+    Wrong password
+
+    # Define the URI and wrong credentials
+    $uri = [System.Uri]::new("http://localhost:8081/users")
+    $wrongUsername = "wrongUser"
+    $wrongPassword = "wrongPassword"
+
+    # Create a credential cache and add Digest authentication with incorrect credentials
+    $credentialCache = [System.Net.CredentialCache]::new()
+    $networkCredential = [System.Net.NetworkCredential]::new($wrongUsername, $wrongPassword)
+    $credentialCache.Add($uri, "Digest", $networkCredential)
+
+    # Create the HTTP client handler with the credential cache
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+    $handler.Credentials = $credentialCache
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Display the response status code (to check for 401 Unauthorized)
+    $response.StatusCode
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
 
 
 .LINK
@@ -67,7 +135,7 @@ Start-PodeServer -Threads 2 {
     # setup digest auth
     New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $params)
-write-podehost "username=$username"
+
         # here you'd check a real user storage, this is just for example
         if ($username -ieq 'morty') {
             return @{
@@ -79,13 +147,12 @@ write-podehost "username=$username"
                 Password = 'pickle'
             }
         }
-write-podehost 'no auth'
+
         return $null
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate'   -ScriptBlock {
-        write-podehsot '1'
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ErrorContentType  'application/json' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{

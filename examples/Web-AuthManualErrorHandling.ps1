@@ -16,6 +16,38 @@
 
         Invoke-RestMethod -Uri http://localhost/api/v3/ -Headers @{ 'X-API-KEY' = 'test_user' } -Method Get
 
+.EXAMPLE
+   Digest
+   # Define the URI and credentials
+    $uri = [System.Uri]::new("http://localhost:8081/api/v3/whois")
+    $username = "morty"
+    $password = "pickle"
+
+    # Create a credential cache and add Digest authentication
+    $credentialCache = [System.Net.CredentialCache]::new()
+    $networkCredential = [System.Net.NetworkCredential]::new($username, $password)
+    $credentialCache.Add($uri, "Digest", $networkCredential)
+
+    # Create the HTTP client handler with the credential cache
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+    $handler.Credentials = $credentialCache
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
+
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthManualErrorHandling.ps1
 
@@ -42,7 +74,7 @@ catch { throw }
 # Start the Pode server
 Start-PodeServer {
     # Define an HTTP endpoint for the server
-    Add-PodeEndpoint -Address 'localhost' -Protocol 'Http' -Port '80'
+    Add-PodeEndpoint -Address 'localhost' -Protocol 'Http' -Port '8081'
 
     # Enable OpenAPI documentation and viewers
     Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -DisableMinimalDefinitions -NoDefaultResponses
@@ -79,6 +111,24 @@ Start-PodeServer {
 
     }
 
+    New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Digest' -Sessionless -ScriptBlock {
+        param($username, $params)
+
+        # here you'd check a real user storage, this is just for example
+        if ($username -ieq 'morty') {
+            return @{
+                User     = @{
+                    ID   = 'M0R7Y302'
+                    Name = 'Morty'
+                    Type = 'Human'
+                }
+                Password = 'pickle'
+            }
+        }
+
+        return $null
+    }
+
     # Define an API route with manual authentication error handling
     Add-PodeRoute -PassThru -Method 'Get' -Path '/api/v3/whoami' -Authentication 'APIKey' -NoMiddlewareAuthentication -ScriptBlock {
         # Manually invoke authentication
@@ -109,8 +159,7 @@ Start-PodeServer {
 
     Add-PodeRoute -PassThru -Method 'Get' -Path '/api/v3/whoami_standard' -Authentication 'APIKey_standard' -ErrorContentType 'application/json'  -ScriptBlock {
         # Manually invoke authentication
-      #  $auth = Invoke-PodeAuth -Name 'APIKey'
-
+        $auth = $WebEvent.Auth
         # Log authentication details for debugging
         Write-PodeHost $auth -Explode
 
@@ -133,4 +182,34 @@ Start-PodeServer {
     } | Set-PodeOARouteInfo -Summary 'Who am I (default auth)' -Tags 'auth' -OperationId 'whoami_standard' -PassThru |
         Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{  'application/json' = (New-PodeOABoolProperty -Name 'Success' -Default $true | New-PodeOAStringProperty -Name 'Username' | New-PodeOAIntProperty -Name 'UserId' | New-PodeOAObjectProperty ) } -PassThru |
         Add-PodeOAResponse -StatusCode 401 -Description 'Authentication failure' -Content @{  'application/json' = (New-PodeOABoolProperty -Name 'Success' -Default $false | New-PodeOAStringProperty -Name 'Username' | New-PodeOAStringProperty -Name 'Message' | New-PodeOAObjectProperty ) }
+
+
+    # Define an API route with manual authentication error handling
+    Add-PodeRoute   -Method 'Get' -Path '/api/v3/whois' -Authentication 'Digest'   -ScriptBlock {
+        # Manually invoke authentication
+        $auth = $WebEvent.Auth
+
+        # Log authentication details for debugging
+        Write-PodeHost $Webauth -Explode
+
+        # If authentication succeeds, return user details
+        if ($auth.Success) {
+            Write-PodeJsonResponse -StatusCode 200 -Value @{
+                Success  = $true
+                Username = $auth.User.Name
+                UserId   = $auth.User.Id
+            }
+        }
+        else {
+            # Handle authentication failures with a custom error response
+            Write-PodeJsonResponse -StatusCode 401 -Value @{
+                Success  = $false
+                Message  = $auth.Reason
+                Username = $auth.User
+            }
+        }
+    }
+    #| Set-PodeOARouteInfo -Summary 'Who Is' -Tags 'auth' -OperationId 'whois' -PassThru |
+    #   Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{  'application/json' = (New-PodeOABoolProperty -Name 'Success' -Default $true | New-PodeOAStringProperty -Name 'Username' | New-PodeOAIntProperty -Name 'UserId' | New-PodeOAObjectProperty ) } -PassThru |
+    #  Add-PodeOAResponse -StatusCode 401 -Description 'Authentication failure' -Content @{  'application/json' = (New-PodeOABoolProperty -Name 'Success' -Default $false | New-PodeOAStringProperty -Name 'Username' | New-PodeOAStringProperty -Name 'Message' | New-PodeOAObjectProperty ) }
 }
