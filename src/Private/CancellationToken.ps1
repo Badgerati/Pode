@@ -418,10 +418,6 @@ function Test-PodeCancellationTokenRequest {
     its operations. It interacts with the Pode server's context and state to perform
     the necessary operations based on the allowed actions and current state.
 
-.PARAMETER serverState
-    The current state of the Pode server, retrieved using Get-PodeServerState,
-    which determines whether actions like suspend, disable, or restart can be executed.
-
 .NOTES
     This is an internal function and may change in future releases of Pode.
 
@@ -431,12 +427,8 @@ function Test-PodeCancellationTokenRequest {
 #>
 
 function Resolve-PodeCancellationToken {
-    param(
-        [Parameter(Mandatory = $true)]
-        [Pode.PodeServerState]
-        $ServerState
-    )
-
+    #Retrieve the current state of the Pode server
+    $serverState = Get-PodeServerState
     if ($PodeContext.Server.AllowedActions.Restart -and (Test-PodeCancellationTokenRequest -Type Restart)) {
         Restart-PodeInternalServer
         return
@@ -461,11 +453,13 @@ function Resolve-PodeCancellationToken {
     }
     # Handle suspend/resume actions
     if ($PodeContext.Server.AllowedActions.Suspend) {
-        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq [Pode.PodeServerState]::Suspended)) {
+        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq [Pode.PodeServerState]::Resuming)) {
+            #    if ((Test-PodeCancellationTokenRequest -Type Resume) -and (($ServerState -eq [Pode.PodeServerState]::Suspended) -or ($ServerState -eq [Pode.PodeServerState]::Resuming))) {
             Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
             return
         }
-        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq [Pode.PodeServerState]::Running)) {
+        #elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and (($ServerState -eq [Pode.PodeServerState]::Running) -or ($ServerState -eq [Pode.PodeServerState]::Suspending))) {
+        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq [Pode.PodeServerState]::Suspending)) {
             Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
             return
         }

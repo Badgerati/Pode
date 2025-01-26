@@ -222,7 +222,9 @@ function New-PodeContext {
 
     # Load the server configuration based on the provided parameters.
     # If $IgnoreServerConfig is set, an empty configuration (@{}) is assigned; otherwise, the configuration is loaded using Open-PodeConfiguration.
-    $ctx.Server.Configuration = if ($IgnoreServerConfig) { @{} }
+    $ctx.Server.Configuration = if ($IgnoreServerConfig) {
+        @{}
+    }
     else {
         Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx -ConfigFile $ConfigFile
     }

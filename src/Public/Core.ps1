@@ -235,15 +235,18 @@ function Start-PodeServer {
         if ($PodeService) {
             if ($null -ne $PodeService.DisableTermination -or
                 $null -ne $PodeService.Quiet -or
-                $null -ne $PodeService.PipeName
+                $null -ne $PodeService.PipeName -or
+                $null -ne $PodeService.DisableConsoleInput
             ) {
                 $DisableTermination = [switch]$PodeService.DisableTermination
                 $Quiet = [switch]$PodeService.Quiet
+                $DisableConsoleInput = [switch]$PodeService.DisableConsoleInput
 
                 $monitorService = @{
-                    DisableTermination = $PodeService.DisableTermination
-                    Quiet              = $PodeService.Quiet
-                    PipeName           = $PodeService.PipeName
+                    DisableTermination  = $PodeService.DisableTermination
+                    Quiet               = $PodeService.Quiet
+                    PipeName            = $PodeService.PipeName
+                    DisableConsoleInput = $PodeService.DisableConsoleInput
                 }
                 write-podehost $PodeService -Explode -Force
             }
@@ -330,7 +333,7 @@ function Start-PodeServer {
                 }
 
                 # Resolve cancellation token requests (e.g., Restart, Enable/Disable, Suspend/Resume).
-                Resolve-PodeCancellationToken -ServerState $serverState
+                Resolve-PodeCancellationToken
 
                 # Pause for 1 second before re-checking the state and processing the next action.
                 Start-Sleep -Seconds 1
