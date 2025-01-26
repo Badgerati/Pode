@@ -267,5 +267,5 @@ packers/choco/pode.nuspec
 packers/choco/tools/ChocolateyInstall.ps1
 docs/Getting-Started/Samples.md
 
-#Todo files
-*.todo
+# Dump Folder
+Dump

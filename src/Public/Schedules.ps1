@@ -132,6 +132,9 @@ function Add-PodeSchedule {
     # check for scoped vars
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
+    # Modify the ScriptBlock to replace 'Start-Sleep' with 'Start-PodeSleep'
+    $ScriptBlock = ConvertTo-PodeSleep -ScriptBlock $ScriptBlock
+
     # add the schedule
     $parsedCrons = ConvertFrom-PodeCronExpression -Expression @($Cron)
     $nextTrigger = Get-PodeCronNextEarliestTrigger -Expressions $parsedCrons -StartTime $StartTime -EndTime $EndTime

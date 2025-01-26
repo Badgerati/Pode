@@ -428,7 +428,7 @@ function Add-PodeOAServerEndpoint {
                 # If there's already a local endpoint, throw an exception, as only one local endpoint is allowed per definition
                 # Both are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition.
                 if ($srv.url -notmatch '^(?i)https?://') {
-                    throw ($PodeLocale.LocalEndpointConflictExceptionMessage -f $Url, $srv.url)
+                    throw ($PodeLocale.localEndpointConflictExceptionMessage -f $Url, $srv.url)
                 }
             }
         }
@@ -3747,8 +3747,6 @@ Validate the OpenAPI definition if all Reference are satisfied
 .DESCRIPTION
 Validate the OpenAPI definition if all Reference are satisfied
 
-
-
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
 This tag helps distinguish between different versions or types of API specifications within the application.
@@ -3802,4 +3800,38 @@ function Test-PodeOADefinition {
         }
     }
     return  $result
+}
+
+
+
+<#
+.SYNOPSIS
+    Checks if OpenAPI is enabled in the Pode server.
+
+.DESCRIPTION
+    The `Test-PodeOAEnabled` function iterates through the OpenAPI definitions in the Pode server to determine if any are enabled.
+    It checks for the presence of `bookmarks` in the hidden components of each definition, which indicates an active OpenAPI configuration.
+
+.RETURNS
+    [bool] True if OpenAPI is enabled; otherwise, False.
+
+.EXAMPLE
+    Test-PodeOAEnabled
+
+    Returns $true if OpenAPI is enabled for any definition in the Pode server, otherwise returns $false.
+#>
+function Test-PodeOAEnabled {
+    # Iterate through each OpenAPI definition key
+    foreach ($key in $PodeContext.Server.OpenAPI.Definitions.Keys) {
+        # Retrieve the bookmarks from the hidden components
+        $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
+
+        # If bookmarks exist, OpenAPI is enabled for this definition
+        if ($bookmarks) {
+            return $true
+        }
+    }
+
+    # If no bookmarks are found, OpenAPI is not enabled
+    return $false
 }

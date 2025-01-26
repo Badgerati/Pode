@@ -31,6 +31,9 @@
 .PARAMETER PassThru
     If specified, returns the pipeline and handler for custom processing.
 
+.PARAMETER Name
+    If specified, is used as base name for the runspace.
+
 .EXAMPLE
     Add-PodeRunspace -Type 'Tasks' -ScriptBlock {
         # Your script code here
@@ -65,10 +68,7 @@ function Add-PodeRunspace {
         $PassThru,
 
         [string]
-        $Name,
-
-        [string]
-        $Id = '1'
+        $Name = 'generic'
     )
 
     try {
@@ -112,7 +112,7 @@ function Add-PodeRunspace {
         $null = $ps.AddParameters(
             @{
                 'Type'      = $Type
-                'Name'      = "Pode_$($Type)_$($Name)_$($Id)"
+                'Name'      = "Pode_$($Type)_$($Name)_$((++$PodeContext.RunspacePools[$Type].LastId))" # create the name and increment the last Id for the type
                 'NoProfile' = $NoProfile.IsPresent
             }
         )
@@ -549,3 +549,53 @@ function New-PodeRunspacePoolNetWrapper {
 }
 
 
+<#
+.SYNOPSIS
+    Resets the name of the current Pode runspace by modifying its structure.
+
+.DESCRIPTION
+    The `Reset-PodeRunspaceName` function updates the name of the current runspace if it begins with "Pode_".
+    It replaces the portion of the name after the second underscore with "waiting" while retaining the final number.
+    Additionally, it prepends an underscore (`_`) to the modified name.
+
+.PARAMETER None
+    This function does not take any parameters.
+
+.NOTES
+    - The function assumes the current runspace follows the naming convention "Pode_*".
+    - If the current runspace name does not start with "Pode_", no changes are made.
+    - Useful for managing or resetting runspace names in Pode applications.
+
+.EXAMPLE
+    # Example 1: Current runspace name is Pode_Tasks_Test_1
+    Reset-PodeRunspaceName
+    # After execution: Runspace name becomes _Pode_Tasks_waiting_1
+
+    # Example 2: Current runspace name is NotPode_Runspace
+    Reset-PodeRunspaceName
+    # No changes are made because the name does not start with "Pode_".
+
+.EXAMPLE
+    # Example 3: Runspace with custom name
+    Reset-PodeRunspaceName
+    # Before: Pode_CustomRoute_Process_5
+    # After:  _Pode_CustomRoute_waiting_5
+
+.OUTPUTS
+    None.
+
+#>
+function Reset-PodeRunspaceName {
+    [CmdletBinding()]
+
+    # Get the current runspace
+    $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+
+    # Check if the runspace name starts with 'Pode_'
+    if (! $currentRunspace.Name.StartsWith('Pode_')) {
+        return
+    }
+
+    # Update the runspace name with the required format
+    $currentRunspace.Name = "_$($currentRunspace.Name -replace '^(Pode_[^_]+_).+?(_\d+)$', '${1}idle${2}')"
+}
