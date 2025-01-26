@@ -894,7 +894,6 @@ This is an internal function and may change in future releases of Pode.
 
 function Get-PodeOpenApiDefinitionInternal {
     param(
-
         [string]
         $EndpointName,
 
@@ -1707,6 +1706,7 @@ function Resolve-PodeOAReference {
     This is an internal function and may change in future releases of Pode.
 #>
 function New-PodeOAPropertyInternal {
+    [CmdletBinding()]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param (
         [String]

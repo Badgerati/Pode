@@ -732,7 +732,7 @@ Date: 24th May 2020
 ### Enhancements
 * #533: Support on states for inclusion/exlcusions when saving, and scopes on states
 * #538: Support to batch log items together before sending them off to be recorded
-* #540: Adds a Ctrl+B shortcutto open the server in the default browser
+* #540: Adds a Ctrl+B shortcut to open the server in the default browser
 * #542: Add new switch to help toggling of Status Page exception message
 * #548: Adds new `Get-PodeSchedule` and `Get-PodeTimer` functions
 * #549: Support for calculating a schedule's next trigger datetime
