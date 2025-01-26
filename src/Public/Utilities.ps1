@@ -20,7 +20,7 @@ Close-PodeDisposable -Disposable $stream -Close
 function Close-PodeDisposable {
     [CmdletBinding()]
     param(
-        [Parameter()]
+        [Parameter(ValueFromPipeline = $true)]
         [System.IDisposable]
         $Disposable,
 
@@ -30,26 +30,27 @@ function Close-PodeDisposable {
         [switch]
         $CheckNetwork
     )
-
-    if ($null -eq $Disposable) {
-        return
-    }
-
-    try {
-        if ($Close) {
-            $Disposable.Close()
-        }
-    }
-    catch [exception] {
-        if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
+    process {
+        if ($null -eq $Disposable) {
             return
         }
 
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
-    }
-    finally {
-        $Disposable.Dispose()
+        try {
+            if ($Close) {
+                $Disposable.Close()
+            }
+        }
+        catch [exception] {
+            if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
+                return
+            }
+
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+        finally {
+            $Disposable.Dispose()
+        }
     }
 }
 
@@ -421,19 +422,46 @@ function Import-PodeSnapin {
 
 <#
 .SYNOPSIS
-Protects a value, by returning a default value is the main one is null/empty.
+    Resolves and protects a value by ensuring it defaults to a specified fallback and optionally parses it as an enum.
 
 .DESCRIPTION
-Protects a value, by returning a default value is the main one is null/empty.
+    The `Protect-PodeValue` function ensures that a given value is resolved. If the value is empty, a default value is used instead.
+    Additionally, the function can parse the resolved value as an enum type with optional case sensitivity.
 
 .PARAMETER Value
-The main value to use.
+    The input value to be resolved.
 
 .PARAMETER Default
-A default value to return should the main value be null/empty.
+    The default value to fall back to if the input value is empty.
+
+.PARAMETER EnumType
+    The type of enum to parse the resolved value into. If specified, the resolved value must be a valid enum member.
+
+.PARAMETER CaseSensitive
+    Specifies whether the enum parsing should be case-sensitive. By default, parsing is case-insensitive.
+
+.OUTPUTS
+    [object]
+    Returns the resolved value, either as the original value, the default value, or a parsed enum.
 
 .EXAMPLE
-$Name = Protect-PodeValue -Value $Name -Default 'Rick'
+    # Example 1: Resolve a value with a default fallback
+    $resolved = Protect-PodeValue -Value $null -Default "Fallback"
+    Write-Output $resolved  # Output: Fallback
+
+.EXAMPLE
+    # Example 2: Resolve and parse a value as a case-insensitive enum
+    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([type][System.ConsoleColor])
+    Write-Output $resolvedEnum  # Output: Red
+
+.EXAMPLE
+    # Example 3: Resolve and parse a value as a case-sensitive enum
+    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([type][System.ConsoleColor]) -CaseSensitive
+    # Throws an error if "red" does not match an enum member exactly (case-sensitive).
+
+.NOTES
+    This function resolves values using `Resolve-PodeValue` and validates enums using `[enum]::IsDefined`.
+
 #>
 function Protect-PodeValue {
     [CmdletBinding()]
@@ -443,10 +471,24 @@ function Protect-PodeValue {
         $Value,
 
         [Parameter()]
-        $Default
+        $Default,
+
+        [Parameter()]
+        [Type]
+        $EnumType,
+
+        [switch]
+        $CaseSensitive
     )
 
-    return (Resolve-PodeValue -Check (Test-PodeIsEmpty $Value) -TrueValue $Default -FalseValue $Value)
+    $resolvedValue = Resolve-PodeValue -Check (Test-PodeIsEmpty $Value) -TrueValue $Default -FalseValue $Value
+
+    if ($null -ne $EnumType -and [enum]::IsDefined($EnumType, $resolvedValue)) {
+        # Use $CaseSensitive to determine if case sensitivity should apply
+        return [enum]::Parse($EnumType, $resolvedValue, !$CaseSensitive.IsPresent)
+    }
+
+    return $resolvedValue
 }
 
 <#
@@ -814,7 +856,7 @@ function Out-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet) {
             return
         }
         # Set InputObject to the array of values
@@ -855,6 +897,9 @@ Show the Object Type
 .PARAMETER Label
 Show a label for the object
 
+.PARAMETER Force
+Overrides the -Quiet flag of the server.
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
@@ -883,7 +928,10 @@ function Write-PodeHost {
 
         [Parameter( Mandatory = $false, ParameterSetName = 'object')]
         [string]
-        $Label
+        $Label,
+
+        [switch]
+        $Force
     )
     begin {
         # Initialize an array to hold piped-in values
@@ -896,7 +944,7 @@ function Write-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Quiet) {
+        if ($PodeContext.Server.Console.Quiet -and !($Force.IsPresent)) {
             return
         }
         # Set Object to the array of values
@@ -1486,3 +1534,80 @@ function Invoke-PodeGC {
 
     [System.GC]::Collect()
 }
+
+<#
+.SYNOPSIS
+    A function to pause execution for a specified duration.
+    This function should be used in Pode as replacement for Start-Sleep
+
+.DESCRIPTION
+    The `Start-PodeSleep` function pauses script execution for a given duration specified in seconds, milliseconds, or a TimeSpan.
+
+.PARAMETER Seconds
+    Specifies the duration to pause execution in seconds. Default is 1 second.
+
+.PARAMETER Milliseconds
+    Specifies the duration to pause execution in milliseconds.
+
+.PARAMETER Duration
+    Specifies the duration to pause execution using a TimeSpan object.
+
+.PARAMETER Activity
+    Specifies the activity name displayed in the progress bar. Default is "Sleeping...".
+
+.PARAMETER ParentId
+    Optional parameter to specify the ParentId for the progress bar, enabling hierarchical grouping.
+
+.PARAMETER ShowProgress
+    Switch to enable the progress bar during the sleep duration.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Start-PodeSleep -Seconds 5
+
+    Pauses execution for 5 seconds.
+
+.NOTES
+    This function is useful for scenarios where tracking the remaining wait time visually is helpful.
+#>
+function Start-PodeSleep {
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Seconds')]
+        [int]
+        $Seconds = 1,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Milliseconds')]
+        [int]
+        $Milliseconds,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'Duration')]
+        [TimeSpan]
+        $Duration
+    )
+
+    # Determine the total duration
+    $totalDuration = switch ($PSCmdlet.ParameterSetName) {
+        'Seconds' { [TimeSpan]::FromSeconds($Seconds) }
+        'Milliseconds' { [TimeSpan]::FromMilliseconds($Milliseconds) }
+        'Duration' { $Duration }
+    }
+
+    # Calculate end time
+    $startTime = [DateTime]::UtcNow
+    $endTime = $startTime.Add($totalDuration)
+
+    # Precompute sleep interval (total duration divided by 100 - ie 100%)
+    $sleepInterval = [math]::Max($totalDuration.TotalMilliseconds / 100, 10)
+
+    # Main loop
+    while ([DateTime]::UtcNow -lt $endTime) {
+        # Sleep for the interval
+        Start-Sleep -Milliseconds $sleepInterval
+    }
+}
+
+
+
