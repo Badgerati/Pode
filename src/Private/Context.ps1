@@ -43,14 +43,17 @@ function New-PodeContext {
         [string[]]
         $EnablePool,
 
-        [switch]
-        $DisableTermination,
+        [hashtable]
+        $Console,
 
         [switch]
-        $Quiet,
+        $EnableBreakpoints,
 
         [switch]
-        $EnableBreakpoints
+        $IgnoreServerConfig,
+
+        [string]
+        $ConfigFile
     )
 
     # set a random server name if one not supplied
@@ -92,8 +95,7 @@ function New-PodeContext {
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
-    $ctx.Server.DisableTermination = $DisableTermination.IsPresent
-    $ctx.Server.Quiet = $Quiet.IsPresent
+    $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
 
     # list of created listeners/receivers
@@ -190,8 +192,40 @@ function New-PodeContext {
         'Errors' = 'errors'
     }
 
-    # check if there is any global configuration
-    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
+    $ctx.Server.Debug = @{
+        Breakpoints = @{
+            Enabled = $false
+        }
+    }
+
+    $ctx.Server.AllowedActions = @{
+        Suspend         = $true
+        Restart         = $true
+        Disable         = $true
+        DisableSettings = @{
+            RetryAfter     = 3600
+            MiddlewareName = '__Pode_Midleware_Code_503__'
+        }
+        Timeout         = @{
+            Suspend = 30
+            Resume  = 30
+        }
+    }
+
+    # Load the server configuration based on the provided parameters.
+    # If $IgnoreServerConfig is set, an empty configuration (@{}) is assigned; otherwise, the configuration is loaded using Open-PodeConfiguration.
+    $ctx.Server.Configuration = if ($IgnoreServerConfig) { @{} }
+    else {
+        Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx -ConfigFile $ConfigFile
+    }
+
+    # Set the 'Enabled' property of the server configuration.
+    # This is based on whether $IgnoreServerConfig is explicitly present (false if present, true otherwise).
+    $ctx.Server.Configuration.Enabled = ! $IgnoreServerConfig.IsPresent
+
+    # Assign the specified configuration file path (if any) to the 'ConfigFile' property of the server configuration.
+    # This allows tracking which configuration file was used, even if overridden.
+    $ctx.Server.Configuration.ConfigFile = $ConfigFile
 
     # over status page exceptions
     if (!(Test-PodeIsEmpty $StatusPageExceptions)) {
@@ -214,10 +248,6 @@ function New-PodeContext {
 
     # debugging
     if ($EnableBreakpoints) {
-        if ($null -eq $ctx.Server.Debug) {
-            $ctx.Server.Debug = @{ Breakpoints = @{} }
-        }
-
         $ctx.Server.Debug.Breakpoints.Enabled = $EnableBreakpoints.IsPresent
     }
 
@@ -228,7 +258,7 @@ function New-PodeContext {
     $ctx.Server.ServerlessType = $ServerlessType
     $ctx.Server.IsServerless = $isServerless
     if ($isServerless) {
-        $ctx.Server.DisableTermination = $true
+        $ctx.Server.Console.DisableTermination = $true
     }
 
     # set the server types
@@ -238,13 +268,6 @@ function New-PodeContext {
     # is the server running under IIS? (also, disable termination)
     $ctx.Server.IsIIS = (!$isServerless -and (!(Test-PodeIsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-PodeIsEmpty $env:ASPNETCORE_TOKEN)))
     if ($ctx.Server.IsIIS) {
-        $ctx.Server.DisableTermination = $true
-
-        # if under IIS and Azure Web App, force quiet
-        if (!(Test-PodeIsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
-            $ctx.Server.Quiet = $true
-        }
-
         # set iis token/settings
         $ctx.Server.IIS = @{
             Token    = $env:ASPNETCORE_TOKEN
@@ -267,9 +290,42 @@ function New-PodeContext {
     # is the server running under Heroku?
     $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-PodeIsEmpty $env:PORT)) -and (!(Test-PodeIsEmpty $env:DYNO)))
 
-    # if we're inside a remote host, stop termination
-    if ($Host.Name -ieq 'ServerRemoteHost') {
-        $ctx.Server.DisableTermination = $true
+    # Check if the current session is running in a console-like environment
+    if (Test-PodeHasConsole) {
+        try {
+            if (! (Test-PodeIsISEHost)) {
+                # If the session is not configured for quiet mode, modify console behavior
+                if (!$ctx.Server.Console.Quiet) {
+                    # Hide the cursor to improve the console appearance
+                    [System.Console]::CursorVisible = $false
+
+                    # If the divider line should be shown, configure UTF-8 output encoding
+                    if ($ctx.Server.Console.ShowDivider) {
+                        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+                    }
+                }
+                if (Test-PodeIsConsoleHost) {
+                    # Treat Ctrl+C as input instead of terminating the process
+                    [Console]::TreatControlCAsInput = $true
+                }
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            # Console support is partial , configure the context for non-console behavior
+            $ctx.Server.Console.DisableTermination = $true  # Prevent termination
+            $ctx.Server.Console.DisableConsoleInput = $true # Disable console input
+            $ctx.Server.Console.Quiet = $true               # Silence the console
+            $ctx.Server.Console.ShowDivider = $false        # Disable divider display
+        }
+
+    }
+    else {
+        # If not running in a console-like environment, configure the context for non-console behavior
+        $ctx.Server.Console.DisableTermination = $true  # Prevent termination
+        $ctx.Server.Console.DisableConsoleInput = $true # Disable console input
+        $ctx.Server.Console.Quiet = $true               # Silence the console
+        $ctx.Server.Console.ShowDivider = $false        # Disable divider display
     }
 
     # set the IP address details
@@ -380,6 +436,7 @@ function New-PodeContext {
     #OpenApi Definition Tag
     $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
+
     # server metrics
     $ctx.Metrics = @{
         Server   = @{
@@ -406,10 +463,7 @@ function New-PodeContext {
     }
 
     # create new cancellation tokens
-    $ctx.Tokens = @{
-        Cancellation = [System.Threading.CancellationTokenSource]::new()
-        Restart      = [System.Threading.CancellationTokenSource]::new()
-    }
+    $ctx.Tokens = Initialize-PodeCancellationToken
 
     # requests that should be logged
     $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
@@ -546,47 +600,53 @@ function New-PodeRunspacePool {
     # main runspace - for timers, schedules, etc
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{
-        Pool  = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
-        State = 'Waiting'
+        Pool   = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+        State  = 'Waiting'
+        LastId = 0
     }
 
     # web runspace - if we have any http/s endpoints
     if (Test-PodeEndpointByProtocolType -Type Http) {
         $PodeContext.RunspacePools.Web = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # smtp runspace - if we have any smtp endpoints
     if (Test-PodeEndpointByProtocolType -Type Smtp) {
         $PodeContext.RunspacePools.Smtp = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # tcp runspace - if we have any tcp endpoints
     if (Test-PodeEndpointByProtocolType -Type Tcp) {
         $PodeContext.RunspacePools.Tcp = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # signals runspace - if we have any ws/s endpoints
     if (Test-PodeEndpointByProtocolType -Type Ws) {
         $PodeContext.RunspacePools.Signals = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # web socket connections runspace - for receiving data for external sockets
     if (Test-PodeWebSocketsExist) {
         $PodeContext.RunspacePools.WebSockets = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.WebSockets + 1, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.WebSockets + 1, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
 
         New-PodeWebSocketReceiver
@@ -595,40 +655,45 @@ function New-PodeRunspacePool {
     # setup timer runspace pool -if we have any timers
     if (Test-PodeTimersExist) {
         $PodeContext.RunspacePools.Timers = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Timers, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Timers, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # setup schedule runspace pool -if we have any schedules
     if (Test-PodeSchedulesExist) {
         $PodeContext.RunspacePools.Schedules = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # setup tasks runspace pool -if we have any tasks
     if (Test-PodeTasksExist) {
         $PodeContext.RunspacePools.Tasks = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Tasks, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Tasks, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # setup files runspace pool -if we have any file watchers
     if (Test-PodeFileWatchersExist) {
         $PodeContext.RunspacePools.Files = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Files + 1, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Files + 1, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
     }
 
     # setup gui runspace pool (only for non-ps-core) - if gui enabled
     if (Test-PodeGuiEnabled) {
         $PodeContext.RunspacePools.Gui = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
-            State = 'Waiting'
+            Pool   = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
+            State  = 'Waiting'
+            LastId = 0
         }
 
         $PodeContext.RunspacePools.Gui.Pool.ApartmentState = 'STA'
@@ -801,23 +866,52 @@ function New-PodeStateContext {
         Server        = $Context.Server
     }
 }
+<#
+.SYNOPSIS
+    Opens and processes the Pode server configuration.
 
+.DESCRIPTION
+    This function handles loading the Pode server configuration file. It supports custom configurations specified by environment variables,
+    a provided file path, or falls back to the default `server.psd1` file. The function sets the configuration for both the server and web contexts.
+
+.PARAMETER ServerRoot
+    Specifies the root directory of the server. Defaults to `$null` if not provided.
+
+.PARAMETER Context
+    Specifies the context to set configurations for Pode server and web.
+
+.PARAMETER ConfigFile
+    Allows specifying a custom configuration file path. If provided, it overrides any other configuration file.
+
+.OUTPUTS
+    Hashtable representing the loaded configuration.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Open-PodeConfiguration {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter()]
         [string]
         $ServerRoot = $null,
 
         [Parameter()]
-        $Context
+        $Context,
+
+        [Parameter()]
+        [string]
+        $ConfigFile
     )
 
+    # Initialize an empty configuration hashtable
     $config = @{}
 
-    # set the path to the root config file
+    # Set the path to the default root configuration file
     $configPath = (Join-PodeServerRoot -Folder '.' -FilePath 'server.psd1' -Root $ServerRoot)
 
-    # check to see if an environmental config exists (if the env var is set)
+    # Check for an environment-specific configuration file if the environment variable is set
     if (!(Test-PodeIsEmpty $env:PODE_ENVIRONMENT)) {
         $_path = (Join-PodeServerRoot -Folder '.' -FilePath "server.$($env:PODE_ENVIRONMENT).psd1" -Root $ServerRoot)
         if (Test-PodePath -Path $_path -NoStatus) {
@@ -825,13 +919,23 @@ function Open-PodeConfiguration {
         }
     }
 
+    # Override the configuration path if a valid ConfigFile parameter is provided
+    if (!([string]::IsNullOrEmpty($ConfigFile))) {
+        #-and (Test-Path -Path $ConfigFile -PathType Leaf)) {
+        $configPath = Get-PodeRelativePath -Path $ConfigFile -JoinRoot -Resolve -RootPath $ServerRoot -TestPath
+    }
+
     # check the path exists, and load the config
     if (Test-PodePath -Path $configPath -NoStatus) {
+        # Import the configuration from the file
         $config = Import-PowerShellDataFile -Path $configPath -ErrorAction Stop
+
+        # Set the server and web configurations in the provided context
         Set-PodeServerConfiguration -Configuration $config.Server -Context $Context
         Set-PodeWebConfiguration -Configuration $config.Web -Context $Context
     }
 
+    # Return the loaded configuration
     return $config
 }
 
@@ -901,9 +1005,73 @@ function Set-PodeServerConfiguration {
     # debug
     $Context.Server.Debug = @{
         Breakpoints = @{
-            Enabled = [bool]$Configuration.Debug.Breakpoints.Enable
+            Enabled = [bool](Protect-PodeValue -Value  $Configuration.Debug.Breakpoints.Enable -Default $Context.Server.Debug.Breakpoints.Enable)
         }
     }
+
+    $Context.Server.AllowedActions = @{
+        Suspend         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Suspend -Default $Context.Server.AllowedActions.Suspend)
+        Restart         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Restart -Default $Context.Server.AllowedActions.Restart)
+        Disable         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Disable -Default $Context.Server.AllowedActions.Disable)
+        DisableSettings = @{
+            RetryAfter     = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.RetryAfter -Default $Context.Server.AllowedActions.DisableSettings.RetryAfter)
+            MiddlewareName = (Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.MiddlewareName -Default $Context.Server.AllowedActions.DisableSettings.MiddlewareName)
+        }
+        Timeout         = @{
+            Suspend = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Suspend -Default $Context.Server.AllowedActions.Timeout.Suspend)
+            Resume  = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Resume -Default $Context.Server.AllowedActions.Timeout.Resume)
+        }
+    }
+
+    $Context.Server.Console = @{
+        DisableTermination  = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableTermination -Default $Context.Server.Console.DisableTermination)
+        DisableConsoleInput = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableConsoleInput -Default $Context.Server.Console.DisableConsoleInput)
+        Quiet               = [bool](Protect-PodeValue -Value  $Configuration.Console.Quiet -Default $Context.Server.Console.Quiet)
+        ClearHost           = [bool](Protect-PodeValue -Value  $Configuration.Console.ClearHost -Default $Context.Server.Console.ClearHost)
+        ShowOpenAPI         = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowOpenAPI -Default $Context.Server.Console.ShowOpenAPI)
+        ShowEndpoints       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowEndpoints -Default $Context.Server.Console.ShowEndpoints)
+        ShowHelp            = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowHelp -Default $Context.Server.Console.ShowHelp)
+        ShowDivider         = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowDivider -Default $Context.Server.Console.ShowDivider)
+        ShowTimeStamp       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowTimeStamp -Default $Context.Server.Console.ShowTimeStamp)
+        DividerLength       = [int](Protect-PodeValue -Value  $Configuration.Console.DividerLength -Default $Context.Server.Console.DividerLength)
+        Colors              = @{
+            Header            = Protect-PodeValue $Configuration.Console.Colors.Header -Default $Context.Server.Console.Colors.Header -EnumType ([type][System.ConsoleColor])
+            EndpointsHeader   = Protect-PodeValue -Value $Configuration.Console.Colors.EndpointsHeader -Default $Context.Server.Console.Colors.EndpointsHeader -EnumType ([type][System.ConsoleColor])
+            Endpoints         = Protect-PodeValue -Value $Configuration.Console.Colors.Endpoints -Default $Context.Server.Console.Colors.Endpoints -EnumType ([type][System.ConsoleColor])
+            EndpointsProtocol = Protect-PodeValue -Value $Configuration.Console.Colors.EndpointsProtocol -Default $Context.Server.Console.Colors.EndpointsProtocol -EnumType ([type][System.ConsoleColor])
+            EndpointsFlag     = Protect-PodeValue -Value $Configuration.Console.Colors.EndpointsFlag -Default $Context.Server.Console.Colors.EndpointsFlag -EnumType ([type][System.ConsoleColor])
+            EndpointsName     = Protect-PodeValue -Value $Configuration.Console.Colors.EndpointsName -Default $Context.Server.Console.Colors.EndpointsName -EnumType ([type][System.ConsoleColor])
+            OpenApiUrls       = Protect-PodeValue -Value $Configuration.Console.Colors.OpenApiUrls -Default $Context.Server.Console.Colors.OpenApiUrls -EnumType ([type][System.ConsoleColor])
+            OpenApiHeaders    = Protect-PodeValue -Value $Configuration.Console.Colors.OpenApiHeaders -Default $Context.Server.Console.Colors.OpenApiHeaders -EnumType ([type][System.ConsoleColor])
+            OpenApiTitles     = Protect-PodeValue -Value $Configuration.Console.Colors.OpenApiTitles -Default $Context.Server.Console.Colors.OpenApiTitles -EnumType ([type][System.ConsoleColor])
+            OpenApiSubtitles  = Protect-PodeValue -Value $Configuration.Console.Colors.OpenApiSubtitles -Default $Context.Server.Console.Colors.OpenApiSubtitles -EnumType ([type][System.ConsoleColor])
+            HelpHeader        = Protect-PodeValue -Value $Configuration.Console.Colors.HelpHeader -Default $Context.Server.Console.Colors.HelpHeader -EnumType ([type][System.ConsoleColor])
+            HelpKey           = Protect-PodeValue -Value $Configuration.Console.Colors.HelpKey -Default $Context.Server.Console.Colors.HelpKey -EnumType ([type][System.ConsoleColor])
+            HelpDescription   = Protect-PodeValue -Value $Configuration.Console.Colors.HelpDescription -Default $Context.Server.Console.Colors.HelpDescription -EnumType ([type][System.ConsoleColor])
+            HelpDivider       = Protect-PodeValue -Value $Configuration.Console.Colors.HelpDivider -Default $Context.Server.Console.Colors.HelpDivider -EnumType ([type][System.ConsoleColor])
+            Divider           = Protect-PodeValue -Value $Configuration.Console.Colors.Divider -Default $Context.Server.Console.Colors.Divider -EnumType ([type][System.ConsoleColor])
+            MetricsHeader     = Protect-PodeValue -Value $Configuration.Console.Colors.MetricsHeader -Default $Context.Server.Console.Colors.MetricsHeader -EnumType ([type][System.ConsoleColor])
+            MetricsLabel      = Protect-PodeValue -Value $Configuration.Console.Colors.MetricsLabel -Default $Context.Server.Console.Colors.MetricsLabel -EnumType ([type][System.ConsoleColor])
+            MetricsValue      = Protect-PodeValue -Value $Configuration.Console.Colors.MetricsValue -Default $Context.Server.Console.Colors.MetricsValue -EnumType ([type][System.ConsoleColor])
+
+
+        }
+        KeyBindings         = @{
+            Browser   = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Browser -Default $Context.Server.Console.KeyBindings.Browser -EnumType ([type][System.ConsoleKey])
+            Help      = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Help -Default $Context.Server.Console.KeyBindings.Help -EnumType ([type][System.ConsoleKey])
+            OpenAPI   = Protect-PodeValue -Value $Configuration.Console.KeyBindings.OpenAPI -Default $Context.Server.Console.KeyBindings.OpenAPI -EnumType ([type][System.ConsoleKey])
+            Endpoints = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Endpoints -Default $Context.Server.Console.KeyBindings.Endpoints -EnumType ([type][System.ConsoleKey])
+            Clear     = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Clear -Default $Context.Server.Console.KeyBindings.Clear -EnumType ([type][System.ConsoleKey])
+            Quiet     = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Quiet -Default $Context.Server.Console.KeyBindings.Quiet -EnumType ([type][System.ConsoleKey])
+            Terminate = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Terminate -Default $Context.Server.Console.KeyBindings.Terminate -EnumType ([type][System.ConsoleKey])
+            Restart   = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Restart -Default $Context.Server.Console.KeyBindings.Restart -EnumType ([type][System.ConsoleKey])
+            Disable   = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Disable -Default $Context.Server.Console.KeyBindings.Disable -EnumType ([type][System.ConsoleKey])
+            Suspend   = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Suspend -Default $Context.Server.Console.KeyBindings.Suspend -EnumType ([type][System.ConsoleKey])
+            Metrics   = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Metrics -Default $Context.Server.Console.KeyBindings.Metrics -EnumType ([type][System.ConsoleKey])
+        }
+    }
+
+
 }
 
 function Set-PodeWebConfiguration {
@@ -993,7 +1161,7 @@ function New-PodeAutoRestartServer {
     $period = [int]$restart.period
     if ($period -gt 0) {
         Add-PodeTimer -Name '__pode_restart_period__' -Interval ($period * 60) -ScriptBlock {
-            $PodeContext.Tokens.Restart.Cancel()
+            Close-PodeCancellationTokenRequest -Type Restart
         }
     }
 
@@ -1008,7 +1176,7 @@ function New-PodeAutoRestartServer {
         }
 
         Add-PodeSchedule -Name '__pode_restart_times__' -Cron @($crons) -ScriptBlock {
-            $PodeContext.Tokens.Restart.Cancel()
+            Close-PodeCancellationTokenRequest -Type Restart
         }
     }
 
@@ -1016,7 +1184,7 @@ function New-PodeAutoRestartServer {
     $crons = @(@($restart.crons) -ne $null)
     if (($crons | Measure-Object).Count -gt 0) {
         Add-PodeSchedule -Name '__pode_restart_crons__' -Cron @($crons) -ScriptBlock {
-            $PodeContext.Tokens.Restart.Cancel()
+            Close-PodeCancellationTokenRequest -Type Restart
         }
     }
 }
