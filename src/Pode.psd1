@@ -144,6 +144,7 @@
         'Get-PodeCurrentRunspaceName',
         'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',
+        'Start-PodeSleep',
 
         # routes
         'Add-PodeRoute',
@@ -227,6 +228,7 @@
         'New-PodeMiddleware',
         'Add-PodeBodyParser',
         'Remove-PodeBodyParser',
+        'Test-PodeMiddleware',
 
         # sessions
         'Enable-PodeSessionMiddleware',
@@ -329,6 +331,12 @@
         'Get-PodeServerDefaultSecret',
         'Wait-PodeDebugger',
         'Get-PodeVersion',
+        'Suspend-PodeServer',
+        'Resume-PodeServer',
+        'Get-PodeServerState',
+        'Test-PodeServerState',
+        'Enable-PodeServer',
+        'Disable-PodeServer',
 
         # openapi
         'Enable-PodeOpenApi',
@@ -341,6 +349,7 @@
         'Test-PodeOADefinitionTag',
         'Test-PodeOADefinition',
         'Rename-PodeOADefinitionTag',
+        'Test-PodeOAEnabled',
 
         # properties
         'New-PodeOAIntProperty',

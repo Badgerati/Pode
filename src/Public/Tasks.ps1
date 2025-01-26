@@ -68,6 +68,9 @@ function Add-PodeTask {
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
+    # Modify the ScriptBlock to replace 'Start-Sleep' with 'Start-PodeSleep'
+    $ScriptBlock = ConvertTo-PodeSleep -ScriptBlock $ScriptBlock
+
     # check for scoped vars
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 

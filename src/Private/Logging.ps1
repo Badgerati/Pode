@@ -763,7 +763,9 @@ function Start-PodeLoggerDispatcher {
         # Wait for the server to start before processing logs
         if ( Wait-PodeServerToStart) {
             try {
-                while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                    # Check for suspension token and wait for the debugger to reset if active
+                    Test-PodeSuspensionToken
                     try {
                         # Check if the log queue has reached its limit
                         if ([Pode.PodeLogger]::Count -ge $PodeContext.Server.Logging.QueueLimit) {

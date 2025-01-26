@@ -42,7 +42,7 @@ catch { throw }
 # Import-Module Pode
 
 # create a server, and start listening on port 8081
-Start-PodeServer -Threads 2 {
+Start-PodeServer -ConfigFile '..\Server.psd1' -Threads 2 {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port $port -Protocol Http

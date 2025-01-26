@@ -6,7 +6,7 @@ To use this scheme, you'll need to supply an Authorise/Token URL, as well as set
 
 ## Setup
 
-Before using the OAuth2 authentication in Pode, you first need to register a new app within your service of choice. This registration will supply you with the required Client ID and Secret (if you're using [PKCE](#PKCE) then the Client Secret is optional).
+Before using the OAuth2 authentication in Pode, you first need to register a new app within your service of choice. This registration will supply you with the required Client ID and Secret (if you're using [PKCE](#pkce) then the Client Secret is optional).
 
 To setup and start using OAuth2 authentication in Pode you use `New-PodeAuthScheme -OAuth2`, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function.
 

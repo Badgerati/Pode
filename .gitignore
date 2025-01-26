@@ -266,3 +266,6 @@ examples/PetStore/data/PetData.json
 packers/choco/pode.nuspec
 packers/choco/tools/ChocolateyInstall.ps1
 docs/Getting-Started/Samples.md
+
+# Dump Folder
+Dump
