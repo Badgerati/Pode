@@ -268,3 +268,6 @@ packers/choco/tools/ChocolateyInstall.ps1
 docs/Getting-Started/Samples.md
 examples/HelloService/*_svcsettings.json
 examples/HelloService/svc_settings
+
+# Dump Folder
+Dump

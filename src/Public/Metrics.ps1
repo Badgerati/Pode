@@ -1,13 +1,29 @@
 <#
 .SYNOPSIS
-    Returns the uptime of the server in milliseconds or in a human-readable format.
+    Retrieves the server uptime in milliseconds or a human-readable format.
 
 .DESCRIPTION
-    Returns the uptime of the server in milliseconds by default. You can optionally return the total uptime regardless of server restarts or convert the uptime to a human-readable format with selectable output styles (e.g., Verbose, Compact).
-    Additionally, milliseconds can be excluded from the output if desired.
+    The `Get-PodeServerUptime` function calculates the server's uptime since its last start or total uptime since initial load, depending on the `-Total` switch.
+    By default, the uptime is returned in milliseconds. When the `-Format` parameter is used, the uptime can be returned in various human-readable styles:
+    - `Milliseconds` (default): Raw uptime in milliseconds.
+    - `Concise`: A short format like "1d 2h 3m".
+    - `Compact`: A condensed format like "01:10:17:36".
+    - `Verbose`: A detailed format like "1 day, 2 hours, 3 minutes, 5 seconds, 200 milliseconds".
+    The `-ExcludeMilliseconds` switch allows removal of milliseconds from human-readable output.
 
 .PARAMETER Total
-    If supplied, the total uptime of the server will be returned, regardless of restarts.
+    Retrieves the total server uptime since the initial load, regardless of any restarts.
+
+.PARAMETER Format
+    Specifies the desired output format for the uptime.
+    Allowed values:
+    - `Milliseconds` (default): Uptime in raw milliseconds.
+    - `Concise`: Human-readable in a short form (e.g., "1d 2h 3m").
+    - `Compact`: Condensed form (e.g., "01:10:17:36").
+    - `Verbose`: Detailed format (e.g., "1 day, 2 hours, 3 minutes, 5 seconds").
+
+.PARAMETER ExcludeMilliseconds
+    Omits milliseconds from the human-readable output when `-Format` is not `Milliseconds`.
 
 .PARAMETER Readable
     If supplied, the uptime will be returned in a human-readable format instead of milliseconds.
@@ -30,47 +46,43 @@
     # Output: 987654321 (milliseconds)
 
 .EXAMPLE
-    $readableUptime = Get-PodeServerUptime -Readable
-    # Output: "1d 10h 17m 36s"
+    $readableUptime = Get-PodeServerUptime -Format Concise
+    # Output: "1d 10h 17m"
 
 .EXAMPLE
-    $verboseUptime = Get-PodeServerUptime -Readable -OutputType Verbose
+    $verboseUptime = Get-PodeServerUptime -Format Verbose
     # Output: "1 day, 10 hours, 17 minutes, 36 seconds, 789 milliseconds"
 
 .EXAMPLE
-    $compactUptime = Get-PodeServerUptime -Readable -OutputType Compact
+    $compactUptime = Get-PodeServerUptime -Format Compact
     # Output: "01:10:17:36"
 
 .EXAMPLE
-    $compactUptimeNoMs = Get-PodeServerUptime -Readable -OutputType Compact -ExcludeMilliseconds
+    $compactUptimeNoMs = Get-PodeServerUptime -Format Compact -ExcludeMilliseconds
     # Output: "01:10:17:36"
+
+.NOTES
+    This function is part of Pode's utility metrics to monitor server uptime.
 #>
 function Get-PodeServerUptime {
-    [CmdletBinding(DefaultParameterSetName = 'Milliseconds')]
+    [CmdletBinding()]
     [OutputType([long], [string])]
     param(
         # Common to all parameter sets
         [switch]
         $Total,
 
-        # Default set: Milliseconds output
-        [Parameter(ParameterSetName = 'Readable')]
-        [switch]
-        $Readable,
-
-        # Available only when -Readable is specified
-        [Parameter(ParameterSetName = 'Readable')]
-        [ValidateSet("Verbose", "Compact", "Default")]
+        [Parameter()]
+        [ValidateSet('Milliseconds', 'Concise', 'Compact', 'Verbose')]
         [string]
-        $OutputType = "Default",
+        $Format = 'Milliseconds',
 
-        # Available only when -Readable is specified
-        [Parameter(ParameterSetName = 'Readable')]
         [switch]
         $ExcludeMilliseconds
     )
 
-    # Determine the appropriate start time
+    # Determine the start time based on the -Total switch
+    # Default: Uses the last start time; -Total: Uses the initial load time
     $time = $PodeContext.Metrics.Server.StartTime
     if ($Total) {
         $time = $PodeContext.Metrics.Server.InitialLoadTime
@@ -79,23 +91,13 @@ function Get-PodeServerUptime {
     # Calculate uptime in milliseconds
     $uptimeMilliseconds = [long]([datetime]::UtcNow - $time).TotalMilliseconds
 
-    # Handle readable output
-    if ($PSCmdlet.ParameterSetName -eq 'Readable') {
-        switch ($OutputType) {
-            "Verbose" {
-                return Convert-PodeMillisecondsToReadable -Milliseconds $uptimeMilliseconds -VerboseOutput -ExcludeMilliseconds:$ExcludeMilliseconds
-            }
-            "Compact" {
-                return Convert-PodeMillisecondsToReadable -Milliseconds $uptimeMilliseconds -CompactOutput -ExcludeMilliseconds:$ExcludeMilliseconds
-            }
-            "Default" {
-                return Convert-PodeMillisecondsToReadable -Milliseconds $uptimeMilliseconds -ExcludeMilliseconds:$ExcludeMilliseconds
-            }
-        }
+    # Return uptime in milliseconds if no readable format is requested
+    if ($Format -ieq 'Milliseconds') {
+        return $uptimeMilliseconds
     }
 
-    # Default to milliseconds if no readable output is requested
-    return $uptimeMilliseconds
+    # Convert uptime to a human-readable format
+    return Convert-PodeMillisecondsToReadable -Milliseconds $uptimeMilliseconds -Format $Format -ExcludeMilliseconds:$ExcludeMilliseconds
 }
 
 

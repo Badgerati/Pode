@@ -404,7 +404,11 @@ function Start-PodeLoggingRunspace {
 
     $script = {
         try {
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+
+                # Check for suspension token and wait for the debugger to reset if active
+                Test-PodeSuspensionToken
+
                 try {
                     # if there are no logs to process, just sleep for a few seconds - but after checking the batch
                     if ($PodeContext.LogsToProcess.Count -eq 0) {
