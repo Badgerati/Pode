@@ -16,7 +16,7 @@ Add-PodeTask -Name 'Example' -ScriptBlock {
 }
 ```
 
-A task's scriptblock can also return values, that can be retrieved later on (see [Invoking](#Invoking)):
+A task's scriptblock can also return values, that can be retrieved later on (see [Invoking](#invoking)):
 
 ```powershell
 Add-PodeTask -Name 'Example' -ScriptBlock {
@@ -159,6 +159,7 @@ You normally define a task's script using the `-ScriptBlock` parameter however, 
 For example, to create a task from a file that will output `Hello, world`:
 
 * File.ps1
+
 ```powershell
 {
     'Hello, world!' | Out-PodeHost
@@ -166,6 +167,7 @@ For example, to create a task from a file that will output `Hello, world`:
 ```
 
 * Task
+
 ```powershell
 Add-PodeTask -Name 'from-file' -FilePath './Tasks/File.ps1'
 ```

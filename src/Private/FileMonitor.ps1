@@ -83,7 +83,7 @@ function Start-PodeFileMonitor {
     } -MessageData @{
         Tokens       = $PodeContext.Tokens
         FileSettings = $PodeContext.Server.FileMonitor
-        Quiet        = $PodeContext.Server.Quiet
+        Quiet        = $PodeContext.Server.Console.Quiet
     } -SupportEvent
 }
 
