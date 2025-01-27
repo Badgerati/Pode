@@ -174,7 +174,7 @@ function Get-PodeHostIPRegex {
         $Type
     )
 
-    $ip_rgx = '\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|((\d+\.){3}\d+)|\*|all'
+    $ip_rgx = '^(?<host>(\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|((\d+\.){3}\d+)(\/(\d|[1-2][0-9]|3[0-2]))?|\*|all))$'
     $host_rgx = '([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
 
     switch ($Type.ToLowerInvariant()) {
@@ -255,17 +255,33 @@ function Test-PodeIPAddress {
         $IP,
 
         [switch]
-        $IPOnly
+        $IPOnly,
+
+        [switch]
+        $FailOnEmpty
     )
 
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
+    # fail on empty
+    if ([string]::IsNullOrWhiteSpace($IP)) {
+        return !$FailOnEmpty.IsPresent
+    }
+
+    # all empty, or */all
+    if ($IP -iin @('*', 'all')) {
         return $true
     }
 
+    # are we allowing hostnames?
     if ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$") {
-        return (!$IPOnly)
+        return !$IPOnly.IsPresent
     }
 
+    # check if the IP matches regex
+    if ($IP -imatch "^$(Get-PodeHostIPRegex -Type IP)$") {
+        return $true
+    }
+
+    # if we get here, try parsing with [IPAddress] as a last resort
     try {
         $null = [System.Net.IPAddress]::Parse($IP)
         return $true
@@ -465,10 +481,28 @@ function Test-PodeIPAddressInRange {
         return $false
     }
 
+    return Test-PodeIPAddressInSubnet -IP $IP.Bytes -Lower $LowerIP.Bytes -Upper $UpperIP.Bytes
+}
+
+function Test-PodeIPAddressInSubnet {
+    param(
+        [Parameter(Mandatory = $true)]
+        [byte[]]
+        $IP,
+
+        [Parameter(Mandatory = $true)]
+        [byte[]]
+        $Lower,
+
+        [Parameter(Mandatory = $true)]
+        [byte[]]
+        $Upper
+    )
+
     $valid = $true
 
     foreach ($i in 0..3) {
-        if (($IP.Bytes[$i] -lt $LowerIP.Bytes[$i]) -or ($IP.Bytes[$i] -gt $UpperIP.Bytes[$i])) {
+        if (($IP[$i] -lt $Lower[$i]) -or ($IP[$i] -gt $Upper[$i])) {
             $valid = $false
             break
         }
@@ -543,11 +577,11 @@ function Get-PodeSubnetRange {
         })
 
     return @{
-        'Lower'   = ($bottom -join '.')
-        'Upper'   = ($top -join '.')
-        'Range'   = ($range -join '.')
-        'Netmask' = ($network -join '.')
-        'IP'      = ($ip_parts -join '.')
+        Lower   = ($bottom -join '.')
+        Upper   = ($top -join '.')
+        Range   = ($range -join '.')
+        Netmask = ($network -join '.')
+        IP      = ($ip_parts -join '.')
     }
 }
 

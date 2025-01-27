@@ -419,8 +419,13 @@ function New-PodeContext {
 
     # setup basic limit rules
     $ctx.Server.Limits = @{
-        Rules  = @{}
-        Active = @{}
+        Rate   = @{
+            Rules = [ordered]@{}
+        }
+        Access = @{
+            Rules         = [ordered]@{}
+            HaveAllowRule = $false
+        }
     }
 
     # cookies and session logic

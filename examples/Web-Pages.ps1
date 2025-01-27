@@ -67,9 +67,17 @@ Start-PodeServer -Threads 2 -Verbose {
     # Add-PodeAccessRule -Access Deny -Type IP -Values 10.10.10.10
     # Add-PodeAccessRule -Access Deny -Type IP -Values '10.10.0.0/24'
     # Add-PodeAccessRule -Access Deny -Type IP -Values all
+    # Add-PodeLimitAccessRule -Name 'Main' -Action Deny -Component @(
+    #     New-PodeLimitIPComponent -IP '127.0.0.1'
+    #     New-PodeLimitRouteComponent -Path '/error'
+    # )
 
     # limit
     # Add-PodeLimitRule -Type IP -Values all -Limit 100 -Seconds 5
+    Add-PodeLimitRateRule -Name 'Main' -Limit 5 -Timeout 10 -Component @(
+        New-PodeLimitIPComponent #-IP '127.0.0.2'
+        New-PodeLimitRouteComponent -Path '/'
+    )
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
