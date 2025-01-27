@@ -222,11 +222,11 @@ function New-PodeContext {
 
     # Load the server configuration based on the provided parameters.
     # If $IgnoreServerConfig is set, an empty configuration (@{}) is assigned; otherwise, the configuration is loaded using Open-PodeConfiguration.
-    $ctx.Server.Configuration = if ($IgnoreServerConfig) {
-        @{}
+    if ($IgnoreServerConfig) {
+        $ctx.Server.Configuration = @{}
     }
     else {
-        Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx -ConfigFile $ConfigFile
+        $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx -ConfigFile $ConfigFile
     }
 
     # Set the 'Enabled' property of the server configuration.
@@ -714,6 +714,7 @@ function New-PodeRunspacePool {
         $PodeContext.RunspacePools.Service = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
+            LastId = 0
         }
     }
 }

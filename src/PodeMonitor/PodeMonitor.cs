@@ -34,10 +34,7 @@ namespace PodeMonitor
         private readonly string _scriptPath;      // Path to the Pode script
         private readonly string _parameterString; // Parameters passed to the script
         private readonly string _pwshPath;        // Path to the PowerShell executable
-        private readonly bool _quiet;            // Indicates whether the process runs in quiet mode
-        private readonly bool _disableTermination; // Indicates whether termination is disabled
         private readonly int _shutdownWaitTimeMs; // Timeout for shutting down the process
-        private readonly string _pipeName;        // Name of the named pipe for communication
         private readonly string _stateFilePath; // Path to the service state file
 
         private DateTime _lastLogTime;           // Tracks the last time the process logged activity
@@ -50,8 +47,19 @@ namespace PodeMonitor
 
         public ServiceState State { get => _state; set => _state = value; }
 
-        public bool DisableTermination { get => _disableTermination; }
+        public bool DisableTermination { get => _serviceJson.DisableTermination; }
 
+        private class ServiceJson(PodeMonitorWorkerOptions options)
+        {
+            public readonly string PipeName = PipeNameGenerator.GeneratePipeName();           // Name of the named pipe for communication
+            public readonly bool Quiet = options.Quiet;                // Indicates whether the process runs in quiet mode
+            public readonly bool DisableTermination = options.DisableTermination;   // Indicates whether termination is disabled
+            public readonly bool DisableConsoleInput = options.DisableConsoleInput;  // Disables all console interactions for the server
+            public readonly bool IgnoreServerConfig = options.IgnoreServerConfig;             // Prevents the server from loading settings from the server.psd1 configuration file
+            public readonly string ConfigFile = options.ConfigFile.Replace("\\", "\\\\");         // Specifies a custom configuration file instead of using the default `server.psd1`
+        }
+
+        private readonly ServiceJson _serviceJson;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PodeMonitor"/> class with the specified configuration options.
@@ -63,15 +71,13 @@ namespace PodeMonitor
             _scriptPath = options.ScriptPath;
             _pwshPath = options.PwshPath;
             _parameterString = options.ParameterString;
-            _quiet = options.Quiet;
-            _disableTermination = options.DisableTermination;
             _shutdownWaitTimeMs = options.ShutdownWaitTimeMs;
             StartMaxRetryCount = options.StartMaxRetryCount;
             StartRetryDelayMs = options.StartRetryDelayMs;
 
-            // Generate a unique pipe name
-            _pipeName = PipeNameGenerator.GeneratePipeName();
-            
+            // Initialize the _serviceJson object with values from options
+            _serviceJson = new ServiceJson(options);
+
             // Define the state file path only for Linux/macOS
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
@@ -100,7 +106,7 @@ namespace PodeMonitor
                 _stateFilePath = Path.Combine(stateDirectory, $"{Environment.ProcessId}.state");
 
 
-                PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Initialized PodeMonitor with pipe name: {0} and state file: {1}",_pipeName,_stateFilePath);
+                PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Initialized PodeMonitor with pipe name: {0} and state file: {1}", _serviceJson.PipeName, _stateFilePath);
             }
         }
 
@@ -314,9 +320,17 @@ namespace PodeMonitor
         /// <returns>The PowerShell command string.</returns>
         private string BuildCommand()
         {
-            string podeServiceJson = $"{{\\\"DisableTermination\\\": {_disableTermination.ToString().ToLower()}, \\\"Quiet\\\": {_quiet.ToString().ToLower()}, \\\"PipeName\\\": \\\"{_pipeName}\\\"}}";
+            string podeServiceJson =
+                $"{{\\\"DisableTermination\\\": {_serviceJson.DisableTermination.ToString().ToLower()}, " +
+                $"\\\"Quiet\\\": {_serviceJson.Quiet.ToString().ToLower()}, " +
+                $"\\\"DisableConsoleInput\\\": {_serviceJson.DisableConsoleInput.ToString().ToLower()}, " +
+                $"\\\"IgnoreServerConfig\\\": {_serviceJson.IgnoreServerConfig.ToString().ToLower()}, " +
+                $"\\\"ConfigFile\\\": \\\"{_serviceJson.ConfigFile}\\\", " +
+                $"\\\"PipeName\\\": \\\"{_serviceJson.PipeName}\\\"}}";
+
             return $"-NoProfile -Command \"& {{ $global:PodeService = '{podeServiceJson}' | ConvertFrom-Json; . '{_scriptPath}' {_parameterString} }}\"";
         }
+
 
         /// <summary>
         /// Initializes the named pipe client with a retry mechanism.
@@ -333,7 +347,7 @@ namespace PodeMonitor
                 {
                     if (_pipeClient == null)
                     {
-                        _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
+                        _pipeClient = new NamedPipeClientStream(".", _serviceJson.PipeName, PipeDirection.InOut);
                     }
 
                     if (!_pipeClient.IsConnected)

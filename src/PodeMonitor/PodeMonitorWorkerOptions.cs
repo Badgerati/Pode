@@ -78,6 +78,21 @@ namespace PodeMonitor
         public int StartRetryDelayMs { get; set; } = 5000;
 
         /// <summary>
+        /// Disables all console interactions for the server.
+        /// </summary>
+        public bool DisableConsoleInput { get; set; } = true;
+
+        /// <summary>
+        /// Prevents the server from loading settings from the server.psd1 configuration file.
+        /// </summary>
+        public bool IgnoreServerConfig { get; set; } = false;
+
+        /// <summary>
+        /// Specifies a custom configuration file instead of using the default `server.psd1`.
+        /// </summary>
+        public string ConfigFile { get; set; } = "";
+
+        /// <summary>
         /// Provides a string representation of the configured options for debugging or logging purposes.
         /// </summary>
         /// <returns>A string containing all configured options and their values.</returns>
@@ -86,7 +101,8 @@ namespace PodeMonitor
             return $"Name: {Name}, ScriptPath: {ScriptPath}, PwshPath: {PwshPath}, ParameterString: {ParameterString}, " +
                     $"LogFilePath: {LogFilePath}, LogLevel: {LogLevel}, LogMaxFileSize: {LogMaxFileSize}, Quiet: {Quiet}, " +
                     $"DisableTermination: {DisableTermination}, ShutdownWaitTimeMs: {ShutdownWaitTimeMs}, " +
-                    $"StartMaxRetryCount: {StartMaxRetryCount}, StartRetryDelayMs: {StartRetryDelayMs}";
+                    $"StartMaxRetryCount: {StartMaxRetryCount}, StartRetryDelayMs: {StartRetryDelayMs}" +
+                    $"DisableConsoleInput: {IgnoreServerConfig}, IgnoreServerConfig: {IgnoreServerConfig}, ConfigFile: {ConfigFile}";
         }
     }
 

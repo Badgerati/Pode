@@ -123,7 +123,7 @@ namespace PodeMonitor
                     services.AddSingleton<PodeMonitor>(serviceProvider =>
                     {
                         var options = serviceProvider.GetRequiredService<IOptions<PodeMonitorWorkerOptions>>().Value;
-                        PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Initializing PodeMonitor with options: {0}", JsonSerializer.Serialize(options));
+                        PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Initializing PodeMonitor with options: {0}", options.ToString());
                         return new PodeMonitor(options);
                     });
 

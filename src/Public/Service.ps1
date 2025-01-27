@@ -64,6 +64,12 @@
 .PARAMETER LogMaxFileSize
     Specifies the maximum size of the log file in bytes. Defaults to 10 MB (10,485,760 bytes).
 
+.PARAMETER IgnoreServerConfig
+    Prevents the server from loading settings from the server.psd1 configuration file.
+
+.PARAMETER ConfigFile
+    Specifies a custom configuration file instead of using the default `server.psd1`.
+
 .EXAMPLE
     Register-PodeService -Name "PodeExampleService" -Description "Example Pode Service" -ParameterString "-Verbose"
 
@@ -153,7 +159,14 @@ function Register-PodeService {
 
         [Parameter()]
         [Int64]
-        $LogMaxFileSize = 10 * 1024 * 1024
+        $LogMaxFileSize = 10 * 1024 * 1024,
+
+        [Parameter()]
+        [string]
+        $ConfigFile,
+
+        [switch]
+        $IgnoreServerConfig
     )
 
     # Ensure the script is running with the necessary administrative/root privileges.
@@ -232,6 +245,8 @@ function Register-PodeService {
                 StartRetryDelayMs  = $StartRetryDelayMs
                 LogLevel           = $LogLevel.ToUpper()
                 LogMaxFileSize     = $LogMaxFileSize
+                ConfigFile         = $ConfigFile
+                IgnoreServerConfig = $IgnoreServerConfig.IsPresent
             }
         }
 
