@@ -7,17 +7,6 @@ using System.Threading;
 
 namespace PodeMonitor
 {
-    /// <summary>
-    /// Enum representing possible states of the Pode service.
-    /// </summary>
-    public enum ServiceState
-    {
-        Unknown,    // State is unknown
-        Running,    // Service is running
-        Suspended,  // Service is suspended
-        Starting,    // Service is starting
-        Stopping    // Service is stopping
-    }
 
     /// <summary>
     /// Class responsible for managing and monitoring the Pode PowerShell process.
@@ -42,10 +31,10 @@ namespace PodeMonitor
         public int StartMaxRetryCount { get; }   // Maximum number of retries for starting the process
         public int StartRetryDelayMs { get; }   // Delay between retries in milliseconds
 
-        private volatile ServiceState _state;
+        private volatile PodeMonitorServiceState _state;
 
 
-        public ServiceState State { get => _state; set => _state = value; }
+        public PodeMonitorServiceState State { get => _state; set => _state = value; }
 
         public bool DisableTermination { get => _serviceJson.DisableTermination; }
 
@@ -274,27 +263,13 @@ namespace PodeMonitor
 
             if (output.StartsWith("Service State: ", StringComparison.OrdinalIgnoreCase))
             {
-                string state = output["Service State: ".Length..].Trim().ToLowerInvariant();
+                string state = output["Service State: ".Length..].Trim();
 
-                switch (state)
-                {
-                    case "running":
-                        UpdateServiceState(ServiceState.Running);
-                        break;
-                    case "suspended":
-                        UpdateServiceState(ServiceState.Suspended);
-                        break;
-                    case "starting":
-                        UpdateServiceState(ServiceState.Starting);
-                        break;
-                    case "stopping":
-                        UpdateServiceState(ServiceState.Stopping);
-                        break;
-                    default:
-                        PodeMonitorLogger.Log(PodeLogLevel.WARN, "PodeMonitor", Environment.ProcessId, $"Unknown service state: {state}");
-                        UpdateServiceState(ServiceState.Unknown);
-                        break;
-                }
+                // Convert the extracted string to a PodeMonitorServiceState enum
+                PodeMonitorServiceState parsedState = state.ToPodeMonitorServiceState();
+
+                // Update the service state
+                UpdateServiceState(parsedState);
             }
         }
 
@@ -302,7 +277,7 @@ namespace PodeMonitor
         /// Updates the internal state variables based on the provided service state.
         /// </summary>
         /// <param name="state">The new service state.</param>
-        private void UpdateServiceState(ServiceState state)
+        private void UpdateServiceState(PodeMonitorServiceState state)
         {
             _state = state;
             PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Service state updated to: {state}");
@@ -407,7 +382,7 @@ namespace PodeMonitor
         /// Writes the current service state to the state file.
         /// </summary>
         /// <param name="state">The service state to write.</param>
-        private void WriteServiceStateToFile(ServiceState state)
+        private void WriteServiceStateToFile(PodeMonitorServiceState state)
         {
             lock (_syncLock) // Ensure thread-safe access
             {

@@ -24,7 +24,7 @@ namespace PodeMonitor
 
         private bool _terminating = false;
 
-        public ServiceState State => _pwshMonitor.State;
+        public PodeMonitorServiceState State => _pwshMonitor.State;
 
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace PodeMonitor
         /// </summary>
         public void Shutdown()
         {
-            if ((!_terminating) && (_pwshMonitor.State == ServiceState.Running || _pwshMonitor.State == ServiceState.Suspended))
+            if ((!_terminating) && (_pwshMonitor.State == PodeMonitorServiceState.Running || _pwshMonitor.State == PodeMonitorServiceState.Suspended))
             {
 
                 _terminating = true;
@@ -124,7 +124,7 @@ namespace PodeMonitor
         /// </summary>
         public void Restart()
         {
-            if ((!_terminating) && _pwshMonitor.State == ServiceState.Running || _pwshMonitor.State == ServiceState.Suspended)
+            if ((!_terminating) && _pwshMonitor.State == PodeMonitorServiceState.Running || _pwshMonitor.State == PodeMonitorServiceState.Suspended)
             {
                 PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service restarting at: {0}", DateTimeOffset.Now);
                 try
@@ -146,7 +146,7 @@ namespace PodeMonitor
         /// </summary>
         public void OnPause()
         {
-            if ((!_terminating) && _pwshMonitor.State == ServiceState.Running)
+            if ((!_terminating) && _pwshMonitor.State == PodeMonitorServiceState.Running)
             {
                 PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pause command received at: {0}", DateTimeOffset.Now);
 
@@ -156,7 +156,7 @@ namespace PodeMonitor
 
                     PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Suspend message sent via pipe at: {0}", DateTimeOffset.Now);
                     var retryCount = 0; // Reset retry count on success
-                    while (_pwshMonitor.State != ServiceState.Suspended)
+                    while (_pwshMonitor.State != PodeMonitorServiceState.Suspended)
                     {
                         if (retryCount >= 100)
                         {
@@ -181,7 +181,7 @@ namespace PodeMonitor
         /// </summary>
         public void OnContinue()
         {
-            if ((!_terminating) && _pwshMonitor.State == ServiceState.Suspended)
+            if ((!_terminating) && _pwshMonitor.State == PodeMonitorServiceState.Suspended)
             {
                 PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Continue command received at: {0}", DateTimeOffset.Now);
 
@@ -191,7 +191,7 @@ namespace PodeMonitor
 
                     PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Resume message sent via pipe at: {0}", DateTimeOffset.Now);
                     var retryCount = 0; // Reset retry count on success
-                    while (_pwshMonitor.State == ServiceState.Suspended)
+                    while (_pwshMonitor.State == PodeMonitorServiceState.Suspended)
                     {
                         if (retryCount >= 100)
                         {
