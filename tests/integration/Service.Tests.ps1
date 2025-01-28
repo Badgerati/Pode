@@ -7,9 +7,9 @@ param()
 Describe 'Service Lifecycle' {
 
     BeforeAll {
-        $isAgent=$false
-        if ($IsMacOS){
-            $isAgent=$true
+        $isAgent = $false
+        if ($IsMacOS) {
+            $isAgent = $true
         }
     }
     it 'register' {
@@ -47,12 +47,12 @@ Describe 'Service Lifecycle' {
         $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Suspend -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 2
-        #  $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
+
         $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Suspended'
         $status.Name | Should -Be 'Hello Service'
         $status.Pid | Should -BeGreaterThan 0
-        # $webRequest | Should -BeNullOrEmpty
+        { Invoke-WebRequest -uri http://localhost:8080 } | Should -Throw
     }
 
     it  'resume' {
@@ -95,7 +95,7 @@ Describe 'Service Lifecycle' {
     it 'unregister' {
         $status = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query -Agent:$isAgent
         $status.Status | Should -Be 'Running'
-        $isAgent=$status.Type -eq 'Agent'
+        $isAgent = $status.Type -eq 'Agent'
         $success = & "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Unregister -Force -Agent:$isAgent
         $success | Should -BeTrue
         Start-Sleep 2
