@@ -80,6 +80,7 @@ Start-PodeServer -Threads 2 -Verbose {
     # )
     # Add-PodeLimitRateRule -Name 'Debounce' -Limit 1 -Timeout 10 -Component @(
     #     New-PodeLimitIPComponent
+    #     New-PodeLimitRouteComponent
     #     New-PodeLimitMethodComponent -Method Get, Post
     # )
 
@@ -150,6 +151,10 @@ Start-PodeServer -Threads 2 -Verbose {
     # ALL request, that supports every method and it a default drop route
     Add-PodeRoute -Method * -Path '/all' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every http method' }
+    }
+
+    Add-PodeRoute -Method Get -Path '/api/test' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ 'value' = 'works for test route' }
     }
 
     Add-PodeRoute -Method Get -Path '/api/*/hello' -ScriptBlock {

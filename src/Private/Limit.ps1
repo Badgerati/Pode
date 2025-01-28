@@ -26,7 +26,6 @@ function Add-PodeLimitRateTimer {
                         $item = $rule.Active[$key]
 
                         if ($item.Timeout.AddSeconds(5) -lt $now) {
-                            'here' | Out-Default
                             $rule.Active.TryRemove($key, [ref]$value)
                         }
                     }

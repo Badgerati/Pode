@@ -103,7 +103,7 @@ function Add-PodeLimitRule {
 
     switch ($Type.ToLowerInvariant()) {
         'ip' {
-            $component = New-PodeLimitIPComponent -IP $Values -UseSubnetMask:$Group
+            $component = New-PodeLimitIPComponent -IP $Values -Group:$Group
         }
 
         'route' {
@@ -149,7 +149,7 @@ function Add-PodeLimitRateRule {
     )
 
     if (Test-PodeLimitRateRule -Name $Name) {
-        throw "A rate limit rule with the name '$Name' already exists"
+        throw "A rate limit rule with the name '$($Name)' already exists"
     }
 
     $PodeContext.Server.Limits.Rate.Rules[$Name] = @{
@@ -225,7 +225,7 @@ function Add-PodeLimitAccessRule {
     )
 
     if (Test-PodeLimitAccessRule -Name $Name) {
-        throw "An access limit rule with the name '$Name' already exists"
+        throw "An access limit rule with the name '$($Name)' already exists"
     }
 
     $PodeContext.Server.Limits.Access.Rules[$Name] = @{
@@ -301,7 +301,7 @@ function New-PodeLimitIPComponent {
         # if not passed, IPs in a passed subnet will be treated individually
         # if passed, IPs in a passed subnet will be treated as a single entity
         [switch]
-        $UseSubnetMask
+        $Group
     )
 
     # map of ip/subnet details
@@ -355,8 +355,8 @@ function New-PodeLimitIPComponent {
     # pass back the IP component
     return @{
         Options     = @{
-            IP            = $ipDetails
-            UseSubnetMask = $UseSubnetMask.IsPresent
+            IP    = $ipDetails
+            Group = $Group.IsPresent
         }
         ScriptBlock = {
             param($options)
@@ -383,7 +383,7 @@ function New-PodeLimitIPComponent {
 
                 # if the ip is in the subnet range, then return the subnet
                 if (Test-PodeIPAddressInSubnet -IP $ipDetails.Bytes -Lower $subnetDetails.Lower -Upper $subnetDetails.Upper) {
-                    if ($options.UseSubnetMask) {
+                    if ($options.Group) {
                         return $subnet
                     }
 
@@ -394,7 +394,7 @@ function New-PodeLimitIPComponent {
             # is the ip local?
             if ($options.IP.Local) {
                 if ([System.Net.IPAddress]::IsLoopback($ip)) {
-                    if ($options.UseSubnetMask) {
+                    if ($options.Group) {
                         return 'local'
                     }
 
@@ -404,7 +404,7 @@ function New-PodeLimitIPComponent {
 
             # is any allowed?
             if ($options.IP.Any) {
-                if ($options.UseSubnetMask) {
+                if ($options.Group) {
                     return '*'
                 }
 
@@ -423,20 +423,24 @@ function New-PodeLimitRouteComponent {
     param(
         [Parameter()]
         [string[]]
-        $Path
+        $Path,
+
+        [switch]
+        $Group
     )
 
     # convert paths into a hashtable for easier lookup
     $htPath = @{}
     foreach ($p in $Path) {
-        $htPath[$p] = $true
+        $htPath[(ConvertTo-PodeRouteRegex -Path $p)] = $true
     }
 
     # pass back the route component
     return @{
         Options     = @{
-            Path = $htPath
-            All  = (Test-PodeIsEmpty -Value $Path)
+            Path  = $htPath
+            Group = $Group.IsPresent
+            All   = (Test-PodeIsEmpty -Value $Path)
         }
         ScriptBlock = {
             param($options)
@@ -447,6 +451,17 @@ function New-PodeLimitRouteComponent {
             # if the list is empty, or the list contains the path, then return the path
             if ($options.All -or $options.Path.ContainsKey($path)) {
                 return $path
+            }
+
+            # check if the path is a wildcard
+            foreach ($key in $options.Path.Keys) {
+                if ($path -imatch "^$($key)$") {
+                    if ($options.Group) {
+                        return $key
+                    }
+
+                    return $path
+                }
             }
 
             # return null
@@ -546,7 +561,7 @@ function New-PodeLimitHeaderComponent {
         $Value,
 
         [switch]
-        $UseHeaderName
+        $Group
     )
 
     # convert header names into a hashtable for easier lookup
@@ -564,10 +579,10 @@ function New-PodeLimitHeaderComponent {
     # pass back the header component
     return @{
         Options     = @{
-            HeaderNames   = $htHeaderName
-            HeaderValues  = $htHeaderValue
-            UseHeaderName = $UseHeaderName.IsPresent
-            AllValues     = (Test-PodeIsEmpty -Value $Value)
+            HeaderNames  = $htHeaderName
+            HeaderValues = $htHeaderValue
+            Group        = $Group.IsPresent
+            AllValues    = (Test-PodeIsEmpty -Value $Value)
         }
         ScriptBlock = {
             param($options)
@@ -584,7 +599,7 @@ function New-PodeLimitHeaderComponent {
 
                 # are we checking any specific values - if not, return name/value or just name
                 if ($options.AllValues) {
-                    if ($options.UseHeaderName) {
+                    if ($options.Group) {
                         return $header
                     }
                     return "$($header)=$($reqHeaders[$header])"
