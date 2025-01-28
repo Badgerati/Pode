@@ -3,12 +3,19 @@
 Pode lets you register scripts to be run when certain server events are triggered. The following types of events can have scripts registered:
 
 * Start
+* Starting
 * Terminate
+* Restarting
 * Restart
 * Browser
 * Crash
 * Stop
 * Running
+* Suspending
+* Suspend
+* Resume
+* Enable
+* Disable
 
 And these events are triggered in the following order:
 
@@ -44,9 +51,17 @@ If you need the runspaces to be opened, you'll want to look at the `Running` eve
 
 These scripts will also be re-invoked after a server restart has occurred.
 
+### Starting
+
+Scripts registered to the `Starting` event will all be invoked during the initialization phase of the server, before the `Start` event is triggered.
+
 ### Terminate
 
 Scripts registered to the `Terminate` event will all be invoked just before the server terminates. Ie, when the `Terminating...` message usually appears in the terminal, the script will run just after this and just before the `Done` message. Runspaces at this point will still be open.
+
+### Restarting
+
+Scripts registered to the `Restarting` event will all be invoked when the server begins the restart process. This occurs before the `Restart` event.
 
 ### Restart
 
@@ -58,12 +73,33 @@ Scripts registered to the `Browser` event will all be invoked whenever the serve
 
 ### Crash
 
-Scripts registered to the `Crash` event will all be invoked if the server ever terminates due to an exception being thrown. If a Crash event it triggered, then Terminate will not be triggered. Runspaces at this point will still be open, but there could be a chance not all of them will be available as the crash could have occurred from a runspace error.
+Scripts registered to the `Crash` event will all be invoked if the server ever terminates due to an exception being thrown. If a Crash event is triggered, then Terminate will not be triggered. Runspaces at this point will still be open, but there could be a chance not all of them will be available as the crash could have occurred from a runspace error.
 
 ### Stop
 
-Scripts registered to the `Stop` event will all be invoked when the server stops and closes. This event will be fired after either the Terminate or Crash events - which ever one causes the server to ultimately stop. Runspaces at this point will still be open.
+Scripts registered to the `Stop` event will all be invoked when the server stops and closes. This event will be fired after either the Terminate or Crash events - whichever one causes the server to ultimately stop. Runspaces at this point will still be open.
 
 ### Running
 
 Scripts registered to the `Running` event will all be run soon after the `Start` event, even after a `Restart`. At this point all of the runspaces will have been opened and available for use.
+
+### Suspending
+
+Scripts registered to the `Suspending` event will all be invoked when the server begins the suspension process.
+
+### Suspend
+
+Scripts registered to the `Suspend` event will all be invoked when the server completes the suspension process.
+
+### Resume
+
+Scripts registered to the `Resume` event will all be invoked when the server resumes operation after suspension.
+
+### Enable
+
+Scripts registered to the `Enable` event will all be invoked when the server is enabled.
+
+### Disable
+
+Scripts registered to the `Disable` event will all be invoked when the server is disabled.
+
