@@ -74,10 +74,14 @@ Start-PodeServer -Threads 2 -Verbose {
 
     # limit
     # Add-PodeLimitRule -Type IP -Values all -Limit 100 -Seconds 5
-    Add-PodeLimitRateRule -Name 'Main' -Limit 5 -Timeout 10 -Component @(
-        New-PodeLimitIPComponent #-IP '127.0.0.2'
-        New-PodeLimitRouteComponent -Path '/'
-    )
+    # Add-PodeLimitRateRule -Name 'Main' -Limit 5 -Timeout 10 -Component @(
+    #     New-PodeLimitIPComponent #-IP '127.0.0.2'
+    #     New-PodeLimitRouteComponent -Path '/'
+    # )
+    # Add-PodeLimitRateRule -Name 'Debounce' -Limit 1 -Timeout 10 -Component @(
+    #     New-PodeLimitIPComponent
+    #     New-PodeLimitMethodComponent -Method Get, Post
+    # )
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
@@ -150,6 +154,10 @@ Start-PodeServer -Threads 2 -Verbose {
 
     Add-PodeRoute -Method Get -Path '/api/*/hello' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every hello route' }
+    }
+
+    Add-PodeRoute -Method Delete -Path '/delete' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ 'value' = 'works for delete method' }
     }
 
     $script:hmm = 'well well'

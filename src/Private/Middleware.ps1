@@ -241,6 +241,7 @@ function Get-PodeLimitMiddleware {
                 if ($rule.Active.ContainsKey($ruleKey) -and
                     ($rule.Active[$ruleKey].Timeout -gt $now) -and
                     ($rule.Active[$ruleKey].Counter -ge $rule.Limit)) {
+                    Set-PodeHeader -Name 'Retry-After' -Value ([int]($rule.Active[$ruleKey].Timeout - $now).TotalSeconds)
                     Set-PodeResponseStatus -Code $rule.StatusCode
                     return $false
                 }
