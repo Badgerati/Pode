@@ -11,10 +11,25 @@ namespace PodeMonitor
         /// <returns>The corresponding PodeMonitorServiceState, or Unknown if parsing fails.</returns>
         public static PodeMonitorServiceState ToPodeMonitorServiceState(this string stateString)
         {
-            if (Enum.TryParse(stateString, true, out PodeMonitorServiceState result)) // true for case-insensitive
+            if (string.IsNullOrWhiteSpace(stateString))
+                return PodeMonitorServiceState.Unknown;
+
+            // Normalize known aliases
+            stateString = stateString.Trim().ToLowerInvariant();
+            switch (stateString)
+            {
+                case "terminated":
+                    return PodeMonitorServiceState.Stopped;
+                case "terminating":
+                    return PodeMonitorServiceState.Stopping;
+            }
+
+            // Try parsing the string to an enum
+            if (Enum.TryParse(stateString, true, out PodeMonitorServiceState result))
             {
                 return result;
             }
+
             return PodeMonitorServiceState.Unknown; // Default if parsing fails
         }
 

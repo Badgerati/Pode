@@ -57,8 +57,12 @@ function Start-PodeServiceHearthbeat {
 
         # Define the script block for the client receiver, listens for commands via the named pipe
         $scriptBlock = {
-            $serviceState = 'running'
             while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+
+                do {
+                    Start-Sleep -Seconds 1
+                    $serviceState = Get-PodeServerState
+                }until(( [Pode.PodeServerState]::Running, [Pode.PodeServerState]::Suspended, [Pode.PodeServerState]::Terminating) -contains ( $serviceState) )
 
                 Write-PodeHost -Message "Initialize Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
                 Write-PodeHost -Message "Service State: $serviceState" -Force
@@ -99,10 +103,10 @@ function Start-PodeServiceHearthbeat {
                                 'shutdown' {
                                     # Process 'shutdown' message
                                     Write-PodeHost -Message 'Server requested shutdown. Closing Pode ...' -Force
-                                    $serviceState = 'stopping'
-                                    Write-PodeHost -Message "Service State: $serviceState" -Force
                                     Close-PodeServer  # Gracefully stop Pode server
                                     Start-Sleep 1
+                                    Write-PodeHost -Message "Service State: $(Get-PodeServerState)" -Force
+
                                     Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
                                     return  # Exit the loop
                                 }
@@ -110,13 +114,11 @@ function Start-PodeServiceHearthbeat {
                                 'restart' {
                                     # Process 'restart' message
                                     Write-PodeHost -Message 'Server requested restart. Restarting Pode ...' -Force
-
-                                    $serviceState = 'starting'
-                                    Write-PodeHost -Message "Service State: $serviceState" -Force
-                                    Start-Sleep 1
                                     Restart-PodeServer  # Restart Pode server
-                                    Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
                                     Start-Sleep 1
+                                    Write-PodeHost -Message "Service State: $(Get-PodeServerState)" -Force
+
+                                    Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
                                     return
                                     # Exit the loop
                                 }
@@ -124,19 +126,17 @@ function Start-PodeServiceHearthbeat {
                                 'suspend' {
                                     # Process 'suspend' message
                                     Write-PodeHost -Message 'Server requested suspend. Suspending Pode ...' -Force
-                                    $serviceState = 'suspended'
-                                    Write-PodeHost -Message "Service State: $serviceState" -Force
-                                    Start-Sleep 1
                                     Suspend-PodeServer
+                                    Start-Sleep 1
+                                    Write-PodeHost -Message "Service State: $(Get-PodeServerState)" -Force
                                 }
 
                                 'resume' {
                                     # Process 'resume' message
                                     Write-PodeHost -Message 'Server requested resume. Resuming Pode ...' -Force
-                                    $serviceState = 'running'
-                                    Write-PodeHost -Message "Service State: $serviceState" -Force
-                                    Start-Sleep 1
                                     Resume-PodeServer
+                                    Start-Sleep 1
+                                    Write-PodeHost -Message "Service State: $(Get-PodeServerState)" -Force
                                 }
                             }
 

@@ -6,18 +6,16 @@ namespace PodeMonitor
     public enum PodeMonitorServiceState
     {
         Unknown,    // State is unknown
-        Stopping,    // Service is stopping
-
 
         /// <summary>
-        /// The server has been completely terminated and is no longer running.
+        /// The server has been completely Stopped and is no longer running.
         /// </summary>
-        Terminated,
+        Stopped,
 
         /// <summary>
-        /// The server is in the process of terminating and shutting down its operations.
+        /// The server is in the process of Stopping and shutting down its operations.
         /// </summary>
-        Terminating,
+        Stopping,
 
         /// <summary>
         /// The server is resuming from a suspended state and is starting to run again.
