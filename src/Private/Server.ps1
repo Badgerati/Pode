@@ -195,7 +195,7 @@ function Start-PodeInternalServer {
         Show-PodeConsoleInfo
 
         # Start Service Monitor
-        Start-PodeServiceHearthbeat
+        Start-PodeServiceHeartbeat
     }
     catch {
         throw

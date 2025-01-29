@@ -181,7 +181,7 @@ namespace PodeMonitor
                 {
                     if (InitializePipeClientWithRetry())
                     {
-                        SendPipeMessage("shutdown");
+                        SendPipeMessage("stop");
                         PodeMonitorLogger.Log(PodeLogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Waiting for {_shutdownWaitTimeMs} milliseconds for Pode process to exit...");
                         WaitForProcessExit(_shutdownWaitTimeMs);
 

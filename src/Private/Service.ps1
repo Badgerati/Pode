@@ -35,7 +35,7 @@ function Test-PodeServiceEnabled {
     The function takes no parameters. It retrieves the pipe name from the Pode service context.
 
 .EXAMPLE
-    Start-PodeServiceHearthbeat
+    Start-PodeServiceHeartbeat
 
     This command starts the Pode service monitoring and waits for 'shutdown' or 'restart' commands from the named pipe.
 
@@ -45,13 +45,15 @@ function Test-PodeServiceEnabled {
     The function uses Pode's context for the service to manage the pipe server. The pipe listens for messages sent from a C# client
     and performs actions based on the received message.
 
-    If the pipe receives a 'shutdown' message, the Pode server is stopped.
+    If the pipe receives a 'stop' message, the Pode server is stopped.
     If the pipe receives a 'restart' message, the Pode server is restarted.
 
     Global variable example:  $global:PodeService=@{DisableTermination=$true;Quiet=$false;Pipename='ssss'}
 #>
-function Start-PodeServiceHearthbeat {
-
+function Start-PodeServiceHeartbeat {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    [CmdletBinding()]
+    param()
     # Check if the Pode service is enabled
     if (Test-PodeServiceEnabled) {
 
@@ -64,13 +66,13 @@ function Start-PodeServiceHearthbeat {
                     $serviceState = Get-PodeServerState
                 }until(( [Pode.PodeServerState]::Running, [Pode.PodeServerState]::Suspended, [Pode.PodeServerState]::Terminating) -contains ( $serviceState) )
 
-                Write-PodeHost -Message "Initialize Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
-                Write-PodeHost -Message "Service State: $serviceState" -Force
-                Write-PodeHost -Message "Total Uptime: $(Get-PodeServerUptime -Total -Format verbose -ExcludeMilliseconds)" -Force
+                [System.Console]::WriteLine("Initialize Listener Pipe $($PodeContext.Server.Service.PipeName)")
+                [System.Console]::WriteLine("Service State: $serviceState")
+                [System.Console]::WriteLine("Total Uptime: $(Get-PodeServerUptime -Total -Format verbose -ExcludeMilliseconds)")
                 if ((Get-PodeServerUptime) -gt 1000) {
-                    Write-PodeHost -Message "Uptime Since Last Restart: $(Get-PodeServerUptime -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
+                    [System.Console]::WriteLine("Uptime Since Last Restart: $(Get-PodeServerUptime -Readable -OutputType Verbose -ExcludeMilliseconds)")
                 }
-                Write-PodeHost -Message "Total Number of Restart: $(Get-PodeServerRestartCount)" -Force
+                [System.Console]::WriteLine("Total Number of Restart: $(Get-PodeServerRestartCount)")
                 try {
                     Start-Sleep -Milliseconds 100
                     # Create a named pipe server stream
@@ -82,84 +84,85 @@ function Start-PodeServiceHearthbeat {
                         [System.IO.Pipes.PipeOptions]::None
                     )
 
-                    Write-PodeHost -Message "Waiting for connection to the $($PodeContext.Server.Service.PipeName) pipe." -Force
+                    [System.Console]::WriteLine("Waiting for connection to the $($PodeContext.Server.Service.PipeName) pipe.")
                     $pipeStream.WaitForConnection()  # Wait until a client connects
-                    Write-PodeHost -Message "Connected to the $($PodeContext.Server.Service.PipeName) pipe." -Force
+                    [System.Console]::WriteLine("Connected to the $($PodeContext.Server.Service.PipeName) pipe.")
 
                     # Create a StreamReader to read incoming messages from the pipe
                     $reader = [System.IO.StreamReader]::new($pipeStream)
 
                     # Process incoming messages in a loop as long as the pipe is connected
-                    while ($pipeStream.IsConnected) {
+                    if ($pipeStream.IsConnected) {
                         $message = $reader.ReadLine()  # Read message from the pipe
                         if ( Test-PodeCancellationTokenRequest -Type Terminate) {
                             return
                         }
 
                         if ($message) {
-                            Write-PodeHost -Message "Received message: $message" -Force
+                            [System.Console]::WriteLine("Received message: $message")
 
                             switch ($message) {
-                                'shutdown' {
+                                'stop' {
                                     # Process 'shutdown' message
-                                    Write-PodeHost -Message 'Server requested shutdown. Closing Pode ...' -Force
+                                    [System.Console]::WriteLine("Server request: 'Stop'. Closing Pode ...")
                                     Close-PodeServer  # Gracefully stop Pode server
                                     Start-Sleep 1
-                                    Write-PodeHost -Message "Service State: $(Get-PodeServerState)" -Force
+                                    [System.Console]::WriteLine("Service State: $(Get-PodeServerState)")
 
-                                    Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
+                                    [System.Console]::WriteLine('Closing Service Monitoring Heartbeat')
                                     return  # Exit the loop
                                 }
 
                                 'restart' {
                                     # Process 'restart' message
-                                    Write-PodeHost -Message 'Server requested restart. Restarting Pode ...' -Force
+                                    [System.Console]::WriteLine("Server request: 'Restart'. Restarting Pode ...")
                                     Restart-PodeServer  # Restart Pode server
                                     Start-Sleep 1
-                                    Write-PodeHost -Message "Service State: $(Get-PodeServerState)" -Force
+                                    [System.Console]::WriteLine("Service State: $(Get-PodeServerState)")
 
-                                    Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
-                                    return
-                                    # Exit the loop
+                                    [System.Console]::WriteLine('Closing Service Monitoring Heartbeat')
+                                    return # Exit the loop
                                 }
 
                                 'suspend' {
                                     # Process 'suspend' message
-                                    Write-PodeHost -Message 'Server requested suspend. Suspending Pode ...' -Force
+                                    [System.Console]::WriteLine("Server request: 'Suspend'. Suspending Pode ...")
                                     Suspend-PodeServer
                                     Start-Sleep 1
-                                    Write-PodeHost -Message "Service State: $(Get-PodeServerState)" -Force
+                                    [System.Console]::WriteLine("Service State: $(Get-PodeServerState)")
+                                    break
                                 }
 
                                 'resume' {
                                     # Process 'resume' message
-                                    Write-PodeHost -Message 'Server requested resume. Resuming Pode ...' -Force
+                                    [System.Console]::WriteLine("Server request: 'Resume'. Resuming Pode ...")
                                     Resume-PodeServer
                                     Start-Sleep 1
-                                    Write-PodeHost -Message "Service State: $(Get-PodeServerState)" -Force
+                                    [System.Console]::WriteLine("Service State: $(Get-PodeServerState)")
+                                    break
                                 }
                             }
 
                         }
-                        break
                     }
                 }
                 catch {
                     $_ | Write-PodeErrorLog  # Log any errors that occur during pipe operation
-                    throw $_
                 }
                 finally {
                     if ($reader) {
                         $reader.Dispose()
                     }
-                    if ( $pipeStream) {
+                    if ($pipeStream) {
+                        $pipeStream.Flush()
+                        $pipeStream.Close()
                         $pipeStream.Dispose()  # Always dispose of the pipe stream when done
-                        Write-PodeHost -Message "Disposing Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
+                        [System.Console]::WriteLine("Disposing Listener Pipe $($PodeContext.Server.Service.PipeName)")
                     }
                 }
 
             }
-            Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
+            [System.Console]::WriteLine('Closing Service Monitoring Heartbeat')
         }
 
         # Assign a name to the Pode service
