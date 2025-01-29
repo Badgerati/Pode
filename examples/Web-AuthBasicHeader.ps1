@@ -17,7 +17,8 @@
     The example used here is Basic authentication.
 
     Login:
-    $session = (Invoke-WebRequest -Uri http://localhost:8081/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }).Headers['pode.sid']
+    Invoke-RestMethod -Uri http://localhost:8081/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' } -ResponseHeadersVariable headers -SkipHttpErrorCheck
+    $session = $headers['pode.sid']
 
     Users:
     Invoke-RestMethod -Uri http://localhost:8081/users -Method Post -Headers @{ 'pode.sid' = "$session" }
@@ -81,13 +82,13 @@ Start-PodeServer -Threads 2 {
     }
 
     # POST request to login
-    Add-PodeRoute -Method Post -Path '/login' -Authentication 'Login'
+    Add-PodeRoute -Method Post -Path '/login' -Authentication 'Login'  -ErrorContentType 'application/json'
 
     # POST request to logout
-    Add-PodeRoute -Method Post -Path '/logout' -Authentication 'Login' -Logout
+    Add-PodeRoute -Method Post -Path '/logout' -Authentication 'Login' -Logout  -ErrorContentType 'application/json'
 
     # POST request to get list of users - the "pode.sid" header is expected
-    Add-PodeRoute -Method Post -Path '/users' -Authentication 'Login' -ScriptBlock {
+    Add-PodeRoute -Method Post -Path '/users' -Authentication 'Login'  -ErrorContentType 'application/json' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{

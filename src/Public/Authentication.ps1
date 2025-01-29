@@ -200,6 +200,11 @@ function New-PodeAuthScheme {
         [switch]
         $Digest,
 
+        [Parameter(ParameterSetName = 'Digest')]
+        [ValidateSet('MD5', 'SHA-1', 'SHA-256', 'SHA-512','SHA-512-256' )]
+        [string]
+        $Algorithm = 'MD5',
+
         [Parameter(ParameterSetName = 'Bearer')]
         [switch]
         $Bearer,
@@ -361,6 +366,7 @@ function New-PodeAuthScheme {
                     Scheme        = 'http'
                     Arguments     = @{
                         HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
+                        Algorithm = $Algorithm
                     }
                 }
             }

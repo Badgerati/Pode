@@ -5,11 +5,102 @@
 .DESCRIPTION
     This script sets up a Pode server that listens on a specified port and uses Digest authentication
     for securing access to the server. The authentication details are checked against predefined user data.
+    For not MD5 algorithm use ./utility/DigestClient.ps1
 
 .EXAMPLE
     To run the sample: ./Web-AuthDigest.ps1
 
-    Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
+    # Define the URI and credentials
+    $uri = [System.Uri]::new("http://localhost:8081/users")
+    $username = "morty"
+    $password = "pickle"
+
+    # Create a credential cache and add Digest authentication
+    $credentialCache = [System.Net.CredentialCache]::new()
+    $networkCredential = [System.Net.NetworkCredential]::new($username, $password)
+    $credentialCache.Add($uri, "Digest", $networkCredential)
+
+    # Create the HTTP client handler with the credential cache
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+    $handler.Credentials = $credentialCache
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
+
+.EXAMPLE
+    No authentication
+
+    # Define the URI
+    $uri = [System.Uri]::new("http://localhost:8081/users")
+
+    # Create the HTTP client handler (no authentication)
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
+
+.EXAMPLE
+    Wrong password
+
+    # Define the URI and wrong credentials
+    $uri = [System.Uri]::new("http://localhost:8081/users")
+    $wrongUsername = "wrongUser"
+    $wrongPassword = "wrongPassword"
+
+    # Create a credential cache and add Digest authentication with incorrect credentials
+    $credentialCache = [System.Net.CredentialCache]::new()
+    $networkCredential = [System.Net.NetworkCredential]::new($wrongUsername, $wrongPassword)
+    $credentialCache.Add($uri, "Digest", $networkCredential)
+
+    # Create the HTTP client handler with the credential cache
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+    $handler.Credentials = $credentialCache
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Display the response status code (to check for 401 Unauthorized)
+    $response.StatusCode
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
+
 
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthDigest.ps1
@@ -18,6 +109,10 @@
     Author: Pode Team
     License: MIT License
 #>
+
+param(
+    $Algorithm = 'MD5'
+)
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -43,14 +138,14 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # setup digest auth
-    New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -Digest -Algorithm $Algorithm | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $params)
 
         # here you'd check a real user storage, this is just for example
         if ($username -ieq 'morty') {
             return @{
-                User = @{
-                    ID ='M0R7Y302'
+                User     = @{
+                    ID   = 'M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'
                 }
@@ -62,16 +157,16 @@ Start-PodeServer -Threads 2 {
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ErrorContentType  'application/json' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{
                     Name = 'Deep Thought'
-                    Age = 42
+                    Age  = 42
                 },
                 @{
                     Name = 'Leeroy Jenkins'
-                    Age = 1337
+                    Age  = 1337
                 }
             )
         }
