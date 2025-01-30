@@ -589,7 +589,7 @@ function ConvertTo-PodeDigestHash {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter()] 
+        [Parameter()]
         $Value,
 
         [Parameter(Mandatory = $true)]
@@ -611,7 +611,6 @@ function ConvertTo-PodeDigestHash {
             $fullHash = $sha512.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value))
             return [System.BitConverter]::ToString($fullHash[0..31]).Replace('-', '').ToLowerInvariant()
         }
-        Default { throw "Unsupported algorithm: $Algorithm" }
     }
 
     return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
