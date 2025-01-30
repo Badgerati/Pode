@@ -566,22 +566,25 @@ function ConvertFrom-PodeJwtBase64Value {
 
 <#
 .SYNOPSIS
-    Converts a string to an MD5 hash.
+    Computes a cryptographic hash using the specified algorithm.
 
 .DESCRIPTION
-    Computes an MD5 hash of the provided string and returns it as a lowercase hexadecimal string.
-    Uses ASCII encoding to ensure compatibility with traditional Digest Authentication.
+    This function accepts a string and an algorithm name, computes the hash using the specified algorithm,
+    and returns the hash as a lowercase hexadecimal string.
 
 .PARAMETER Value
-    The string to hash using the MD5 algorithm.
+    The input string to be hashed.
+
+.PARAMETER Algorithm
+    The hashing algorithm to use (SHA-1, SHA-256, SHA-512, SHA-512/256).
 
 .OUTPUTS
-    [string] - The computed MD5 hash in hexadecimal format.
+    [string] - The computed hash in hexadecimal format.
 
 .NOTES
     Internal Pode function for authentication hashing.
 #>
-function ConvertTo-PodeMD5Hash {
+function ConvertTo-PodeDigestHash {
 
     [CmdletBinding()]
     [OutputType([string])]
@@ -589,141 +592,29 @@ function ConvertTo-PodeMD5Hash {
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Value
-    )
+        $Value,
 
-    $crypto = [System.Security.Cryptography.MD5]::Create()
-    return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::ASCII.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
-}
-
-
-<#
-.SYNOPSIS
-    Converts a string to a SHA-1 hash.
-
-.DESCRIPTION
-    Computes a SHA-1 hash of the provided string and returns it as a lowercase hexadecimal string.
-
-.PARAMETER Value
-    The string to hash using the SHA-1 algorithm.
-
-.OUTPUTS
-    [string] - The computed SHA-1 hash in hexadecimal format.
-
-.NOTES
-    Internal Pode function for authentication hashing.
-#>
-function ConvertTo-PodeSHA1Hash {
-
-    [CmdletBinding()]
-    [OutputType([string])]
-    param(
         [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
+        [ValidateSet('MD5', 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256')]
         [string]
-        $Value
+        $Algorithm
     )
 
-    $crypto = [System.Security.Cryptography.SHA1]::Create()
+    # Select the appropriate hash algorithm
+    $crypto = switch ($Algorithm) {
+        'MD5' { [System.Security.Cryptography.MD5]::Create() }
+        'SHA-1' { [System.Security.Cryptography.SHA1]::Create() }
+        'SHA-256' { [System.Security.Cryptography.SHA256]::Create() }
+        'SHA-384' { [System.Security.Cryptography.SHA384]::Create() }
+        'SHA-512' { [System.Security.Cryptography.SHA512]::Create() }
+        'SHA-512/256' {
+            # Compute SHA-512 and truncate to 256 bits (first 32 bytes)
+            $sha512 = [System.Security.Cryptography.SHA512]::Create()
+            $fullHash = $sha512.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value))
+            return [System.BitConverter]::ToString($fullHash[0..31]).Replace('-', '').ToLowerInvariant()
+        }
+        Default { throw "Unsupported algorithm: $Algorithm" }
+    }
+
     return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
-}
-
-<#
-.SYNOPSIS
-    Converts a string to a SHA-256 hash.
-
-.DESCRIPTION
-    Computes a SHA-256 hash of the provided string and returns it as a lowercase hexadecimal string.
-
-.PARAMETER Value
-    The string to hash using the SHA-256 algorithm.
-
-.OUTPUTS
-    [string] - The computed SHA-256 hash in hexadecimal format.
-
-.NOTES
-    Internal Pode function for authentication hashing.
-#>
-function ConvertTo-PodeSHA256Hash {
-
-    [CmdletBinding()]
-    [OutputType([string])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Value
-    )
-
-    $crypto = [System.Security.Cryptography.SHA256]::Create()
-    return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
-}
-
-<#
-.SYNOPSIS
-    Converts a string to a SHA-512 hash.
-
-.DESCRIPTION
-    Computes a SHA-512 hash of the provided string and returns it as a lowercase hexadecimal string.
-
-.PARAMETER Value
-    The string to hash using the SHA-512 algorithm.
-
-.OUTPUTS
-    [string] - The computed SHA-512 hash in hexadecimal format.
-
-.NOTES
-    Internal Pode function for authentication hashing.
-#>
-function ConvertTo-PodeSHA512Hash {
-
-    [CmdletBinding()]
-    [OutputType([string])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Value
-    )
-
-    $crypto = [System.Security.Cryptography.SHA512]::Create()
-    return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
-}
-
-<#
-.SYNOPSIS
-    Converts a string to a SHA-512/256 hash.
-
-.DESCRIPTION
-    Computes a SHA-512/256 hash of the provided string and returns it as a lowercase hexadecimal string.
-    SHA-512/256 is a variant of SHA-512 that outputs a 256-bit (32-byte) hash.
-
-.PARAMETER Value
-    The string to hash using the SHA-512/256 algorithm.
-
-.OUTPUTS
-    [string] - The computed SHA-512/256 hash in hexadecimal format.
-
-.NOTES
-    Internal Pode function for authentication hashing.
-#>
-function ConvertTo-PodeSHA512_256Hash {
-    [CmdletBinding()]
-    [OutputType([string])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Value
-    )
-
-    # Compute full SHA-512 hash
-    $crypto = [System.Security.Cryptography.SHA512]::Create()
-    $fullHash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value))
-
-    # Truncate to 256 bits (first 32 bytes)
-    $truncatedHash = $fullHash[0..31]
-
-    # Convert to lowercase hexadecimal string
-    return [System.BitConverter]::ToString($truncatedHash).Replace('-', '').ToLowerInvariant()
 }

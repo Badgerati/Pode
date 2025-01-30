@@ -201,8 +201,8 @@ function New-PodeAuthScheme {
         $Digest,
 
         [Parameter(ParameterSetName = 'Digest')]
-        [ValidateSet('MD5', 'SHA-1', 'SHA-256', 'SHA-512','SHA-512-256' )]
-        [string]
+        [ValidateSet('MD5', 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256')]
+        [string[]]
         $Algorithm = 'MD5',
 
         [Parameter(ParameterSetName = 'Bearer')]

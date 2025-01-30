@@ -111,7 +111,8 @@
 #>
 
 param(
-    $Algorithm = 'MD5'
+    [string[]]
+    $Algorithm = @(  'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256')
 )
 try {
     # Determine the script path and Pode module path

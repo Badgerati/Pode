@@ -790,7 +790,7 @@ function Get-PodeAuthDigestType {
             $message = 'No Authorization header found'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm $options.algorithm)
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
                 Code      = 401
             }
         }
@@ -801,7 +801,7 @@ function Get-PodeAuthDigestType {
             $message = 'Invalid Authorization header format'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm $options.algorithm )
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') )
                 Code      = 401  # RFC 7616: Invalid credentials format should return 401
             }
         }
@@ -810,7 +810,7 @@ function Get-PodeAuthDigestType {
             $message = "Authorization header is not $($options.HeaderTag)"
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm $options.algorithm)
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
                 Code      = 401
             }
         }
@@ -822,7 +822,7 @@ function Get-PodeAuthDigestType {
             return @{
                 Message   = $message
                 Code      = 400
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm $options.algorithm)
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
             }
         }
 
@@ -831,18 +831,17 @@ function Get-PodeAuthDigestType {
             $message = 'Authorization header is missing username'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message  -Nonce $nonce -Algorithm $options.algorithm)
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message  -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
                 Code      = 401
             }
         }
 
         # return 400 if domain doesnt match request domain
         if ($WebEvent.Path -ine $params.uri) {
-            write-podehost "$($WebEvent.Path) -ine $($params.uri) "
             $message = 'Invalid Authorization header'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm $options.algorithm)
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
                 Code      = 400
             }
         }
@@ -945,56 +944,56 @@ function Get-PodeAuthDigestPostValidator {
             $message = 'Invalid credentials'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm $options.algorithm -ErrorDescription $message)
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm ($options.algorithm -join ', ') -ErrorDescription $message)
                 Code      = 401
             }
         }
-        switch ($options.algorithm) {
-            'MD5' {
-                $hash1 = ConvertTo-PodeMD5Hash -Value "$($params.username):$($params.realm):$($result.Password)"
-                $hash2 = ConvertTo-PodeMD5Hash -Value "$($WebEvent.Method.ToUpperInvariant()):$($params.uri)"
-                $final = ConvertTo-PodeMD5Hash -Value "$($hash1):$($params.nonce):$($params.nc):$($params.cnonce):$($params.qop):$($hash2)"
-                break
-            }
-            'SHA-1' {
-                $hash1 = ConvertTo-PodeSHA1Hash -Value "$($params.username):$($params.realm):$($result.Password)"
-                $hash2 = ConvertTo-PodeSHA1Hash -Value "$($WebEvent.Method.ToUpperInvariant()):$($params.uri)"
-                $final = ConvertTo-PodeSHA1Hash -Value "$($hash1):$($params.nonce):$($params.nc):$($params.cnonce):$($params.qop):$($hash2)"
-                break
-            }
-            'SHA-256' {
-                $hash1 = ConvertTo-PodeSHA256Hash -Value "$($params.username):$($params.realm):$($result.Password)"
-                $hash2 = ConvertTo-PodeSHA256Hash -Value "$($WebEvent.Method.ToUpperInvariant()):$($params.uri)"
-                $final = ConvertTo-PodeSHA256Hash -Value "$($hash1):$($params.nonce):$($params.nc):$($params.cnonce):$($params.qop):$($hash2)"
-                break
-            }
-            'SHA-512' {
-                $hash1 = ConvertTo-PodeSHA512Hash -Value "$($params.username):$($params.realm):$($result.Password)"
-                $hash2 = ConvertTo-PodeSHA512Hash -Value "$($WebEvent.Method.ToUpperInvariant()):$($params.uri)"
-                $final = ConvertTo-PodeSHA512Hash -Value "$($hash1):$($params.nonce):$($params.nc):$($params.cnonce):$($params.qop):$($hash2)"
-                break
-            }
-            'SHA-512/256' {
-                $hash1 = ConvertTo-PodeSHA512_256Hash -Value "$($params.username):$($params.realm):$($result.Password)"
-                $hash2 = ConvertTo-PodeSHA512_256Hash -Value "$($WebEvent.Method.ToUpperInvariant()):$($params.uri)"
-                $final = ConvertTo-PodeSHA512_256Hash -Value "$($hash1):$($params.nonce):$($params.nc):$($params.cnonce):$($params.qop):$($hash2)"
-                break
-            }
-            Default {
-                $message = "Unsupported algorithm: $($options.algorithm)"
-                return @{
-                    Message   = $message
-                    Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm $options.algorithm -ErrorDescription $message)
-                    Code      = 400
-                }
+        # Extract the client's chosen algorithm
+        $algorithm = $params.algorithm
+
+        # Ensure the client-selected algorithm is supported
+        if (-not ($options.algorithm -contains $algorithm)) {
+            $message = "Unsupported algorithm: $algorithm"
+            return @{
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm ($options.algorithm -join ', ') -ErrorDescription $message)
+                Code      = 400
             }
         }
-        # compare final hash to client response
+
+        # Extract qop value
+        $qop = $params.qop
+
+        # Get the request method and URI
+        $method = $WebEvent.Method.ToUpperInvariant()
+        $uri = $params.uri
+
+        # Compute HA1 (username:realm:password)
+        $HA1 = ConvertTo-PodeDigestHash -Value "$($params.username):$($params.realm):$($result.Password)" -Algorithm $algorithm
+
+        # Compute HA2 (handle `auth-int` case)
+        if ($qop -eq 'auth-int') {
+            # Retrieve and hash the entity body
+            $entityBody = [System.Text.Encoding]::UTF8.GetString($WebEvent.Body)
+            $entityHash = ConvertTo-PodeDigestHash -Value $entityBody -Algorithm $algorithm
+
+            # HA2 with auth-int
+            $HA2 = ConvertTo-PodeDigestHash -Value "$($method):$($uri):$($entityHash)" -Algorithm $algorithm
+        }
+        else {
+            # Standard HA2
+            $HA2 = ConvertTo-PodeDigestHash -Value "$($method):$($uri)" -Algorithm $algorithm
+        }
+
+        # Compute final response hash
+        $final = ConvertTo-PodeDigestHash -Value "$($HA1):$($params.nonce):$($params.nc):$($params.cnonce):$($qop):$($HA2)" -Algorithm $algorithm
+
+        # Compare final hash to client response
         if ($final -ne $params.response) {
             $message = 'Invalid authentication response'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm $options.algorithm -ErrorDescription $message)
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm ($options.algorithm -join ', ') -ErrorDescription $message)
                 Code      = 401
             }
         }
@@ -1025,7 +1024,6 @@ function ConvertFrom-PodeAuthDigestHeader {
             $obj[$Matches['name']] = $Matches['value']
         }
     }
-write-podehost $obj -explode
     return $obj
 }
 
@@ -2907,7 +2905,7 @@ function New-PodeAuthChallenge {
         $Nonce,
 
         [Parameter()]
-        [string]
+        [string[]]
         $Algorithm = 'md5'
 
     )
@@ -2915,7 +2913,7 @@ function New-PodeAuthChallenge {
     $items = @()
 
     if (![string]::IsNullOrWhiteSpace($Nonce)) {
-        $items += 'qop="auth"', "algorithm=$Algorithm", "nonce=`"$Nonce`""
+        $items += 'qop="auth"', "algorithm=$Algorithm" , "nonce=`"$Nonce`""
     }
 
     if (($null -ne $Scopes) -and ($Scopes.Length -gt 0)) {
