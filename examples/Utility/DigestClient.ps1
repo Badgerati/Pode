@@ -10,6 +10,10 @@ $httpClient = [System.Net.Http.HttpClient]::new($handler)
 # Step 1: Send an initial request to get the challenge
 $initialRequest = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
 $initialResponse = $httpClient.SendAsync($initialRequest).Result
+if ($null -eq $initialResponse) {
+    Write-Error "Server $uri is not responding"
+    return
+}
 
 # Extract WWW-Authenticate headers safely
 $wwwAuthHeaders = $initialResponse.Headers.GetValues("WWW-Authenticate")
@@ -38,9 +42,9 @@ if ($wwwAuthHeader -match "^Digest ") {
 
     # 1) CAPTURE
     if ($headerContent -match "algorithm=((?:SHA-1|SHA-256|SHA-384|SHA-512(?:/256)?|MD5)(?:,\s*(?:SHA-1|SHA-256|SHA-384|SHA-512(?:/256)?|MD5))*)") {
-        Write-Output "RAW MATCH: $($matches[1])"
+  
         $algorithms = ($matches[1] -split '\s*,\s*')
-        Write-Output "SPLIT ALGORITHMS: $algorithms"
+        Write-Output "Supported Algorithms: $algorithms"
         $challenge["algorithm"] = $algorithms
     }
 
@@ -50,10 +54,7 @@ if ($wwwAuthHeader -match "^Digest ") {
     # 3) CLEAN UP ANY EXTRA COMMAS/WHITESPACE
     $headerContent = $headerContent -replace ",\s*,", ","
     $headerContent = $headerContent -replace "^\s*,", ""
-
-
-    Write-Output "Remaining header content: $headerContent"
-    
+     
     # Now split the rest of the parameters safely
     $headerContent -split ', ' | ForEach-Object {
         $key, $value = $_ -split '=', 2
@@ -78,7 +79,19 @@ $nonce = $challenge['nonce']
 $qop = $challenge['qop']
 $algorithm = $challenge['algorithm']
 
- 
+# Ensure qop is an array
+$qopOptions = $qop -split '\s*,\s*' 
+
+# Choose 'auth-int' if available, otherwise fallback to 'auth'
+if ($qopOptions -contains "auth-int") {
+    $qop = "auth-int"
+}
+else {
+    $qop = "auth"
+}
+
+Write-Output "Selected QOP: $qop"
+
 # Define the preferred algorithm order (strongest to weakest)
 $preferredAlgorithms = @("SHA-512/256", "SHA-512", "SHA-384", "SHA-256", "SHA-1", "MD5")
 
@@ -128,8 +141,16 @@ $uriPath = $uriPath.AbsolutePath  # Extract only "/users"
 # Compute HA1 (username:realm:password)
 $HA1 = ConvertTo-Hash -Value "$($username):$($realm):$($password)" -Algorithm $algorithm
 
-# Compute HA2 (method:uri)
-$HA2 = ConvertTo-Hash -Value "$($method):$($uriPath)" -Algorithm $algorithm
+# Compute HA2 based on qop value
+if ($qop -eq "auth-int") {
+    # Sample request body (for example, a JSON payload)
+    $requestBody = '{ "test": "auth-int" }'  # Modify as needed
+    $entityBodyHash = ConvertTo-Hash -Value $requestBody -Algorithm $algorithm
+    $HA2 = ConvertTo-Hash -Value "$($method):$($uriPath):$($entityBodyHash)" -Algorithm $algorithm
+}
+else {
+    $HA2 = ConvertTo-Hash -Value "$($method):$($uriPath)" -Algorithm $algorithm
+}
 
 # Compute final response hash
 $response = ConvertTo-Hash -Value "$($HA1):$($nonce):$($nc):$($cnonce):$($qop):$($HA2)" -Algorithm $algorithm
@@ -142,6 +163,11 @@ Digest username="$username", realm="$realm", nonce="$nonce", uri="$uriPath", alg
 # Step 4: Send the authenticated request
 $authRequest = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
 $authRequest.Headers.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new('Digest', $authHeader)
+
+# Include the same request body in the request
+if ($qop -eq "auth-int") {
+    $authRequest.Content = [System.Net.Http.StringContent]::new($requestBody, [System.Text.Encoding]::UTF8, "application/json")
+}
 
 $response = $httpClient.SendAsync($authRequest).Result
 

@@ -2906,14 +2906,18 @@ function New-PodeAuthChallenge {
 
         [Parameter()]
         [string[]]
-        $Algorithm = 'md5'
+        $Algorithm = 'md5',
+        
+        [Parameter()]
+        [string[]]
+        $Qop='auth,auth-int'
 
     )
 
     $items = @()
 
     if (![string]::IsNullOrWhiteSpace($Nonce)) {
-        $items += 'qop="auth"', "algorithm=$Algorithm" , "nonce=`"$Nonce`""
+        $items += "qop=`"$Qop`"", "algorithm=$Algorithm" , "nonce=`"$Nonce`""
     }
 
     if (($null -ne $Scopes) -and ($Scopes.Length -gt 0)) {
