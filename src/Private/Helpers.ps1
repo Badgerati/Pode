@@ -1480,11 +1480,15 @@ function ConvertFrom-PodeRequestContent {
                 $Content = $Request.Body
             }
         }
-
+        # Add raw body content
+        $Result.RawData = $Content
         # if there is no content then do nothing
         if ([string]::IsNullOrWhiteSpace($Content)) {
             return $Result
         }
+
+        # Add raw body content
+        $Result.RawData = $Content
 
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
@@ -1494,7 +1498,6 @@ function ConvertFrom-PodeRequestContent {
             return $Result
         }
     }
-
     # run action for the content type
     switch ($ContentType) {
         { $_ -ilike '*/json' } {

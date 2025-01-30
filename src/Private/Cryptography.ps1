@@ -589,9 +589,7 @@ function ConvertTo-PodeDigestHash {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
+        [Parameter()] 
         $Value,
 
         [Parameter(Mandatory = $true)]

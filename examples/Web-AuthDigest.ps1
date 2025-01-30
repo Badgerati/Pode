@@ -111,8 +111,14 @@
 #>
 
 param(
+    [Parameter()]
     [string[]]
-    $Algorithm =  @('MD5',  'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256')
+    $Algorithm = @('MD5', 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256'),
+
+    [Parameter()]
+    [ValidateSet('auth', 'auth-int', 'auth,auth-int'  )]
+    [string[]]
+    $QualityOfProtection = 'auth,auth-int'
 )
 try {
     # Determine the script path and Pode module path
@@ -139,7 +145,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # setup digest auth
-    New-PodeAuthScheme -Digest -Algorithm $Algorithm | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -Digest -Algorithm $Algorithm -QualityOfProtection $QualityOfProtection | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $params)
 
         # here you'd check a real user storage, this is just for example
@@ -170,6 +176,15 @@ Start-PodeServer -Threads 2 {
                     Age  = 1337
                 }
             )
+        }
+    }
+
+    Add-PodeRoute -Method Post -Path '/users' -Authentication 'Validate' -ErrorContentType  'application/json' -ScriptBlock {
+        if ($WebEvent.data) {
+            Write-PodeJsonResponse -Value  $WebEvent.data -StatusCode 200
+        }
+        else {
+            Write-PodeJsonResponse -Value @{success = $false } -StatusCode 400
         }
     }
 

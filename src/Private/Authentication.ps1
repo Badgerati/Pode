@@ -790,7 +790,7 @@ function Get-PodeAuthDigestType {
             $message = 'No Authorization header found'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
                 Code      = 401
             }
         }
@@ -801,7 +801,7 @@ function Get-PodeAuthDigestType {
             $message = 'Invalid Authorization header format'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') )
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
                 Code      = 401  # RFC 7616: Invalid credentials format should return 401
             }
         }
@@ -810,7 +810,7 @@ function Get-PodeAuthDigestType {
             $message = "Authorization header is not $($options.HeaderTag)"
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
                 Code      = 401
             }
         }
@@ -822,7 +822,7 @@ function Get-PodeAuthDigestType {
             return @{
                 Message   = $message
                 Code      = 400
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
             }
         }
 
@@ -831,7 +831,7 @@ function Get-PodeAuthDigestType {
             $message = 'Authorization header is missing username'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message  -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message  -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
                 Code      = 401
             }
         }
@@ -841,7 +841,7 @@ function Get-PodeAuthDigestType {
             $message = 'Invalid Authorization header'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', '))
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection )
                 Code      = 400
             }
         }
@@ -851,91 +851,66 @@ function Get-PodeAuthDigestType {
     }
 }
 
+function Get-PodeAuthDigestPostValidator {
 <#
 .SYNOPSIS
-    Validates digest authentication responses for incoming requests.
+    Validates HTTP Digest authentication responses for incoming requests.
 
 .DESCRIPTION
-    The `Get-PodeAuthDigestPostValidator` function processes and validates HTTP digest
-    authentication responses by comparing the computed hash with the client's provided response.
-    It ensures the provided credentials are correct and returns appropriate challenges
-    if validation fails.
+    The `Get-PodeAuthDigestPostValidator` function processes and validates HTTP Digest
+    authentication responses by computing and verifying the response hash against
+    the client's provided hash. It ensures authentication is performed securely by
+    supporting multiple hashing algorithms and optional integrity protection (`auth-int`).
 
 .PARAMETER username
     The username extracted from the client's authentication request.
 
 .PARAMETER params
-    A hashtable containing digest authentication parameters, including:
-    - `username`: The username provided in the request.
-    - `realm`: The authentication realm.
-    - `nonce`: A unique server-generated nonce value.
-    - `uri`: The requested resource URI.
-    - `nc`: Nonce count (tracking the number of requests).
-    - `cnonce`: Client-generated nonce value.
-    - `qop`: Quality of protection value.
-    - `response`: The client's hashed response to be verified.
+    A hashtable containing Digest authentication parameters, including:
+    - `username`   : The username provided in the request.
+    - `realm`      : The authentication realm.
+    - `nonce`      : A unique server-generated nonce value.
+    - `uri`        : The requested resource URI.
+    - `nc`         : Nonce count (tracking the number of requests).
+    - `cnonce`     : Client-generated nonce value.
+    - `qop`        : Quality of Protection (`auth` or `auth-int`).
+    - `response`   : The client's computed response hash.
+    - `algorithm`  : The hashing algorithm used by the client.
 
 .PARAMETER result
     A hashtable containing the user data retrieved from the authentication source.
     This should include:
-    - `User`: The username.
-    - `Password`: The stored password or hash for verification.
+    - `User`      : The username.
+    - `Password`  : The stored password or hash for verification.
 
 .PARAMETER options
-    Additional options for authentication processing, if required.
+    A hashtable defining authentication options, including:
+    - `algorithm`           : The list of supported hashing algorithms (MD5, SHA-256, etc.).
+    - `QualityOfProtection` : The supported Quality of Protection values (`auth`, `auth-int`).
 
 .OUTPUTS
-    On successful validation, returns the user data with the password removed.
-    If authentication fails, returns an error response with a challenge and HTTP status code.
-
-.EXAMPLE
-    $params = @{
-        username = "morty"
-        realm    = "PodeRealm"
-        nonce    = "abc123"
-        uri      = "/protected"
-        nc       = "00000001"
-        cnonce   = "xyz456"
-        qop      = "auth"
-        response = "expected-client-hash"
-    }
-
-    $result = @{
-        User     = "morty"
-        Password = "pickle"
-    }
-
-    Get-PodeAuthDigestPostValidator -username "morty" -params $params -result $result -options $null
-
-    Returns:
-    @{'User'='morty'}
-
-.EXAMPLE
-    Get-PodeAuthDigestPostValidator -username "unknown" -params $params -result $null -options $null
-
-    Returns:
-    @{
-        Message   = "Invalid credentials"
-        Challenge = "Digest realm=\"PodeRealm\", error_description=\"Invalid credentials\""
-        Code      = 401
-    }
+    - Returns the user data (with the password removed) on successful authentication.
+    - Returns an error response with a Digest authentication challenge and HTTP status code
+      if authentication fails.
 
 .NOTES
-    This function performs digest authentication validation by:
-    - Generating an MD5 hash using the provided credentials and digest parameters.
-    - Comparing the computed hash with the client's provided response.
-    - Handling authentication failures by returning appropriate challenges.
+    This scriptblock ensures robust Digest authentication by:
+    - Supporting multiple hashing algorithms (MD5, SHA-1, SHA-256, SHA-512/256, etc.).
+    - Handling authentication with and without message integrity (`auth` vs `auth-int`).
+    - Verifying authentication by comparing the computed hash with the client's response.
 
-    Possible HTTP response codes:
-    - 401 Unauthorized: When credentials are missing, incorrect, or authentication fails.
+    **Behavior:**
+    - If the user is unknown or the password is missing, authentication fails with a `401 Unauthorized`.
+    - If the client selects an unsupported algorithm, authentication fails with `400 Bad Request`.
+    - If the computed response does not match the client’s hash, authentication fails with `401 Unauthorized`.
 
-    Digest authentication elements included:
-    - `qop="auth"`
-    - `algorithm="MD5"`
-    - `nonce="<generated_nonce>"`
+    **Digest Authentication Elements:**
+    - `qop="auth"`: Standard authentication (default).
+    - `qop="auth-int"`: Authentication with message integrity (includes request body hashing).
+    - `algorithm="MD5, SHA-256, SHA-512/256"`: Server-supported algorithms.
+    - `nonce="<generated_nonce>"`: Unique server nonce for replay protection.
 
 #>
-function Get-PodeAuthDigestPostValidator {
     return {
         param($username, $params, $result, $options)
 
@@ -944,7 +919,7 @@ function Get-PodeAuthDigestPostValidator {
             $message = 'Invalid credentials'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm ($options.algorithm -join ', ') -ErrorDescription $message)
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection -ErrorDescription $message)
                 Code      = 401
             }
         }
@@ -956,7 +931,7 @@ function Get-PodeAuthDigestPostValidator {
             $message = "Unsupported algorithm: $algorithm"
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm ($options.algorithm -join ', ') -ErrorDescription $message)
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection -ErrorDescription $message)
                 Code      = 400
             }
         }
@@ -973,10 +948,14 @@ function Get-PodeAuthDigestPostValidator {
 
         # Compute HA2 (handle `auth-int` case)
         if ($qop -eq 'auth-int') {
+            $entityBody = if ($null -eq $WebEvent.RawData) {
+                [string]::Empty
+            }
+            else {
+                $WebEvent.RawData
+            }
             # Retrieve and hash the entity body
-            $entityBody = [System.Text.Encoding]::UTF8.GetString($WebEvent.Body)
             $entityHash = ConvertTo-PodeDigestHash -Value $entityBody -Algorithm $algorithm
-
             # HA2 with auth-int
             $HA2 = ConvertTo-PodeDigestHash -Value "$($method):$($uri):$($entityHash)" -Algorithm $algorithm
         }
@@ -987,13 +966,12 @@ function Get-PodeAuthDigestPostValidator {
 
         # Compute final response hash
         $final = ConvertTo-PodeDigestHash -Value "$($HA1):$($params.nonce):$($params.nc):$($params.cnonce):$($qop):$($HA2)" -Algorithm $algorithm
-
         # Compare final hash to client response
         if ($final -ne $params.response) {
             $message = 'Invalid authentication response'
             return @{
                 Message   = $message
-                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm ($options.algorithm -join ', ') -ErrorDescription $message)
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection -ErrorDescription $message)
                 Code      = 401
             }
         }
@@ -2907,17 +2885,17 @@ function New-PodeAuthChallenge {
         [Parameter()]
         [string[]]
         $Algorithm = 'md5',
-        
+
         [Parameter()]
         [string[]]
-        $Qop='auth,auth-int'
+        $QualityOfProtection = 'auth'
 
     )
 
     $items = @()
 
     if (![string]::IsNullOrWhiteSpace($Nonce)) {
-        $items += "qop=`"$Qop`"", "algorithm=$Algorithm" , "nonce=`"$Nonce`""
+        $items += "qop=`"$QualityOfProtection`"", "algorithm=$Algorithm" , "nonce=`"$Nonce`""
     }
 
     if (($null -ne $Scopes) -and ($Scopes.Length -gt 0)) {

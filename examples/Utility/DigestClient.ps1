@@ -30,6 +30,7 @@ if (-not $wwwAuthHeader) {
     Write-Output "Digest authentication not supported by server!"
     exit
 }
+
 ## Extract Digest Authentication challenge values correctly
 $challenge = @{}
 
@@ -68,8 +69,6 @@ if ($wwwAuthHeader -match "^Digest ") {
 Write-Output "Extracted Digest Authentication Challenge:"
 $challenge | ForEach-Object { Write-Output "$($_.Key) = $($_.Value)" }
 
-
-
 # Display parsed challenge values
 $challenge
 
@@ -103,11 +102,11 @@ if ($algorithm -isnot [System.Array]) {
 # Select the strongest algorithm that both client and server support
 $algorithm = ($preferredAlgorithms | Where-Object { $algorithm -contains $_ } | Select-Object -First 1)
 
-
 if (-not $algorithm) {
-    Write-Output "No supported algorithms found! Server supports: $serverAlgorithms"
+    Write-Output "No supported algorithms found! Server supports: $algorithm"
     exit
 }
+
 # Step 2: Hashing functions
 function ConvertTo-Hash {
     param (
@@ -134,21 +133,33 @@ function ConvertTo-Hash {
 
 $nc = '00000001'  # Nonce Count
 $cnonce = (New-Guid).Guid.Substring(0, 8)  # Generate a random client nonce
-$method = 'GET'
-$uriPath = [System.Uri]$uri
-$uriPath = $uriPath.AbsolutePath  # Extract only "/users"
 
-# Compute HA1 (username:realm:password)
-$HA1 = ConvertTo-Hash -Value "$($username):$($realm):$($password)" -Algorithm $algorithm
-
-# Compute HA2 based on qop value
-if ($qop -eq "auth-int") {
-    # Sample request body (for example, a JSON payload)
-    $requestBody = '{ "test": "auth-int" }'  # Modify as needed
-    $entityBodyHash = ConvertTo-Hash -Value $requestBody -Algorithm $algorithm
-    $HA2 = ConvertTo-Hash -Value "$($method):$($uriPath):$($entityBodyHash)" -Algorithm $algorithm
+# <--- MODIFIED: Decide the method based on qop
+if ($qop -eq 'auth-int') {
+    $method = 'POST'  # Use POST for auth-int so we can send a body
 }
 else {
+    $method = 'GET'
+}
+Write-Output "Using method: $method"
+
+# Build the URI path
+$uriPath = [System.Uri]$uri
+$uriPath = $uriPath.AbsolutePath  # "/users"
+
+# Compute HA1
+$HA1 = ConvertTo-Hash -Value "$($username):$($realm):$($password)" -Algorithm $algorithm
+
+# <--- MODIFIED: Handle HA2 for auth-int
+if ($qop -eq "auth-int") {
+    # Sample request body
+    $requestBody =  '{ "test": "auth-int" }'
+    $entityBodyHash = ConvertTo-Hash -Value $requestBody -Algorithm $algorithm
+    $HA2 = ConvertTo-Hash -Value "$($method):$($uriPath):$($entityBodyHash)" -Algorithm $algorithm
+ 
+}
+else {
+    # Standard auth
     $HA2 = ConvertTo-Hash -Value "$($method):$($uriPath)" -Algorithm $algorithm
 }
 
@@ -160,11 +171,13 @@ $authHeader = @"
 Digest username="$username", realm="$realm", nonce="$nonce", uri="$uriPath", algorithm=$algorithm, response="$response", qop="$qop", nc=$nc, cnonce="$cnonce"
 "@
 
+Write-Output "Authorization Header: $authHeader"
+
 # Step 4: Send the authenticated request
-$authRequest = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+$authRequest = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::$method, $uri)
 $authRequest.Headers.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new('Digest', $authHeader)
 
-# Include the same request body in the request
+# <--- MODIFIED: If auth-int, attach the request body
 if ($qop -eq "auth-int") {
     $authRequest.Content = [System.Net.Http.StringContent]::new($requestBody, [System.Text.Encoding]::UTF8, "application/json")
 }
