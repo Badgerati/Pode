@@ -1,3 +1,71 @@
+<#
+.SYNOPSIS
+    PowerShell script to authenticate against a Pode server using Digest authentication.
+
+.DESCRIPTION
+    This script acts as a client to interact with a Pode server that requires Digest authentication.
+    It retrieves the server's `WWW-Authenticate` challenge, extracts required parameters, computes
+    the proper response hash, and sends an authenticated request.
+
+    - Supports multiple algorithms: `MD5`, `SHA-1`, `SHA-256`, `SHA-384`, `SHA-512`, `SHA-512/256`
+    - Handles both `auth` and `auth-int` Quality of Protection (QoP) modes.
+    - Ensures compatibility with Pode's built-in Digest authentication.
+    - Uses a preferred algorithm selection process based on security strength.
+
+    ⚠ **Windows Limitations:**
+    - Windows' built-in Digest authentication **only supports MD5**.
+    - Windows **fails** if multiple algorithms are presented in the `WWW-Authenticate` header.
+    - Windows **does not support `auth-int`** for Digest authentication.
+    - For alternative authentication handling, refer to Pode's `examples/Utilities/DigestClient.ps1`.
+
+.PARAMETER uri
+    The target server's URI requiring Digest authentication.
+
+.PARAMETER username
+    The username for authentication.
+
+.PARAMETER password
+    The corresponding password for authentication.
+
+.EXAMPLE
+    # Run the script against a Pode server
+    ./DigestClient.ps1
+
+.EXAMPLE
+    # Manually specify credentials
+    $uri = "http://localhost:8081/users"
+    $username = "morty"
+    $password = "pickle"
+    ./DigestClient.ps1 -uri $uri -username $username -password $password
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/utilities/DigestClient.ps1
+
+.NOTES
+    - **Digest Authentication Overview:**
+        - The script retrieves the authentication challenge from the server.
+        - It parses the `WWW-Authenticate` header to determine the `realm`, `nonce`, `qop`, and `algorithm`.
+        - The strongest supported algorithm is selected.
+        - The client computes HA1, HA2, and the final response hash based on the selected algorithm and QoP.
+        - The request is sent with the appropriate `Authorization` header.
+
+    - **Quality of Protection (QoP):**
+        - `"auth"`: Standard Digest authentication using `method:uri`.
+        - `"auth-int"`: Includes a hash of the request body for additional integrity protection.
+
+    - **Pode Compatibility:**
+        - Pode's `New-PodeAuthScheme -Digest` supports multiple algorithms beyond MD5.
+        - Pode's implementation supports `auth-int`, unlike Windows' built-in Digest authentication.
+
+    - **Security Considerations:**
+        - MD5 is insecure and should not be used in production.
+        - SHA-256 or stronger algorithms (`SHA-512/256`) are recommended.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 # Define the URI and credentials
 $uri = 'http://localhost:8081/users'
 $username = 'morty'
@@ -43,7 +111,7 @@ if ($wwwAuthHeader -match "^Digest ") {
 
     # 1) CAPTURE
     if ($headerContent -match "algorithm=((?:SHA-1|SHA-256|SHA-384|SHA-512(?:/256)?|MD5)(?:,\s*(?:SHA-1|SHA-256|SHA-384|SHA-512(?:/256)?|MD5))*)") {
-  
+
         $algorithms = ($matches[1] -split '\s*,\s*')
         Write-Output "Supported Algorithms: $algorithms"
         $challenge["algorithm"] = $algorithms
@@ -55,7 +123,7 @@ if ($wwwAuthHeader -match "^Digest ") {
     # 3) CLEAN UP ANY EXTRA COMMAS/WHITESPACE
     $headerContent = $headerContent -replace ",\s*,", ","
     $headerContent = $headerContent -replace "^\s*,", ""
-     
+
     # Now split the rest of the parameters safely
     $headerContent -split ', ' | ForEach-Object {
         $key, $value = $_ -split '=', 2
@@ -79,7 +147,7 @@ $qop = $challenge['qop']
 $algorithm = $challenge['algorithm']
 
 # Ensure qop is an array
-$qopOptions = $qop -split '\s*,\s*' 
+$qopOptions = $qop -split '\s*,\s*'
 
 # Choose 'auth-int' if available, otherwise fallback to 'auth'
 if ($qopOptions -contains "auth-int") {
@@ -156,7 +224,7 @@ if ($qop -eq "auth-int") {
     $requestBody =  '{ "test": "auth-int" }'
     $entityBodyHash = ConvertTo-Hash -Value $requestBody -Algorithm $algorithm
     $HA2 = ConvertTo-Hash -Value "$($method):$($uriPath):$($entityBodyHash)" -Algorithm $algorithm
- 
+
 }
 else {
     # Standard auth

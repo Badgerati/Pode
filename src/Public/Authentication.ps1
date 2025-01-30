@@ -1,126 +1,195 @@
 <#
 .SYNOPSIS
-Create a new type of Authentication scheme.
+    Creates a new authentication scheme in Pode.
 
 .DESCRIPTION
-Create a new type of Authentication scheme, which is used to parse the Request for user credentials for validating.
+    The `New-PodeAuthScheme` function defines different types of authentication schemes
+    (Basic, Digest, OAuth2, API Key, etc.) that Pode can use to authenticate incoming
+    requests. It allows configuring various authentication mechanisms, such as
+    credential-based authentication, token authentication, and certificate-based authentication.
 
 .PARAMETER Basic
-If supplied, will use the inbuilt Basic Authentication credentials retriever.
+    Enables Basic Authentication using the `Authorization` header with `Base64(username:password)` encoding.
 
 .PARAMETER Encoding
-The Encoding to use when decoding the Basic Authorization header.
+    Specifies the encoding for decoding the Basic Authentication header.
+    Default: `ISO-8859-1`.
 
 .PARAMETER HeaderTag
-The Tag name used in the Authorization header, ie: Basic, Bearer, Digest.
+    Defines the tag used in the `Authorization` header (e.g., `Basic`, `Bearer`, `Digest`).
 
 .PARAMETER Form
-If supplied, will use the inbuilt Form Authentication credentials retriever.
+    Enables Form-based authentication, allowing credentials to be retrieved from request payloads.
 
 .PARAMETER UsernameField
-The name of the Username Field in the payload to retrieve the username.
+    Specifies the key name for the username in Form authentication payloads.
+    Default: `username`.
 
 .PARAMETER PasswordField
-The name of the Password Field in the payload to retrieve the password.
+    Specifies the key name for the password in Form authentication payloads.
+    Default: `password`.
 
 .PARAMETER Custom
-If supplied, will allow you to create a Custom Authentication credentials retriever.
+    Enables a custom authentication scheme where the validation logic is implemented
+    using a custom ScriptBlock.
 
 .PARAMETER ScriptBlock
-The ScriptBlock is used to parse the request and retieve user credentials and other information.
+    A ScriptBlock that defines custom authentication logic for processing incoming requests.
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Custom Authentication type's ScriptBlock.
+    A hashtable of additional arguments that can be passed to the custom ScriptBlock.
 
 .PARAMETER Name
-The Name of an Authentication type - such as Basic or NTLM.
+    The name of the custom authentication scheme.
 
 .PARAMETER Description
-A short description for security scheme. CommonMark syntax MAY be used for rich text representation
+    A short description of the authentication scheme, with optional CommonMark syntax
+    for rich text representation.
 
 .PARAMETER Realm
-The name of scope of the protected area.
+    The authentication realm for the protected area.
 
 .PARAMETER Type
-The scheme type for custom Authentication types. Default is HTTP.
+    The authentication type for custom schemes. Default: `HTTP`.
+    Valid options: `ApiKey`, `Http`, `OAuth2`, `OpenIdConnect`.
 
 .PARAMETER Middleware
-An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
+    An array of optional Middleware ScriptBlocks to be executed before the authentication process.
 
 .PARAMETER PostValidator
-The PostValidator is a scriptblock that is invoked after user validation.
+    A script block that runs after user validation to perform additional checks or transformations.
 
 .PARAMETER Digest
-If supplied, will use the inbuilt Digest Authentication credentials retriever.
+    Enables Digest Authentication, which secures credentials by hashing them before transmission.
+
+.PARAMETER Algorithm
+    Specifies the hashing algorithm(s) for Digest Authentication.
+    Supported: `MD5`, `SHA-1`, `SHA-256`, `SHA-512`, `SHA-384`, `SHA-512/256`.
+    Default: `MD5`.
+
+.PARAMETER QualityOfProtection
+    Defines the Quality of Protection (QoP) level for Digest Authentication.
+    Options: `auth`, `auth-int`, `auth,auth-int`.
+    Default: `auth` .
 
 .PARAMETER Bearer
-If supplied, will use the inbuilt Bearer Authentication token retriever.
+    Enables Bearer Authentication, commonly used for OAuth2/JWT-based authentication.
 
 .PARAMETER ClientCertificate
-If supplied, will use the inbuilt Client Certificate Authentication scheme.
+    Enables authentication using client certificates.
 
 .PARAMETER ClientId
-The Application ID generated when registering a new app for OAuth2.
+    Specifies the Client ID for OAuth2 authentication (required for OAuth2 flows).
 
 .PARAMETER ClientSecret
-The Application Secret generated when registering a new app for OAuth2 (this is optional when using PKCE).
+    The OAuth2 Client Secret. This is required unless using PKCE.
 
 .PARAMETER RedirectUrl
-An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
+    Specifies the OAuth2 Redirect URL (default: `<host>/oauth2/callback`).
 
 .PARAMETER AuthoriseUrl
-The OAuth2 Authorisation URL to authenticate a User. This is optional if you're using an InnerScheme like Basic/Form.
+    Defines the OAuth2 authorization URL for user authentication.
 
 .PARAMETER TokenUrl
-The OAuth2 Token URL to acquire an access token.
+    Specifies the OAuth2 token endpoint URL for retrieving access tokens.
 
 .PARAMETER UserUrl
-An optional User profile URL to retrieve a user's details - for OAuth2
+    Optional URL to retrieve user profile details from the OAuth2 provider.
 
 .PARAMETER UserUrlMethod
-An optional HTTP method to use when calling the User profile URL - for OAuth2 (Default: Post)
+    The HTTP method used when calling the OAuth2 user profile URL.
+    Default: `POST`.
 
 .PARAMETER CodeChallengeMethod
-An optional method for sending a PKCE code challenge when calling the Authorise URL - for OAuth2 (Default: S256)
+    The method for sending a PKCE code challenge during OAuth2 authorization.
+    Default: `S256`.
 
 .PARAMETER UsePKCE
-If supplied, OAuth2 authentication will use PKCE code verifiers - for OAuth2
+    If specified, OAuth2 authentication will use PKCE (Proof Key for Code Exchange).
 
 .PARAMETER OAuth2
-If supplied, will use the inbuilt OAuth2 Authentication scheme.
+    Enables OAuth2 authentication for handling authorization flows.
 
 .PARAMETER Scope
-An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-sensitive)
+    Specifies an array of scopes for Bearer/OAuth2 authentication (case-sensitive).
 
 .PARAMETER ApiKey
-If supplied, will use the inbuilt API key Authentication scheme.
+    Enables API Key authentication, allowing keys to be passed in headers, query parameters, or cookies.
 
 .PARAMETER Location
-The Location to find an API key: Header, Query, or Cookie. (Default: Header)
+    Defines where to look for the API key (`Header`, `Query`, or `Cookie`).
+    Default: `Header`.
 
 .PARAMETER LocationName
-The Name of the Header, Query, or Cookie to find an API key. (Default depends on Location. Header/Cookie: X-API-KEY, Query: api_key)
+    Specifies the key name to retrieve the API key from (`X-API-KEY`, `api_key`, etc.).
 
 .PARAMETER InnerScheme
-An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
+    Defines an optional nested authentication scheme that will run before this scheme.
 
 .PARAMETER AsCredential
-If supplied, username/password credentials for Basic/Form authentication will instead be supplied as a pscredential object.
+    If enabled, username/password credentials for Basic/Form authentication
+    will be provided as a `pscredential` object instead of plain text.
 
 .PARAMETER AsJWT
-If supplied, the token/key supplied for Bearer/API key authentication will be parsed as a JWT, and the payload supplied instead.
+    If enabled, the token or API key for Bearer/API Key authentication
+    will be parsed as a JWT, and the payload will be extracted.
 
 .PARAMETER Secret
-An optional Secret, used to sign/verify JWT signatures.
+    A secret key used to sign or verify JWT signatures for Bearer/API Key authentication.
 
 .EXAMPLE
-$basic_auth = New-PodeAuthScheme -Basic
+    # Create a Basic Authentication scheme
+    $basic_auth = New-PodeAuthScheme -Basic
 
 .EXAMPLE
-$form_auth = New-PodeAuthScheme -Form -UsernameField 'Email'
+    # Create a Form Authentication scheme with a custom username field
+    $form_auth = New-PodeAuthScheme -Form -UsernameField 'Email'
 
 .EXAMPLE
-$custom_auth = New-PodeAuthScheme -Custom -ScriptBlock { /* logic */ }
+    # Create a Digest Authentication scheme supporting SHA-256 and auth-int QoP
+    $digest_auth = New-PodeAuthScheme -Digest -Algorithm 'SHA-256' -QualityOfProtection 'auth-int'
+
+.EXAMPLE
+    # Create a Bearer Authentication scheme for OAuth2
+    $oauth_auth = New-PodeAuthScheme -OAuth2 -ClientId 'abc123' -TokenUrl 'https://auth.example.com/token' -AuthoriseUrl 'https://auth.example.com/auth'
+
+.EXAMPLE
+    # Create an API Key Authentication scheme, passing the key in the query string
+    $api_auth = New-PodeAuthScheme -ApiKey -Location 'Query' -LocationName 'api_key'
+
+.EXAMPLE
+    # Create a custom authentication scheme
+    $custom_auth = New-PodeAuthScheme -Custom -Name 'MyAuth' -ScriptBlock { param($req) return @{ User = "custom-user" } }
+
+.NOTES
+    **Authentication Types Supported:**
+    - `Basic` (username/password over HTTP)
+    - `Digest` (MD5/SHA-based authentication with QoP)
+    - `OAuth2` (Bearer token-based authentication)
+    - `ApiKey` (Key-based authentication via headers, query parameters, or cookies)
+    - `ClientCertificate` (Mutual TLS authentication)
+    - `Custom` (ScriptBlock-defined authentication logic)
+
+    **Digest Authentication Notes:**
+    - `MD5` is supported for legacy compatibility but is **not recommended** for security reasons.
+    - Use `SHA-256` or `SHA-512/256` for stronger security.
+    - `auth-int` should be used when message integrity verification is required.
+    - **Windows Limitations:** Windows' built-in Digest authentication **only supports MD5** and **fails if multiple algorithms are listed** in the `WWW-Authenticate` header.
+        Additionally, `auth-int` is **not supported**.
+        However, you can implement custom Digest authentication using Pode; see `./examples/utilities/DigestClient.ps1` for an example.
+
+    **OAuth2 Notes:**
+    - PKCE is recommended for security (use `-UsePKCE`).
+    - `InnerScheme` can be used for hybrid authentication (e.g., Basic + OAuth2).
+    - The `Secret` parameter is required unless using PKCE.
+
+    **API Key Notes:**
+    - The default location for API keys is `Header`, using `X-API-KEY`.
+    - The key can be extracted from headers, query parameters, or cookies.
+
+    **JWT Handling:**
+    - If `-AsJWT` is enabled, Pode will automatically parse JWTs and extract claims.
+    - A `Secret` must be supplied for signed JWT verification.
 #>
 function New-PodeAuthScheme {
     [CmdletBinding(DefaultParameterSetName = 'Basic')]
