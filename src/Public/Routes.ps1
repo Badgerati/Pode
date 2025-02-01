@@ -89,6 +89,9 @@ Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (Get-PodeC
 Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
+Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -FilePath '/route.ps1'
+
+.EXAMPLE
 Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -TransferEncoding gzip -ScriptBlock { /* logic */ }
 
 .EXAMPLE
