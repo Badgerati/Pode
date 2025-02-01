@@ -645,3 +645,42 @@ function Use-PodeMiddleware {
 
     Use-PodeFolder -Path $Path -DefaultPath 'middleware'
 }
+
+
+
+<#
+.SYNOPSIS
+    Checks if a specific middleware is registered in the Pode server.
+
+.DESCRIPTION
+    This function verifies whether a middleware with the specified name is registered in the Pode server by checking the `PodeContext.Server.Middleware` collection.
+    It returns `$true` if the middleware exists, otherwise it returns `$false`.
+
+.PARAMETER Name
+    The name of the middleware to check for.
+
+.OUTPUTS
+    [boolean]
+        Returns $true if the middleware with the specified name is found, otherwise returns $false.
+
+.EXAMPLE
+    Test-PodeMiddleware -Name 'BlockEverything'
+
+    This command checks if a middleware named 'BlockEverything' is registered in the Pode server.
+#>
+function Test-PodeMiddleware {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    # Check if the middleware exists
+    foreach ($middleware in $PodeContext.Server.Middleware) {
+        if ($middleware.Name -ieq $Name) {
+            return $true
+        }
+    }
+
+    return $false
+}
