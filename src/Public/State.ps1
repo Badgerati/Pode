@@ -61,12 +61,11 @@ function Set-PodeState {
         if ($pipelineValue.Count -gt 1) {
             $Value = $pipelineValue
         }
-
-        $PodeContext.Server.State[$Name] = @{
-            Value = $Value
-            Scope = $Scope
-        }
-
+        #Wait-Debugger
+        $PodeContext.Server.State[$Name] = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+        $PodeContext.Server.State[$Name].Value = $Value
+        $PodeContext.Server.State[$Name].Scope = $Scope
+        write-podehost $PodeContext.Server.State[$Name]  -Explode -ShowType
         return $Value
     }
 }
@@ -144,7 +143,6 @@ function Get-PodeStateNames {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        # Pode has not been initialized
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
@@ -152,12 +150,12 @@ function Get-PodeStateNames {
         $Scope = @()
     }
 
-    $tempState = $PodeContext.Server.State.Clone()
-    $keys = $tempState.Keys
+    # Directly retrieve the keys from the ConcurrentDictionary
+    $keys = $PodeContext.Server.State.Keys
 
     if ($Scope.Length -gt 0) {
         $keys = @(foreach ($key in $keys) {
-                if ($tempState[$key].Scope -iin $Scope) {
+                if ($PodeContext.Server.State.ContainsKey($key) -and ($PodeContext.Server.State[$key].Scope -iin $Scope)) {
                     $key
                 }
             })
@@ -174,6 +172,7 @@ function Get-PodeStateNames {
     return $keys
 }
 
+
 <#
 .SYNOPSIS
 Removes some state object from the shared state.
@@ -189,22 +188,29 @@ Remove-PodeState -Name 'Data'
 #>
 function Remove-PodeState {
     [CmdletBinding()]
-    [OutputType([object])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
 
-    if ($null -eq $PodeContext.Server.State) {
+    if ($null -eq $PodeContext -or $null -eq $PodeContext.Server -or $null -eq $PodeContext.Server.State) {
         # Pode has not been initialized
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
-    $value = $PodeContext.Server.State[$Name].Value
-    $null = $PodeContext.Server.State.Remove($Name)
-    return $value
+    # ConcurrentDictionary requires TryRemove to remove and retrieve the value
+    $removedValue = $null
+    $removed = $PodeContext.Server.State.TryRemove($Name, [ref]$removedValue)
+
+    if ($removed) {
+        return $removedValue
+    }
+
+    # If not removed (key didn't exist), return $null
+    return $null
 }
+
 
 <#
 .SYNOPSIS
@@ -265,68 +271,84 @@ function Save-PodeState {
 
         [switch]
         $Compress
+
     )
 
-    # error if attempting to use outside of the pode server
-    if ($null -eq $PodeContext.Server.State) {
-        # Pode has not been initialized
+    # Error if attempting to use outside of a running Pode server
+    if ($null -eq $PodeContext -or
+        $null -eq $PodeContext.Server -or
+        $null -eq $PodeContext.Server.State) {
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
-    # get the full path to save the state
+    # Convert relative path to absolute
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+    write-podehost "Path=$Path"
+    # Create a shallow copy of the current ConcurrentDictionary
+    $state = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+    foreach ($kvp in $PodeContext.Server.State.GetEnumerator()) {
+        $null = $state.TryAdd($kvp.Key, $kvp.Value)
+    }
 
-    # contruct the state to save (excludes, etc)
-    $state = $PodeContext.Server.State.Clone()
-
-    # scopes
+    #------------------------------------------------------------------------------
+    # Filter by Scope
+    #------------------------------------------------------------------------------
     if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
-        foreach ($_key in $state.Clone().Keys) {
-            # remove if no scope
-            if (($null -eq $state[$_key].Scope) -or ($state[$_key].Scope.Length -eq 0)) {
-                $null = $state.Remove($_key)
-                continue
-            }
+        $keys = $state.Keys
+        foreach ($key in $keys) {
+            # Ensure the key still exists (another thread might have removed it)
+            if ($state.ContainsKey($key)) {
+                $value = $state[$key]
 
-            # check scopes (only remove if none match)
-            $found = $false
+                # If there's no Scope property, or it has no entries, remove
+                if (($null -eq $value.Scope) -or ($value.Scope.Count -eq 0)) {
+                    $null = $state.TryRemove($key, [ref]$null)
+                    continue
+                }
 
-            foreach ($_scope in $state[$_key].Scope) {
-                if ($Scope -icontains $_scope) {
-                    $found = $true
-                    break
+                # Check for any matching scope
+                $found = $false
+                foreach ($item in $value.Scope) {
+                    if ($Scope -icontains $item) {
+                        $found = $true
+                        break
+                    }
+                }
+
+                # Remove if no scope matched
+                if (!$found) {
+                    $null = $state.TryRemove($key, [ref]$null)
                 }
             }
-
-            if ($found) {
-                continue
-            }
-
-            # none matched, remove
-            $null = $state.Remove($_key)
         }
     }
-
-    # include keys
+    #------------------------------------------------------------------------------
+    # Include Keys
+    #------------------------------------------------------------------------------
     if (($null -ne $Include) -and ($Include.Length -gt 0)) {
-        foreach ($_key in $state.Clone().Keys) {
-            if ($Include -inotcontains $_key) {
-                $null = $state.Remove($_key)
+        $keys = $state.Keys
+        foreach ($key in $keys) {
+            if ($Include -inotcontains $key) {
+                $null = $state.TryRemove($key, [ref]$null)
             }
         }
     }
 
-    # exclude keys
+    #------------------------------------------------------------------------------
+    # Exclude Keys
+    #------------------------------------------------------------------------------
     if (($null -ne $Exclude) -and ($Exclude.Length -gt 0)) {
-        foreach ($_key in $state.Clone().Keys) {
-            if ($Exclude -icontains $_key) {
-                $null = $state.Remove($_key)
+        $keys = $state.Keys
+        foreach ($key in $keys) {
+            if ($Exclude -icontains $key) {
+                $null = $state.TryRemove($key, [ref]$null)
             }
         }
     }
 
-    # save the state
-    $null = ConvertTo-Json -InputObject $state -Depth $Depth -Compress:$Compress | Out-File -FilePath $Path -Force
+    $null = ConvertTo-Json -InputObject $state -Depth $Depth -Compress:$Compress |
+        Out-File -FilePath $Path -Force
+
 }
 
 <#
@@ -373,12 +395,19 @@ function Restore-PodeState {
     if (!(Test-Path $Path)) {
         return
     }
+    $state = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+
+    $null = ConvertTo-Json -InputObject $state -Depth $Depth -Compress:$Compress |
+        Out-File -FilePath $Path -Force
+
 
     # restore the state from file
-    $state = @{}
 
     if (Test-PodeIsPSCore) {
-        $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth $Depth)
+        $props = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth $Depth)
+        foreach ($key in $props.Keys) {
+            $state[$key] = $props[$key]
+        }
     }
     else {
         $props = (Get-Content $Path -Force | ConvertFrom-Json).psobject.properties
@@ -387,9 +416,10 @@ function Restore-PodeState {
         }
     }
 
+    write-podehost 'restore'
     # check for no scopes, and add for backwards compat
     $convert = $false
-    foreach ($_key in $state.Clone().Keys) {
+    foreach ($_key in $state.Keys) {
         if ($null -eq $state[$_key].Scope) {
             $convert = $true
             break
@@ -412,7 +442,7 @@ function Restore-PodeState {
         }
     }
     else {
-        $PodeContext.Server.State = $state.Clone()
+        $PodeContext.Server.State = $state
     }
 }
 
@@ -444,4 +474,113 @@ function Test-PodeState {
     }
 
     return $PodeContext.Server.State.ContainsKey($Name)
+}
+
+
+<#
+.SYNOPSIS
+    Deserializes JSON from ConvertTo-PodeCustomDictionaryJson back into the original dictionary type.
+
+.DESCRIPTION
+    Reads the JSON, checks the "Type" property, and constructs either a Hashtable or
+    ConcurrentDictionary. Then populates it with all the Items (key-value pairs).
+
+.PARAMETER Json
+    A JSON string or file content containing "Type" and "Items".
+
+.OUTPUTS
+    [Hashtable] or [System.Collections.Concurrent.ConcurrentDictionary[string, object]]
+#>
+function ConvertFrom-PodeCustomDictionaryJson {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Json
+    )
+
+    # Parse JSON
+    $wrapper = $Json | ConvertFrom-Json
+
+    # Check "Type" property
+    switch ($wrapper.Type) {
+        'Hashtable' {
+            $dict = @{}
+        }
+        'ConcurrentDictionary' {
+            $dict = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+        }
+        Default {
+            throw "Unknown dictionary type in JSON: $($wrapper.Type)"
+        }
+    }
+
+    # Re-populate
+    foreach ($item in $wrapper.Items) {
+        $key = $item.Key
+        $value = $item.Value
+
+        if ($dict -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]]) {
+            $null = $dict.TryAdd($key, $value)
+        }
+        else {
+            $dict[$key] = $value
+        }
+    }
+
+    return $dict
+}
+
+<#
+.SYNOPSIS
+    Serializes either a Hashtable or ConcurrentDictionary to JSON, preserving which type it was.
+
+.DESCRIPTION
+    This function checks the .NET type of the supplied object. If it's a [Hashtable] or
+    [System.Collections.Concurrent.ConcurrentDictionary], it serializes the data (keys + values)
+    and a "Type" property that indicates which dictionary you had. Otherwise, it throws.
+
+.PARAMETER Dictionary
+    The hashtable or concurrent dictionary to serialize.
+
+.OUTPUTS
+    [string] (JSON)
+#>
+function ConvertTo-PodeCustomDictionaryJson {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [object]$Dictionary
+    )
+
+    # Identify the dictionary type
+    $dictType = $Dictionary.GetType().FullName
+    switch ($dictType) {
+        'System.Collections.Hashtable' {
+            $typeIndicator = 'Hashtable'
+        }
+        'System.Collections.Concurrent.ConcurrentDictionary`2[[System.String],[System.Object]]' {
+            $typeIndicator = 'ConcurrentDictionary'
+        }
+        Default {
+            throw "Unsupported dictionary type: $dictType"
+        }
+    }
+
+    # Build an array of {Key, Value} objects
+    $items = @()
+    foreach ($key in $Dictionary.Keys) {
+        $items += [PSCustomObject]@{
+            Key   = $key
+            Value = $Dictionary[$key]
+        }
+    }
+
+    # Build a wrapper object with Type + Items
+    $wrapper = [PSCustomObject]@{
+        'Type'  = $typeIndicator
+        'Items' = $items
+    }
+
+    # Convert to JSON
+    return $wrapper | ConvertTo-Json -Depth 50
 }

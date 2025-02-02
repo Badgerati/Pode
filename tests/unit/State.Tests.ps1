@@ -27,10 +27,10 @@ Describe 'Set-PodeState' {
 
     It 'Sets by pipe and returns an object array' {
         $PodeContext.Server = @{ 'State' = @{} }
-        $result =  @(7,3,4)|Set-PodeState -Name 'test'
+        $result = @(7, 3, 4) | Set-PodeState -Name 'test'
 
-        $result | Should -Be @(7,3,4)
-        $PodeContext.Server.State['test'].Value | Should -Be @(7,3,4)
+        $result | Should -Be @(7, 3, 4)
+        $PodeContext.Server.State['test'].Value | Should -Be @(7, 3, 4)
         $PodeContext.Server.State['test'].Scope | Should -Be @()
     }
 }
@@ -135,5 +135,141 @@ Describe 'Test-PodeState' {
         $PodeContext.Server = @{ 'State' = @{} }
         Set-PodeState -Name 'test' -Value 8
         Test-PodeState -Name 'tests' | Should -Be $false
+    }
+}
+
+# Get-PodeStateNames.Tests.ps1
+# Pester 5 test script for Get-PodeStateNames
+
+# If your function is in a separate file, dot-source it. Adjust the path as needed:
+# . "$PSScriptRoot\..\Functions\Get-PodeStateNames.ps1"
+
+Describe 'Get-PodeStateNames' -Tags 'Unit', 'Pode' {
+    BeforeAll {
+        # Mocking up $PodeLocale and $PodeContext to simulate Pode's environment.
+        $PodeLocale = @{
+            podeNotInitializedExceptionMessage = 'Pode has not been initialized.'
+        }
+
+        $PodeContext = @{
+            Server = @{
+                State = $null
+            }
+        }
+
+        # Define (or dot-source) the function here if not already loaded:
+        function Get-PodeStateNames {
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
+            [CmdletBinding()]
+            param(
+                [Parameter()]
+                [string]
+                $Pattern,
+
+                [Parameter()]
+                [string[]]
+                $Scope
+            )
+
+            if ($null -eq $PodeContext.Server.State) {
+                throw ($PodeLocale.podeNotInitializedExceptionMessage)
+            }
+
+            if ($null -eq $Scope) {
+                $Scope = @()
+            }
+
+            $keys = $PodeContext.Server.State.Keys
+
+            if ($Scope.Length -gt 0) {
+                $keys = @(
+                    foreach ($key in $keys) {
+                        if ($PodeContext.Server.State.ContainsKey($key)) {
+                            $scopeValue = $PodeContext.Server.State[$key]['Scope']
+                            if ($scopeValue -is [string] -and ($scopeValue -iin $Scope)) {
+                                $key
+                            }
+                        }
+                    }
+                )
+            }
+
+            if (![string]::IsNullOrWhiteSpace($Pattern)) {
+                $keys = @(
+                    foreach ($key in $keys) {
+                        if ($key -imatch $Pattern) {
+                            $key
+                        }
+                    }
+                )
+            }
+
+            return $keys
+        }
+    }
+
+    Context 'When PodeContext.Server.State is $null' {
+        It 'Throws an exception if state is null' {
+            { Get-PodeStateNames } | Should -Throw 'Pode has not been initialized.'
+        }
+    }
+
+    Context 'When PodeContext.Server.State is a valid ConcurrentDictionary' {
+        BeforeEach {
+            # Initialize the thread-safe dictionary before each test
+            $PodeContext.Server.State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+
+            # For each key, store another ConcurrentDictionary with "Scope" and "Data"
+            # Key1 -> { Scope = 'Test1'; Data = 'Value1' }
+            # Key2 -> { Scope = 'Test2'; Data = 'Value2' }
+            # SpecialKey -> { Scope = 'Test1'; Data = 'SpecialValue' }
+
+            $cd1 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+            $cd1['Scope'] = 'Test1'
+            $cd1['Data'] = 'Value1'
+            $null = $PodeContext.Server.State.TryAdd('Key1', $cd1)
+
+            $cd2 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+            $cd2['Scope'] = 'Test2'
+            $cd2['Data'] = 'Value2'
+            $null = $PodeContext.Server.State.TryAdd('Key2', $cd2)
+
+            $cd3 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+            $cd3['Scope'] = 'Test1'
+            $cd3['Data'] = 'SpecialValue'
+            $null = $PodeContext.Server.State.TryAdd('SpecialKey', $cd3)
+        }
+
+        It 'Returns all keys if no scope or pattern is specified' {
+            $keys = Get-PodeStateNames
+            $keys | Should -Contain 'Key1'
+            $keys | Should -Contain 'Key2'
+            $keys | Should -Contain 'SpecialKey'
+            $keys.Count | Should -Be 3
+        }
+
+        It 'Filters by scope correctly' {
+            $keys = Get-PodeStateNames -Scope 'Test1'
+            $keys.Count | Should -Be 2
+            $keys | Should -Contain 'Key1'
+            $keys | Should -Contain 'SpecialKey'
+            $keys | Should -Not -Contain 'Key2'
+        }
+
+        It 'Filters by pattern correctly' {
+            # Pattern to match "Key\d" (e.g. Key1, Key2)
+            $keys = Get-PodeStateNames -Pattern 'Key\d'
+            $keys.Count | Should -Be 2
+            $keys | Should -Contain 'Key1'
+            $keys | Should -Contain 'Key2'
+            $keys | Should -Not -Contain 'SpecialKey'
+        }
+
+        It 'Filters by both scope and pattern' {
+            # e.g. Scope = 'Test1', Pattern = 'Special'
+            $keys = Get-PodeStateNames -Scope 'Test1' -Pattern 'Special'
+            $keys.Count | Should -Be 1
+            $keys | Should -Contain 'SpecialKey'
+        }
     }
 }

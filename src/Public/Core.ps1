@@ -273,7 +273,7 @@ function Start-PodeServer {
 
             # Create main context object
             $PodeContext = New-PodeContext @ContextParams
-
+write-podehost $PodeContext.Server.State -Explode -ShowType
             # Define parameter values with comments explaining each one
             $ConfigParameters = @{
                 DisableTermination  = $DisableTermination   # Disable termination of the Pode server from the console

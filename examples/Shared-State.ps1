@@ -46,7 +46,7 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # re-initialise the state
-    Restore-PodeState -Path './state.json'
+    Restore-PodeState -Path './state.xml'
 
     # initialise if there was no file
     if ($null -eq ($hash = (Get-PodeState -Name 'hash1'))) {
@@ -66,38 +66,39 @@ Start-PodeServer {
     # create timer to update a hashtable and make it globally accessible
     Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
         $hash = $null
-
-        Lock-PodeObject -ScriptBlock {
+     #   Wait-Debugger
+        write-podehost $PodeContext.Server.State  -Explode -ShowType
+      #  Lock-PodeObject -ScriptBlock {
             $hash = (Get-PodeState -Name 'hash1')
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
-            Save-PodeState -Path './state.json' -Scope Scope1 #-Exclude 'hash1'
-        }
+            Save-PodeState -Path './state.xml' -Scope Scope1 #-Exclude 'hash1'
+   #     }
 
-        Lock-PodeObject -ScriptBlock {
+     #   Lock-PodeObject -ScriptBlock {
             $state:hash3.values += (Get-Random -Minimum 0 -Maximum 10)
-        }
+     #   }
     }
 
     # route to retrieve and return the value of the hashtable from global state
     Add-PodeRoute -Method Get -Path '/array' -ScriptBlock {
-        Lock-PodeObject -ScriptBlock {
+     #   Lock-PodeObject -ScriptBlock {
             $hash = (Get-PodeState 'hash1')
             Write-PodeJsonResponse -Value $hash
-        }
+    #    }
     }
 
     Add-PodeRoute -Method Get -Path '/array3' -ScriptBlock {
-        Lock-PodeObject -ScriptBlock {
+     #   Lock-PodeObject -ScriptBlock {
             Write-PodeJsonResponse -Value $state:hash3
-        }
+   #     }
     }
 
     # route to remove the hashtable from global state
     Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
-        Lock-PodeObject -ScriptBlock {
-            $hash = (Set-PodeState -Name 'hash1' -Value @{})
-            $hash.values = @()
-        }
+     #   Lock-PodeObject -ScriptBlock {
+            $hash = (Set-PodeState -Name 'hash1' -Value @{values = @()}  -Scope Scope0, Scope1 )
+
+  #      }
     }
 
 }
