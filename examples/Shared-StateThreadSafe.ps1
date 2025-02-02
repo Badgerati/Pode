@@ -75,7 +75,7 @@ Start-PodeServer {
         $hash = (Get-PodeState -Name 'hash1')
         $hash.values += (Get-Random -Minimum 0 -Maximum 10)
         Save-PodeState -Path './state.json' -Scope Scope1 #-Exclude 'hash1'
-        
+
         # Lock-PodeObject  Is not required because of Set-PodeState -Threadsafe
         # because of the ordered threadsafe PodeOrderedConcurrentDictionary
         # `$hash3.values +=` doesn't work if you are using keys named 'keys' or 'values' use the [] form
@@ -97,7 +97,7 @@ Start-PodeServer {
     # route to remove the hashtable from global state
     Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
         # Lock-PodeObject  Is not required because of Set-PodeState -Threadsafe
-        $hash = (Set-PodeState -Name 'hash1' -Value @{})
+        $hash = (Set-PodeState -Name 'hash1' -Value @{} -Scope Scope0, Scope1)
         $hash.values = @()
     }
 

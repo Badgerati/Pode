@@ -96,7 +96,7 @@ Start-PodeServer {
     # route to remove the hashtable from global state
     Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
         Lock-PodeObject -ScriptBlock {
-            $hash = (Set-PodeState -Name 'hash1' -Value @{})
+            $hash = (Set-PodeState -Name 'hash1' -Value @{} -Scope Scope0, Scope1)
             $hash.values = @()
         }
     }
