@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = 'عرض OpenAPI'
     enableQuietModeMessage                                            = 'تمكين الوضع الصامت'
     disableQuietModeMessage                                           = 'تعطيل الوضع الصامت'
+    invalidPodeStateFormatExceptionMessage = 'ملف PodeState "{0}" يحتوي على تنسيق غير صالح. كان متوقعًا هيكل يشبه القاموس (ConcurrentDictionary أو Hashtable أو OrderedDictionary)، ولكن تم العثور على [{1}]. يرجى التحقق من محتوى الملف أو إعادة تهيئة الحالة.'
 }

@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = '显示OpenAPI'
     enableQuietModeMessage                                            = '启用安静模式'
     disableQuietModeMessage                                           = '禁用安静模式'
+    invalidPodeStateFormatExceptionMessage                            = 'PodeState 文件 "{0}" 的格式无效。预期为类似字典的结构 (ConcurrentDictionary、Hashtable 或 OrderedDictionary)，但发现 [{1}]。请验证文件内容或重新初始化状态。'
 }

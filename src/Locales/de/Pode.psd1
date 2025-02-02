@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = 'OpenAPI anzeigen'
     enableQuietModeMessage                                            = 'Leisemodus aktivieren'
     disableQuietModeMessage                                           = 'Leisemodus deaktivieren'
+    invalidPodeStateFormatExceptionMessage                            = 'Die PodeState-Datei "{0}" enthält ein ungültiges Format. Erwartet wurde eine Dictionary-ähnliche Struktur (ConcurrentDictionary, Hashtable oder OrderedDictionary), aber gefunden wurde [{1}]. Bitte überprüfen Sie den Dateiinhalt oder initialisieren Sie den Zustand neu.'
 }

@@ -50,8 +50,9 @@ Start-PodeServer {
 
     # initialise if there was no file
     if ($null -eq ($hash = (Get-PodeState -Name 'hash1'))) {
-        $hash = Set-PodeState -Name 'hash1' -Value @{} -Scope Scope0, Scope1
-        $hash['values'] = @()
+        $hash = (Set-PodeState -Name 'hash1' -Value ([System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new())  -Scope Scope0, Scope1 )
+        $hash.bag = [System.Collections.Concurrent.ConcurrentBag[object]]::new()
+        $hash.array = @()
     }
 
     if ($null -eq ($hash = (Get-PodeState -Name 'hash2'))) {
@@ -67,37 +68,38 @@ Start-PodeServer {
     Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
         $hash = $null
 
-        Lock-PodeObject -ScriptBlock {
-            $hash = (Get-PodeState -Name 'hash1')
-            $hash.values += (Get-Random -Minimum 0 -Maximum 10)
-            Save-PodeState -Path './state.json' -Scope Scope1 #-Exclude 'hash1'
-        }
+        $hash = (Get-PodeState -Name 'hash1')
+        $hash.bag.add((Get-Random -Minimum 0 -Maximum 10))
+        $hash.array += (Get-Random -Minimum 0 -Maximum 10)
+        Save-PodeState -Path './state.json' -Scope Scope1 #-Exclude 'hash1'
 
-        Lock-PodeObject -ScriptBlock {
-            $state:hash3.values += (Get-Random -Minimum 0 -Maximum 10)
-        }
+
+
+        $state:hash3.values += (Get-Random -Minimum 0 -Maximum 10)
+
     }
 
     # route to retrieve and return the value of the hashtable from global state
     Add-PodeRoute -Method Get -Path '/array' -ScriptBlock {
-        Lock-PodeObject -ScriptBlock {
-            $hash = (Get-PodeState 'hash1')
-            Write-PodeJsonResponse -Value $hash
-        }
+        #   Lock-PodeObject -ScriptBlock {
+        $hash = (Get-PodeState 'hash1')
+        Write-PodeJsonResponse -Value $hash
+        #    }
     }
 
     Add-PodeRoute -Method Get -Path '/array3' -ScriptBlock {
-        Lock-PodeObject -ScriptBlock {
-            Write-PodeJsonResponse -Value $state:hash3
-        }
+        #   Lock-PodeObject -ScriptBlock {
+        Write-PodeJsonResponse -Value $state:hash3
+        #     }
     }
 
     # route to remove the hashtable from global state
     Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
-        Lock-PodeObject -ScriptBlock {
-            $hash = (Set-PodeState -Name 'hash1' -Value @{})
-            $hash.values = @()
-        }
+        $hash = (Set-PodeState -Name 'hash1' -Value ([System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new())  -Scope Scope0, Scope1 )
+        $hash.bag = [System.Collections.Concurrent.ConcurrentBag[object]]::new()
+        $hash.bag.add((Get-Random -Minimum 0 -Maximum 10))
+        $hash.array = @((Get-Random -Minimum 0 -Maximum 10))
+ 
     }
 
 }

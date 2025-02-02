@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = 'Mostrar OpenAPI'
     enableQuietModeMessage                                            = 'Activar modo silencioso'
     disableQuietModeMessage                                           = 'Desactivar modo silencioso'
+    invalidPodeStateFormatExceptionMessage                            = 'El archivo PodeState "{0}" tiene un formato no válido. Se esperaba una estructura similar a un diccionario (ConcurrentDictionary, Hashtable o OrderedDictionary), pero se encontró [{1}]. Verifique el contenido del archivo o reinicialice el estado.'
 }

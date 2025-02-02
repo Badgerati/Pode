@@ -17,7 +17,7 @@ Describe 'Set-PodeState' {
     }
 
     It 'Sets and returns an object' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         $result = Set-PodeState -Name 'test' -Value 7
 
         $result | Should -Be 7
@@ -26,7 +26,7 @@ Describe 'Set-PodeState' {
     }
 
     It 'Sets by pipe and returns an object array' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         $result = @(7, 3, 4) | Set-PodeState -Name 'test'
 
         $result | Should -Be @(7, 3, 4)
@@ -42,7 +42,7 @@ Describe 'Get-PodeState' {
     }
 
     It 'Gets an object from the state' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         Set-PodeState -Name 'test' -Value 8
         Get-PodeState -Name 'test' | Should -Be 8
     }
@@ -55,7 +55,7 @@ Describe 'Remove-PodeState' {
     }
 
     It 'Removes an object from the state' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         Set-PodeState -Name 'test' -Value 8
         Remove-PodeState -Name 'test' | Should -Be 8
         $PodeContext.Server.State['test'] | Should -Be $null
@@ -72,7 +72,7 @@ Describe 'Save-PodeState' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Out-File {}
 
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         Set-PodeState -Name 'test' -Value 8
         Save-PodeState -Path './state.json'
 
@@ -83,7 +83,7 @@ Describe 'Save-PodeState' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Out-File {}
 
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         Set-PodeState -Name 'test' -Value 8
         Save-PodeState -Path './state.json' -Include 'test'
 
@@ -94,7 +94,7 @@ Describe 'Save-PodeState' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Out-File {}
 
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         Set-PodeState -Name 'test' -Value 8
         Save-PodeState -Path './state.json' -Exclude 'test'
 
@@ -113,7 +113,7 @@ Describe 'Restore-PodeState' {
         Mock Test-Path { return $true }
         Mock Get-Content { return '{ "Name": "Morty" }' }
 
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         Restore-PodeState -Path './state.json'
         Get-PodeState -Name 'Name' | Should -Be 'Morty'
     }
@@ -126,13 +126,13 @@ Describe 'Test-PodeState' {
     }
 
     It 'Returns true for an object being in the state' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         Set-PodeState -Name 'test' -Value 8
         Test-PodeState -Name 'test' | Should -Be $true
     }
 
     It 'Returns false for an object not being in the state' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         Set-PodeState -Name 'test' -Value 8
         Test-PodeState -Name 'tests' | Should -Be $false
     }
