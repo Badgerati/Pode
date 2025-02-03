@@ -118,7 +118,7 @@ function Add-PodeLimitRule {
     Add-PodeLimitRateRule `
         -Name (New-PodeGuid) `
         -Limit $Limit `
-        -Timeout $Seconds `
+        -Timeout $Seconds * 1000 `
         -Component $component
 }
 
@@ -141,7 +141,7 @@ function Add-PodeLimitRateRule {
         [Parameter()]
         [ValidateRange(1, [int]::MaxValue)]
         [int]
-        $Timeout = 60,
+        $Timeout = 60000,
 
         [Parameter()]
         [int]

@@ -241,16 +241,17 @@ function Get-PodeLimitMiddleware {
                 if ($rule.Active.ContainsKey($ruleKey) -and
                     ($rule.Active[$ruleKey].Timeout -gt $now) -and
                     ($rule.Active[$ruleKey].Counter -ge $rule.Limit)) {
-                    Set-PodeHeader -Name 'Retry-After' -Value ([int]($rule.Active[$ruleKey].Timeout - $now).TotalSeconds)
+                    $retryAfter = [int][System.Math]::Ceiling(($rule.Active[$ruleKey].Timeout - $now).TotalSeconds)
+                    Set-PodeHeader -Name 'Retry-After' -Value $retryAfter
                     Set-PodeResponseStatus -Code $rule.StatusCode
                     return $false
                 }
 
-                # if it's not in the active dictionary, or the timeout has passed, then add it
+                # if it's not in the active dictionary, or the timeout has passed, then add/reset it
                 if (!$rule.Active.ContainsKey($ruleKey) -or
                     ($rule.Active[$ruleKey].Timeout -le $now)) {
                     $rule.Active[$ruleKey] = @{
-                        Timeout = $now.AddSeconds($rule.Timeout)
+                        Timeout = $now.AddMilliseconds($rule.Timeout)
                         Counter = 0
                     }
                 }
