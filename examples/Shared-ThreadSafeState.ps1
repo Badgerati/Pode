@@ -45,27 +45,37 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-    $statePath = './ThreadSafeState.json'
+    $Path = Get-PodeRelativePath -Path './State' -JoinRoot -Resolve
+
+    if (!(Test-Path -Path $Path -PathType Container)) {
+        New-Item -Path $Path -ItemType Directory
+
+    }
+    $stateScope1Path = Join-Path -Path $Path -ChildPath 'ThreadSafeStateScope1.json'
+    $stateScope2Path = Join-Path -Path $Path -ChildPath 'ThreadSafeStateScope2.json'
+    $stateScope0Path = Join-Path -Path $Path -ChildPath 'ThreadSafeStateScope0.json'
+    $stateNoScopePath = Join-Path -Path $Path -ChildPath 'ThreadSafeStateNoScope.json'
     # re-initialise the state
-    Restore-PodeState -Path $statePath
+    Restore-PodeState -Path $stateScope1Path
+    Restore-PodeState -Path $stateScope2Path -Merge
 
     # initialise if there was no file
-    if ($null -eq ($hash = (Get-PodeState -Name 'hash1'))) {
-        $hash = (Set-PodeState -Name 'hash1' -Value ([System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new())  -Scope Scope0, Scope1 )
+    if (!(Test-PodeState -Name 'hash1')) {
+        $hash = (Set-PodeState -Name 'hash1' -NewCollectionType ConcurrentDictionary  -Scope Scope0, Scope1 )
         $hash.bag = [System.Collections.Concurrent.ConcurrentBag[object]]::new()
         $hash.array = @()
         $hash.psCustomSum = [PSCustomObject]@{
             bag   = 0
             array = 0
         }
-        $hash.string = 'standard string'
-        $hash.number = 1
+        $hash.string = 'Never deleted'
+        $hash.deleted = 0
         # Assign a custom PsTypeName
         $hash.psCustomSum.PSTypeNames.Insert(0, 'Pode.StateSum')
     }
 
-    if ($null -eq ($hash = (Get-PodeState -Name 'hash2'))) {
-        $hash = Set-PodeState -Name 'hash2' -Value @{} -Scope Scope0, Scope2
+    if (!(Test-PodeState -Name 'hash2')) {
+        $hash = Set-PodeState -Name 'hash2' -NewCollectionType Hashtable -Scope Scope0, Scope2
         $hash['values'] = @()
     }
 
@@ -74,8 +84,8 @@ Start-PodeServer {
     }
 
     # create timer to update a hashtable and make it globally accessible
-    Add-PodeTimer -Name 'forever' -Interval 2 -ArgumentList $statePath  -ScriptBlock {
-        param([string]$statePath)
+    Add-PodeTimer -Name 'forever' -Interval 2 -ArgumentList $stateScope1Path, $stateScope2Path, $stateScope0Path, $stateNoScopePath  -ScriptBlock {
+        param([string]$stateScope1Path, [string]$stateScope2Path, [string]$stateScope0Path, [string]$stateNoScopePath)
         $hash = $null
 
         $hash = (Get-PodeState -Name 'hash1')
@@ -85,31 +95,31 @@ Start-PodeServer {
         $hash.psCustomSum.bag = $hash.bag.ToArray() | Measure-Object -Sum | Select-Object -ExpandProperty Sum
         $hash.psCustomSum.array = $hash.array | Measure-Object -Sum | Select-Object -ExpandProperty Sum
 
-        write-podehost  $hash.psCustomSum -Explode -ShowType
-        write-podehost      $hash.psCustomSum.PSTypeNames[0]
-        Save-PodeState -Path $statePath -Scope Scope1 #-Exclude 'hash1'
 
         $state:hash3.values += (Get-Random -Minimum 0 -Maximum 10)
 
+        $hash2 = (Get-PodeState -Name 'hash2')
+        $hash2.values += (Get-Random -Minimum 100 -Maximum 200)
+        Save-PodeState -Path $stateScope1Path -Scope Scope1 #-Exclude 'hash2'
+        Save-PodeState -Path $stateScope2Path -Scope Scope2
+        Save-PodeState -Path $stateScope0Path -Scope Scope0
+        Save-PodeState -Path $stateNoScopePath
     }
 
     # route to retrieve and return the value of the hashtable from global state
     Add-PodeRoute -Method Get -Path '/array' -ScriptBlock {
-        #   Lock-PodeObject -ScriptBlock {
         $hash = (Get-PodeState 'hash1')
         Write-PodeJsonResponse -Value $hash
-        #    }
     }
 
     Add-PodeRoute -Method Get -Path '/array3' -ScriptBlock {
-        #   Lock-PodeObject -ScriptBlock {
         Write-PodeJsonResponse -Value $state:hash3
-        #     }
     }
 
     # route to remove the hashtable from global state
     Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
-        $hash = (Set-PodeState -Name 'hash1' -Value ([System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new())  -Scope Scope0, Scope1 )
+        $value = (Get-PodeState -Name 'hash1' )
+        $hash = (Set-PodeState -Name 'hash1' -NewCollectionType ConcurrentDictionary  -Scope Scope0, Scope1 )
         $hash.bag = [System.Collections.Concurrent.ConcurrentBag[object]]::new()
         $hash.bag.add((Get-Random -Minimum 0 -Maximum 10))
         $hash.array = @((Get-Random -Minimum 0 -Maximum 10))
@@ -120,8 +130,8 @@ Start-PodeServer {
         }
         # Assign a custom PsTypeName
         $hash.psCustomSum.PSTypeNames.Insert(0, 'Pode.StateSum')
-        $hash.string = 'standard string'
-        $hash.number = 1
+        $hash.deleted = $value.number + 1
+        $hash.string = "Deleted $($hash.number) times"
 
     }
 

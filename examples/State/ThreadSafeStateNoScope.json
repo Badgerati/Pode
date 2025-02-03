@@ -1,0 +1,223 @@
+{
+  "Type": "ConcurrentDictionary",
+  "Items": [
+    {
+      "Key": "hash2",
+      "Value": {
+        "Type": "ConcurrentDictionary",
+        "Items": [
+          {
+            "Key": "Value",
+            "Value": {
+              "Type": "Hashtable",
+              "Items": [
+                {
+                  "Key": "values",
+                  "Value": [
+                    127,
+                    146,
+                    152,
+                    199,
+                    131,
+                    172,
+                    123,
+                    128,
+                    100,
+                    113,
+                    172,
+                    126,
+                    126,
+                    162,
+                    125,
+                    150,
+                    187,
+                    191,
+                    142,
+                    141,
+                    141,
+                    189,
+                    181,
+                    177,
+                    175,
+                    103,
+                    151,
+                    147,
+                    132,
+                    138,
+                    134,
+                    173,
+                    110,
+                    199
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "Key": "Scope",
+            "Value": [
+              "Scope0",
+              "Scope2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Key": "hash3",
+      "Value": {
+        "Type": "ConcurrentDictionary",
+        "Items": [
+          {
+            "Key": "Value",
+            "Value": {
+              "Type": "Hashtable",
+              "Items": [
+                {
+                  "Key": "values",
+                  "Value": [
+                    0,
+                    9,
+                    7,
+                    3,
+                    4,
+                    3,
+                    6,
+                    9,
+                    7,
+                    9,
+                    1
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "Key": "Scope",
+            "Value": []
+          }
+        ]
+      }
+    },
+    {
+      "Key": "hash1",
+      "Value": {
+        "Type": "ConcurrentDictionary",
+        "Items": [
+          {
+            "Key": "Value",
+            "Value": {
+              "Type": "ConcurrentDictionary",
+              "Items": [
+                {
+                  "Key": "array",
+                  "Value": [
+                    7,
+                    5,
+                    2,
+                    5,
+                    7,
+                    5,
+                    6,
+                    3,
+                    2,
+                    8,
+                    2,
+                    2,
+                    9,
+                    0,
+                    0,
+                    7,
+                    4,
+                    3,
+                    3,
+                    8,
+                    2,
+                    3,
+                    0,
+                    5,
+                    0,
+                    7,
+                    3,
+                    2,
+                    8,
+                    0,
+                    3,
+                    4,
+                    9,
+                    0
+                  ]
+                },
+                {
+                  "Key": "string",
+                  "Value": "Never deleted"
+                },
+                {
+                  "Key": "bag",
+                  "Value": {
+                    "Type": "ConcurrentBag",
+                    "Items": [
+                      8,
+                      1,
+                      0,
+                      2,
+                      7,
+                      6,
+                      1,
+                      7,
+                      4,
+                      3,
+                      8,
+                      8,
+                      8,
+                      4,
+                      1,
+                      5,
+                      8,
+                      6,
+                      2,
+                      8,
+                      6,
+                      1,
+                      0,
+                      3,
+                      9,
+                      1,
+                      8,
+                      7,
+                      6,
+                      9,
+                      4,
+                      9,
+                      9,
+                      2
+                    ]
+                  }
+                },
+                {
+                  "Key": "deleted",
+                  "Value": 0
+                },
+                {
+                  "Key": "psCustomSum",
+                  "Value": {
+                    "__PsTypeName__": "Pode.StateSum",
+                    "array": 134.0,
+                    "bag": 171.0
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "Key": "Scope",
+            "Value": [
+              "Scope0",
+              "Scope1"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

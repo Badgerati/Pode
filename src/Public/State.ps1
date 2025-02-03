@@ -1,40 +1,67 @@
 <#
 .SYNOPSIS
-Sets an object within the shared state.
+    Sets an object within the shared state.
 
 .DESCRIPTION
-Sets an object within the shared state.
+    Sets an object within the shared state, allowing for the creation of different collection types, such as a Hashtable, ConcurrentDictionary, or other concurrent collections.
 
 .PARAMETER Name
-The name of the state object.
+    The name of the state object.
 
 .PARAMETER Value
-The value to set in the state.
+    The value to set in the state. If a collection type is specified using `-NewCollectionType`, this value is ignored.
 
 .PARAMETER Scope
-An optional Scope for the state object, used when saving the state.
+    An optional scope for the state object, used when saving the state.
+
+.PARAMETER NewCollectionType
+    Specifies the type of collection to create. Supported options include:
+    - Hashtable
+    - ConcurrentDictionary
+    - OrderedDictionary
+    - ConcurrentBag
+    - ConcurrentQueue
+    - ConcurrentStack
+
+    If this parameter is used, the state object will be initialized as the specified collection type.
 
 .EXAMPLE
-Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
+    Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
 
 .EXAMPLE
-Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
+    Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
+
+.EXAMPLE
+    Set-PodeState -Name 'Cache' -NewCollectionType 'ConcurrentDictionary'
+
+.EXAMPLE
+    Set-PodeState -Name 'Tasks' -NewCollectionType 'ConcurrentQueue'
+
+.NOTES
+    - `NewCollectionType` and `Value` are mutually exclusive; only one can be used at a time.
+    - The function ensures thread safety when using concurrent collections.
+    - Pode must be initialized before calling this function.
 #>
 function Set-PodeState {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Value')]
     [OutputType([object])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(ValueFromPipeline = $true, Position = 0)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Value')]
         [object]
         $Value,
 
         [Parameter()]
         [string[]]
-        $Scope
+        $Scope,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Collection')]
+        [ValidateSet('Hashtable', 'ConcurrentDictionary', 'OrderedDictionary', 'ConcurrentBag', 'ConcurrentQueue', 'ConcurrentStack')]
+        [string]
+        $NewCollectionType
     )
 
     begin {
@@ -52,22 +79,37 @@ function Set-PodeState {
     }
 
     process {
-        # Add the current piped-in value to the array
+        # Collect piped-in values
         $pipelineValue += $_
     }
 
     end {
-        # Set Value to the array of values
+        # If multiple values were piped in, store them as an array
         if ($pipelineValue.Count -gt 1) {
             $Value = $pipelineValue
         }
-        #Wait-Debugger
-        $PodeContext.Server.State[$Name] = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
-        $PodeContext.Server.State[$Name].Value = $Value
+
+        # Initialize the state as a case-insensitive ConcurrentDictionary
+        $PodeContext.Server.State[$Name] = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
+        # Create the specified collection type, or use the provided value
+        $PodeContext.Server.State[$Name].Value = switch ($NewCollectionType) {
+            'Hashtable' { @{} }
+            'ConcurrentDictionary' { [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
+            'OrderedDictionary' { [ordered]@{} }
+            'ConcurrentBag' { [System.Collections.Concurrent.ConcurrentBag[object]]::new() }
+            'ConcurrentQueue' { [System.Collections.Concurrent.ConcurrentQueue[object]]::new() }
+            'ConcurrentStack' { [System.Collections.Concurrent.ConcurrentStack[object]]::new() }
+            default { $Value }  # If no collection type is specified, use the provided value
+        }
+
+        # Store the scope for the state object
         $PodeContext.Server.State[$Name].Scope = $Scope
-        return $Value
+
+        return $PodeContext.Server.State[$Name].Value
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -307,7 +349,7 @@ function Save-PodeState {
 
     # A new ConcurrentDictionary is created to store a snapshot of the current state,
     # preventing modifications while the state is being serialized.
-    $state = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+    $state = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($kvp in $PodeContext.Server.State.GetEnumerator()) {
         $null = $state.TryAdd($kvp.Key, $kvp.Value)
     }
@@ -475,7 +517,8 @@ function Restore-PodeState {
         # Merge or replace each key in the state
         foreach ($key in $state.Keys) {
             if ($key) {
-            $null = $PodeContext.Server.State.TryAdd($key, $state[$key])}
+                $null = $PodeContext.Server.State.TryAdd($key, $state[$key])
+            }
         }
     }
     else {

@@ -1,0 +1,179 @@
+{
+  "Type": "ConcurrentDictionary",
+  "Items": [
+    {
+      "Key": "hash1",
+      "Value": {
+        "Type": "ConcurrentDictionary",
+        "Items": [
+          {
+            "Key": "Value",
+            "Value": {
+              "Type": "ConcurrentDictionary",
+              "Items": [
+                {
+                  "Key": "values",
+                  "Value": [
+                    7,
+                    5,
+                    2,
+                    5,
+                    7,
+                    5,
+                    6,
+                    3,
+                    2,
+                    8,
+                    2,
+                    2,
+                    9,
+                    0,
+                    0,
+                    7,
+                    4,
+                    3,
+                    3,
+                    8,
+                    2,
+                    3,
+                    0,
+                    5,
+                    0,
+                    7,
+                    3,
+                    2,
+                    8,
+                    0,
+                    3,
+                    4,
+                    9,
+                    0,
+                    "Never deleted",
+                    {
+                      "Type": "ConcurrentBag",
+                      "Items": "2 9 9 4 9 6 7 8 1 9 3 0 1 6 8 2 6 8 5 1 4 8 8 8 3 4 7 1 6 7 2 0 1 8"
+                    },
+                    0,
+                    {
+                      "__PsTypeName__": "Pode.StateSum",
+                      "array": 134.0,
+                      "bag": 171.0
+                    },
+                    4,
+                    2,
+                    5,
+                    0
+                  ]
+                },
+                {
+                  "Key": "array",
+                  "Value": [
+                    7,
+                    5,
+                    2,
+                    5,
+                    7,
+                    5,
+                    6,
+                    3,
+                    2,
+                    8,
+                    2,
+                    2,
+                    9,
+                    0,
+                    0,
+                    7,
+                    4,
+                    3,
+                    3,
+                    8,
+                    2,
+                    3,
+                    0,
+                    5,
+                    0,
+                    7,
+                    3,
+                    2,
+                    8,
+                    0,
+                    3,
+                    4,
+                    9,
+                    0
+                  ]
+                },
+                {
+                  "Key": "string",
+                  "Value": "Never deleted"
+                },
+                {
+                  "Key": "bag",
+                  "Value": {
+                    "Type": "ConcurrentBag",
+                    "Items": [
+                      2,
+                      9,
+                      9,
+                      4,
+                      9,
+                      6,
+                      7,
+                      8,
+                      1,
+                      9,
+                      3,
+                      0,
+                      1,
+                      6,
+                      8,
+                      2,
+                      6,
+                      8,
+                      5,
+                      1,
+                      4,
+                      8,
+                      8,
+                      8,
+                      3,
+                      4,
+                      7,
+                      1,
+                      6,
+                      7,
+                      2,
+                      0,
+                      1,
+                      8
+                    ]
+                  }
+                },
+                {
+                  "Key": "deleted",
+                  "Value": 0
+                },
+                {
+                  "Key": "psCustomSum",
+                  "Value": {
+                    "__PsTypeName__": "Pode.StateSum",
+                    "array": 134.0,
+                    "bag": 171.0
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "Key": "Scope",
+            "Value": [
+              "Scope0",
+              "Scope1"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

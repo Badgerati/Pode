@@ -17,7 +17,7 @@ Describe 'Set-PodeState' {
     }
 
     It 'Sets and returns an object' {
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         $result = Set-PodeState -Name 'test' -Value 7
 
         $result | Should -Be 7
@@ -26,7 +26,7 @@ Describe 'Set-PodeState' {
     }
 
     It 'Sets by pipe and returns an object array' {
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         $result = @(7, 3, 4) | Set-PodeState -Name 'test'
 
         $result | Should -Be @(7, 3, 4)
@@ -42,7 +42,7 @@ Describe 'Get-PodeState' {
     }
 
     It 'Gets an object from the state' {
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Get-PodeState -Name 'test' | Should -Be 8
     }
@@ -55,7 +55,7 @@ Describe 'Remove-PodeState' {
     }
 
     It 'Removes an object from the state' {
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Remove-PodeState -Name 'test' | Should -Be 8
         $PodeContext.Server.State['test'] | Should -Be $null
@@ -72,7 +72,7 @@ Describe 'Save-PodeState' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Out-File {}
 
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Save-PodeState -Path './state.json'
 
@@ -83,7 +83,7 @@ Describe 'Save-PodeState' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Out-File {}
 
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Save-PodeState -Path './state.json' -Include 'test'
 
@@ -94,7 +94,7 @@ Describe 'Save-PodeState' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Out-File {}
 
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Save-PodeState -Path './state.json' -Exclude 'test'
 
@@ -111,9 +111,9 @@ Describe 'Restore-PodeState' {
     It 'Restores the state from file' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Test-Path { return $true }
-        Mock Get-Content { return '{"Type":"ConcurrentDictionary","Items":[[],{"Key":"Name","Value":{"Type":"ConcurrentDictionary","Items":[[],{"Key":"Value","Value":{"Type":"Hashtable","Items":[{"Key":"Name","Value":"Morty"}]}},{"Key":"Scope","Value":[]}]}}]}' }
+        Mock Get-Content { return '{"Type":"ConcurrentDictionary","Items":[{"Key":"Name","Value":{"Type":"ConcurrentDictionary","Items":[{"Key":"Value","Value":"Morty"},{"Key":"Scope","Value":[]}]}}]}' }
 
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Restore-PodeState -Path './state.json'
         Get-PodeState -Name 'Name' | Should -Be 'Morty'
     }
@@ -126,13 +126,13 @@ Describe 'Test-PodeState' {
     }
 
     It 'Returns true for an object being in the state' {
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Test-PodeState -Name 'test' | Should -Be $true
     }
 
     It 'Returns false for an object not being in the state' {
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Test-PodeState -Name 'tests' | Should -Be $false
     }
@@ -217,24 +217,24 @@ Describe 'Get-PodeStateNames' -Tags 'Unit', 'Pode' {
     Context 'When PodeContext.Server.State is a valid ConcurrentDictionary' {
         BeforeEach {
             # Initialize the thread-safe dictionary before each test
-            $PodeContext.Server.State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+            $PodeContext.Server.State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
             # For each key, store another ConcurrentDictionary with "Scope" and "Data"
             # Key1 -> { Scope = 'Test1'; Data = 'Value1' }
             # Key2 -> { Scope = 'Test2'; Data = 'Value2' }
             # SpecialKey -> { Scope = 'Test1'; Data = 'SpecialValue' }
 
-            $cd1 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+            $cd1 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
             $cd1['Scope'] = 'Test1'
             $cd1['Data'] = 'Value1'
             $null = $PodeContext.Server.State.TryAdd('Key1', $cd1)
 
-            $cd2 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+            $cd2 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
             $cd2['Scope'] = 'Test2'
             $cd2['Data'] = 'Value2'
             $null = $PodeContext.Server.State.TryAdd('Key2', $cd2)
 
-            $cd3 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+            $cd3 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
             $cd3['Scope'] = 'Test1'
             $cd3['Data'] = 'SpecialValue'
             $null = $PodeContext.Server.State.TryAdd('SpecialKey', $cd3)

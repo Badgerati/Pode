@@ -44,19 +44,23 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-    Set-PodeState -Name 'Name' -Value @{Name= "Morty"}
- Save-PodeState -Path './test.json' -Compress
+    $Path = Get-PodeRelativePath -Path './State' -JoinRoot -Resolve
 
+    if (!(Test-Path -Path $Path -PathType Container)) {
+        New-Item -Path $Path -ItemType Directory
+
+    }
+    $stateScope1Path = Join-Path -Path $Path -ChildPath 'LegacyStateScope1.json'
     # re-initialise the state
-    Restore-PodeState -Path './legacyState.json'
+    Restore-PodeState -Path $stateScope1Path
 
     # initialise if there was no file
-    if ($null -eq ($hash = (Get-PodeState -Name 'hash1'))) {
+    if (!(Test-PodeState -Name 'hash1')) {
         $hash = Set-PodeState -Name 'hash1' -Value @{} -Scope Scope0, Scope1
         $hash['values'] = @()
     }
 
-    if ($null -eq ($hash = (Get-PodeState -Name 'hash2'))) {
+    if (!(Test-PodeState -Name 'hash2')) {
         $hash = Set-PodeState -Name 'hash2' -Value @{} -Scope Scope0, Scope2
         $hash['values'] = @()
     }
@@ -65,14 +69,17 @@ Start-PodeServer {
         $state:hash3 = @{ values = @() }
     }
 
+    Save-PodeState -Path $stateScope1Path -Scope Scope1
+
     # create timer to update a hashtable and make it globally accessible
-    Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
+    Add-PodeTimer -Name 'forever' -Interval 2 -ArgumentList $stateScope1Path -ScriptBlock {
+        param([string]$stateScope1Path)
         $hash = $null
 
         Lock-PodeObject -ScriptBlock {
             $hash = (Get-PodeState -Name 'hash1')
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
-            Save-PodeState -Path './legacyState.json' -Scope Scope1 #-Exclude 'hash1'
+            Save-PodeState -Path $stateScope1Path -Scope Scope1 #-Exclude 'hash1'
         }
 
         Lock-PodeObject -ScriptBlock {

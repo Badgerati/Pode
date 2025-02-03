@@ -101,7 +101,7 @@ Describe 'ConvertTo-PodeCustomDictionaryJson' {
     }
 
     It 'Should correctly serialize thread-safe collections' {
-        $concurrentDictionary = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+        $concurrentDictionary = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
         $concurrentDictionary['Key1'] = 'Value1'
         $concurrentDictionary['Key2'] = 42
 

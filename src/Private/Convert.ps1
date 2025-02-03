@@ -65,14 +65,14 @@ function ConvertFrom-PodeCustomDictionaryJson {
                         return $dict
                     }
                     'ConcurrentDictionary' {
-                        $dict = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new()
+                        $dict = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
                         foreach ($pair in $obj.Items) {
                             $null = $dict.TryAdd($pair.Key, (Construct -obj $pair.Value))
                         }
                         return $dict
                     }
                     'OrderedDictionary' {
-                        $dict = [System.Collections.Specialized.OrderedDictionary]::new()
+                        $dict = [ordered]@{}
                         foreach ($pair in $obj.Items) {
                             $dict[$pair.Key] = (Construct -obj $pair.Value)
                         }
@@ -234,7 +234,7 @@ function ConvertTo-PodeCustomDictionaryJson {
 
         # Handle ConcurrentDictionary
         if ($Object -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]]) {
-            $wrapper = [PSCustomObject]@{ Type = 'ConcurrentDictionary'; Items = ,@() }
+            $wrapper = [PSCustomObject]@{ Type = 'ConcurrentDictionary'; Items = @() }
             foreach ($key in $Object.Keys) {
                 $wrapper.Items += [PSCustomObject]@{
                     Key   = $key

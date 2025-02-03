@@ -7,20 +7,15 @@ You also have the option of saving the current state to a file, and then restori
 Pode supports various structures for shared state, some of which are thread-safe:
 
 **Thread-Safe Structures:**
-
 - `ConcurrentDictionary`
 - `ConcurrentBag`
 - `ConcurrentQueue`
 - `ConcurrentStack`
 
 **Non-Thread-Safe Structures (Require Locking):**
-
 - `OrderedDictionary`
 - `Hashtable`
-- `PSCustomObject`
-
-!!! tip
-When using a thread-safe object, `Lock-PodeObject` is no longer required.
+- `PSCustomObject`When using a thread-safe object, `Lock-PodeObject` is no longer required.
 
 !!! tip
 It's wise to use the State in conjunction with [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject) when dealing with non-thread-safe objects to ensure thread safety between runspaces.
@@ -33,6 +28,59 @@ If you are using a non-thread-safe object, such as `Hashtable`, `OrderedDictiona
 Where possible, use the same casing for the `-Name` of state keys. When using [`Restore-PodeState`](../../Functions/State/Restore-PodeState), the state will become case-sensitive due to the nature of how `ConvertFrom-Json` works.
 
 ### Set
+
+#### **NewCollectionType Parameter**
+
+The `-NewCollectionType` parameter allows users to specify the type of collection to initialize within the shared state. This eliminates the need to manually instantiate collections before setting them in the state.
+
+**Supported Collection Types:**
+
+- `Hashtable`
+- `ConcurrentDictionary`
+- `OrderedDictionary`
+- `ConcurrentBag`
+- `ConcurrentQueue`
+- `ConcurrentStack`
+
+If `-NewCollectionType` is used, the specified collection type will be created and stored in the state. The `-Value` parameter is ignored when this option is used.
+
+**Examples:**
+
+```powershell
+# Set a simple hashtable in shared state
+Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
+
+# Initialize a ConcurrentDictionary instead of providing a value
+Set-PodeState -Name 'Cache' -NewCollectionType 'ConcurrentDictionary'
+
+# Create a ConcurrentQueue for shared state management
+Set-PodeState -Name 'Tasks' -NewCollectionType 'ConcurrentQueue'
+```
+
+The [`Set-PodeState`](../../Functions/State/Set-PodeState) function will create/update a variable in the state. You need to supply a name and a value to set on the state, and there's also an optional scope that can be supplied - which lets you save specific state objects with a certain scope.
+
+
+!!! tip
+The .NET collections `ConcurrentDictionary` and `OrderedDictionary` are case-sensitive by default. To make them case-insensitive, initialize them as follows:
+
+```powershell
+# Case-insensitive ConcurrentDictionary
+Set-PodeState -Name 'Cache' -Value ([System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase))
+
+# Case-insensitive OrderedDictionary
+Set-PodeState -Name 'Config' -Value ([System.Collections.Specialized.OrderedDictionary]::new([System.StringComparer]::OrdinalIgnoreCase))
+
+# Case-insensitive OrderedDictionary
+Set-PodeState -Name 'Running' -Value ([ordered]@{})
+```
+
+Alternatively, you can use:
+
+```powershell
+Set-PodeState -Name 'Cache' -NewCollectionType 'ConcurrentDictionary'
+Set-PodeState -Name 'Config' -NewCollectionType 'OrderedDictionary'
+Set-PodeState -Name 'Running' -NewCollectionType 'OrderedDictionary'
+```
 
 #### Example: Non-Thread-Safe Objects
 
@@ -141,3 +189,4 @@ Start-PodeServer {
     }
 }
 ```
+
