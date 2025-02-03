@@ -445,15 +445,17 @@ function Restore-PodeState {
     <# Ensure Backward Compatibility for Missing Scopes #>
     # Older versions of Pode may not include scope properties in state objects.
     # This ensures each state entry has a 'Scope' property for compatibility.
-    $convert = $false
+    # $convert = $false
     foreach ($_key in $state.Keys) {
-        if ($null -eq $state[$_key].Scope) {
-            $convert = $true
-            break
+        if ($_key) {
+            if ($null -eq $state[$_key].Scope) {
+                $state[$_key].Scope = @()
+
+            }
         }
     }
 
-    if ($convert) {
+    <#  if ($convert) {
         foreach ($_key in $state.Keys) {
             $old = $state[$_key]
             $state[$_key] = @{
@@ -461,7 +463,7 @@ function Restore-PodeState {
                 Scope = @()  # Ensure an empty array if scope was missing
             }
         }
-    }
+    }#>
 
     <# Validate and Apply the Restored State #>
     if ($state -is [System.Collections.IDictionary]) {
@@ -472,7 +474,8 @@ function Restore-PodeState {
 
         # Merge or replace each key in the state
         foreach ($key in $state.Keys) {
-            $null = $PodeContext.Server.State.TryAdd($key, $state[$key])
+            if ($key) {
+            $null = $PodeContext.Server.State.TryAdd($key, $state[$key])}
         }
     }
     else {
@@ -510,4 +513,3 @@ function Test-PodeState {
 
     return $PodeContext.Server.State.ContainsKey($Name)
 }
- 

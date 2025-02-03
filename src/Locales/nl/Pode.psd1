@@ -323,4 +323,5 @@
     enableQuietModeMessage                                            = 'Stille modus inschakelen'
     disableQuietModeMessage                                           = 'Stille modus uitschakelen'
     invalidPodeStateFormatExceptionMessage                            = 'Plik PodeState "{0}" ma nieprawidłowy format. Oczekiwano struktury podobnej do słownika (ConcurrentDictionary, Hashtable lub OrderedDictionary), ale znaleziono [{1}]. Sprawdź zawartość pliku lub ponownie zainicjalizuj stan.'
+    unknownJsonDictionaryTypeExceptionMessage                         = 'Onbekend woordenboek-/collectietype in JSON: {0}'
 }

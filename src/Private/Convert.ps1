@@ -103,7 +103,7 @@ function ConvertFrom-PodeCustomDictionaryJson {
                         return $stack
                     }
                     default {
-                        throw "Unknown dictionary/collection type in JSON: $($obj.Type)"
+                        throw ($PodeLocale.unknownJsonDictionaryTypeExceptionMessage -f $obj.Type)
                     }
                 }
             }
@@ -234,11 +234,11 @@ function ConvertTo-PodeCustomDictionaryJson {
 
         # Handle ConcurrentDictionary
         if ($Object -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]]) {
-            $wrapper = [PSCustomObject]@{ Type = 'ConcurrentDictionary'; Items = @() }
+            $wrapper = [PSCustomObject]@{ Type = 'ConcurrentDictionary'; Items = ,@() }
             foreach ($key in $Object.Keys) {
                 $wrapper.Items += [PSCustomObject]@{
                     Key   = $key
-                    Value = Deconstruct($Object[$key])
+                    Value =  Deconstruct($Object[$key])
                 }
             }
             return $wrapper
@@ -273,6 +273,9 @@ function ConvertTo-PodeCustomDictionaryJson {
 
         # If it's a list/array, process each item but return as array
         if ($Object -is [System.Collections.IEnumerable] -and $Object -isnot [string]) {
+            if ($Object.Count -eq 0) {
+                return ,@()
+            }
             $convertedArray = @()
             foreach ($item in $Object) {
                 $convertedArray += Deconstruct($item)

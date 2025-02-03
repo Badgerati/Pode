@@ -323,4 +323,5 @@
     enableQuietModeMessage                                            = 'クワイエットモードを有効化'
     disableQuietModeMessage                                           = 'クワイエットモードを無効化'
     invalidPodeStateFormatExceptionMessage                            = 'PodeState ファイル "{0}" の形式が無効です。辞書のような構造 (ConcurrentDictionary、Hashtable、OrderedDictionary) が期待されましたが、[{1}] が見つかりました。ファイルの内容を確認するか、状態を再初期化してください。'
+    unknownJsonDictionaryTypeExceptionMessage                         = 'JSON 内の不明な辞書/コレクション型: {0}'
 }

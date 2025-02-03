@@ -111,7 +111,7 @@ Describe 'Restore-PodeState' {
     It 'Restores the state from file' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Test-Path { return $true }
-        Mock Get-Content { return '{ "Name": "Morty" }' }
+        Mock Get-Content { return '{"Type":"ConcurrentDictionary","Items":[[],{"Key":"Name","Value":{"Type":"ConcurrentDictionary","Items":[[],{"Key":"Value","Value":{"Type":"Hashtable","Items":[{"Key":"Name","Value":"Morty"}]}},{"Key":"Scope","Value":[]}]}}]}' }
 
         $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new() }
         Restore-PodeState -Path './state.json'

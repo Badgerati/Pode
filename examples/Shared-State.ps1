@@ -44,6 +44,8 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    Set-PodeState -Name 'Name' -Value @{Name= "Morty"}
+ Save-PodeState -Path './test.json' -Compress
 
     # re-initialise the state
     Restore-PodeState -Path './legacyState.json'

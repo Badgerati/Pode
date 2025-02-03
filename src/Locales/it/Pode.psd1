@@ -323,4 +323,5 @@
     enableQuietModeMessage                                            = 'Abilita la modalità silenziosa'
     disableQuietModeMessage                                           = 'Disabilita la modalità silenziosa'
     invalidPodeStateFormatExceptionMessage                            = 'Il file PodeState "{0}" contiene un formato non valido. Era prevista una struttura simile a un dizionario (ConcurrentDictionary, Hashtable o OrderedDictionary), ma è stato trovato [{1}]. Verifica il contenuto del file o reinizializza lo stato.'
+    unknownJsonDictionaryTypeExceptionMessage                         = 'Tipo di dizionario/collezione sconosciuto in JSON: {0}'
 }
