@@ -1,0 +1,45 @@
+{
+  "Type": "ConcurrentDictionary",
+  "Items": [
+    {
+      "Key": "hash1",
+      "Value": {
+        "Type": "ConcurrentDictionary",
+        "Items": [
+          {
+            "Key": "Value",
+            "Value": {
+              "Type": "ConcurrentDictionary",
+              "Items": [
+                {
+                  "Key": "array",
+                  "Value": [
+                    0,
+                    3
+                  ]
+                },
+                {
+                  "Key": "bag",
+                  "Value": {
+                    "Type": "ConcurrentBag",
+                    "Items": [
+                      8,
+                      7
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "Key": "Scope",
+            "Value": [
+              "Scope0",
+              "Scope1"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
