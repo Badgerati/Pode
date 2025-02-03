@@ -7,12 +7,14 @@ You also have the option of saving the current state to a file, and then restori
 Pode supports various structures for shared state, some of which are thread-safe:
 
 **Thread-Safe Structures:**
+
 - `ConcurrentDictionary`
 - `ConcurrentBag`
 - `ConcurrentQueue`
 - `ConcurrentStack`
 
 **Non-Thread-Safe Structures (Require Locking):**
+
 - `OrderedDictionary`
 - `Hashtable`
 - `PSCustomObject`When using a thread-safe object, `Lock-PodeObject` is no longer required.
@@ -58,7 +60,6 @@ Set-PodeState -Name 'Tasks' -NewCollectionType 'ConcurrentQueue'
 ```
 
 The [`Set-PodeState`](../../Functions/State/Set-PodeState) function will create/update a variable in the state. You need to supply a name and a value to set on the state, and there's also an optional scope that can be supplied - which lets you save specific state objects with a certain scope.
-
 
 !!! tip
 The .NET collections `ConcurrentDictionary` and `OrderedDictionary` are case-sensitive by default. To make them case-insensitive, initialize them as follows:
