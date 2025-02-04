@@ -316,7 +316,7 @@ function ConvertTo-PodeCustomDictionaryJson {
         Metadata = [ordered]@{
             Product     = 'Pode'
             Version     = Get-PodeVersion
-            Timestamp   = Get-Date -AsUTC
+            Timestamp   = [DateTime]::UtcNow
             Application = $PodeContext.Server.ApplicationName
         }
         Data     = @{}
