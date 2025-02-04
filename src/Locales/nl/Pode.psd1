@@ -324,4 +324,7 @@
     disableQuietModeMessage                                           = 'Stille modus uitschakelen'
     invalidPodeStateFormatExceptionMessage                            = 'Plik PodeState "{0}" ma nieprawidłowy format. Oczekiwano struktury podobnej do słownika (ConcurrentDictionary, Hashtable lub OrderedDictionary), ale znaleziono [{1}]. Sprawdź zawartość pliku lub ponownie zainicjalizuj stan.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'Onbekend woordenboek-/collectietype in JSON: {0}'
+    invalidPodeStateDataExceptionMessage                              = 'De opgegeven gegevens vertegenwoordigen geen geldige Pode-status.'
+    podeStateVersionMismatchExceptionMessage                          = 'De opgegeven statusgegevens zijn afkomstig van een nieuwere versie van Pode: {0}.'
+    podeStateApplicationMismatchExceptionMessage                      = 'De opgegeven statusgegevens behoren tot een andere applicatie: {0}.'
 }

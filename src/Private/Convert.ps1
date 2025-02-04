@@ -135,30 +135,24 @@ function ConvertFrom-PodeCustomDictionaryJson {
     $parsed = $Json | ConvertFrom-Json
     if ($parsed.Metadata) {
         if ($parsed.Metadata.Product -ne 'Pode') {
-            throw 'This is not a Pode State data.'
+            # 'The provided data does not represent a valid Pode state.'
+            throw $PodeLocale.invalidPodeStateDataExceptionMessage
         }
         $podeVersion = (Get-PodeVersion -Raw)
         if (!($podeVersion -eq '[dev]' -or ( ([System.Version]$parsed.Metadata) -le ([System.Version]$podeVersion))) ) {
-            throw ('This State data are from a newer version {0} of Pode.' -f $parsed.Metadata)
+            # The provided state data originates from a newer Pode version:
+            throw ($PodeLocale.podeStateVersionMismatchExceptionMessage -f $parsed.Metadata)
         }
         if ($parsed.Metadata.Application -ne (Get-PodeApplicationName)) {
-            throw ('This is Pode State data are from another application called {0}.' -f $parsed.Metadata.Application)
+            # The provided state data belongs to a different application
+            throw ($PodeLocale.podeStateApplicationMismatchExceptionMessage -f $parsed.Metadata.Application)
         }
 
         <# Rebuild the Full Structure from JSON #>
         return Construct -obj $parsed.Data
     }
     else {
-        # if (Test-PodeIsPSCore) {
-        #      $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth $Depth)
-        #  }
-        #     else {
-        $state = @{}
-        $props = $parsed.psobject.properties
-        foreach ($prop in $props) {
-            $state[$prop.Name] = $prop.Value
-        }
-        return $state
+        return ConvertTo-PodeHashtable -InputObject $parsed
     }
 }
 
@@ -187,7 +181,6 @@ function ConvertFrom-PodeCustomDictionaryJson {
 
 .NOTES
     This function is for internal Pode usage and may be subject to change.
-
 #>
 function ConvertTo-PodeCustomDictionaryJson {
     [CmdletBinding()]
@@ -212,11 +205,8 @@ function ConvertTo-PodeCustomDictionaryJson {
         }
 
         # Return common primitives directly
-        if ($Object -is [string] -or
-            $Object -is [int] -or
-            $Object -is [bool] -or
-            $Object -is [double] -or
-            $Object -is [float] -or
+        if ($Object.PSObject.BaseObject.GetType().IsPrimitive -or
+            $Object -is [string] -or
             $Object -is [datetime]) {
             return $Object
         }
@@ -339,4 +329,88 @@ function ConvertTo-PodeCustomDictionaryJson {
 
     # Finally convert to JSON
     return $converted | ConvertTo-Json -Depth $Depth -Compress:$Compress
+}
+
+
+<#
+.SYNOPSIS
+    Converts a PSCustomObject or nested object structure into a hashtable.
+
+.DESCRIPTION
+    The `ConvertTo-PodeHashtable` function recursively converts a PowerShell `PSCustomObject`
+    into a hashtable while preserving the original data structure. It ensures that objects,
+    arrays, and collections are properly transformed, while primitive types such as numbers,
+    booleans, and strings remain unchanged.
+
+.PARAMETER InputObject
+    Specifies the input object to convert. The function can accept:
+    - A `PSCustomObject`, which will be transformed into a hashtable.
+    - A collection (`Array`, `List`), which will be processed recursively.
+    - A primitive type (`String`, `Number`, `Boolean`), which will remain unchanged.
+
+.EXAMPLE
+    $psCustomObject = [PSCustomObject]@{
+        Name    = "Pode"
+        Version = 2.0
+        Active  = $true
+        Metadata = [PSCustomObject]@{
+            Author  = "Pode Team"
+            Created = "2025-02-03"
+            Stats   = [PSCustomObject]@{
+                Users   = 150
+                Servers = 5
+            }
+        }
+        Features = @("Fast", "Lightweight", "Modular")
+    }
+
+    $hashtable = ConvertTo-PodeHashtable -InputObject $psCustomObject
+    $hashtable
+
+.EXAMPLE
+    # Convert a list of PSCustomObjects to an array of hashtables
+    $users = @(
+        [PSCustomObject]@{ ID = 1; Name = "Alice" }
+        [PSCustomObject]@{ ID = 2; Name = "Bob" }
+    )
+
+    $hashtableList = ConvertTo-PodeHashtable -InputObject $users
+    $hashtableList
+
+.EXAMPLE
+    # Using pipeline input
+    $users | ConvertTo-PodeHashtable
+
+.NOTES
+    - This function ensures deep conversion of nested PSCustomObjects while leaving primitive values intact.
+    - Collections (e.g., Arrays, Lists) are processed recursively, preserving structure.
+    - This function is for internal Pode usage and may be subject to change.
+#>
+
+function ConvertTo-PodeHashtable {
+    param (
+        [Parameter(ValueFromPipeline)]
+        [psobject]
+        $InputObject
+    )
+
+    process {
+        if ($null -eq $InputObject) { return $null }
+
+        if ($InputObject -is [System.Collections.IEnumerable] -and $InputObject -isnot [string]) {
+            Write-Output -NoEnumerate -InputObject  @(
+                foreach ($object in $InputObject) { ConvertTo-PodeHashtable -InputObject $object }
+            )
+        }
+        elseif ($InputObject -is [psobject]) {
+            $hash = @{}
+            foreach ($property in $InputObject.PSObject.Properties) {
+                $hash[$property.Name] = (ConvertTo-PodeHashtable -InputObject $property.Value).PSObject.BaseObject
+            }
+            $hash
+        }
+        else {
+            $InputObject
+        }
+    }
 }

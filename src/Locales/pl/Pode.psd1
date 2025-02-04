@@ -324,4 +324,7 @@
     disableQuietModeMessage                                           = 'Wyłącz tryb cichy'
     invalidPodeStateFormatExceptionMessage                            = 'Plik PodeState "{0}" ma nieprawidłowy format. Oczekiwano struktury podobnej do słownika (ConcurrentDictionary, Hashtable lub OrderedDictionary), ale znaleziono [{1}]. Sprawdź zawartość pliku lub ponownie zainicjalizuj stan.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'Nieznany typ słownika/kolekcji w JSON: {0}'
+    invalidPodeStateDataExceptionMessage                              = 'Podane dane nie są poprawnym stanem Pode.'
+    podeStateVersionMismatchExceptionMessage                          = 'Podane dane stanu pochodzą z nowszej wersji Pode: {0}.'
+    podeStateApplicationMismatchExceptionMessage                      = 'Podane dane stanu należą do innej aplikacji: {0}.'
 }

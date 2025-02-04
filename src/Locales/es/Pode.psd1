@@ -324,4 +324,7 @@
     disableQuietModeMessage                                           = 'Desactivar modo silencioso'
     invalidPodeStateFormatExceptionMessage                            = 'El archivo PodeState "{0}" tiene un formato no válido. Se esperaba una estructura similar a un diccionario (ConcurrentDictionary, Hashtable o OrderedDictionary), pero se encontró [{1}]. Verifique el contenido del archivo o reinicialice el estado.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'Tipo de diccionario/colección desconocido en JSON: {0}'
+    invalidPodeStateDataExceptionMessage                              = 'Los datos proporcionados no representan un estado válido de Pode.'
+    podeStateVersionMismatchExceptionMessage                          = 'Los datos del estado proporcionados provienen de una versión más reciente de Pode: {0}.'
+    podeStateApplicationMismatchExceptionMessage                      = 'Los datos del estado proporcionados pertenecen a otra aplicación: {0}.'
 }

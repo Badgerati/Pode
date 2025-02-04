@@ -324,4 +324,7 @@
     disableQuietModeMessage                                           = 'Disable Quiet Mode'
     invalidPodeStateFormatExceptionMessage                            = 'The PodeState file "{0}" contains an invalid format. Expected a dictionary-like structure (ConcurrentDictionary, Hashtable, or OrderedDictionary), but found [{1}]. Please verify the file content or reinitialize the state.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'Unknown dictionary/collection type in JSON: {0}'
+    invalidPodeStateDataExceptionMessage                              = 'The provided data does not represent a valid Pode state.'
+    podeStateVersionMismatchExceptionMessage                          = 'The provided state data originates from a newer Pode version: {0}.'
+    podeStateApplicationMismatchExceptionMessage                      = 'The provided state data belongs to a different application: {0}.'
 }

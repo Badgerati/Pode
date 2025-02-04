@@ -324,4 +324,7 @@
     disableQuietModeMessage                                           = 'تعطيل الوضع الصامت'
     invalidPodeStateFormatExceptionMessage                            = 'ملف PodeState "{0}" يحتوي على تنسيق غير صالح. كان متوقعًا هيكل يشبه القاموس (ConcurrentDictionary أو Hashtable أو OrderedDictionary)، ولكن تم العثور على [{1}]. يرجى التحقق من محتوى الملف أو إعادة تهيئة الحالة.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'نوع قاموس/مجموعة غير معروف في JSON: {0}'
+    invalidPodeStateDataExceptionMessage                              = 'البيانات المقدمة لا تمثل حالة Pode صالحة.'
+    podeStateVersionMismatchExceptionMessage                          = 'بيانات الحالة المقدمة تأتي من إصدار أحدث من Pode: {0}.'
+    podeStateApplicationMismatchExceptionMessage                      = 'بيانات الحالة المقدمة تنتمي إلى تطبيق آخر: {0}.'
 }

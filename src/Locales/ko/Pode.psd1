@@ -324,4 +324,7 @@
     disableQuietModeMessage                                           = '조용한 모드 비활성화'
     invalidPodeStateFormatExceptionMessage                            = 'Het PodeState-bestand "{0}" bevat een ongeldig formaat. Verwacht werd een dictionary-achtige structuur (ConcurrentDictionary, Hashtable of OrderedDictionary), maar gevonden werd [{1}]. Controleer de inhoud van het bestand of initialiseert u de status opnieuw.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'JSON에서 알 수 없는 사전/컬렉션 유형: {0}'
+    invalidPodeStateDataExceptionMessage                              = '제공된 데이터는 유효한 Pode 상태 데이터가 아닙니다.'
+    podeStateVersionMismatchExceptionMessage                          = '제공된 상태 데이터는 최신 Pode 버전 ({0}) 에서 생성되었습니다.'
+    podeStateApplicationMismatchExceptionMessage                      = '제공된 상태 데이터는 다른 애플리케이션 ({0}) 에서 생성되었습니다.'
 }
