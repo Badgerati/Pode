@@ -27,6 +27,7 @@
 #>
 function ConvertFrom-PodeCustomDictionaryJson {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory)]
         [string]$Json
@@ -147,7 +148,20 @@ function ConvertFrom-PodeCustomDictionaryJson {
         <# Rebuild the Full Structure from JSON #>
         return Construct -obj $parsed.Data
     }
+    else {
+        # if (Test-PodeIsPSCore) {
+        #      $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth $Depth)
+        #  }
+        #     else {
+        $state = @{}
+        $props = $parsed.psobject.properties
+        foreach ($prop in $props) {
+            $state[$prop.Name] = $prop.Value
+        }
+        return $state
+    }
 }
+
 
 <#
 .SYNOPSIS
