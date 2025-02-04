@@ -111,9 +111,9 @@ Describe 'Restore-PodeState' {
     It 'Restores the state from file' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Test-Path { return $true }
-        Mock Get-Content { return '{"Type":"ConcurrentDictionary","Items":[{"Key":"Name","Value":{"Type":"ConcurrentDictionary","Items":[{"Key":"Value","Value":"Morty"},{"Key":"Scope","Value":[]}]}}]}' }
+        Mock Get-Content { return '{"Metadata":{"Product":"Pode","Version":"[dev]","Timestamp":"2025-02-04T01:54:30.6400033Z","Application":"Pester"},"Data":{"Type":"ConcurrentDictionary","Items":[{"Key":"Name","Value":{"Type":"ConcurrentDictionary","Items":[{"Key":"Value","Value":"Morty"},{"Key":"Scope","Value":[]}]}}]}}' }
 
-        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase); ApplicationName = 'Pester' }
         Restore-PodeState -Path './state.json'
         Get-PodeState -Name 'Name' | Should -Be 'Morty'
     }
