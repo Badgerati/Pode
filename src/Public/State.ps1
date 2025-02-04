@@ -281,7 +281,7 @@ function Remove-PodeState {
 
 .PARAMETER Depth
     Defines the maximum depth for JSON serialization.
-    This value is passed to `ConvertTo-PodeCustomDictionaryJson`. Default is **10**.
+    This value is passed to `ConvertTo-PodeCustomDictionaryJson`. Default is **20**.
 
 .PARAMETER Compress
     If specified, the JSON output will be minified (no extra whitespace).
@@ -326,7 +326,7 @@ function Save-PodeState {
 
         [Parameter()]
         [int16]
-        $Depth = 10,
+        $Depth = 20,
 
         [switch]
         $Compress
@@ -433,7 +433,7 @@ function Save-PodeState {
 
 .PARAMETER Depth
     Defines the maximum depth for JSON deserialization.
-    This value is passed to `ConvertFrom-PodeCustomDictionaryJson`. Default is **10**.
+    This value is passed to `ConvertFrom-PodeCustomDictionaryJson`. Default is **20**.
 
 .EXAMPLE
     Restore-PodeState -Path './state.json'
@@ -458,7 +458,7 @@ function Restore-PodeState {
 
         [switch]$Merge,
 
-        [int16]$Depth = 10
+        [int16]$Depth = 20
     )
 
     <# Validate Pode Server Context #>

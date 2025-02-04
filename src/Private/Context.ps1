@@ -98,6 +98,14 @@ function New-PodeContext {
     $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
 
+    $scriptFrame = (Get-PSCallStack | Where-Object { $_.Command -match '\.ps1$' } | Select-Object -First 1)
+    $ctx.Server.ApplicationName = if ($scriptFrame) {
+        [System.IO.Path]::GetFileName($scriptFrame.Command)
+    }
+    else {
+        'NoName'
+    }
+
     # list of created listeners/receivers
     $ctx.Listeners = @()
     $ctx.Receivers = @()

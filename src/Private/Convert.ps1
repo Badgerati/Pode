@@ -32,9 +32,6 @@ function ConvertFrom-PodeCustomDictionaryJson {
         [string]$Json
     )
 
-    # Parse the top-level JSON into a PSObject/Array
-    $parsed = $Json | ConvertFrom-Json
-
     function Construct {
         param([object]$obj)
 
@@ -132,11 +129,25 @@ function ConvertFrom-PodeCustomDictionaryJson {
         return $obj
     }
 
-    <# Rebuild the Full Structure from JSON #>
-    return Construct -obj $parsed
+
+    # Parse the top-level JSON into a PSObject/Array
+    $parsed = $Json | ConvertFrom-Json
+    if ($parsed.Metadata) {
+        if ($parsed.Metadata.Product -ne 'Pode') {
+            throw 'This is not a Pode State data.'
+        }
+        $podeVersion = (Get-PodeVersion -Raw)
+        if (!($podeVersion -eq '[dev]' -or ( ([System.Version]$parsed.Metadata) -le ([System.Version]$podeVersion))) ) {
+            throw ('This State data are from a newer version {0} of Pode.' -f $parsed.Metadata)
+        }
+        if ($parsed.Metadata.Application -ne (Get-PodeApplicationName)) {
+            throw ('This is Pode State data are from another application called {0}.' -f $parsed.Metadata.Application)
+        }
+
+        <# Rebuild the Full Structure from JSON #>
+        return Construct -obj $parsed.Data
+    }
 }
-
-
 
 <#
 .SYNOPSIS
@@ -172,7 +183,7 @@ function ConvertTo-PodeCustomDictionaryJson {
 
         [Parameter()]
         [int16]
-        $Depth = 10,
+        $Depth = 20,
 
         [switch]
         $Compress
@@ -238,7 +249,7 @@ function ConvertTo-PodeCustomDictionaryJson {
             foreach ($key in $Object.Keys) {
                 $wrapper.Items += [PSCustomObject]@{
                     Key   = $key
-                    Value =  Deconstruct($Object[$key])
+                    Value = Deconstruct($Object[$key])
                 }
             }
             return $wrapper
@@ -274,7 +285,7 @@ function ConvertTo-PodeCustomDictionaryJson {
         # If it's a list/array, process each item but return as array
         if ($Object -is [System.Collections.IEnumerable] -and $Object -isnot [string]) {
             if ($Object.Count -eq 0) {
-                return ,@()
+                return , @()
             }
             $convertedArray = @()
             foreach ($item in $Object) {
@@ -285,7 +296,7 @@ function ConvertTo-PodeCustomDictionaryJson {
 
         # If it's a PSCustomObject, process each property individually
         if ($Object -is [PSCustomObject]) {
-            $newObj = @{}
+            $newObj = [ordered]@{}
             $properties = $Object | Get-Member -MemberType NoteProperty, AliasProperty, ScriptProperty
             foreach ($prop in $properties) {
                 $newObj[$prop.Name] = Deconstruct($Object.$($prop.Name))
@@ -297,13 +308,19 @@ function ConvertTo-PodeCustomDictionaryJson {
         return $Object
     }
 
-    # If top-level is null, treat as an empty dictionary
-    if ($null -eq $Dictionary) {
-        $converted = @{ }
+    $converted = [ordered]@{
+        Metadata = [ordered]@{
+            Product     = 'Pode'
+            Version     = Get-PodeVersion
+            Timestamp   = Get-Date -AsUTC
+            Application = Get-PodeApplicationName
+        }
+        Data     = @{}
     }
-    else {
+    # If top-level is null, treat as an empty dictionary
+    if ($null -ne $Dictionary) {
         # Recursively convert any nested structures
-        $converted = Deconstruct -Object $Dictionary
+        $converted.Data = Deconstruct -Object $Dictionary
     }
 
     # Finally convert to JSON

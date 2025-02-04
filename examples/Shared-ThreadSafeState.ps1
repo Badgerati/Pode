@@ -58,7 +58,7 @@ Start-PodeServer {
     # re-initialise the state
     Restore-PodeState -Path $stateScope1Path
     Restore-PodeState -Path $stateScope2Path -Merge
-
+    Save-PodeState -Path $stateNoScopePath
     # initialise if there was no file
     if (!(Test-PodeState -Name 'hash1')) {
         $hash = (Set-PodeState -Name 'hash1' -NewCollectionType ConcurrentDictionary  -Scope Scope0, Scope1 )

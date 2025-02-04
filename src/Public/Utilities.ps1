@@ -1385,8 +1385,15 @@ This function assumes that $moduleManifest is a hashtable representing the loade
 
 #>
 function Get-PodeVersion {
+    param (
+        [switch]
+        $Raw
+    )
     $moduleManifest = Get-PodeModuleManifest
     if ($moduleManifest.ModuleVersion -ne '$version$') {
+        if ($Raw) {
+            return $moduleManifest.ModuleVersion
+        }
         return "v$($moduleManifest.ModuleVersion)"
     }
     else {
@@ -1611,3 +1618,14 @@ function Start-PodeSleep {
 
 
 
+function Get-PodeApplicationName {
+    return $PodeContext.Server.ApplicationName
+}
+
+function Set-PodeApplicationName {
+    param(
+        [string]
+        $Name
+    )
+    $PodeContext.Server.ApplicationName = $Name
+}
