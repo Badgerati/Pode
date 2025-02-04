@@ -77,7 +77,7 @@ Describe 'ConvertFrom-PodeCustomDictionaryJson' {
 Describe 'ConvertTo-PodeCustomDictionaryJson' {
     BeforeAll {
         $PodeContext = @{Server = @{ ApplicationName = 'Pester' } }
-        mock Get-Date { '2025-02-04T01:54:30.6400033Z' }
+        mock Get-PodeUtcNow { '2025-02-04T01:54:30.6400033Z' }
     }
     It 'Should correctly serialize a recursively nested dictionary' {
         $dictionary = @{ 'Level1' = @{ 'Level2' = @{ 'Final' = 'Reached' } } }

@@ -3971,3 +3971,33 @@ function Test-PodeIsISEHost {
         return 'NoName'
     }
  }
+
+
+ <#
+.SYNOPSIS
+    Returns the current date and time in UTC format.
+
+.DESCRIPTION
+    This function retrieves the current date and time in Coordinated Universal Time (UTC), ensuring consistency across different time zones.
+
+.OUTPUTS
+    [DateTime] - The current UTC date and time.
+
+.EXAMPLE
+    Get-PodeUtcNow
+
+    Returns the current UTC datetime.
+
+.NOTES
+    - This function is required to allow Pester test to mock it
+    - This function is for internal Pode usage and may be subject to change.
+#>
+function Get-PodeUtcNow {
+    [CmdletBinding()]
+    [OutputType([System.DateTime])]
+    param ()
+
+    process {
+        return [System.DateTime]::UtcNow
+    }
+}
