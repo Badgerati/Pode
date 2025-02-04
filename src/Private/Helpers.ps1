@@ -555,8 +555,9 @@ function Close-PodeServerInternal {
     # PodeContext doesn't exist return
     if ($null -eq $PodeContext) { return }
     try {
-           #Disable Logging before closing
+        #Disable Logging before closing
         Disable-PodeLog
+        
         # ensure the token is cancelled
         Write-Verbose 'Cancelling main cancellation token'
         Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
@@ -583,12 +584,15 @@ function Close-PodeServerInternal {
             $_ | Out-Default
         }
 
-    # remove all of the pode temp drives
-    Write-Verbose 'Removing internal PSDrives'
-    Remove-PodePSDrive
-
-    if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
-        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
+        # remove all of the pode temp drives
+        Write-Verbose 'Removing internal PSDrives'
+        Remove-PodePSDrive
+    }
+    finally {
+        if ($null -ne $PodeContext) {
+            # Remove any tokens
+            $PodeContext.Tokens = $null
+        }
     }
 
 }

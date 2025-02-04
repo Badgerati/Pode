@@ -760,111 +760,110 @@ function Start-PodeLoggerDispatcher {
     $scriptBlock = {
 
         $log = @{}
-        # Wait for the server to start before processing logs
-        if ( Wait-PodeServerToStart) {
-            try {
-                while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
-                    # Check for suspension token and wait for the debugger to reset if active
-                    Test-PodeSuspensionToken
-                    try {
-                        # Check if the log queue has reached its limit
-                        if ([Pode.PodeLogger]::Count -ge $PodeContext.Server.Logging.QueueLimit) {
-                            Invoke-PodeHandleFailure -Message "Reached the log Queue Limit of $($PodeContext.Server.Logging.QueueLimit)" -FailureAction $logger.Method.Arguments.FailureAction
+        # Waits for the Pode server to fully start before proceeding with further operations.
+        Wait-PodeCancellationTokenRequest -Type Start
+        try {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+
+                try {
+                    # Check if the log queue has reached its limit
+                    if ([Pode.PodeLogger]::Count -ge $PodeContext.Server.Logging.QueueLimit) {
+                        Invoke-PodeHandleFailure -Message "Reached the log Queue Limit of $($PodeContext.Server.Logging.QueueLimit)" -FailureAction $logger.Method.Arguments.FailureAction
+                    }
+
+                    # Try to dequeue a log entry from the queue
+                    if (  [Pode.PodeLogger]::TryDequeue([ref]$log)) {
+                        # If the log is null, check batch then sleep and skip
+                        if ($null -eq $log) {
+                            Start-Sleep -Milliseconds 100
+                            continue
+                        }
+                        if ($log.Name -eq [pode.PodeLogger]::ListenerLogName) {
+
+                            if ($log.Item -is [System.Exception]) {
+                                Write-PodeErrorLog -Exception $log.Item -Level 'Error' -ThreadId $log.Item.ThreadId
+                            }
+                            else {
+                                Write-PodeLog -Message $log.Item.Message -ThreadId $log.Item.ThreadId -Tag 'Listener' -Level $log.Item.Level
+
+                            }
+                            continue
                         }
 
-                        # Try to dequeue a log entry from the queue
-                        if (  [Pode.PodeLogger]::TryDequeue([ref]$log)) {
-                            # If the log is null, check batch then sleep and skip
-                            if ($null -eq $log) {
-                                Start-Sleep -Milliseconds 100
-                                continue
-                            }
-                            if ($log.Name -eq [pode.PodeLogger]::ListenerLogName) {
+                        # Run the log item through the appropriate method
+                        $logger = $PodeContext.Server.Logging.Type[$log.Name]
+                        $now = [datetime]::Now
 
-                                if ($log.Item -is [System.Exception]) {
-                                    Write-PodeErrorLog -Exception $log.Item -Level 'Error' -ThreadId $log.Item.ThreadId
+                        # Convert the log item into a writable format
+                        $rawItem = $log.Item
+                        $_args = @($log.Item) + @($logger.Arguments)
+
+                        $item = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
+
+                        # Check batching
+                        $batch = $logger.Method.Batch
+                        if ($batch.Size -gt 1) {
+                            # Add current item to batch
+                            $batch.Items += $item
+                            $batch.RawItems += $log.Item
+                            $batch.LastUpdate = $now
+
+                            # If the current amount of items matches the batch size, write
+                            $item = $null
+                            if ($batch.Items.Length -ge $batch.Size) {
+                                $item = $batch.Items
+                                $rawItem = $batch.RawItems
+                            }
+
+                            # If we're writing, reset the items
+                            if ($null -ne $item) {
+                                $batch.Items = @()
+                                $batch.RawItems = @()
+                            }
+                        }
+
+                        # Send the writable log item off to the log writer
+                        if ($null -ne $item) {
+                            foreach ($method in $logger.Method) {
+                                if ($method.NoRunspace) {
+                                    # Legacy for custom methods
+                                    #    $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logging.Method[$method.Id].ScriptBlock -Arguments $_args -UsingVariables $method.UsingVariables -Splat
+                                    $_args = @(, $item) + @($method.Arguments) + @(, $rawItem)
+                                    $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
                                 }
                                 else {
-                                    Write-PodeLog -Message $log.Item.Message -ThreadId $log.Item.ThreadId -Tag 'Listener' -Level $log.Item.Level
-
-                                }
-                                continue
-                            }
-
-                            # Run the log item through the appropriate method
-                            $logger = $PodeContext.Server.Logging.Type[$log.Name]
-                            $now = [datetime]::Now
-
-                            # Convert the log item into a writable format
-                            $rawItem = $log.Item
-                            $_args = @($log.Item) + @($logger.Arguments)
-
-                            $item = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
-
-                            # Check batching
-                            $batch = $logger.Method.Batch
-                            if ($batch.Size -gt 1) {
-                                # Add current item to batch
-                                $batch.Items += $item
-                                $batch.RawItems += $log.Item
-                                $batch.LastUpdate = $now
-
-                                # If the current amount of items matches the batch size, write
-                                $item = $null
-                                if ($batch.Items.Length -ge $batch.Size) {
-                                    $item = $batch.Items
-                                    $rawItem = $batch.RawItems
-                                }
-
-                                # If we're writing, reset the items
-                                if ($null -ne $item) {
-                                    $batch.Items = @()
-                                    $batch.RawItems = @()
-                                }
-                            }
-
-                            # Send the writable log item off to the log writer
-                            if ($null -ne $item) {
-                                foreach ($method in $logger.Method) {
-                                    if ($method.NoRunspace) {
-                                        # Legacy for custom methods
-                                        #    $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logging.Method[$method.Id].ScriptBlock -Arguments $_args -UsingVariables $method.UsingVariables -Splat
-                                        $_args = @(, $item) + @($method.Arguments) + @(, $rawItem)
-                                        $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
+                                    $_args = @{
+                                        Item    = $item
+                                        Options = $method.Arguments
+                                        RawItem = $rawItem
                                     }
-                                    else {
-                                        $_args = @{
-                                            Item    = $item
-                                            Options = $method.Arguments
-                                            RawItem = $rawItem
-                                        }
-                                        $PodeContext.Server.Logging.Method[$method.Id].Queue.Enqueue($_args)
-                                    }
+                                    $PodeContext.Server.Logging.Method[$method.Id].Queue.Enqueue($_args)
                                 }
                             }
+                        }
 
-                            # Small sleep to lower CPU usage
-                            Start-Sleep -Milliseconds 100
-                        }
-                        else {
-                            # Check the logger batch
-                            Test-PodeLoggerBatch
-                            Start-Sleep -Seconds 5
-                        }
+                        # Small sleep to lower CPU usage
+                        Start-Sleep -Milliseconds 100
                     }
-                    catch {
-                        $_ | Write-PodeErrorLog
+                    else {
+                        # Check the logger batch
+                        Test-PodeLoggerBatch
+                        Start-Sleep -Seconds 5
                     }
                 }
-            }
-            catch [System.OperationCanceledException] {
-                $_ | Write-PodeErrorLog -Level Debug
-            }
-            catch {
-                $_ | Write-PodeErrorLog
-                throw $_.Exception
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
             }
         }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+
     }
 
     # Retrieve unique method IDs
@@ -875,7 +874,7 @@ function Start-PodeLoggerDispatcher {
             foreach ($methodId in $uniqueMethodIds) {
                 if ($null -ne $PodeContext.Server.Logging.Method[$methodId]) {
                     $PodeContext.Server.Logging.Method[$methodId].Queue = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-                    $PodeContext.Server.Logging.Method[$methodId].Runspace = Add-PodeRunspace -PassThru -Type Logs -ScriptBlock $PodeContext.Server.Logging.Method[$methodId].ScriptBlock -Parameters @{ MethodId = $methodId } -Name 'Method' -Id $methodId | Out-Null
+                    $PodeContext.Server.Logging.Method[$methodId].Runspace = Add-PodeRunspace -PassThru -Type Logs -ScriptBlock $PodeContext.Server.Logging.Method[$methodId].ScriptBlock -Parameters @{ MethodId = $methodId } -Name 'Method' | Out-Null
                 }
             }
         }

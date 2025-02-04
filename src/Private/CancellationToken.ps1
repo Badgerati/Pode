@@ -340,7 +340,7 @@ function Wait-PodeCancellationTokenRequest {
 
     # Wait for the token to be reset, with exponential back-off
     $count = 1
-    while ($PodeContext.Tokens[$Type].IsCancellationRequested) {
+    while (! ($PodeContext.Tokens[$Type].IsCancellationRequested)) {
         Start-Sleep -Milliseconds (100 * $count)
         $count = [System.Math]::Min($count + 1, 20)
     }
@@ -366,9 +366,6 @@ function Wait-PodeCancellationTokenRequest {
     - `Start`
     - `Disable`
 
-.PARAMETER Wait
-    If specified, waits until the token's cancellation request becomes active before returning the result.
-
 .OUTPUTS
     [bool] Returns `$true` if the specified token has an active cancellation request, otherwise `$false`.
 
@@ -376,11 +373,6 @@ function Wait-PodeCancellationTokenRequest {
     Test-PodeCancellationTokenRequest -Type 'Restart'
 
     Checks if the Restart token has an active cancellation request and returns `$true` or `$false`.
-
-.EXAMPLE
-    Test-PodeCancellationTokenRequest -Type 'Suspend' -Wait
-
-    Waits until the Suspend token has an active cancellation request before returning `$true` or `$false`.
 
 .NOTES
     This function is an internal utility for Pode and may be subject to change in future releases.
@@ -390,21 +382,11 @@ function Test-PodeCancellationTokenRequest {
         [Parameter(Mandatory = $true)]
         [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable')]
         [string]
-        $Type,
-
-        [switch]
-        $Wait
+        $Type
     )
 
     # Check if the specified token has an active cancellation request
-    $cancelled = $PodeContext.Tokens[$Type].IsCancellationRequested
-
-    # If -Wait is specified, block until the token's cancellation request becomes active
-    if ($Wait) {
-        Wait-PodeCancellationTokenRequest -Type $Type
-    }
-
-    return $cancelled
+    return $PodeContext.Tokens[$Type].IsCancellationRequested
 }
 
 

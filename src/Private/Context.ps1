@@ -659,8 +659,9 @@ function New-PodeRunspacePool {
 
     # logs runspace - any log is running here
     $PodeContext.RunspacePools.Logs = @{
-        Pool  = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
-        State = 'Waiting'
+        Pool   = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
+        State  = 'Waiting'
+        LastId = 0
     }
 
     # web runspace - if we have any http/s endpoints
