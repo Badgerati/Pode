@@ -26,7 +26,7 @@ function Get-PodeLoggingTerminalMethod {
         }
 
         $log = @{}
-        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+        while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
             Start-Sleep -Milliseconds 100
 
             if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
@@ -67,7 +67,7 @@ function Get-PodeLoggingFileMethod {
         param($MethodId)
 
         $log = @{}
-        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+        while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
             Start-Sleep -Milliseconds 100
 
             if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
@@ -175,7 +175,7 @@ function Get-PodeLoggingSysLogMethod {
         $log = @{}
         $socketCreated = $false
         try {
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
                 Start-Sleep -Milliseconds 100
 
                 if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
@@ -311,7 +311,7 @@ function Get-PodeLoggingEventViewerMethod {
         param($MethodId)
 
         $log = @{}
-        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+        while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
             Start-Sleep -Milliseconds 100
 
             if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
