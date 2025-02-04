@@ -1615,17 +1615,3 @@ function Start-PodeSleep {
         Start-Sleep -Milliseconds $sleepInterval
     }
 }
-
-
-
-function Get-PodeApplicationName {
-    return $PodeContext.Server.ApplicationName
-}
-
-function Set-PodeApplicationName {
-    param(
-        [string]
-        $Name
-    )
-    $PodeContext.Server.ApplicationName = $Name
-}

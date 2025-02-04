@@ -143,7 +143,7 @@ function ConvertFrom-PodeCustomDictionaryJson {
             # The provided state data originates from a newer Pode version:
             throw ($PodeLocale.podeStateVersionMismatchExceptionMessage -f $parsed.Metadata)
         }
-        if ($parsed.Metadata.Application -ne (Get-PodeApplicationName)) {
+        if ($parsed.Metadata.Application -ne ($PodeContext.Server.ApplicationName)) {
             # The provided state data belongs to a different application
             throw ($PodeLocale.podeStateApplicationMismatchExceptionMessage -f $parsed.Metadata.Application)
         }
@@ -317,7 +317,7 @@ function ConvertTo-PodeCustomDictionaryJson {
             Product     = 'Pode'
             Version     = Get-PodeVersion
             Timestamp   = Get-Date -AsUTC
-            Application = Get-PodeApplicationName
+            Application = $PodeContext.Server.ApplicationName
         }
         Data     = @{}
     }
