@@ -512,6 +512,8 @@
         'Add-PodeLimitRule',
         'Add-PodeLimitRateRule',
         'Add-PodeLimitAccessRule',
+        'Update-PodeLimitRateRule',
+        'Update-PodeLimitAccessRule',
         'Test-PodeLimitRateRule',
         'Test-PodeLimitAccessRule',
         'Remove-PodeLimitRateRule',

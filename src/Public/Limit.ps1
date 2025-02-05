@@ -134,18 +134,22 @@ function Add-PodeLimitRateRule {
         $Component,
 
         [Parameter()]
-        [ValidateRange(1, [int]::MaxValue)]
+        [ValidateRange(0, [int]::MaxValue)]
         [int]
         $Limit,
 
         [Parameter()]
         [ValidateRange(1, [int]::MaxValue)]
         [int]
-        $Timeout = 60000,
+        $Duration = 60000,
 
         [Parameter()]
         [int]
-        $StatusCode = 429
+        $StatusCode = 429,
+
+        [Parameter()]
+        [int]
+        $Priority = [int]::MinValue
     )
 
     if (Test-PodeLimitRateRule -Name $Name) {
@@ -153,14 +157,55 @@ function Add-PodeLimitRateRule {
     }
 
     $PodeContext.Server.Limits.Rate.Rules[$Name] = @{
+        Name       = $Name
         Components = $Component
         Limit      = $Limit
-        Timeout    = $Timeout
+        Duration   = $Duration
         StatusCode = $StatusCode
+        Priority   = $Priority
         Active     = [System.Collections.Concurrent.ConcurrentDictionary[string, hashtable]]::new()
     }
 
+    $PodeContext.Server.Limits.Rate.RulesAltered = $true
     Add-PodeLimitRateTimer
+}
+
+function Update-PodeLimitRateRule {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [int]
+        $Limit = -1,
+
+        [Parameter()]
+        [int]
+        $Duration = -1,
+
+        [Parameter()]
+        [int]
+        $StatusCode = -1
+    )
+
+    $rule = $PodeContext.Server.Limits.Rate.Rules[$Name]
+    if (!$rule) {
+        throw "A rate limit rule with the name '$($Name)' does not exist"
+    }
+
+    if ($Limit -ge 0) {
+        $rule.Limit = $Limit
+    }
+
+    if ($Duration -gt 0) {
+        $rule.Duration = $Duration
+    }
+
+    if ($StatusCode -gt 0) {
+        $rule.StatusCode = $StatusCode
+    }
 }
 
 function Remove-PodeLimitRateRule {
@@ -172,6 +217,7 @@ function Remove-PodeLimitRateRule {
     )
 
     $null = $PodeContext.Server.Limits.Rate.Rules.Remove($Name)
+    $PodeContext.Server.Limits.Rate.RulesAltered = $true
     Remove-PodeLimitRateTimer
 }
 
@@ -221,7 +267,11 @@ function Add-PodeLimitAccessRule {
 
         [Parameter()]
         [int]
-        $StatusCode = 403
+        $StatusCode = 403,
+
+        [Parameter()]
+        [int]
+        $Priority = [int]::MinValue
     )
 
     if (Test-PodeLimitAccessRule -Name $Name) {
@@ -229,15 +279,55 @@ function Add-PodeLimitAccessRule {
     }
 
     $PodeContext.Server.Limits.Access.Rules[$Name] = @{
+        Name       = $Name
         Components = $Component
         Action     = $Action
         StatusCode = $StatusCode
+        Priority   = $Priority
     }
+
+    $PodeContext.Server.Limits.Access.RulesAltered = $true
 
     # set the flag if we have any allow rules
     if ($Action -eq 'Allow') {
         $PodeContext.Server.Limits.Access.HaveAllowRules = $true
     }
+}
+
+function Update-PodeLimitAccessRule {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [ValidateSet('Allow', 'Deny')]
+        [string]
+        $Action = $null,
+
+        [Parameter()]
+        [int]
+        $StatusCode = -1
+    )
+
+    $rule = $PodeContext.Server.Limits.Access.Rules[$Name]
+    if (!$rule) {
+        throw "An access limit rule with the name '$($Name)' does not exist"
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Action)) {
+        $rule.Action = $Action
+    }
+
+    if ($StatusCode -gt 0) {
+        $rule.StatusCode = $StatusCode
+    }
+
+    # reset the flag if we have any allow rules
+    $PodeContext.Server.Limits.Access.HaveAllowRules = ($PodeContext.Server.Limits.Access.Rules.Value |
+            Where-Object { $_.Action -eq 'Allow' } |
+            Measure-Object).Count -gt 0
 }
 
 function Remove-PodeLimitAccessRule {
@@ -250,15 +340,12 @@ function Remove-PodeLimitAccessRule {
 
     # remove the rule
     $null = $PodeContext.Server.Limits.Access.Rules.Remove($Name)
+    $PodeContext.Server.Limits.Access.RulesAltered = $true
 
     # reset the flag if we have any allow rules
-    $haveAccessRules = ($PodeContext.Server.Limits.Access.Rules.Value |
+    $PodeContext.Server.Limits.Access.HaveAllowRules = ($PodeContext.Server.Limits.Access.Rules.Value |
             Where-Object { $_.Action -eq 'Allow' } |
             Measure-Object).Count -gt 0
-
-    if (!$haveAccessRules) {
-        $PodeContext.Server.Limits.Access.HaveAllowRules = $false
-    }
 }
 
 function Test-PodeLimitAccessRule {

@@ -137,8 +137,16 @@ function Get-PodeAccessMiddleware {
                 return $true
             }
 
+            # generate the rule order, if rules have been altered
+            if ($PodeContext.Server.Limits.Access.RulesAltered) {
+                $PodeContext.Server.Limits.Access.RulesOrder = $PodeContext.Server.Limits.Access.Rules.Values |
+                    Sort-Object -Property { $_.Priority } -Descending |
+                    Select-Object -ExpandProperty Name
+                $PodeContext.Server.Limits.Access.RulesAltered = $false
+            }
+
             # loop through each access rule
-            foreach ($ruleName in $PodeContext.Server.Limits.Access.Rules.Keys) {
+            foreach ($ruleName in $PodeContext.Server.Limits.Access.RulesOrder) {
                 $rule = $PodeContext.Server.Limits.Access.Rules[$ruleName]
 
                 # loop through each component of the rule, checking if the request matches
@@ -208,10 +216,19 @@ function Get-PodeLimitMiddleware {
                 return $true
             }
 
+            # generate the rule order, if rules have been altered
+            if ($PodeContext.Server.Limits.Rate.RulesAltered) {
+                $PodeContext.Server.Limits.Rate.RulesOrder = $PodeContext.Server.Limits.Rate.Rules.Values |
+                    Sort-Object -Property { $_.Priority } -Descending |
+                    Select-Object -ExpandProperty Name
+                $PodeContext.Server.Limits.Rate.RulesAltered = $false
+            }
+
             # loop through each rate rule
-            foreach ($ruleName in $PodeContext.Server.Limits.Rate.Rules.Keys) {
+            foreach ($ruleName in $PodeContext.Server.Limits.Rate.RulesOrder) {
                 $rule = $PodeContext.Server.Limits.Rate.Rules[$ruleName]
                 $ruleKey = @()
+                $now = [DateTime]::UtcNow
 
                 # loop through each component of the rule
                 $skip = $false
@@ -235,7 +252,17 @@ function Get-PodeLimitMiddleware {
 
                 # concatenate the rule key
                 $ruleKey = $ruleKey -join '|'
-                $now = [DateTime]::UtcNow
+
+                # if it's not in the active dictionary, or the timeout has passed, then add/reset it
+                if (!$rule.Active.ContainsKey($ruleKey) -or ($rule.Active[$ruleKey].Timeout -le $now)) {
+                    $rule.Active[$ruleKey] = @{
+                        Timeout = $now.AddMilliseconds($rule.Duration)
+                        Counter = 0
+                    }
+                }
+
+                # increment the counter
+                $rule.Active[$ruleKey].Counter++
 
                 # if the key is in the active dictionary, then check the timeout/counter and set the status code if needed
                 if ($rule.Active.ContainsKey($ruleKey) -and
@@ -246,18 +273,6 @@ function Get-PodeLimitMiddleware {
                     Set-PodeResponseStatus -Code $rule.StatusCode
                     return $false
                 }
-
-                # if it's not in the active dictionary, or the timeout has passed, then add/reset it
-                if (!$rule.Active.ContainsKey($ruleKey) -or
-                    ($rule.Active[$ruleKey].Timeout -le $now)) {
-                    $rule.Active[$ruleKey] = @{
-                        Timeout = $now.AddMilliseconds($rule.Timeout)
-                        Counter = 0
-                    }
-                }
-
-                # increment the counter
-                $rule.Active[$ruleKey].Counter++
             }
 
             # request is allowed
