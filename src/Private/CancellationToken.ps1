@@ -340,7 +340,7 @@ function Wait-PodeCancellationTokenRequest {
 
     # Wait for the token to be reset, with exponential back-off
     $count = 1
-    while ($PodeContext.Tokens[$Type].IsCancellationRequested) {
+    while (! $PodeContext.Tokens[$Type].IsCancellationRequested) {
         Start-Sleep -Milliseconds (100 * $count)
         $count = [System.Math]::Min($count + 1, 20)
     }
@@ -366,9 +366,6 @@ function Wait-PodeCancellationTokenRequest {
     - `Start`
     - `Disable`
 
-.PARAMETER Wait
-    If specified, waits until the token's cancellation request becomes active before returning the result.
-
 .OUTPUTS
     [bool] Returns `$true` if the specified token has an active cancellation request, otherwise `$false`.
 
@@ -376,11 +373,6 @@ function Wait-PodeCancellationTokenRequest {
     Test-PodeCancellationTokenRequest -Type 'Restart'
 
     Checks if the Restart token has an active cancellation request and returns `$true` or `$false`.
-
-.EXAMPLE
-    Test-PodeCancellationTokenRequest -Type 'Suspend' -Wait
-
-    Waits until the Suspend token has an active cancellation request before returning `$true` or `$false`.
 
 .NOTES
     This function is an internal utility for Pode and may be subject to change in future releases.
@@ -390,19 +382,11 @@ function Test-PodeCancellationTokenRequest {
         [Parameter(Mandatory = $true)]
         [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable')]
         [string]
-        $Type,
-
-        [switch]
-        $Wait
+        $Type
     )
 
     # Check if the specified token has an active cancellation request
     $cancelled = $PodeContext.Tokens[$Type].IsCancellationRequested
-
-    # If -Wait is specified, block until the token's cancellation request becomes active
-    if ($Wait) {
-        Wait-PodeCancellationTokenRequest -Type $Type
-    }
 
     return $cancelled
 }
@@ -427,8 +411,10 @@ function Test-PodeCancellationTokenRequest {
 #>
 
 function Resolve-PodeCancellationToken {
+
     #Retrieve the current state of the Pode server
     $serverState = Get-PodeServerState
+
     if ($PodeContext.Server.AllowedActions.Restart -and (Test-PodeCancellationTokenRequest -Type Restart)) {
         Restart-PodeInternalServer
         return
@@ -454,11 +440,9 @@ function Resolve-PodeCancellationToken {
     # Handle suspend/resume actions
     if ($PodeContext.Server.AllowedActions.Suspend) {
         if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq [Pode.PodeServerState]::Resuming)) {
-            #    if ((Test-PodeCancellationTokenRequest -Type Resume) -and (($ServerState -eq [Pode.PodeServerState]::Suspended) -or ($ServerState -eq [Pode.PodeServerState]::Resuming))) {
             Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
             return
         }
-        #elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and (($ServerState -eq [Pode.PodeServerState]::Running) -or ($ServerState -eq [Pode.PodeServerState]::Suspending))) {
         elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq [Pode.PodeServerState]::Suspending)) {
             Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
             return

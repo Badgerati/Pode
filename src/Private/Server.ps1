@@ -183,16 +183,18 @@ function Start-PodeInternalServer {
             }
         }
 
-        # Trigger the start
-        Close-PodeCancellationTokenRequest -Type Start
 
         # set the start time of the server (start and after restart)
         $PodeContext.Metrics.Server.StartTime = [datetime]::UtcNow
 
+        # Trigger the start
+        Close-PodeCancellationTokenRequest -Type Start
+
+        Show-PodeConsoleInfo
+
         # run running event hooks
         Invoke-PodeEvent -Type Running
 
-        Show-PodeConsoleInfo
 
         # Start Service Monitor
         Start-PodeServiceHeartbeat
