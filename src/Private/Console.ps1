@@ -944,10 +944,6 @@ function Get-PodeConsoleKey {
     The `Invoke-PodeConsoleAction` function uses a hashtable to define and centralize key mappings,
     allowing for easier updates and a cleaner implementation.
 
-.PARAMETER serverState
-    The current state of the Pode server, retrieved using Get-PodeServerState,
-    which determines whether actions like suspend, disable, or restart can be executed.
-
 .NOTES
     This function is part of Pode's internal utilities and may change in future releases.
 
@@ -957,11 +953,10 @@ function Get-PodeConsoleKey {
     Processes the next key press or cancellation token to execute the corresponding server action.
 #>
 function Invoke-PodeConsoleAction {
-    param(
-        [Parameter(Mandatory = $true)]
-        [Pode.PodeServerState]
-        $ServerState
-    )
+
+    # Retrieve the current state of the server (e.g., Running, Suspended).
+    $serverState = Get-PodeServerState
+
     # Get the next key press if console input is enabled
     $Key = Get-PodeConsoleKey
     if ($null -ne $key) {
@@ -1427,7 +1422,7 @@ function Test-PodeHasConsole {
         return ([Pode.NativeMethods]::IsTerminal($handleTypeMap.Input) -and `
                 [Pode.NativeMethods]::IsTerminal($handleTypeMap.Output) -and `
                 [Pode.NativeMethods]::IsTerminal($handleTypeMap.Error)
-        )  
+        )
     }
     return $false
 }
