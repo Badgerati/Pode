@@ -337,7 +337,7 @@ Add-PodeAuthIIS -Name 'IISAuth' -ScriptBlock {
 
 ## IIS Advanced Kerberos
 
-Kerberos Authentication can be configured using Active Directory account and 
+Kerberos Authentication can be configured using Active Directory account and
 Group Managed Service Account (gMSA)
 
 gMSA allows automatic password management, if you have more than 1 IIS server running Pode better to use gMSA for IIS AppPool Identity
@@ -423,7 +423,7 @@ Start-PodeServer -StatusPageExceptions Show {
 ### Configuration steps for _Domain Account_:
 
 1. Create Domain Users in AD for Pode AppPool - **Pode.Svc**
-1. Create SPNs: 
+1. Create SPNs:
     ``` cmd
     setspn -d HTTP/PodeServer Contoso\pode.svc
     setspn -d HTTP/PodeServer.Contoso.com Contoso\pode.svc
@@ -431,9 +431,9 @@ Start-PodeServer -StatusPageExceptions Show {
 1. Configure **Pode.Svc** user Delegation - _Trust this user for delegation ..._
 1. Configure Pode Website to use **PodeServer.Contoso.com** as **Host Name**
 1. Configure Pode Website AppPool to use _Contoso\pode.svc_ as **Identity**
-1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder 
+1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder
 1. _**!!! Important !!!**_ Add PTR DNS record _PodeServer.Contoso.com_ pointing to Load Balancer IP. If you have only one server and want to test, replace PTR record for _iis1.Contoso.com_ to _PodeServer.Contoso.com_
-1. Open URLs: 
+1. Open URLs:
     - https://PodeServer.Contoso.com/
     - https://PodeServer.Contoso.com/test-kerberos
     - https://PodeServer.Contoso.com/test-kerberos-impersonation
@@ -462,7 +462,7 @@ Start-PodeServer -StatusPageExceptions Show {
     # Reboot IIS servers to update hosts group membership!
     Restart-Computer -ComputerName "iis1","iis2" -force
     ```
-1. _**!!! Important !!!**_ Both IIS Servers must be rebooted to update Group Membership 
+1. _**!!! Important !!!**_ Both IIS Servers must be rebooted to update Group Membership
 1. On both IIS Servers:
     ``` PowerShell
     Add-WindowsFeature RSAT-AD-PowerShell
@@ -472,16 +472,16 @@ Start-PodeServer -StatusPageExceptions Show {
     ```
 1. Configure Pode Website to use **PodeServer.Contoso.com** as **Host Name**
 1. Configure Pode Website AppPool to use _Contoso\gmsaPodeSvc$_ as **Identity**
-1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder 
+1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder
 1. _**!!! Important !!!**_ Add PTR DNS record _PodeServer.Contoso.com_ pointing to Load Balancer IP. If you have only one server and want to test, replace PTR record for _iis1.Contoso.com_ to _PodeServer.Contoso.com_
-1. Open URLs: 
+1. Open URLs:
     - https://PodeServer.Contoso.com/
     - https://PodeServer.Contoso.com/test-kerberos
     - https://PodeServer.Contoso.com/test-kerberos-impersonation
 
 ### Kerberos Impersonate
 
-Pode can impersonate the user that requests the web page using Kerberos Constrained Delegation (KCD). 
+Pode can impersonate the user that requests the web page using Kerberos Constrained Delegation (KCD).
 
 Requirements:
 
@@ -503,7 +503,7 @@ To host your Pode server under IIS using Azure Web Apps, ensure the OS type is W
 
 Your web.config's `processPath` will also need to reference `powershell.exe` not `pwsh.exe`.
 
-Pode can auto-detect if you're using an Azure Web App, but if you're having issues trying setting the `-DisableTermination` and `-Quiet` switches on your [`Start-PodeServer`](../../Functions/Core/Start-PodeServer).
+Pode can auto-detect if you're using an Azure Web App, but if you're having issues trying setting the `-Daemon` switches on your [`Start-PodeServer`](../../Functions/Core/Start-PodeServer).
 
 ## Useful Links
 

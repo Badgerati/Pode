@@ -675,7 +675,12 @@ function Test-PodeMiddleware {
         $Name
     )
 
-    # Check if the specified middleware exists in the Pode server's middleware collection
-    return (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0)
-}
+    # Check if the middleware exists
+    foreach ($middleware in $PodeContext.Server.Middleware) {
+        if ($middleware.Name -ieq $Name) {
+            return $true
+        }
+    }
 
+    return $false
+}
