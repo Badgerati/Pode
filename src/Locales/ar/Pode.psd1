@@ -322,4 +322,7 @@
     showOpenAPIMessage                                                = 'عرض OpenAPI'
     enableQuietModeMessage                                            = 'تمكين الوضع الصامت'
     disableQuietModeMessage                                           = 'تعطيل الوضع الصامت'
+    authMethodDoesNotExistExceptionMessage                            = 'طريقة المصادقة غير موجودة: {0}'
+    authenticationMethodMergedExceptionMessage                        = 'تم دمج طريقة المصادقة {0}'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "المعلمة '-NoMiddlewareAuthentication' يمكن استخدامها فقط عند تحديد '-Authentication'."
 }

@@ -322,4 +322,7 @@
     showOpenAPIMessage                                                = 'OpenAPI 표시'
     enableQuietModeMessage                                            = '조용한 모드 활성화'
     disableQuietModeMessage                                           = '조용한 모드 비활성화'
+    authMethodDoesNotExistExceptionMessage                            = '인증 방법이 존재하지 않습니다: {0}'
+    authenticationMethodMergedExceptionMessage                        = '인증 방법 {0}이(가) 병합되었습니다'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "매개변수 '-NoMiddlewareAuthentication'은 '-Authentication'이 지정된 경우에만 사용할 수 있습니다."
 }

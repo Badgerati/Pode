@@ -9,7 +9,13 @@
 .EXAMPLE
     To run the sample: ./Web-AuthBasicBearer.ps1
 
-    Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ Authorization = 'Bearer test-token' }
+    Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ Authorization = 'Bearer test-token' } -ResponseHeadersVariable headers
+
+.EXAMPLE
+    "No Authorization header found" 
+
+    Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -ResponseHeadersVariable headers -Verbose -SkipHttpErrorCheck
+    $headers | Format-List
 
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthBasicBearer.ps1
@@ -64,7 +70,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ErrorContentType 'application/json' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{

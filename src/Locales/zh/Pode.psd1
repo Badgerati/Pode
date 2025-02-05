@@ -322,4 +322,7 @@
     showOpenAPIMessage                                                = '显示OpenAPI'
     enableQuietModeMessage                                            = '启用安静模式'
     disableQuietModeMessage                                           = '禁用安静模式'
+    authMethodDoesNotExistExceptionMessage                            = '身份验证方法不存在: {0}'
+    authenticationMethodMergedExceptionMessage                        = '身份验证方法 {0} 已合并'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "参数 '-NoMiddlewareAuthentication' 只能在指定 '-Authentication' 时使用。"
 }

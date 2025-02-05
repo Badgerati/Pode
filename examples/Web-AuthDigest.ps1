@@ -9,7 +9,97 @@
 .EXAMPLE
     To run the sample: ./Web-AuthDigest.ps1
 
-    Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
+    # Define the URI and credentials
+    $uri = [System.Uri]::new("http://localhost:8081/users")
+    $username = "morty"
+    $password = "pickle"
+
+    # Create a credential cache and add Digest authentication
+    $credentialCache = [System.Net.CredentialCache]::new()
+    $networkCredential = [System.Net.NetworkCredential]::new($username, $password)
+    $credentialCache.Add($uri, "Digest", $networkCredential)
+
+    # Create the HTTP client handler with the credential cache
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+    $handler.Credentials = $credentialCache
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
+
+.EXAMPLE
+    No authentication
+
+    # Define the URI
+    $uri = [System.Uri]::new("http://localhost:8081/users")
+
+    # Create the HTTP client handler (no authentication)
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
+
+.EXAMPLE
+    Wrong password
+
+    # Define the URI and wrong credentials
+    $uri = [System.Uri]::new("http://localhost:8081/users")
+    $wrongUsername = "wrongUser"
+    $wrongPassword = "wrongPassword"
+
+    # Create a credential cache and add Digest authentication with incorrect credentials
+    $credentialCache = [System.Net.CredentialCache]::new()
+    $networkCredential = [System.Net.NetworkCredential]::new($wrongUsername, $wrongPassword)
+    $credentialCache.Add($uri, "Digest", $networkCredential)
+
+    # Create the HTTP client handler with the credential cache
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+    $handler.Credentials = $credentialCache
+
+    # Create the HTTP client
+    $httpClient = [System.Net.Http.HttpClient]::new($handler)
+
+    # Create the HTTP GET request message
+    $requestMessage = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $uri)
+
+    # Send the request and get the response
+    $response = $httpClient.SendAsync($requestMessage).Result
+
+    # Display the response status code (to check for 401 Unauthorized)
+    $response.StatusCode
+
+    # Extract and display the response headers
+    $response.Headers | ForEach-Object { "$($_.Key): $($_.Value)" }
+
+    # Optionally, get content as string if needed
+    $content = $response.Content.ReadAsStringAsync().Result
+    $content
+
 
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthDigest.ps1
@@ -62,7 +152,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ErrorContentType  'application/json' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{

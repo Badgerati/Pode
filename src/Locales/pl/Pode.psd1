@@ -322,4 +322,7 @@
     showOpenAPIMessage                                                = 'Pokaż OpenAPI'
     enableQuietModeMessage                                            = 'Włącz tryb cichy'
     disableQuietModeMessage                                           = 'Wyłącz tryb cichy'
+    authMethodDoesNotExistExceptionMessage                            = 'Metoda uwierzytelniania nie istnieje: {0}'
+    authenticationMethodMergedExceptionMessage                        = 'Metoda uwierzytelniania {0} została scalona'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "Parametr '-NoMiddlewareAuthentication' można używać tylko, gdy określono '-Authentication'."
 }

@@ -322,4 +322,7 @@
     showOpenAPIMessage                                                = 'Show OpenAPI'
     enableQuietModeMessage                                            = 'Enable Quiet Mode'
     disableQuietModeMessage                                           = 'Disable Quiet Mode'
+    authMethodDoesNotExistExceptionMessage                            = 'The authentication method does not exist: {0}'
+    authenticationMethodMergedExceptionMessage                        = 'The authentication method {0} has been merged'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "The parameter '-NoMiddlewareAuthentication' can only be used when '-Authentication' is specified."
 }

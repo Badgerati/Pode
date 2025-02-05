@@ -322,4 +322,7 @@
     showOpenAPIMessage                                                = 'OpenAPI weergeven'
     enableQuietModeMessage                                            = 'Stille modus inschakelen'
     disableQuietModeMessage                                           = 'Stille modus uitschakelen'
+    authMethodDoesNotExistExceptionMessage                            = 'Authenticatiemethode bestaat niet: {0}'
+    authenticationMethodMergedExceptionMessage                        = 'Authenticatiemethode {0} is samengevoegd'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "De parameter '-NoMiddlewareAuthentication' kan alleen worden gebruikt als '-Authentication' is opgegeven."
 }

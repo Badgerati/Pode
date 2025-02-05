@@ -388,3 +388,69 @@ Start-PodeServer {
     New-PodeAuthScheme -Basic | Add-PodeAuthWindowsAd -Name 'Login'
 }
 ```
+
+## Handling Authentication Manually
+
+Sometimes, the standard Pode authentication approach may not provide the flexibility needed to accommodate all use cases. For example, specific requirements such as customizing an OpenAPI definition for an unsuccessful authentication might necessitate a more tailored solution. This approach offers greater control over authentication processing within routes.
+
+### Invoke-PodeAuth
+
+The `Invoke-PodeAuth` function allows for direct invocation of authentication methods and returns the result from `Add-PodeAuth`. This function offers a streamlined approach for manually handling authentication within routes.
+
+#### Usage Example
+
+```powershell
+New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'APIKey' -Sessionless -ScriptBlock {
+    param($key)
+
+    # Handle missing API key
+    if (!$key) {
+        return @{ Success = $false; Reason = 'No X-API-KEY Header found' }
+    }
+
+    # Validate API key
+    if ($key -eq 'test_user') {
+        return @{ Success = $true; User = 'test_user'; UserId = 1 }
+    }
+
+    # Return failure for invalid users
+    return @{ Success = $false; User = $key; UserId = -1; Reason = 'Not existing user' }
+}
+
+Add-PodeRoute -Method 'Get' -Path '/api/v3/' -Authentication 'APIKey' -NoMiddlewareAuthentication -ScriptBlock {
+    $auth = Invoke-PodeAuth -Name 'APIKey'
+
+    if ($auth.Success) {
+        Write-PodeJsonResponse -Value @{ Username = $auth.User }
+    } else {
+        Write-PodeJsonResponse -Value @{ message = $auth.Reason; user = $auth.User } -StatusCode 401
+    }
+}
+```
+
+The `Auth` object, when managed this way, includes any value returned by the authentication scriptblock, such as `User`, `UserId`, and `Reason` fields as shown in the example.
+
+### NoMiddlewareAuthentication Parameter
+
+The `-NoMiddlewareAuthentication` parameter for `Add-PodeRoute` enables routes to bypass automatic authentication middleware processing. This allows developers to manually handle authentication within route script blocks.
+
+#### Example Usage
+
+```powershell
+Add-PodeRoute -Method 'Get' -Path '/api/v3/' -Authentication 'APIKey' -NoMiddlewareAuthentication -ScriptBlock {
+    $auth = Invoke-PodeAuth -Name 'APIKey'
+
+    if ($auth.Success) {
+        Write-PodeJsonResponse -Value @{ Username = $auth.User }
+    } else {
+        Write-PodeJsonResponse -Value @{ message = $auth.Reason; user = $auth.User } -StatusCode 401
+    }
+}
+```
+
+### Benefits
+
+- Allows developers to manually control authentication within route logic.
+- Provides flexibility to bypass automatic authentication middleware.
+- Ensures better customization for complex authentication scenarios.
+

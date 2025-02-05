@@ -322,4 +322,7 @@
     showOpenAPIMessage                                                = 'OpenAPIを表示'
     enableQuietModeMessage                                            = 'クワイエットモードを有効化'
     disableQuietModeMessage                                           = 'クワイエットモードを無効化'
+    authMethodDoesNotExistExceptionMessage                            = '認証方法が存在しません: {0}'
+    authenticationMethodMergedExceptionMessage                        = '認証方法 {0} が統合されました'
+    parameterNoMiddlewareAuthRequiresAuthenticationExceptionMessage   = "パラメーター '-NoMiddlewareAuthentication' は、'-Authentication' が指定されている場合にのみ使用できます。"
 }
