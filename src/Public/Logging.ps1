@@ -1228,6 +1228,8 @@ function Disable-PodeLog {
     Clear-PodeLogging
 #>
 function Clear-PodeLogging {
+    $PodeContext.Server.Logging.Type.Clear()
+    $PodeContext.Server.Logging.Method.Clear()
     [pode.PodeLogger]::Clear()
 }
 
