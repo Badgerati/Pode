@@ -850,7 +850,6 @@ function Write-PodeErrorLog {
     }
 }
 
-
 <#
 .SYNOPSIS
     Writes an object, exception, or custom message to a configured custom or built-in logging method.
