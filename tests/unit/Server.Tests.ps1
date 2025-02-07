@@ -119,8 +119,7 @@ Describe 'Restart-PodeInternalServer' {
         Mock Start-PodeInternalServer { }
         Mock Write-PodeErrorLog { }
         Mock Close-PodeDisposable { }
-        Mock Invoke-PodeEvent { }
-        Mock Clear-PodeLogging { }
+        Mock Invoke-PodeEvent { } 
     }
 
     It 'Resetting the server values' {
