@@ -74,11 +74,11 @@ Start-PodeServer -Threads 2 -Verbose {
 
     # limit
     # Add-PodeLimitRule -Type IP -Values all -Limit 100 -Seconds 5
-    # Add-PodeLimitRateRule -Name 'Main' -Limit 5 -Timeout 10000 -Component @(
+    # Add-PodeLimitRateRule -Name 'Main' -Limit 5 -Duration 10000 -Component @(
     #     New-PodeLimitIPComponent #-IP '127.0.0.2'
     #     New-PodeLimitRouteComponent -Path '/'
     # )
-    # Add-PodeLimitRateRule -Name 'Debounce' -Limit 1 -Timeout 10000 -Component @(
+    # Add-PodeLimitRateRule -Name 'Debounce' -Limit 1 -Duration 10000 -Component @(
     #     New-PodeLimitIPComponent
     #     New-PodeLimitRouteComponent
     #     New-PodeLimitMethodComponent -Method Get, Post

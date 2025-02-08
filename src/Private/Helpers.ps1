@@ -174,7 +174,7 @@ function Get-PodeHostIPRegex {
         $Type
     )
 
-    $ip_rgx = '\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|((\d+\.){3}\d+)(\/(\d|[1-2][0-9]|3[0-2]))?|\*|all'
+    $ip_rgx = '\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|(((\d{1,2}|1\d{1,2}|2[0-5][0-5])\.){3}(\d{1,2}|1\d{1,2}|2[0-5][0-5]))(\/(\d|[1-2][0-9]|3[0-2]))?|\*|all'
     $host_rgx = '([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
 
     switch ($Type.ToLowerInvariant()) {
@@ -215,7 +215,11 @@ function Get-PodeEndpointInfo {
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
     # validate that we have a valid ip/host:port address
-    if (!(($Address -imatch "^$($cmbdRgx)$") -or ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or ($Address -imatch "[\:]{0,1}$($portRgx)$"))) {
+    if (!(
+        ($Address -imatch "^$($cmbdRgx)$") -or
+        ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or
+        (!$Address.Contains('.') -and $Address -imatch "[\:]{0,1}$($portRgx)$")
+        )) {
         throw ($PodeLocale.failedToParseAddressExceptionMessage -f $Address)#"Failed to parse '$($Address)' as a valid IP/Host:Port address"
     }
 
@@ -463,25 +467,6 @@ function Get-PodeIPAddress {
 
     # raw ip
     return [System.Net.IPAddress]::Parse($IP)
-}
-
-function Test-PodeIPAddressInRange {
-    param(
-        [Parameter(Mandatory = $true)]
-        $IP,
-
-        [Parameter(Mandatory = $true)]
-        $LowerIP,
-
-        [Parameter(Mandatory = $true)]
-        $UpperIP
-    )
-
-    if ($IP.Family -ine $LowerIP.Family) {
-        return $false
-    }
-
-    return Test-PodeIPAddressInSubnet -IP $IP.Bytes -Lower $LowerIP.Bytes -Upper $UpperIP.Bytes
 }
 
 function Test-PodeIPAddressInSubnet {

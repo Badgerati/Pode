@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-Adds an access rule to allow or deny IP addresses.
+Adds an access rule to allow or deny IP addresses. This is a legacy function, use Add-PodeLimitAccessRule instead.
 
 .DESCRIPTION
-Adds an access rule to allow or deny IP addresses.
+Adds an access rule to allow or deny IP addresses. This is a legacy function, use Add-PodeLimitAccessRule instead.
 
 .PARAMETER Access
 The type of access to enable.
@@ -46,10 +46,10 @@ function Add-PodeAccessRule {
 
 <#
 .SYNOPSIS
-Adds rate limiting rules for an IP addresses, Routes, or Endpoints.
+Adds rate limiting rules for an IP addresses, Routes, or Endpoints. This is a legacy function, use Add-PodeLimitRateRule instead.
 
 .DESCRIPTION
-Adds rate limiting rules for an IP addresses, Routes, or Endpoints.
+Adds rate limiting rules for an IP addresses, Routes, or Endpoints. This is a legacy function, use Add-PodeLimitRateRule instead.
 
 .PARAMETER Type
 What type of request is being rate limited: IP, Route, or Endpoint?
@@ -118,10 +118,61 @@ function Add-PodeLimitRule {
     Add-PodeLimitRateRule `
         -Name (New-PodeGuid) `
         -Limit $Limit `
-        -Timeout $Seconds * 1000 `
+        -Duration ($Seconds * 1000) `
         -Component $component
 }
 
+<#
+.SYNOPSIS
+Adds a rate limit rule.
+
+.DESCRIPTION
+Adds a rate limit rule.
+
+.PARAMETER Name
+The name of the rate limit rule.
+
+.PARAMETER Component
+The component(s) to check. This can be a single, or an array of components.
+
+.PARAMETER Limit
+The limit for the rule - the maximum number of requests to allow within the duration.
+
+.PARAMETER Duration
+The duration for the rule, in milliseconds. (Default: 60000)
+
+.PARAMETER StatusCode
+The status code to return when the limit is reached. (Default: 429)
+
+.PARAMETER Priority
+The priority of the rule. The higher the number, the higher the priority. (Default: [int]::MinValue)
+
+.EXAMPLE
+# limit to 10 requests per minute for all IPs
+Add-PodeLimitRateRule -Name 'rule1' -Limit 10 -Component @(
+    New-PodeLimitIPComponent
+)
+
+.EXAMPLE
+# limit to 5 requests per minute for all IPs and the /downloads route
+Add-PodeLimitRateRule -Name 'rule1' -Limit 5 -Component @(
+    New-PodeLimitIPComponent
+    New-PodeLimitRouteComponent -Path '/downloads'
+)
+
+.EXAMPLE
+# limit to 1 request, per 30 seconds, for all IPs in a subnet grouped, to the /downloads route
+Add-PodeLimitRateRule -Name 'rule1' -Limit 1 -Duration 30000 -Component @(
+    New-PodeLimitIPComponent -IP '10.0.0.0/24' -Group
+    New-PodeLimitRouteComponent -Path '/downloads'
+)
+
+.EXAMPLE
+# limit to 10 requests per second, for specific IPs, with a custom status code and priority
+Add-PodeLimitRateRule -Name 'rule1' -Limit 10 -Duration 1000 -StatusCode 401 -Priority 100 -Component @(
+    New-PodeLimitIPComponent -IP '127.0.0.1', '192.0.0.1', '10.0.0.1'
+)
+#>
 function Add-PodeLimitRateRule {
     [CmdletBinding()]
     param(
@@ -153,7 +204,8 @@ function Add-PodeLimitRateRule {
     )
 
     if (Test-PodeLimitRateRule -Name $Name) {
-        throw "A rate limit rule with the name '$($Name)' already exists"
+        # A rate limit rule with the name '$($Name)' already exists
+        throw ($PodeLocale.rateLimitRuleAlreadyExistsExceptionMessage -f $Name)
     }
 
     $PodeContext.Server.Limits.Rate.Rules[$Name] = @{
@@ -170,6 +222,37 @@ function Add-PodeLimitRateRule {
     Add-PodeLimitRateTimer
 }
 
+<#
+.SYNOPSIS
+Updates a rate limit rule.
+
+.DESCRIPTION
+Updates a rate limit rule.
+
+.PARAMETER Name
+The name of the rate limit rule.
+
+.PARAMETER Limit
+The new limit for the rule. If not supplied, the limit will not be updated.
+
+.PARAMETER Duration
+The new duration for the rule, in milliseconds. If not supplied, the duration will not be updated.
+
+.PARAMETER StatusCode
+The new status code for the rule. If not supplied, the status code will not be updated.
+
+.EXAMPLE
+Update-PodeLimitRateRule -Name 'rule1' -Limit 10
+
+.EXAMPLE
+Update-PodeLimitRateRule -Name 'rule1' -Duration 10000
+
+.EXAMPLE
+Update-PodeLimitRateRule -Name 'rule1' -StatusCode 429
+
+.EXAMPLE
+Update-PodeLimitRateRule -Name 'rule1' -Limit 10 -Duration 10000 -StatusCode 429
+#>
 function Update-PodeLimitRateRule {
     [CmdletBinding()]
     param(
@@ -192,7 +275,8 @@ function Update-PodeLimitRateRule {
 
     $rule = $PodeContext.Server.Limits.Rate.Rules[$Name]
     if (!$rule) {
-        throw "A rate limit rule with the name '$($Name)' does not exist"
+        # A rate limit rule with the name '$($Name)' does not exist
+        throw ($PodeLocale.rateLimitRuleDoesNotExistExceptionMessage -f $Name)
     }
 
     if ($Limit -ge 0) {
@@ -208,6 +292,19 @@ function Update-PodeLimitRateRule {
     }
 }
 
+<#
+.SYNOPSIS
+Removes a rate limit rule.
+
+.DESCRIPTION
+Removes a rate limit rule.
+
+.PARAMETER Name
+The name of the rate limit rule.
+
+.EXAMPLE
+Remove-PodeLimitRateRule -Name 'rule1'
+#>
 function Remove-PodeLimitRateRule {
     [CmdletBinding()]
     param(
@@ -221,6 +318,22 @@ function Remove-PodeLimitRateRule {
     Remove-PodeLimitRateTimer
 }
 
+<#
+.SYNOPSIS
+Tests if a rate limit rule exists.
+
+.DESCRIPTION
+Tests if a rate limit rule exists.
+
+.PARAMETER Name
+The name of the rate limit rule.
+
+.EXAMPLE
+Test-PodeLimitRateRule -Name 'rule1'
+
+.NOTES
+This function is used to test if a rate limit rule exists.
+#>
 function Test-PodeLimitRateRule {
     [CmdletBinding()]
     [OutputType([bool])]
@@ -233,6 +346,28 @@ function Test-PodeLimitRateRule {
     return $PodeContext.Server.Limits.Rate.Rules.Contains($Name)
 }
 
+<#
+.SYNOPSIS
+Gets a rate limit rule by name.
+
+.DESCRIPTION
+Gets a rate limit rule by name.
+
+.PARAMETER Name
+The name(s) of the rate limit rule.
+
+.EXAMPLE
+$rules = Get-PodeLimitRateRule -Name 'rule1'
+
+.EXAMPLE
+$rules = Get-PodeLimitRateRule -Name 'rule1', 'rule2'
+
+.EXAMPLE
+$rules = Get-PodeLimitRateRule
+
+.OUTPUTS
+A hashtable array containing the rate limit rule(s).
+#>
 function Get-PodeLimitRateRule {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -249,6 +384,59 @@ function Get-PodeLimitRateRule {
     return $PodeContext.Server.Limits.Rate.Rules.Values
 }
 
+<#
+.SYNOPSIS
+Adds an access limit rule.
+
+.DESCRIPTION
+Adds an access limit rule.
+
+.PARAMETER Name
+The name of the access rule.
+
+.PARAMETER Component
+The component(s) to check. This can be a single, or an array of components.
+
+.PARAMETER Action
+The action to take. Either 'Allow' or 'Deny'.
+
+.PARAMETER StatusCode
+The status code to return. (Default: 403)
+
+.PARAMETER Priority
+The priority of the rule. The higher the number, the higher the priority. (Default: [int]::MinValue)
+
+.EXAMPLE
+# only allow localhost
+Add-PodeLimitAccessRule -Name 'rule1' -Action Allow -Component @(
+    New-PodeLimitIPComponent -IP '127.0.0.1'
+)
+
+.EXAMPLE
+# only allow localhost and the /downloads route
+Add-PodeLimitAccessRule -Name 'rule1' -Action Allow -Component @(
+    New-PodeLimitIPComponent -IP '127.0.0.1'
+    New-PodeLimitRouteComponent -Path '/downloads'
+)
+
+.EXAMPLE
+# deny all requests
+Add-PodeLimitAccessRule -Name 'rule1' -Action Deny -Component @(
+    New-PodeLimitIPComponent
+)
+
+.EXAMPLE
+# deny all requests from a subnet, with a custom status code
+Add-PodeLimitAccessRule -Name 'rule1' -Action Deny -StatusCode 401 -Component @(
+    New-PodeLimitIPComponent -IP '10.0.0.0/24'
+)
+
+.EXAMPLE
+# deny all requests from a subnet, with a custom status code and priority
+Add-PodeLimitAccessRule -Name 'rule1' -Action Deny -StatusCode 401 -Priority 100 -Component @(
+    New-PodeLimitIPComponent -IP '192.0.1.0/16'
+)
+#>
 function Add-PodeLimitAccessRule {
     [CmdletBinding()]
     param(
@@ -275,7 +463,8 @@ function Add-PodeLimitAccessRule {
     )
 
     if (Test-PodeLimitAccessRule -Name $Name) {
-        throw "An access limit rule with the name '$($Name)' already exists"
+        # An access limit rule with the name '$($Name)' already exists
+        throw ($PodeLocale.accessLimitRuleAlreadyExistsExceptionMessage -f $Name)
     }
 
     $PodeContext.Server.Limits.Access.Rules[$Name] = @{
@@ -294,6 +483,31 @@ function Add-PodeLimitAccessRule {
     }
 }
 
+<#
+.SYNOPSIS
+Updates an access rule.
+
+.DESCRIPTION
+Updates an access rule.
+
+.PARAMETER Name
+The name of the access rule.
+
+.PARAMETER Action
+The action to take. Either 'Allow' or 'Deny'. If not supplied, the action will not be updated.
+
+.PARAMETER StatusCode
+The status code to return. If not supplied, the status code will not be updated.
+
+.EXAMPLE
+Update-PodeLimitAccessRule -Name 'rule1' -Action 'Deny'
+
+.EXAMPLE
+Update-PodeLimitAccessRule -Name 'rule1' -StatusCode 404
+
+.EXAMPLE
+Update-PodeLimitAccessRule -Name 'rule1' -Action 'Allow' -StatusCode 200
+#>
 function Update-PodeLimitAccessRule {
     [CmdletBinding()]
     param(
@@ -313,7 +527,8 @@ function Update-PodeLimitAccessRule {
 
     $rule = $PodeContext.Server.Limits.Access.Rules[$Name]
     if (!$rule) {
-        throw "An access limit rule with the name '$($Name)' does not exist"
+        # An access limit rule with the name '$($Name)' does not exist
+        throw ($PodeLocale.accessLimitRuleDoesNotExistExceptionMessage -f $Name)
     }
 
     if (![string]::IsNullOrWhiteSpace($Action)) {
@@ -330,6 +545,19 @@ function Update-PodeLimitAccessRule {
             Measure-Object).Count -gt 0
 }
 
+<#
+.SYNOPSIS
+Removes an access rule.
+
+.DESCRIPTION
+Removes an access rule.
+
+.PARAMETER Name
+The name of the access rule.
+
+.EXAMPLE
+Remove-PodeLimitAccessRule -Name 'rule1'
+#>
 function Remove-PodeLimitAccessRule {
     [CmdletBinding()]
     param(
@@ -348,6 +576,22 @@ function Remove-PodeLimitAccessRule {
             Measure-Object).Count -gt 0
 }
 
+<#
+.SYNOPSIS
+Tests if an access rule exists.
+
+.DESCRIPTION
+Tests if an access rule exists.
+
+.PARAMETER Name
+The name of the access rule.
+
+.EXAMPLE
+Test-PodeLimitAccessRule -Name 'rule1'
+
+.OUTPUTS
+A boolean indicating if the access rule exists.
+#>
 function Test-PodeLimitAccessRule {
     [CmdletBinding()]
     [OutputType([bool])]
@@ -360,6 +604,28 @@ function Test-PodeLimitAccessRule {
     return $PodeContext.Server.Limits.Access.Rules.Contains($Name)
 }
 
+<#
+.SYNOPSIS
+Gets an access rule by name.
+
+.DESCRIPTION
+Gets an access rule by name.
+
+.PARAMETER Name
+The name(s) of the access rule.
+
+.EXAMPLE
+$rules = Get-PodeLimitAccessRule -Name 'rule1'
+
+.EXAMPLE
+$rules = Get-PodeLimitAccessRule -Name 'rule1', 'rule2'
+
+.EXAMPLE
+$rules = Get-PodeLimitAccessRule
+
+.OUTPUTS
+A hashtable array containing the access rule(s).
+#>
 function Get-PodeLimitAccessRule {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -376,6 +642,41 @@ function Get-PodeLimitAccessRule {
     return $PodeContext.Server.Limits.Access.Rules.Values
 }
 
+<#
+.SYNOPSIS
+Creates a new Limit IP component.
+
+.DESCRIPTION
+Creates a new Limit IP component. This supports the WebEvent, SmtpEvent, and TcpEvent IPs.
+
+.PARAMETER IP
+The IP address(es) to check. Supports raw IPs, subnets, local, and any.
+
+.PARAMETER Group
+If supplied, IPs in a subnet will be treated as a single entity.
+
+.EXAMPLE
+New-PodeLimitIPComponent
+
+.EXAMPLE
+New-PodeLimitIPComponent -IP '127.0.0.1'
+
+.EXAMPLE
+New-PodeLimitIPComponent -IP '10.0.0.0/24'
+
+.EXAMPLE
+New-PodeLimitIPComponent -IP 'localhost'
+
+.EXAMPLE
+New-PodeLimitIPComponent -IP 'all'
+
+.EXAMPLE
+New-PodeLimitIPComponent -IP '192.0.1.0/16' -Group
+
+.OUTPUTS
+A hashtable containing the options and scriptblock for the IP component.
+The scriptblock will return the IP - or subnet for grouped - if found, or null if not.
+#>
 function New-PodeLimitIPComponent {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -403,7 +704,8 @@ function New-PodeLimitIPComponent {
     foreach ($_ip in $IP) {
         # is the ip valid?
         if (!(Test-PodeIPAddressLocal -IP $_ip) -and !(Test-PodeIPAddress -IP $_ip -IPOnly)) {
-            throw "The IP '$($_ip)' is not a valid IP address"
+            # The IP address supplied is invalid: {0}
+            throw ($PodeLocale.invalidIpAddressExceptionMessage -f $_ip)
         }
 
         # for any, just flag as any and continue
@@ -448,8 +750,22 @@ function New-PodeLimitIPComponent {
         ScriptBlock = {
             param($options)
 
-            # current request ip
-            $ip = $WebEvent.Request.RemoteEndPoint.Address
+            # current request ip - for webevent, smtpevent, or tcpevent
+            $ip = $null
+            if ($WebEvent) {
+                $ip = $WebEvent.Request.RemoteEndPoint.Address
+            }
+            elseif ($SmtpEvent) {
+                $ip = $SmtpEvent.Request.RemoteEndPoint.Address
+            }
+            elseif ($TcpEvent) {
+                $ip = $TcpEvent.Request.RemoteEndPoint.Address
+            }
+
+            if ($null -eq $ip) {
+                return $null
+            }
+
             $ipDetails = @{
                 Value  = $ip.IPAddressToString
                 Family = $ip.AddressFamily
@@ -504,6 +820,33 @@ function New-PodeLimitIPComponent {
     }
 }
 
+<#
+.SYNOPSIS
+Creates a new Limit Route component.
+
+.DESCRIPTION
+Creates a new Limit Route component. This supports the WebEvent routes.
+
+.PARAMETER Path
+The route path(s) to check. This can be a full path, or a wildcard path.
+
+.PARAMETER Group
+If supplied, the routes will be grouped by any wildcard, ignoring the full path.
+For example, any routes matching "/api/*" will be grouped as "/api/*", and not "/api/test" or "/api/test/hello".
+
+.EXAMPLE
+New-PodeLimitRouteComponent -Path '/downloads'
+
+.EXAMPLE
+New-PodeLimitRouteComponent -Path '/downloads', '/api/*'
+
+.EXAMPLE
+New-PodeLimitRouteComponent -Path '/api/*' -Group
+
+.OUTPUTS
+A hashtable containing the options and scriptblock for the route component.
+The scriptblock will return the route path if found, or null if not.
+#>
 function New-PodeLimitRouteComponent {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -534,6 +877,9 @@ function New-PodeLimitRouteComponent {
 
             # current request path
             $path = $WebEvent.Path
+            if ([string]::IsNullOrEmpty($path)) {
+                return $null
+            }
 
             # if the list is empty, or the list contains the path, then return the path
             if ($options.All -or $options.Path.ContainsKey($path)) {
@@ -557,6 +903,26 @@ function New-PodeLimitRouteComponent {
     }
 }
 
+<#
+.SYNOPSIS
+Creates a new Limit Endpoint component.
+
+.DESCRIPTION
+Creates a new Limit Endpoint component. This supports the WebEvent, SmtpEvent, and TcpEvent endpoints.
+
+.PARAMETER EndpointName
+The endpoint name(s) to check.
+
+.EXAMPLE
+New-PodeLimitEndpointComponent
+
+.EXAMPLE
+New-PodeLimitEndpointComponent -EndpointName 'api'
+
+.OUTPUTS
+A hashtable containing the options and scriptblock for the endpoint component.
+The scriptblock will return the endpoint name if found, or null if not.
+#>
 function New-PodeLimitEndpointComponent {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -581,8 +947,21 @@ function New-PodeLimitEndpointComponent {
         ScriptBlock = {
             param($options)
 
-            # current request endpoint name
-            $endpointName = $WebEvent.Endpoint.Name
+            # current request endpoint name - from webevent, smtpevent, or tcpevent
+            $endpointName = $null
+            if ($WebEvent) {
+                $endpointName = $WebEvent.Endpoint.Name
+            }
+            elseif ($SmtpEvent) {
+                $endpointName = $SmtpEvent.Endpoint.Name
+            }
+            elseif ($TcpEvent) {
+                $endpointName = $TcpEvent.Endpoint.Name
+            }
+
+            if ($null -eq $endpointName) {
+                return $null
+            }
 
             # if the list is empty, or the list contains the endpoint name, then return the endpoint name
             if ($options.All -or $options.EndpointName.ContainsKey($endpointName)) {
@@ -595,6 +974,29 @@ function New-PodeLimitEndpointComponent {
     }
 }
 
+<#
+.SYNOPSIS
+Creates a new Limit HTTP Method component.
+
+.DESCRIPTION
+Creates a new Limit HTTP Method component. This supports the WebEvent methods.
+
+.PARAMETER Method
+The HTTP method(s) to check.
+
+.EXAMPLE
+New-PodeLimitMethodComponent
+
+.EXAMPLE
+New-PodeLimitMethodComponent -Method 'Get'
+
+.EXAMPLE
+New-PodeLimitMethodComponent -Method 'Get', 'Post'
+
+.OUTPUTS
+A hashtable containing the options and scriptblock for the method component.
+The scriptblock will return the method if found, or null if not.
+#>
 function New-PodeLimitMethodComponent {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -622,6 +1024,9 @@ function New-PodeLimitMethodComponent {
 
             # current request method
             $method = $WebEvent.Method
+            if ([string]::IsNullOrEmpty($method)) {
+                return $null
+            }
 
             # if the list is empty, or the list contains the method, then return the method
             if ($options.All -or $options.Method.ContainsKey($method)) {
@@ -634,6 +1039,39 @@ function New-PodeLimitMethodComponent {
     }
 }
 
+<#
+.SYNOPSIS
+Creates a new Limit Header component.
+
+.DESCRIPTION
+Creates a new Limit Header component. This support WebEvent and SmtpEvent headers.
+
+.PARAMETER Name
+The name of the header(s) to check.
+
+.PARAMETER Value
+The value of the header(s) to check.
+
+.PARAMETER Group
+If supplied, the headers will be grouped by name, ignoring the value.
+For example, any headers matching "X-AuthToken" will be grouped as "X-AuthToken", and not "X-AuthToken=123".
+
+.EXAMPLE
+New-PodeLimitHeaderComponent -Name 'X-AuthToken'
+
+.EXAMPLE
+New-PodeLimitHeaderComponent -Name 'X-AuthToken', 'X-AuthKey'
+
+.EXAMPLE
+New-PodeLimitHeaderComponent -Name 'X-AuthToken' -Value '12345'
+
+.EXAMPLE
+New-PodeLimitHeaderComponent -Name 'X-AuthToken' -Group
+
+.OUTPUTS
+A hashtable containing the options and scriptblock for the header component.
+The scriptblock will return the header name and value if found, or just the name if Group is supplied.
+#>
 function New-PodeLimitHeaderComponent {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -674,8 +1112,18 @@ function New-PodeLimitHeaderComponent {
         ScriptBlock = {
             param($options)
 
-            # current request headers
-            $reqHeaders = $WebEvent.Request.Headers
+            # current request headers - from webevent or smtpevent
+            $reqHeaders = @{}
+            if ($WebEvent) {
+                $reqHeaders = $WebEvent.Request.Headers
+            }
+            elseif ($SmtpEvent) {
+                $reqHeaders = $SmtpEvent.Request.Headers
+            }
+
+            if ($reqHeaders.Count -eq 0) {
+                return $null
+            }
 
             # loop through each specified header
             foreach ($header in $options.HeaderNames.Keys) {
