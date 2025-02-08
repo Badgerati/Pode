@@ -259,7 +259,6 @@
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'Certificaat thumbprints/naam worden alleen ondersteund op Windows OS.'
     sseConnectionNameRequiredExceptionMessage                         = "Een SSE-verbindingnaam is vereist, hetzij van -Naam of `$WebEvent.Sse.Name"
     invalidMiddlewareTypeExceptionMessage                             = 'Een van de opgegeven middlewares is van een ongeldig type. Verwachte ScriptBlock of Hashtable, maar kreeg: {0}'
-    noSecretForJwtSignatureExceptionMessage                           = 'Geen geheim opgegeven voor JWT-handtekening.'
     modulePathDoesNotExistExceptionMessage                            = 'Het modulepad bestaat niet: {0}'
     taskAlreadyDefinedExceptionMessage                                = '[Taak] {0}: Taak al gedefinieerd.'
     verbAlreadyDefinedExceptionMessage                                = '[Werkwoord] {0}: Al gedefinieerd'

@@ -259,7 +259,6 @@
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'Zertifikat-Thumbprints/Name werden nur unter Windows unterstützt.'
     sseConnectionNameRequiredExceptionMessage                         = "Ein SSE-Verbindungsname ist erforderlich, entweder von -Name oder `$WebEvent.Sse.Namee"
     invalidMiddlewareTypeExceptionMessage                             = 'Eines der angegebenen Middleware-Objekte ist ein ungültiger Typ. Erwartet wurde entweder ein ScriptBlock oder ein Hashtable, aber erhalten wurde: {0}.'
-    noSecretForJwtSignatureExceptionMessage                           = 'Es wurde kein Geheimnis für die JWT-Signatur angegeben.'
     modulePathDoesNotExistExceptionMessage                            = 'Der Modulpfad existiert nicht: {0}'
     taskAlreadyDefinedExceptionMessage                                = '[Aufgabe] {0}: Aufgabe bereits definiert.'
     verbAlreadyDefinedExceptionMessage                                = '[Verb] {0}: Bereits definiert.'

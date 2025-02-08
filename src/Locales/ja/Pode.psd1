@@ -259,7 +259,6 @@
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'Certificate Thumbprints/NameはWindowsでのみサポートされています。'
     sseConnectionNameRequiredExceptionMessage                         = "-Nameまたは`$WebEvent.Sse.NameからSSE接続名が必要です。"
     invalidMiddlewareTypeExceptionMessage                             = '提供されたMiddlewaresの1つが無効な型です。ScriptBlockまたはHashtableのいずれかを期待しましたが、次を取得しました: {0}'
-    noSecretForJwtSignatureExceptionMessage                           = 'JWT署名に対する秘密が提供されていません。'
     modulePathDoesNotExistExceptionMessage                            = 'モジュールパスが存在しません: {0}'
     taskAlreadyDefinedExceptionMessage                                = '[タスク] {0}: タスクは既に定義されています。'
     verbAlreadyDefinedExceptionMessage                                = '[動詞] {0}: すでに定義されています'

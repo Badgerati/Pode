@@ -259,7 +259,6 @@
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = '证书指纹/名称仅在 Windows 上受支持。'
     sseConnectionNameRequiredExceptionMessage                         = "需要SSE连接名称, 可以从-Name或`$WebEvent.Sse.Name获取。"
     invalidMiddlewareTypeExceptionMessage                             = '提供的中间件之一是无效的类型。期望是 ScriptBlock 或 Hashtable, 但得到了: {0}'
-    noSecretForJwtSignatureExceptionMessage                           = '未提供 JWT 签名的密钥。'
     modulePathDoesNotExistExceptionMessage                            = '模块路径不存在: {0}'
     taskAlreadyDefinedExceptionMessage                                = '[任务] {0}: 任务已定义。'
     verbAlreadyDefinedExceptionMessage                                = '[Verb] {0}: 已经定义'

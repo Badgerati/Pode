@@ -259,7 +259,6 @@
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'بصمات الإبهام/الاسم للشهادة مدعومة فقط على Windows.'
     sseConnectionNameRequiredExceptionMessage                         = "مطلوب اسم اتصال SSE، إما من -Name أو `$WebEvent.Sse.Name"
     invalidMiddlewareTypeExceptionMessage                             = 'أحد مكونات Middleware المقدمة من نوع غير صالح. كان المتوقع إما ScriptBlock أو Hashtable، ولكن تم الحصول عليه: {0}'
-    noSecretForJwtSignatureExceptionMessage                           = 'لم يتم تقديم أي سر لتوقيع JWT.'
     modulePathDoesNotExistExceptionMessage                            = 'مسار الوحدة غير موجود: {0}'
     taskAlreadyDefinedExceptionMessage                                = '[المهمة] {0}: المهمة معرفة بالفعل.'
     verbAlreadyDefinedExceptionMessage                                = '[الفعل] {0}: تم التعريف بالفعل'

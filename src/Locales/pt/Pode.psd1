@@ -259,7 +259,6 @@
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'Impressões digitais/nome do certificado são suportados apenas no Windows.'
     sseConnectionNameRequiredExceptionMessage                         = "Um nome de conexão SSE é necessário, seja de -Name ou `$WebEvent.Sse.Name."
     invalidMiddlewareTypeExceptionMessage                             = 'Um dos Middlewares fornecidos é de um tipo inválido. Esperado ScriptBlock ou Hashtable, mas obtido: {0}'
-    noSecretForJwtSignatureExceptionMessage                           = 'Nenhum segredo fornecido para a assinatura JWT.'
     modulePathDoesNotExistExceptionMessage                            = 'O caminho do módulo não existe: {0}'
     taskAlreadyDefinedExceptionMessage                                = '[Tarefa] {0}: Tarefa já definida.'
     verbAlreadyDefinedExceptionMessage                                = '[Verbo] {0}: Já definido'

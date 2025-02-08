@@ -2340,7 +2340,7 @@ function ConvertTo-PodeJwt {
     }
 
     # make the signature
-    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $Secret
+    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $Secret  -PrivateKey $PrivateKey
 
     # add the signature and return
     $jwt += ".$($sig)"

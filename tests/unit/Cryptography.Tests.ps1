@@ -61,7 +61,7 @@ Describe 'New-PodeSalt' {
 
 
 
-Describe 'Invoke-PodeJWTSign Function Tests' -Tags 'JWT' {
+Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
     BeforeAll {
         # Sample data
         $testValue = 'TestData'
@@ -69,72 +69,87 @@ Describe 'Invoke-PodeJWTSign Function Tests' -Tags 'JWT' {
 
         $testPath = $(Split-Path -Parent -Path $(Split-Path -Parent -Path $path))
         # Load test keys from PEM files (Assume these exist in the test environment)
-        $rsaPrivateKey = Get-Content "$testPath/certs/rsa_private.pem" -Raw
-        $ecdsaPrivateKey = Get-Content "$testPath/certs/ecdsa_private.pem" -Raw
+        $rsaPrivateKey = Get-Content "$testPath/certs/rsa_private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
+        $ecdsaPrivateKey = Get-Content "$testPath/certs/ecdsa_private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
     }
 
     Context 'HMAC Signing Tests' {
         It 'Should generate a valid HMAC-SHA256 signature' {
-            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm HS256 -SecretBytes $testSecret
-            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm HS256 -SecretBytes $testSecret
+            $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid HMAC-SHA384 signature' {
-            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm HS384 -SecretBytes $testSecret
-            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm HS384 -SecretBytes $testSecret
+            $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid HMAC-SHA512 signature' {
-            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm HS512 -SecretBytes $testSecret
-            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm HS512 -SecretBytes $testSecret
+            $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
     }
 
     Context 'RSA Signing Tests' {
         It 'Should generate a valid RSA-SHA256 signature' {
-            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm RS256 -PrivateKey $rsaPrivateKey
-            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm RS256 -PrivateKey $rsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid RSA-SHA384 signature' {
-            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm RS384 -PrivateKey $rsaPrivateKey
-            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm RS384 -PrivateKey $rsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid RSA-SHA512 signature' {
-            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm RS512 -PrivateKey $rsaPrivateKey
-            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm RS512 -PrivateKey $rsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
     }
 
     Context 'ECDSA Signing Tests' {
         It 'Should generate a valid ECDSA-SHA256 signature' {
-            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm ES256 -PrivateKey $ecdsaPrivateKey
-            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm ES256 -PrivateKey $ecdsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid ECDSA-SHA384 signature' {
-            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm ES384 -PrivateKey $ecdsaPrivateKey
-            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm ES384 -PrivateKey $ecdsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid ECDSA-SHA512 signature' {
-            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm ES512 -PrivateKey $ecdsaPrivateKey
-            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm ES512 -PrivateKey $ecdsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
     }
 
+    Context 'Algorithm NONE Tests' {
+        It 'Should return an empty signature when algorithm is NONE' {
+            $result = New-PodeJwtSignature -Token $testValue -Algorithm NONE
+            $result | Should -BeExactly ''
+        }
+
+        It 'Should throw an error if a secret is provided with NONE' {
+            { New-PodeJwtSignature -Token $testValue -Algorithm NONE -SecretBytes $testSecret } | Should -Throw
+        }
+
+        It 'Should throw an error if a private key is provided with NONE' {
+            { New-PodeJwtSignature -Token $testValue -Algorithm NONE -PrivateKey $rsaPrivateKey } | Should -Throw
+        }
+    }
+    
     Context 'Invalid Inputs' {
         It 'Should throw an error for missing secret in HMAC' {
-            { Invoke-PodeJWTSign -Value $testValue -Algorithm HS256 } | Should -Throw
+            { New-PodeJwtSignature -Token $testValue -Algorithm HS256 } | Should -Throw
         }
 
         It 'Should throw an error for missing private key in RSA' {
-            { Invoke-PodeJWTSign -Value $testValue -Algorithm RS256 } | Should -Throw
+            { New-PodeJwtSignature -Token $testValue -Algorithm RS256 } | Should -Throw
         }
 
         It 'Should throw an error for an unsupported algorithm' {
-            { Invoke-PodeJWTSign -Value $testValue -Algorithm 'INVALID' -Secret $testSecret } | Should -Throw
+            { New-PodeJwtSignature -Token $testValue -Algorithm 'INVALID' -Secret $testSecret } | Should -Throw
         }
     }
 }

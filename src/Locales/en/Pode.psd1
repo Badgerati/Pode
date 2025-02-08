@@ -259,7 +259,6 @@
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'Certificate Thumbprints/Name are only supported on Windows OS.'
     sseConnectionNameRequiredExceptionMessage                         = "An SSE connection Name is required, either from -Name or `$WebEvent.Sse.Name"
     invalidMiddlewareTypeExceptionMessage                             = 'One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: {0}'
-    noSecretForJwtSignatureExceptionMessage                           = 'No secret supplied for JWT signature.'
     modulePathDoesNotExistExceptionMessage                            = 'The module path does not exist: {0}'
     taskAlreadyDefinedExceptionMessage                                = '[Task] {0}: Task already defined.'
     verbAlreadyDefinedExceptionMessage                                = '[Verb] {0}: Already defined'

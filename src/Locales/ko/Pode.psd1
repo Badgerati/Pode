@@ -259,7 +259,6 @@
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = '인증서 지문/이름은 Windows에서만 지원됩니다.'
     sseConnectionNameRequiredExceptionMessage                         = "-Name 또는 `$WebEvent.Sse.Name에서 SSE 연결 이름이 필요합니다."
     invalidMiddlewareTypeExceptionMessage                             = '제공된 미들웨어 중 하나가 잘못된 유형입니다. 예상된 유형은 ScriptBlock 또는 Hashtable이지만, 얻은 것은: {0}'
-    noSecretForJwtSignatureExceptionMessage                           = 'JWT 서명을 위한 비밀이 제공되지 않았습니다.'
     modulePathDoesNotExistExceptionMessage                            = '모듈 경로가 존재하지 않습니다: {0}'
     taskAlreadyDefinedExceptionMessage                                = '[작업] {0}: 작업이 이미 정의되었습니다.'
     verbAlreadyDefinedExceptionMessage                                = '[동사] {0}: 이미 정의되었습니다.'
