@@ -111,7 +111,7 @@ function Add-PodeLimitRule {
         }
 
         'endpoint' {
-            $component = New-PodeLimitEndpointComponent -EndpointName $Values
+            $component = New-PodeLimitEndpointComponent -Name $Values
         }
     }
 
@@ -681,13 +681,10 @@ function New-PodeLimitIPComponent {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param(
-        # empty, *, or "all" means all IPs
         [Parameter()]
         [string[]]
         $IP,
 
-        # if not passed, IPs in a passed subnet will be treated individually
-        # if passed, IPs in a passed subnet will be treated as a single entity
         [switch]
         $Group
     )
@@ -910,14 +907,14 @@ Creates a new Limit Endpoint component.
 .DESCRIPTION
 Creates a new Limit Endpoint component. This supports the WebEvent, SmtpEvent, and TcpEvent endpoints.
 
-.PARAMETER EndpointName
+.PARAMETER Name
 The endpoint name(s) to check.
 
 .EXAMPLE
 New-PodeLimitEndpointComponent
 
 .EXAMPLE
-New-PodeLimitEndpointComponent -EndpointName 'api'
+New-PodeLimitEndpointComponent -Name 'api'
 
 .OUTPUTS
 A hashtable containing the options and scriptblock for the endpoint component.
@@ -929,20 +926,20 @@ function New-PodeLimitEndpointComponent {
     param(
         [Parameter()]
         [string[]]
-        $EndpointName
+        $Name
     )
 
     # convert endpoint names into a hashtable for easier lookup
-    $htEndpointName = @{}
-    foreach ($e in $EndpointName) {
-        $htEndpointName[$e] = $true
+    $htName = @{}
+    foreach ($e in $Name) {
+        $htName[$e] = $true
     }
 
     # pass back the endpoint component
     return @{
         Options     = @{
-            EndpointName = $htEndpointName
-            All          = (Test-PodeIsEmpty -Value $EndpointName)
+            EndpointName = $htName
+            All          = (Test-PodeIsEmpty -Value $Name)
         }
         ScriptBlock = {
             param($options)
