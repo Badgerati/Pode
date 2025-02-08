@@ -22,9 +22,25 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the request's header contains an `Authorization` key, and whether the value of that key starts with `Bearer` tag. The `New-PodeAuthScheme -Bearer` function can be supplied parameters to customise the tag using `-HeaderTag`.
+By default, Pode will check if the request's header contains an `Authorization` key, and whether the value of that key starts with the `Bearer` tag. The `New-PodeAuthScheme -Bearer` function can be supplied parameters to customize the tag using `-HeaderTag`. You can also change the location to Query by using the `-BearerLocation` parameter.
 
-You can also optionally return a `Scope` property alongside the `User`. If you specify any scopes with [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.
+For example, to look for a bearer token in a query parameter:
+
+```powershell
+Start-PodeServer {
+    New-PodeAuthScheme -Bearer -BearerLocation Query | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+        param($token)
+
+        # check if the token is valid, and get user
+
+        return @{ User = $user }
+    }
+}
+```
+
+**Note:** Per [RFC 6750](https://datatracker.ietf.org/doc/html/rfc6750), using the Authorization header is the recommended method for sending bearer tokens. Query parameters should only be used when headers are not feasible, as query strings may be logged in URLs, potentially exposing sensitive information.
+
+You can also optionally return a `Scope` property alongside the `User`. If you specify any scopes with [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme), then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.
 
 ```powershell
 Start-PodeServer {
@@ -40,7 +56,7 @@ Start-PodeServer {
 
 ## Middleware
 
-Once configured you can start using Bearer authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
+Once configured, you can start using Bearer authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
 The following will use Bearer authentication to validate every request on every Route:
 
@@ -50,7 +66,7 @@ Start-PodeServer {
 }
 ```
 
-Whereas the following example will use Bearer authentication to only validate requests on specific a Route:
+Whereas the following example will use Bearer authentication to only validate requests on a specific Route:
 
 ```powershell
 Start-PodeServer {
@@ -62,11 +78,11 @@ Start-PodeServer {
 
 ## JWT
 
-You can supply a JWT using Bearer authentication, for more details [see here](../JWT).
+You can supply a JWT using Bearer authentication. For more details, [see here](../JWT).
 
 ## Full Example
 
-The following full example of Bearer authentication will setup and configure authentication, validate the token, and then validate on a specific Route:
+The following full example of Bearer authentication will set up and configure authentication, validate the token, and then validate on a specific Route:
 
 ```powershell
 Start-PodeServer {
@@ -80,7 +96,7 @@ Start-PodeServer {
         if ($token -eq 'test-token') {
             return @{
                 User = @{
-                    'ID' ='M0R7Y302'
+                    'ID' = 'M0R7Y302'
                     'Name' = 'Morty'
                     'Type' = 'Human'
                 }

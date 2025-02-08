@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = 'Mostrar OpenAPI'
     enableQuietModeMessage                                            = 'Activar modo silencioso'
     disableQuietModeMessage                                           = 'Desactivar modo silencioso'
+    missingKeyForAlgorithmExceptionMessage                            = 'Se requiere una clave {0} para los algoritmos {1} ({2}).'
 }

@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = '显示OpenAPI'
     enableQuietModeMessage                                            = '启用安静模式'
     disableQuietModeMessage                                           = '禁用安静模式'
+    missingKeyForAlgorithmExceptionMessage                            = 'Uma chave {0} é necessária para os algoritmos {1} ({2}).'
 }

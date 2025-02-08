@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = 'عرض OpenAPI'
     enableQuietModeMessage                                            = 'تمكين الوضع الصامت'
     disableQuietModeMessage                                           = 'تعطيل الوضع الصامت'
+    missingKeyForAlgorithmExceptionMessage                            = 'مفتاح {0} مطلوب لخوارزميات {1} ({2}).'
 }

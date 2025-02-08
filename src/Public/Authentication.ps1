@@ -116,12 +116,17 @@
 .PARAMETER ApiKey
     Enables API Key authentication, allowing keys to be passed in headers, query parameters, or cookies.
 
-.PARAMETER Location
+.PARAMETER ApiKeyLocation
     Defines where to look for the API key (`Header`, `Query`, or `Cookie`).
     Default: `Header`.
+    Alias: Location
 
 .PARAMETER LocationName
     Specifies the key name to retrieve the API key from (`X-API-KEY`, `api_key`, etc.).
+
+.PARAMETER BearerLocation
+    Defines where to look for the API key (`Header`, `Query`).
+    Default: `Header`.
 
 .PARAMETER InnerScheme
     Defines an optional nested authentication scheme that will run before this scheme.
@@ -136,6 +141,9 @@
 
 .PARAMETER Secret
     A secret key used to sign or verify JWT signatures for Bearer/API Key authentication.
+
+.PARAMETER PrivateKey
+    The private key (PEM format) for RSA or ECDSA algorithms used to decode JWT.
 
 .EXAMPLE
     # Create a Basic Authentication scheme
@@ -336,8 +344,14 @@ function New-PodeAuthScheme {
 
         [Parameter(ParameterSetName = 'ApiKey')]
         [ValidateSet('Header', 'Query', 'Cookie')]
+        [Alias('Location')]
         [string]
-        $Location = 'Header',
+        $ApiKeyLocation = 'Header',
+
+        [Parameter(ParameterSetName = 'Bearer')]
+        [ValidateSet('Header', 'Query' )]
+        [string]
+        $BearerLocation = 'Header',
 
         [Parameter(ParameterSetName = 'ApiKey')]
         [string]
@@ -365,7 +379,12 @@ function New-PodeAuthScheme {
         [Parameter(ParameterSetName = 'Bearer')]
         [Parameter(ParameterSetName = 'ApiKey')]
         [string]
-        $Secret
+        $Secret,
+
+        [Parameter(ParameterSetName = 'Bearer')]
+        [Parameter(ParameterSetName = 'ApiKey')]
+        [SecureString]
+        $PrivateKey
     )
     begin {
         $pipelineItemCount = 0
@@ -473,6 +492,8 @@ function New-PodeAuthScheme {
                         Scopes      = $Scope
                         AsJWT       = $AsJWT
                         Secret      = $secretBytes
+                        PrivateKey  = $PrivateKey
+                        Location    = $BearerLocation
                     }
                 }
             }
@@ -564,7 +585,7 @@ function New-PodeAuthScheme {
                             Header = 'X-API-KEY'
                             Query  = 'api_key'
                             Cookie = 'X-API-KEY'
-                        })[$Location]
+                        })[$ApiKeyLocation]
                 }
 
                 $secretBytes = $null
@@ -585,10 +606,11 @@ function New-PodeAuthScheme {
                     Scheme        = 'apiKey'
                     Arguments     = @{
                         Description  = $Description
-                        Location     = $Location
+                        Location     = $ApiKeyLocation
                         LocationName = $LocationName
                         AsJWT        = $AsJWT
                         Secret       = $secretBytes
+                        PrivateKey   = $PrivateKey
                     }
                 }
             }
@@ -2254,25 +2276,28 @@ function Add-PodeAuthWindowsLocal {
 
 <#
 .SYNOPSIS
-Convert a Header/Payload into a JWT.
+    Convert a Header/Payload into a JWT.
 
 .DESCRIPTION
-Convert a Header/Payload hashtable into a JWT, with the option to sign it.
+    Convert a Header/Payload hashtable into a JWT, with the option to sign it.
 
 .PARAMETER Header
-A Hashtable containing the Header information for the JWT.
+    A Hashtable containing the Header information for the JWT.
 
 .PARAMETER Payload
-A Hashtable containing the Payload information for the JWT.
+    A Hashtable containing the Payload information for the JWT.
 
 .PARAMETER Secret
-An Optional Secret for signing the JWT, should be a string or byte[]. This is mandatory if the Header algorithm isn't "none".
+    An Optional Secret for signing the JWT, should be a string or byte[]. This is mandatory if the Header algorithm isn't "none".
+
+.PARAMETER PrivateKey
+    The private key (PEM format) for RSA or ECDSA algorithms used to decode JWT.
 
 .EXAMPLE
-ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'John' }
+    ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'John' }
 
 .EXAMPLE
-ConvertTo-PodeJwt -Header @{ alg = 'hs256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
+    ConvertTo-PodeJwt -Header @{ alg = 'hs256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
 #>
 function ConvertTo-PodeJwt {
     [CmdletBinding()]
@@ -2287,7 +2312,11 @@ function ConvertTo-PodeJwt {
         $Payload,
 
         [Parameter()]
-        $Secret = $null
+        $Secret = $null,
+
+        [Parameter()]
+        [securestring]
+        $PrivateKey
     )
 
     # validate header
@@ -2320,22 +2349,25 @@ function ConvertTo-PodeJwt {
 
 <#
 .SYNOPSIS
-Convert and return the payload of a JWT token.
+    Convert and return the payload of a JWT token.
 
 .DESCRIPTION
-Convert and return the payload of a JWT token, verifying the signature by default with support to ignore the signature.
+    Convert and return the payload of a JWT token, verifying the signature by default with support to ignore the signature.
 
 .PARAMETER Token
-The JWT token.
+    The JWT token.
 
 .PARAMETER Secret
-The Secret, as a string or byte[], to verify the token's signature.
+    The Secret, as a string or byte[], to verify the token's signature.
+
+.PARAMETER PrivateKey
+    The private key (PEM format) for RSA or ECDSA algorithms used to decode JWT.
 
 .PARAMETER IgnoreSignature
-Skip signature verification, and return the decoded payload.
+    Skip signature verification, and return the decoded payload.
 
 .EXAMPLE
-ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI1NTMyMTQsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMyJ9.LP-O8OKwix91a-SZwVK35gEClLZQmsORbW0un2Z4RkY"
+    ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI1NTMyMTQsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMyJ9.LP-O8OKwix91a-SZwVK35gEClLZQmsORbW0un2Z4RkY"
 #>
 function ConvertFrom-PodeJwt {
     [CmdletBinding(DefaultParameterSetName = 'Secret')]
@@ -2350,7 +2382,11 @@ function ConvertFrom-PodeJwt {
 
         [Parameter(ParameterSetName = 'Ignore')]
         [switch]
-        $IgnoreSignature
+        $IgnoreSignature,
+
+        [Parameter(ParameterSetName = 'Signed')]
+        [securestring]
+        $PrivateKey
     )
 
     # get the parts
@@ -2407,7 +2443,7 @@ function ConvertFrom-PodeJwt {
     }
 
     $sig = "$($parts[0]).$($parts[1])"
-    $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret
+    $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret -PrivateKey $PrivateKey
 
     if ($sig -ne $parts[2]) {
         # Invalid JWT signature supplied

@@ -521,7 +521,7 @@ function Get-PodeAuthApiKeyType {
         # Convert to JWT if required
         if ($options.AsJWT) {
             try {
-                $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
+                $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret -PrivateKey $options.PrivateKey
                 Test-PodeJwt -Payload $payload
                 $result = @($payload)
             }
@@ -598,39 +598,61 @@ function Get-PodeAuthBearerType {
                 Code      = 401  # RFC 6750: Missing credentials should return 401
             }
         }
+        switch ($options.Location.ToLowerInvariant()) {
+            'header' {
+                # Ensure the first part of the header is 'Bearer'
+                $atoms = $header -isplit '\s+'
 
-        # Ensure the first part of the header is 'Bearer'
-        $atoms = $header -isplit '\s+'
+                # 400 Bad Request if no token is provided
+                $token = $atoms[1]
+                if ([string]::IsNullOrWhiteSpace($token)) {
+                    $message = 'No Bearer token found'
+                    return @{
+                        Message   = $message
+                        Code      = 400  # RFC 6750: Malformed request should return 400
+                        Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message
+                    }
+                }
 
-        # 400 Bad Request if no token is provided
-        $token = $atoms[1]
-        if ([string]::IsNullOrWhiteSpace($token)) {
-            $message = 'No Bearer token found'
-            return @{
-                Message   = $message
-                Code      = 400  # RFC 6750: Malformed request should return 400
-                Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message
+                if ($atoms.Length -lt 2) {
+                    $message = 'Invalid Authorization header format'
+                    return @{
+                        Message   = $message
+                        Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message)
+                        Code      = 401  # RFC 6750: Invalid credentials format should return 401
+                    }
+                }
+
+                if ($atoms[0] -ine $options.HeaderTag) {
+                    $message = "Authorization header is not $($options.HeaderTag)"
+                    return @{
+                        Message   = $message
+                        Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message)
+                        Code      = 401  # RFC 6750: Wrong authentication scheme should return 401
+                    }
+                }
+            }
+
+            'query' { # support RFC6750
+                $token = $WebEvent.Query['access_token']
+                if ([string]::IsNullOrWhiteSpace($token)) {
+                    $message = 'No Bearer token found'
+                    return @{
+                        Message   = $message
+                        Code      = 400  # RFC 6750: Malformed request should return 400
+                        Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message
+                    }
+                }
+            }
+            default {
+                $message = "Invalid Bearer Token location: $($options.Location)"
+                return @{
+                    Message   = $message
+                    Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                    Code      = 400
+                }
             }
         }
-         
-        if ($atoms.Length -lt 2) {
-            $message = 'Invalid Authorization header format'
-            return @{
-                Message   = $message
-                Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message)
-                Code      = 401  # RFC 6750: Invalid credentials format should return 401
-            }
-        }
-
-        if ($atoms[0] -ine $options.HeaderTag) {
-            $message = "Authorization header is not $($options.HeaderTag)"
-            return @{
-                Message   = $message
-                Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message)
-                Code      = 401  # RFC 6750: Wrong authentication scheme should return 401
-            }
-        }
-
 
 
         # Trim and build the result
@@ -640,7 +662,7 @@ function Get-PodeAuthBearerType {
         # Convert to JWT if required
         if ($options.AsJWT) {
             try {
-                $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret
+                $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret -PrivateKey $options.PrivateKey
                 Test-PodeJwt -Payload $payload
             }
             catch {

@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = 'OpenAPIを表示'
     enableQuietModeMessage                                            = 'クワイエットモードを有効化'
     disableQuietModeMessage                                           = 'クワイエットモードを無効化'
+    missingKeyForAlgorithmExceptionMessage                            = '{1} アルゴリズム ({2}) には {0} キーが必要です。'
 }

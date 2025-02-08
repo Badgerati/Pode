@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = 'OpenAPI weergeven'
     enableQuietModeMessage                                            = 'Stille modus inschakelen'
     disableQuietModeMessage                                           = 'Stille modus uitschakelen'
+    missingKeyForAlgorithmExceptionMessage                            = 'Een {0}-sleutel is vereist voor {1}-algoritmen ({2}).'
 }

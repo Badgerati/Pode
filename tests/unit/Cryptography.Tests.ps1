@@ -1,3 +1,5 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+param()
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
@@ -54,5 +56,85 @@ Describe 'New-PodeSalt' {
     It 'Returns a salt' {
         Mock Get-PodeRandomByte { return @(10, 10, 10) }
         New-PodeSalt -Length 3 | Should -Be 'CgoK'
+    }
+}
+
+
+
+Describe 'Invoke-PodeJWTSign Function Tests' -Tags 'JWT' {
+    BeforeAll {
+        # Sample data
+        $testValue = 'TestData'
+        $testSecret = [System.Text.Encoding]::UTF8.GetBytes('SuperSecretKey')
+
+        $testPath = $(Split-Path -Parent -Path $(Split-Path -Parent -Path $path))
+        # Load test keys from PEM files (Assume these exist in the test environment)
+        $rsaPrivateKey = Get-Content "$testPath/certs/rsa_private.pem" -Raw
+        $ecdsaPrivateKey = Get-Content "$testPath/certs/ecdsa_private.pem" -Raw
+    }
+
+    Context 'HMAC Signing Tests' {
+        It 'Should generate a valid HMAC-SHA256 signature' {
+            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm HS256 -SecretBytes $testSecret
+            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+        }
+
+        It 'Should generate a valid HMAC-SHA384 signature' {
+            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm HS384 -SecretBytes $testSecret
+            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+        }
+
+        It 'Should generate a valid HMAC-SHA512 signature' {
+            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm HS512 -SecretBytes $testSecret
+            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+        }
+    }
+
+    Context 'RSA Signing Tests' {
+        It 'Should generate a valid RSA-SHA256 signature' {
+            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm RS256 -PrivateKey $rsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+        }
+
+        It 'Should generate a valid RSA-SHA384 signature' {
+            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm RS384 -PrivateKey $rsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+        }
+
+        It 'Should generate a valid RSA-SHA512 signature' {
+            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm RS512 -PrivateKey $rsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+        }
+    }
+
+    Context 'ECDSA Signing Tests' {
+        It 'Should generate a valid ECDSA-SHA256 signature' {
+            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm ES256 -PrivateKey $ecdsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+        }
+
+        It 'Should generate a valid ECDSA-SHA384 signature' {
+            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm ES384 -PrivateKey $ecdsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+        }
+
+        It 'Should generate a valid ECDSA-SHA512 signature' {
+            $result = Invoke-PodeJWTSign -Value $testValue -Algorithm ES512 -PrivateKey $ecdsaPrivateKey
+            $result | Should -Match '^[A-Za-z0-9+/]+={0,2}$'
+        }
+    }
+
+    Context 'Invalid Inputs' {
+        It 'Should throw an error for missing secret in HMAC' {
+            { Invoke-PodeJWTSign -Value $testValue -Algorithm HS256 } | Should -Throw
+        }
+
+        It 'Should throw an error for missing private key in RSA' {
+            { Invoke-PodeJWTSign -Value $testValue -Algorithm RS256 } | Should -Throw
+        }
+
+        It 'Should throw an error for an unsupported algorithm' {
+            { Invoke-PodeJWTSign -Value $testValue -Algorithm 'INVALID' -Secret $testSecret } | Should -Throw
+        }
     }
 }

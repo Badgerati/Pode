@@ -322,4 +322,5 @@
     showOpenAPIMessage                                                = 'OpenAPI 표시'
     enableQuietModeMessage                                            = '조용한 모드 활성화'
     disableQuietModeMessage                                           = '조용한 모드 비활성화'
+    missingKeyForAlgorithmExceptionMessage                            = '{1} 알고리즘 ({2}) 에는 {0} 키가 필요합니다.'
 }
