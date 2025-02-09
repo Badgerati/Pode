@@ -4,7 +4,7 @@ Middleware in Pode allows you to observe and edit the request/response objects f
 
 Middleware is supported in both a global scope, using [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware), as well as at the Route level using the `-Middleware` parameter on [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute).
 
-Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware) and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../Types/AccessRules) and [Rate Limiting](../Types/RateLimiting) page).
+Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware) and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../Types/Limiters/AccessRules) and [Rate Rules](../Types/Limiters/RateRules) page).
 
 ## Global Middleware
 

@@ -227,9 +227,9 @@ namespace Pode
                     Headers = ParseHeaders(content);
                     Subject = Headers["Subject"]?.ToString();
                     IsUrgent = $"{Headers["Priority"]}".Equals("urgent", StringComparison.InvariantCultureIgnoreCase) || $"{Headers["Importance"]}".Equals("high", StringComparison.InvariantCultureIgnoreCase);
-                    ContentEncoding = Headers["Content-Transfer-Encoding"]?.ToString();
+                    ContentEncoding = $"{Headers["Content-Transfer-Encoding"]}";
 
-                    ContentType = Headers["Content-Type"]?.ToString();
+                    ContentType = $"{Headers["Content-Type"]}";
                     if (!string.IsNullOrEmpty(Boundary) && !ContentType.Contains("boundary="))
                     {
                         ContentType = ContentType.TrimEnd(';');
