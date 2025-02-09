@@ -425,8 +425,7 @@ function Write-PodeAttachmentResponseInternal {
 
     # Attempt to retrieve information about the path
     $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
-
-    if (!$pathinfo) {
+    if (!$pathInfo) {
         return
     }
 
@@ -436,10 +435,11 @@ function Write-PodeAttachmentResponseInternal {
     }
 
     if ( $pathInfo.PSIsContainer) {
-        # filebrowsing is enabled, use the directory response function
+        # file browsing is enabled, use the directory response function
         Write-PodeDirectoryResponseInternal -Path $Path
         return
     }
+
     try {
         # setup the content type and disposition
         if (!$ContentType) {

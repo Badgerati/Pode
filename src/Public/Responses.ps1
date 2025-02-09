@@ -14,7 +14,7 @@ If the supplied Path doesn't match any custom static Route, then Pode will look 
 Failing this, if the file path exists as a literal/relative file, then this file is used as a fall back.
 
 .PARAMETER ContentType
-Manually specify the content type of the response rather than infering it from the attachment's file extension.
+Manually specify the content type of the response rather than inferring it from the attachment's file extension.
 The supplied value must match the valid ContentType format, e.g. application/json
 
 .PARAMETER EndpointName
@@ -80,11 +80,11 @@ function Set-PodeResponseAttachment {
         $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
         if ($route) {
             $_path = $route.Content.Source
-
         }
         else {
             $_path = Get-PodeRelativePath -Path $Path -JoinRoot
         }
+
         #call internal Attachment function
         Write-PodeAttachmentResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser
     }
@@ -432,6 +432,7 @@ function Write-PodeDirectoryResponse {
         [string]
         $Path
     )
+
     begin {
         $pipelineItemCount = 0
     }
@@ -444,6 +445,7 @@ function Write-PodeDirectoryResponse {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         # resolve for relative path
         $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
 
@@ -628,7 +630,7 @@ Writes Markdown data to the Response.
 Writes Markdown data to the Response, with the option to render it as HTML.
 
 .PARAMETER Value
-A String, PSObject, or HashTable value.
+A String value.
 
 .PARAMETER Path
 The path to a Markdown file.
@@ -946,13 +948,13 @@ The Depth to generate the YAML document - the larger this value the worse perfor
 The status code to set against the response.
 
 .EXAMPLE
-Write-PodeYamlResponse -Value '{"name": "Rick"}'
+Write-PodeYamlResponse -Value 'name: "Rick"'
 
 .EXAMPLE
 Write-PodeYamlResponse -Value @{ Name = 'Rick' } -StatusCode 201
 
 .EXAMPLE
-Write-PodeYamlResponse -Path 'E:/Files/Names.json'
+Write-PodeYamlResponse -Path 'E:/Files/Names.yaml'
 #>
 function Write-PodeYamlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
