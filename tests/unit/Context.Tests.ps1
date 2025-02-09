@@ -226,7 +226,7 @@ Describe 'Add-PodeEndpoint' {
 
         It 'Throws error for an invalid IPv4' {
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
-            { Add-PodeEndpoint -Address '256.0.0.1' -Protocol 'HTTP' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
+            { Add-PodeEndpoint -Address '256.0.0.1' -Protocol 'HTTP' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f '256.0.0.1:0' ) #'*Failed to parse*'
 
             $PodeContext.Server.Types | Should -Be $null
             $PodeContext.Server.Endpoints.Count | Should -Be 0
@@ -234,7 +234,7 @@ Describe 'Add-PodeEndpoint' {
 
         It 'Throws error for an invalid IPv4 address with port' {
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
-            { Add-PodeEndpoint -Address '256.0.0.1' -Port 80 -Protocol 'HTTP' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
+            { Add-PodeEndpoint -Address '256.0.0.1' -Port 80 -Protocol 'HTTP' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f '256.0.0.1:80' ) #'*Failed to parse*'
 
             $PodeContext.Server.Types | Should -Be $null
             $PodeContext.Server.Endpoints.Count | Should -Be 0

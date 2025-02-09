@@ -67,9 +67,22 @@ Start-PodeServer -Threads 2 -Verbose {
     # Add-PodeAccessRule -Access Deny -Type IP -Values 10.10.10.10
     # Add-PodeAccessRule -Access Deny -Type IP -Values '10.10.0.0/24'
     # Add-PodeAccessRule -Access Deny -Type IP -Values all
+    # Add-PodeLimitAccessRule -Name 'Main' -Action Deny -Component @(
+    #     New-PodeLimitIPComponent -IP '127.0.0.1'
+    #     New-PodeLimitRouteComponent -Path '/error'
+    # )
 
     # limit
     # Add-PodeLimitRule -Type IP -Values all -Limit 100 -Seconds 5
+    # Add-PodeLimitRateRule -Name 'Main' -Limit 5 -Duration 10000 -Component @(
+    #     New-PodeLimitIPComponent #-IP '127.0.0.2'
+    #     New-PodeLimitRouteComponent -Path '/'
+    # )
+    # Add-PodeLimitRateRule -Name 'Debounce' -Limit 1 -Duration 10000 -Component @(
+    #     New-PodeLimitIPComponent
+    #     New-PodeLimitRouteComponent
+    #     New-PodeLimitMethodComponent -Method Get, Post
+    # )
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
@@ -140,8 +153,16 @@ Start-PodeServer -Threads 2 -Verbose {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every http method' }
     }
 
+    Add-PodeRoute -Method Get -Path '/api/test' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ 'value' = 'works for test route' }
+    }
+
     Add-PodeRoute -Method Get -Path '/api/*/hello' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every hello route' }
+    }
+
+    Add-PodeRoute -Method Delete -Path '/delete' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ 'value' = 'works for delete method' }
     }
 
     $script:hmm = 'well well'

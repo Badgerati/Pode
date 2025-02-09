@@ -322,4 +322,8 @@
     showOpenAPIMessage                                                = 'OpenAPI anzeigen'
     enableQuietModeMessage                                            = 'Leisemodus aktivieren'
     disableQuietModeMessage                                           = 'Leisemodus deaktivieren'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "Die Rate-Limit-Regel mit dem Namen '{0}' existiert bereits."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "Die Rate-Limit-Regel mit dem Namen '{0}' existiert nicht."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert bereits."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert nicht."
 }
