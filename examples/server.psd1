@@ -83,8 +83,8 @@
             Restart         = $true       # Enable or disable the restart operation
             Disable         = $true       # Enable or disable the disable operation
             DisableSettings = @{
-                RetryAfter     = 3600                               # Default retry time (in seconds) for Disable-PodeServer
-                MiddlewareName = '__Pode_Midleware_Code_503'    # Name of the middleware scriptblock
+                RetryAfter    = 3600                        # Default retry time (in seconds) for Disable-PodeServer
+                LimitRuleName = '__Pode_Disable_Code_503__' # Name of the rate limit rule
             }
             Timeout         = @{
                 Suspend = 30       # Maximum seconds to wait before suspending

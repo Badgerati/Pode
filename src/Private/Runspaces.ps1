@@ -39,7 +39,6 @@
         # Your script code here
     }
 #>
-
 function Add-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
@@ -74,10 +73,13 @@ function Add-PodeRunspace {
     try {
         # Define the script block to open the runspace and set its state.
         $openRunspaceScript = {
-            param($Type, $Name, $NoProfile)
+            param([string]$Type, [string]$Name, [bool]$NoProfile)
             try {
                 # Set the runspace name.
                 Set-PodeCurrentRunspaceName -Name $Name
+
+                # Set runspace location to server root
+                Set-Location $PodeContext.Server.Root
 
                 if (!$NoProfile) {
                     # Import necessary internal Pode modules for the runspace.
@@ -109,13 +111,11 @@ function Add-PodeRunspace {
 
         # Add the script block and parameters to the pipeline.
         $null = $ps.AddScript($openRunspaceScript)
-        $null = $ps.AddParameters(
-            @{
-                'Type'      = $Type
-                'Name'      = "Pode_$($Type)_$($Name)_$((++$PodeContext.RunspacePools[$Type].LastId))" # create the name and increment the last Id for the type
-                'NoProfile' = $NoProfile.IsPresent
-            }
-        )
+        $null = $ps.AddParameters(@{
+                Type      = $Type
+                Name      = "Pode_$($Type)_$($Name)_$((++$PodeContext.RunspacePools[$Type].LastId))" # create the name and increment the last Id for the type
+                NoProfile = $NoProfile.IsPresent
+            })
 
         # Add the main script block to the pipeline.
         $null = $ps.AddScript($ScriptBlock)

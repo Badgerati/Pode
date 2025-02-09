@@ -332,4 +332,8 @@
     showOpenAPIMessage                                                = 'OpenAPI weergeven'
     enableQuietModeMessage                                            = 'Stille modus inschakelen'
     disableQuietModeMessage                                           = 'Stille modus uitschakelen'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "Rate Limit-regel met de naam '{0}' bestaat al."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "Rate Limit-regel met de naam '{0}' bestaat niet."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "Toegangslimietregel met de naam '{0}' bestaat al."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "Toegangslimietregel met de naam '{0}' bestaat niet."
 }
