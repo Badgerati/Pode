@@ -179,8 +179,8 @@ function Write-PodeFileResponseInternal {
 
         # generate dynamic content
         if (![string]::IsNullOrWhiteSpace($mainExt) -and (
-        ($mainExt -ieq 'pode') -or
-        ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
+                ($mainExt -ieq 'pode') -or
+                ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
             )
         ) {
             # Process dynamic content with the view engine

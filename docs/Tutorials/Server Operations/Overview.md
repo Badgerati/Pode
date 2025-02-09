@@ -24,8 +24,8 @@ Pode introduces the ability to configure and control server behaviors using the 
             Restart = $true       # Enable or disable the restart operation
             Disable = $true       # Enable or disable the disable operation
             DisableSettings = @{
-                RetryAfter = 3600                               # Default retry time (in seconds) for Disable-PodeServer
-                MiddlewareName = '__Pode_Midleware_Code_503__'    # Name of the middleware scriptblock
+                RetryAfter = 3600                           # Default retry time (in seconds) for Disable-PodeServer
+                LimitRuleName = '__Pode_Disable_Code_503__' # Name of the rate limit rule
             }
             Timeout = @{
                 Suspend = 30       # Maximum seconds to wait before suspending
@@ -43,7 +43,7 @@ Pode introduces the ability to configure and control server behaviors using the 
 3. **Disable**: Controls whether the server can block new incoming requests using `Disable-PodeServer`.
 4. **DisableSettings**:
     - `RetryAfter`: Specifies the default retry time (in seconds) included in the `Retry-After` header when the server is disabled.
-    - `MiddlewareName`: Defines the name of the middleware scriptblock responsible for handling `503 Service Unavailable` responses.
+    - `LimitRuleName`: Defines the name of the rate limit rule responsible for handling `503 Service Unavailable` responses.
 5. **Timeout**:
     - `Suspend`: Defines the maximum wait time (in seconds) for runspaces to suspend.
     - `Resume`: Defines the maximum wait time (in seconds) for runspaces to resume.

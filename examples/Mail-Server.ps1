@@ -55,6 +55,12 @@ Start-PodeServer -Threads 2 {
 
     # allow the local ip
     #Add-PodeAccessRule -Access Allow -Type IP -Values 127.0.0.1
+    # Add-PodeLimitAccessRule -Name 'Main' -Action Deny -Component @(
+    #     New-PodeLimitIPComponent -IP '127.0.0.1'
+    # )
+    # Add-PodeLimitRateRule -Name 'Main' -Limit 1 -Duration 5000 -Component @(
+    #     New-PodeLimitIPComponent -IP '127.0.0.1'
+    # )
 
     # setup an smtp handler
     Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {

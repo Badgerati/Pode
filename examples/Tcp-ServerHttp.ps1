@@ -42,6 +42,14 @@ Start-PodeServer -Threads 2 {
     # enable logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
+    # example limits
+    # Add-PodeLimitAccessRule -Name 'Main' -Action Deny -Component @(
+    #     New-PodeLimitIPComponent -IP '127.0.0.1'
+    # )
+    # Add-PodeLimitRateRule -Name 'Main' -Limit 1 -Duration 5000 -Component @(
+    #     New-PodeLimitIPComponent -IP '127.0.0.1'
+    # )
+
     # catch-all for http
     Add-PodeVerb -Verb '*' -Close -ScriptBlock {
         $TcpEvent.Request.Body | Out-Default
