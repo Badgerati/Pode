@@ -151,16 +151,13 @@ function Start-PodeSmtpServer {
                                 throw $Request.Error
                             }
 
-                            # convert the ip
-                            $ip = (ConvertTo-PodeIPAddress -Address $Request.RemoteEndPoint)
-
                             # ensure the request ip is allowed
-                            if (!(Test-PodeIPAccess -IP $ip)) {
+                            if (!(Test-PodeLimitAccessRuleRequest)) {
                                 $Response.WriteLine('554 Your IP address was rejected', $true)
                             }
 
                             # has the ip hit the rate limit?
-                            elseif (!(Test-PodeIPLimit -IP $ip)) {
+                            elseif (!(Test-PodeLimitRateRuleRequest)) {
                                 $Response.WriteLine('554 Your IP address has hit the rate limit', $true)
                             }
 

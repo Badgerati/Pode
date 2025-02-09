@@ -321,5 +321,9 @@
     showOpenAPIMessage                                                = 'OpenAPIを表示'
     enableQuietModeMessage                                            = 'クワイエットモードを有効化'
     disableQuietModeMessage                                           = 'クワイエットモードを無効化'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "名前が '{0}' のレート制限ルールは既に存在します。"
+    rateLimitRuleDoesNotExistExceptionMessage                         = "名前が '{0}' のレート制限ルールは存在しません。"
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "名前が '{0}' のアクセス制限ルールは既に存在します。"
+    accessLimitRuleDoesNotExistExceptionMessage                       = "名前が '{0}' のアクセス制限ルールは存在しません。"
     missingKeyForAlgorithmExceptionMessage                            = '{1} アルゴリズム ({2}) には {0} キーが必要です。'
 }

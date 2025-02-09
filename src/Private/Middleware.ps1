@@ -132,19 +132,13 @@ function Get-PodeInbuiltMiddleware {
 
 function Get-PodeAccessMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_access__' -ScriptBlock {
-            # are there any rules?
-            if (($PodeContext.Server.Access.Allow.Count -eq 0) -and ($PodeContext.Server.Access.Deny.Count -eq 0)) {
+            $result = Invoke-PodeLimitAccessRuleRequest
+            if ($null -eq $result) {
                 return $true
             }
 
-            # ensure the request IP address is allowed
-            if (!(Test-PodeIPAccess -IP $WebEvent.Request.RemoteEndPoint.Address)) {
-                Set-PodeResponseStatus -Code 403
-                return $false
-            }
-
-            # request is allowed
-            return $true
+            Set-PodeResponseStatus -Code $result.StatusCode
+            return $false
         })
 }
 
@@ -153,7 +147,9 @@ function Get-PodeAccessMiddleware {
 Retrieves the rate limit middleware for Pode.
 
 .DESCRIPTION
-This function returns the inbuilt rate limit middleware for Pode. It checks if the request IP address, route, and endpoint have hit their respective rate limits. If any of these checks fail, a 429 status code is set, and the request is denied.
+This function returns the inbuilt rate limit middleware for Pode.
+It checks if the request IP address, route, and endpoint have hit their respective rate limits.
+If any of these checks fail, a 429 status code is set, and the request is denied.
 
 .EXAMPLE
 Get-PodeLimitMiddleware
@@ -170,31 +166,14 @@ function Get-PodeLimitMiddleware {
     [OutputType([hashtable])]
     param()
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
-            # are there any rules?
-            if ($PodeContext.Server.Limits.Rules.Count -eq 0) {
+            $result = Invoke-PodeLimitRateRuleRequest
+            if ($null -eq $result) {
                 return $true
             }
 
-            # check the request IP address has not hit a rate limit
-            if (!(Test-PodeIPLimit -IP $WebEvent.Request.RemoteEndPoint.Address)) {
-                Set-PodeResponseStatus -Code 429
-                return $false
-            }
-
-            # check the route
-            if (!(Test-PodeRouteLimit -Path $WebEvent.Path)) {
-                Set-PodeResponseStatus -Code 429
-                return $false
-            }
-
-            # check the endpoint
-            if (!(Test-PodeEndpointLimit -EndpointName $WebEvent.Endpoint.Name)) {
-                Set-PodeResponseStatus -Code 429
-                return $false
-            }
-
-            # request is allowed
-            return $true
+            Set-PodeHeader -Name 'Retry-After' -Value $result.RetryAfter
+            Set-PodeResponseStatus -Code $result.StatusCode
+            return $false
         })
 }
 

@@ -2,7 +2,7 @@
 
 Pode has a Docker image that you can use to host your server, for instructions on pulling these images you can [look here](../../Installation).
 
-The images use PowerShell v7.4 on either an Ubuntu Jammy (default), Alpine, or ARM32 image.
+The images use PowerShell v7.5 on either an Ubuntu Noble (default), Alpine, or ARM32 image.
 
 ## Images
 
@@ -11,7 +11,7 @@ The images use PowerShell v7.4 on either an Ubuntu Jammy (default), Alpine, or A
 
 ### Default
 
-The default Pode image is an Ubuntu Jammy image with PowerShell v7.4 and Pode installed. An example of using this image in your Dockerfile could be as follows:
+The default Pode image is an Ubuntu Noble image with PowerShell v7.5 and Pode installed. An example of using this image in your Dockerfile could be as follows:
 
 ```dockerfile
 # pull down the pode image

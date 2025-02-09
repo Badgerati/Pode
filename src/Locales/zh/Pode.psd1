@@ -321,5 +321,9 @@
     showOpenAPIMessage                                                = '显示OpenAPI'
     enableQuietModeMessage                                            = '启用安静模式'
     disableQuietModeMessage                                           = '禁用安静模式'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = '速率限制规则已存在: {0}'
+    rateLimitRuleDoesNotExistExceptionMessage                         = '速率限制规则不存在: {0}'
+    accessLimitRuleAlreadyExistsExceptionMessage                      = '访问限制规则已存在: {0}'
+    accessLimitRuleDoesNotExistExceptionMessage                       = '访问限制规则不存在: {0}'
     missingKeyForAlgorithmExceptionMessage                            = 'Uma chave {0} é necessária para os algoritmos {1} ({2}).'
 }

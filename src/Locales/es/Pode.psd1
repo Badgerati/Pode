@@ -321,5 +321,9 @@
     showOpenAPIMessage                                                = 'Mostrar OpenAPI'
     enableQuietModeMessage                                            = 'Activar modo silencioso'
     disableQuietModeMessage                                           = 'Desactivar modo silencioso'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "La regla de límite de velocidad con el nombre '{0}' ya existe."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "La regla de límite de velocidad con el nombre '{0}' no existe."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "La regla de límite de acceso con el nombre '{0}' ya existe."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "La regla de límite de acceso con el nombre '{0}' no existe."
     missingKeyForAlgorithmExceptionMessage                            = 'Se requiere una clave {0} para los algoritmos {1} ({2}).'
 }

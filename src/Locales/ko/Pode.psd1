@@ -321,5 +321,9 @@
     showOpenAPIMessage                                                = 'OpenAPI 표시'
     enableQuietModeMessage                                            = '조용한 모드 활성화'
     disableQuietModeMessage                                           = '조용한 모드 비활성화'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "이름이 '{0}'인 비율 제한 규칙이 이미 존재합니다."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "이름이 '{0}'인 비율 제한 규칙이 존재하지 않습니다."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "이름이 '{0}'인 액세스 제한 규칙이 이미 존재합니다."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "이름이 '{0}'인 액세스 제한 규칙이 존재하지 않습니다."
     missingKeyForAlgorithmExceptionMessage                            = '{1} 알고리즘 ({2}) 에는 {0} 키가 필요합니다.'
 }
