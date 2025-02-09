@@ -157,10 +157,14 @@ function Write-PodeTextResponse {
     begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
-    }process {
+    }
+
+    process {
         # Add the current piped-in value to the array
         $pipelineValue += $_
-    }end {
+    }
+
+    end {
         # Set Value to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Value = $pipelineValue -join "`n"

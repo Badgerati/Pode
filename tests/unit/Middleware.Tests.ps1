@@ -108,13 +108,13 @@ Describe 'Middleware' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Add-PodeMiddleware -Name 'Test1' -ScriptBlock { write-host 'middle1' }
-            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[','`[').Replace(']','`]') # -replace '\[', '`[' -replace '\]', '`]'
+            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
             { Add-PodeMiddleware -Name 'Test1' -ScriptBlock { write-host 'middle2' } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
         }
 
         It 'Throws error when adding middleware hash with no logic' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
-            $expectedMessage = $PodeLocale.middlewareNoLogicSuppliedExceptionMessage.Replace('[','`[').Replace(']','`]') # -replace '\[', '`[' -replace '\]', '`]'
+            $expectedMessage = $PodeLocale.middlewareNoLogicSuppliedExceptionMessage.Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
             { Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Rand' = { write-host 'middle1' } } } | Should -Throw -ExpectedMessage $expectedMessage # '*no logic supplied*'
         }
 
@@ -162,7 +162,7 @@ Describe 'Middleware' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Logic' = { write-host 'middle1' } }
-            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[','`[').Replace(']','`]') # -replace '\[', '`[' -replace '\]', '`]'
+            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
             { Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Logic' = { write-host 'middle2' } } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
         }
     }
@@ -261,7 +261,7 @@ Describe 'Get-PodeAccessMiddleware' {
         $r.Name | Should -Be '__pode_mw_access__'
         $r.Logic | Should -Not -Be $null
 
-        Mock Test-PodeIPAccess { return $true }
+        Mock Invoke-PodeLimitAccessRuleRequest { return $null }
 
         $WebEvent = @{
             'Request' = @{ 'RemoteEndPoint' = @{ 'Address' = 'localhost' } }
@@ -283,19 +283,11 @@ Describe 'Get-PodeAccessMiddleware' {
     }
 
     It 'Returns a ScriptBlock and invokes it as false' {
-        $PodeContext = @{
-            Server = @{
-                Access = @{
-                    Allow = @{ Key = 'Value' }
-                }
-            }
-        }
-
         $r = Get-PodeAccessMiddleware
         $r.Name | Should -Be '__pode_mw_access__'
         $r.Logic | Should -Not -Be $null
 
-        Mock Test-PodeIPAccess { return $false }
+        Mock Invoke-PodeLimitAccessRuleRequest { return @{ 'StatusCode' = 403 } }
         Mock Set-PodeResponseStatus { }
 
         $WebEvent = @{
@@ -317,7 +309,7 @@ Describe 'Get-PodeLimitMiddleware' {
         $r.Name | Should -Be '__pode_mw_rate_limit__'
         $r.Logic | Should -Not -Be $null
 
-        Mock Test-PodeIPLimit { return $true }
+        Mock Invoke-PodeLimitRateRuleRequest { return $null }
 
         $WebEvent = @{
             'Request' = @{ 'RemoteEndPoint' = @{ 'Address' = 'localhost' } }
@@ -339,19 +331,12 @@ Describe 'Get-PodeLimitMiddleware' {
     }
 
     It 'Returns a ScriptBlock and invokes it as false' {
-        $PodeContext = @{
-            Server = @{
-                Limits = @{
-                    Rules = @{ Key = 'Value' }
-                }
-            }
-        }
-
         $r = Get-PodeLimitMiddleware
         $r.Name | Should -Be '__pode_mw_rate_limit__'
         $r.Logic | Should -Not -Be $null
 
-        Mock Test-PodeIPLimit { return $false }
+        Mock Invoke-PodeLimitRateRuleRequest { return @{ 'StatusCode' = 429; 'RetryAfter' = 3600 } }
+        Mock Set-PodeHeader {}
         Mock Set-PodeResponseStatus { }
 
         $WebEvent = @{
