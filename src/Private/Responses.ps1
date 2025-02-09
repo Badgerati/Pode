@@ -179,8 +179,8 @@ function Write-PodeFileResponseInternal {
 
         # generate dynamic content
         if (![string]::IsNullOrWhiteSpace($mainExt) -and (
-        ($mainExt -ieq 'pode') -or
-        ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
+                ($mainExt -ieq 'pode') -or
+                ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
             )
         ) {
             # Process dynamic content with the view engine
@@ -425,8 +425,7 @@ function Write-PodeAttachmentResponseInternal {
 
     # Attempt to retrieve information about the path
     $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
-
-    if (!$pathinfo) {
+    if (!$pathInfo) {
         return
     }
 
@@ -436,10 +435,11 @@ function Write-PodeAttachmentResponseInternal {
     }
 
     if ( $pathInfo.PSIsContainer) {
-        # filebrowsing is enabled, use the directory response function
+        # file browsing is enabled, use the directory response function
         Write-PodeDirectoryResponseInternal -Path $Path
         return
     }
+
     try {
         # setup the content type and disposition
         if (!$ContentType) {

@@ -223,8 +223,6 @@
         'Add-PodeMiddleware',
         'Remove-PodeMiddleware',
         'Clear-PodeMiddleware',
-        'Add-PodeAccessRule',
-        'Add-PodeLimitRule',
         'New-PodeCsrfToken',
         'Get-PodeCsrfMiddleware',
         'Initialize-PodeCsrf',
@@ -512,7 +510,26 @@
         'Test-PodeScopedVariable',
         'Clear-PodeScopedVariables',
         'Get-PodeScopedVariable',
-        'Use-PodeScopedVariables'
+        'Use-PodeScopedVariables',
+
+        # limits
+        'Add-PodeAccessRule',
+        'Add-PodeLimitRule',
+        'Add-PodeLimitRateRule',
+        'Add-PodeLimitAccessRule',
+        'Update-PodeLimitRateRule',
+        'Update-PodeLimitAccessRule',
+        'Test-PodeLimitRateRule',
+        'Test-PodeLimitAccessRule',
+        'Remove-PodeLimitRateRule',
+        'Remove-PodeLimitAccessRule',
+        'Get-PodeLimitRateRule',
+        'Get-PodeLimitAccessRule',
+        'New-PodeLimitIPComponent',
+        'New-PodeLimitRouteComponent',
+        'New-PodeLimitEndpointComponent',
+        'New-PodeLimitMethodComponent',
+        'New-PodeLimitHeaderComponent'
     )
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
