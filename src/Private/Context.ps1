@@ -195,9 +195,9 @@ function New-PodeContext {
 
     # default Folders
     $ctx.Server.DefaultFolders = @{
-        'Views'  = 'views'
-        'Public' = 'public'
-        'Errors' = 'errors'
+        Views  = 'views'
+        Public = 'public'
+        Errors = 'errors'
     }
 
     $ctx.Server.Debug = @{
@@ -211,8 +211,8 @@ function New-PodeContext {
         Restart         = $true
         Disable         = $true
         DisableSettings = @{
-            RetryAfter     = 3600
-            MiddlewareName = '__Pode_Midleware_Code_503__'
+            RetryAfter    = 3600
+            LimitRuleName = '__Pode_Disable_Code_503__'
         }
         Timeout         = @{
             Suspend = 30
@@ -429,8 +429,17 @@ function New-PodeContext {
 
     # setup basic limit rules
     $ctx.Server.Limits = @{
-        Rules  = @{}
-        Active = @{}
+        Rate   = @{
+            Rules        = [ordered]@{}
+            RuleOrder    = @()
+            RulesAltered = $false
+        }
+        Access = @{
+            Rules         = [ordered]@{}
+            RuleOrder     = @()
+            RulesAltered  = $false
+            HaveAllowRule = $false
+        }
     }
 
     # cookies and session logic
@@ -1033,8 +1042,8 @@ function Set-PodeServerConfiguration {
         Restart         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Restart -Default $Context.Server.AllowedActions.Restart)
         Disable         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Disable -Default $Context.Server.AllowedActions.Disable)
         DisableSettings = @{
-            RetryAfter     = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.RetryAfter -Default $Context.Server.AllowedActions.DisableSettings.RetryAfter)
-            MiddlewareName = (Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.MiddlewareName -Default $Context.Server.AllowedActions.DisableSettings.MiddlewareName)
+            RetryAfter    = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.RetryAfter -Default $Context.Server.AllowedActions.DisableSettings.RetryAfter)
+            LimitRuleName = (Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.LimitRuleName -Default $Context.Server.AllowedActions.DisableSettings.LimitRuleName)
         }
         Timeout         = @{
             Suspend = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Suspend -Default $Context.Server.AllowedActions.Timeout.Suspend)

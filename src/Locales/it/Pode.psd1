@@ -330,4 +330,8 @@
     showOpenAPIMessage                                                = 'Mostra OpenAPI'
     enableQuietModeMessage                                            = 'Abilita la modalità silenziosa'
     disableQuietModeMessage                                           = 'Disabilita la modalità silenziosa'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "Una regola di limitazione del tasso con il nome '{0}' esiste già."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "La regola di limitazione del tasso con il nome '{0}' non esiste."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "Una regola di limitazione dell'accesso con il nome '{0}' esiste già."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "La regola di limitazione dell'accesso con il nome '{0}' non esiste."
 }

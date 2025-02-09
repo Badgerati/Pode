@@ -123,6 +123,9 @@ function Invoke-PodeInternalTimer {
 
         # invoke timer
         Invoke-PodeScriptBlock -ScriptBlock $Timer.Script.GetNewClosure() -Arguments $_args -UsingVariables $Timer.UsingVariables -Scoped -Splat -NoNewClosure
+
+        # reset runspace location
+        Set-Location $PodeContext.Server.Root
     }
     catch {
         $_ | Write-PodeErrorLog

@@ -585,10 +585,10 @@ function Resume-PodeServerInternal {
 
 <#
 .SYNOPSIS
-    Enables new requests by removing the middleware that blocks requests when the Pode Watchdog service is active.
+    Enables new requests by removing the access limit rule that blocks requests when the Pode Watchdog service is active.
 
 .DESCRIPTION
-    This function checks if the middleware associated with the Pode Watchdog client is present, and if so, it removes it to allow new requests.
+    This function checks if the access limit rule associated with the Pode Watchdog client is present, and if so, it removes it to allow new requests.
     This effectively re-enables access to the service by removing the request blocking.
 
 .NOTES
@@ -604,22 +604,22 @@ function Enable-PodeServerInternal {
     # Trigger the 'Enable' event for the server.
     Invoke-PodeEvent -Type Enable
 
-    Remove-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName
+    # remove the access limit rule
+    Remove-PodeLimitRateRule -Name $PodeContext.Server.AllowedActions.DisableSettings.LimitRuleName
 }
 
 <#
 .SYNOPSIS
-    Disables new requests by adding middleware that blocks incoming requests when the Pode Watchdog service is active.
+    Disables new requests by adding an access limit rule that blocks incoming requests when the Pode Watchdog service is active.
 
 .DESCRIPTION
-    This function adds middleware to the Pode server to block new incoming requests while the Pode Watchdog client is active.
+    This function adds an access limit rule to the Pode server to block new incoming requests while the Pode Watchdog client is active.
     It responds to all new requests with a 503 Service Unavailable status and sets a 'Retry-After' header, indicating when the service will be available again.
 
 .NOTES
     This function is used internally to manage Watchdog monitoring and may change in future releases of Pode.
 #>
 function Disable-PodeServerInternal {
-
     if (!(Test-PodeServerState -State Running) -or (!( Test-PodeServerIsEnabled)) ) {
         return
     }
@@ -627,19 +627,15 @@ function Disable-PodeServerInternal {
     # Trigger the 'Enable' event for the server.
     Invoke-PodeEvent -Type Disable
 
-    # Add middleware to block new requests and respond with 503 Service Unavailable
-    Add-PodeMiddleware -Name  $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName -ScriptBlock {
-        # Set HTTP response header for retrying after a certain time (RFC7231)
-        Set-PodeHeader -Name 'Retry-After' -Value $PodeContext.Server.AllowedActions.DisableSettings.RetryAfter
+    # add a rate limit rule to block new requests, returning a 503 Service Unavailable status
+    $limitName = $PodeContext.Server.AllowedActions.DisableSettings.LimitRuleName
+    $duration = $PodeContext.Server.AllowedActions.DisableSettings.RetryAfter * 1000
 
-        # Set HTTP status to 503 Service Unavailable
-        Set-PodeResponseStatus -Code 503
-
-        # Stop further processing
-        return $false
-    }
+    Add-PodeLimitRateRule -Name $limitName -Limit 0 -Duration $duration -StatusCode 503 -Priority ([int]::MaxValue) -Component @(
+        New-PodeLimitIPComponent -Group
+    )
 }
 
 function Test-PodeServerIsEnabled {
-    return !(Test-PodeMiddleware -Name $PodeContext.Server.AllowedActions.DisableSettings.MiddlewareName)
+    return !(Test-PodeLimitRateRule -Name $PodeContext.Server.AllowedActions.DisableSettings.LimitRuleName)
 }
