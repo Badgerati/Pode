@@ -322,4 +322,8 @@
     showOpenAPIMessage                                                = 'Show OpenAPI'
     enableQuietModeMessage                                            = 'Enable Quiet Mode'
     disableQuietModeMessage                                           = 'Disable Quiet Mode'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "A Rate Limit Rule with the name '{0}' already exists."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "A Rate Limit Rule with the name '{0}' does not exist."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "An Access Limit Rule with the name '{0}' already exists."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "An Access Limit Rule with the name '{0}' does not exist."
 }

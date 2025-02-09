@@ -218,9 +218,6 @@
         'Add-PodeMiddleware',
         'Remove-PodeMiddleware',
         'Clear-PodeMiddleware',
-        'Test-PodeMiddleware',
-        'Add-PodeAccessRule',
-        'Add-PodeLimitRule',
         'New-PodeCsrfToken',
         'Get-PodeCsrfMiddleware',
         'Initialize-PodeCsrf',
@@ -508,6 +505,26 @@
         'Test-PodeScopedVariable',
         'Clear-PodeScopedVariables',
         'Get-PodeScopedVariable',
+        'Use-PodeScopedVariables',
+
+        # limits
+        'Add-PodeAccessRule',
+        'Add-PodeLimitRule',
+        'Add-PodeLimitRateRule',
+        'Add-PodeLimitAccessRule',
+        'Update-PodeLimitRateRule',
+        'Update-PodeLimitAccessRule',
+        'Test-PodeLimitRateRule',
+        'Test-PodeLimitAccessRule',
+        'Remove-PodeLimitRateRule',
+        'Remove-PodeLimitAccessRule',
+        'Get-PodeLimitRateRule',
+        'Get-PodeLimitAccessRule',
+        'New-PodeLimitIPComponent',
+        'New-PodeLimitRouteComponent',
+        'New-PodeLimitEndpointComponent',
+        'New-PodeLimitMethodComponent',
+        'New-PodeLimitHeaderComponent'
         'Use-PodeScopedVariables',
 
         # watchdog
