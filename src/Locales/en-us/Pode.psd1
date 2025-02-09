@@ -323,5 +323,9 @@
     showOpenAPIMessage                                                = 'Show OpenAPI'
     enableQuietModeMessage                                            = 'Enable Quiet Mode'
     disableQuietModeMessage                                           = 'Disable Quiet Mode'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "A rate limit rule with the name '{0}' already exists."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "A rate limit rule with the name '{0}' does not exist."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "An access limit rule with the name '{0}' already exists."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "An access limit rule with the name '{0}' does not exist."
     deprecatedFunctionWarningMessage                                  = "WARNING: The function '{0}' is deprecated and will be removed in future releases. Please use the '{1}' function instead."
 }
