@@ -322,6 +322,10 @@
     showOpenAPIMessage                                                = 'Mostrar OpenAPI'
     enableQuietModeMessage                                            = 'Ativar modo silencioso'
     disableQuietModeMessage                                           = 'Desativar modo silencioso'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "A regra de limite de taxa com o nome '{0}' já existe."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "A regra de limite de taxa com o nome '{0}' não existe."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "A regra de limite de acesso com o nome '{0}' já existe."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "A regra de limite de acesso com o nome '{0}' não existe."
     invalidPodeStateFormatExceptionMessage                            = 'O arquivo PodeState "{0}" contém um formato inválido. Era esperado uma estrutura semelhante a um dicionário (ConcurrentDictionary, Hashtable ou OrderedDictionary), mas foi encontrado [{1}]. Verifique o conteúdo do arquivo ou reinicialize o estado.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'Tipo de dicionário/coleção desconhecido no JSON: {0}'
     invalidPodeStateDataExceptionMessage                              = 'Os dados fornecidos não representam um estado válido do Pode.'

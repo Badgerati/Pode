@@ -134,18 +134,15 @@ function Start-PodeTcpServer {
                                 throw $Request.Error
                             }
 
-                            # convert the ip
-                            $ip = (ConvertTo-PodeIPAddress -Address $Request.RemoteEndPoint)
-
                             # ensure the request ip is allowed
-                            if (!(Test-PodeIPAccess -IP $ip)) {
+                            if (!(Test-PodeLimitAccessRuleRequest)) {
                                 $Response.WriteLine('Your IP address was rejected', $true)
                                 Close-PodeTcpClient
                                 continue
                             }
 
                             # has the ip hit the rate limit?
-                            if (!(Test-PodeIPLimit -IP $ip)) {
+                            if (!(Test-PodeLimitRateRuleRequest)) {
                                 $Response.WriteLine('Your IP address has hit the rate limit', $true)
                                 Close-PodeTcpClient
                                 continue

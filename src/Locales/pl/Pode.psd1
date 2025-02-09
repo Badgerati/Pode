@@ -322,6 +322,10 @@
     showOpenAPIMessage                                                = 'Pokaż OpenAPI'
     enableQuietModeMessage                                            = 'Włącz tryb cichy'
     disableQuietModeMessage                                           = 'Wyłącz tryb cichy'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "Reguła limitu szybkości o nazwie '{0}' już istnieje."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "Reguła limitu szybkości o nazwie '{0}' nie istnieje."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "Reguła limitu dostępu o nazwie '{0}' już istnieje."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "Reguła limitu dostępu o nazwie '{0}' nie istnieje."
     invalidPodeStateFormatExceptionMessage                            = 'Plik PodeState "{0}" ma nieprawidłowy format. Oczekiwano struktury podobnej do słownika (ConcurrentDictionary, Hashtable lub OrderedDictionary), ale znaleziono [{1}]. Sprawdź zawartość pliku lub ponownie zainicjalizuj stan.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'Nieznany typ słownika/kolekcji w JSON: {0}'
     invalidPodeStateDataExceptionMessage                              = 'Podane dane nie są poprawnym stanem Pode.'

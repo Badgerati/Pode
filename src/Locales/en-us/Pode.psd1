@@ -322,6 +322,10 @@
     showOpenAPIMessage                                                = 'Show OpenAPI'
     enableQuietModeMessage                                            = 'Enable Quiet Mode'
     disableQuietModeMessage                                           = 'Disable Quiet Mode'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "A rate limit rule with the name '{0}' already exists."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "A rate limit rule with the name '{0}' does not exist."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "An access limit rule with the name '{0}' already exists."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "An access limit rule with the name '{0}' does not exist."
     invalidPodeStateFormatExceptionMessage                            = 'The PodeState file "{0}" contains an invalid format. Expected a dictionary-like structure (ConcurrentDictionary, Hashtable, or OrderedDictionary), but found [{1}]. Please verify the file content or reinitialize the state.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'Unknown dictionary/collection type in JSON: {0}'
     invalidPodeStateDataExceptionMessage                              = 'The provided data does not represent a valid Pode state.'

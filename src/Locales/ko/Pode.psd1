@@ -322,6 +322,10 @@
     showOpenAPIMessage                                                = 'OpenAPI 표시'
     enableQuietModeMessage                                            = '조용한 모드 활성화'
     disableQuietModeMessage                                           = '조용한 모드 비활성화'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "이름이 '{0}'인 비율 제한 규칙이 이미 존재합니다."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "이름이 '{0}'인 비율 제한 규칙이 존재하지 않습니다."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "이름이 '{0}'인 액세스 제한 규칙이 이미 존재합니다."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "이름이 '{0}'인 액세스 제한 규칙이 존재하지 않습니다."
     invalidPodeStateFormatExceptionMessage                            = 'Het PodeState-bestand "{0}" bevat een ongeldig formaat. Verwacht werd een dictionary-achtige structuur (ConcurrentDictionary, Hashtable of OrderedDictionary), maar gevonden werd [{1}]. Controleer de inhoud van het bestand of initialiseert u de status opnieuw.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'JSON에서 알 수 없는 사전/컬렉션 유형: {0}'
     invalidPodeStateDataExceptionMessage                              = '제공된 데이터는 유효한 Pode 상태 데이터가 아닙니다.'

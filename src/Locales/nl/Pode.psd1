@@ -322,6 +322,10 @@
     showOpenAPIMessage                                                = 'OpenAPI weergeven'
     enableQuietModeMessage                                            = 'Stille modus inschakelen'
     disableQuietModeMessage                                           = 'Stille modus uitschakelen'
+    rateLimitRuleAlreadyExistsExceptionMessage                        = "Rate Limit-regel met de naam '{0}' bestaat al."
+    rateLimitRuleDoesNotExistExceptionMessage                         = "Rate Limit-regel met de naam '{0}' bestaat niet."
+    accessLimitRuleAlreadyExistsExceptionMessage                      = "Toegangslimietregel met de naam '{0}' bestaat al."
+    accessLimitRuleDoesNotExistExceptionMessage                       = "Toegangslimietregel met de naam '{0}' bestaat niet."
     invalidPodeStateFormatExceptionMessage                            = 'Plik PodeState "{0}" ma nieprawidłowy format. Oczekiwano struktury podobnej do słownika (ConcurrentDictionary, Hashtable lub OrderedDictionary), ale znaleziono [{1}]. Sprawdź zawartość pliku lub ponownie zainicjalizuj stan.'
     unknownJsonDictionaryTypeExceptionMessage                         = 'Onbekend woordenboek-/collectietype in JSON: {0}'
     invalidPodeStateDataExceptionMessage                              = 'De opgegeven gegevens vertegenwoordigen geen geldige Pode-status.'
