@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = "A regra de limite de acesso com o nome '{0}' já existe."
     accessLimitRuleDoesNotExistExceptionMessage                       = "A regra de limite de acesso com o nome '{0}' não existe."
     missingKeyForAlgorithmExceptionMessage                            = 'Uma chave {0} é necessária para os algoritmos {1} ({2}).'
+    jwtIssuedInFutureExceptionMessage                                 = "O carimbo de data/hora 'iat' (Emitido em) do JWT está definido para o futuro. O token ainda não é válido."
+    jwtInvalidIssuerExceptionMessage                                  = "A reivindicação 'iss' (Issuer) do JWT é inválida ou está ausente. Emissor esperado: '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "O JWT está sem a reivindicação obrigatória 'iss' (Issuer). Um emissor válido é necessário."
+    jwtInvalidAudienceExceptionMessage                                = "A reivindicação 'aud' (Audience) do JWT é inválida ou está ausente. Audiência esperada: '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "O JWT está sem a reivindicação obrigatória 'aud' (Audience). Uma audiência válida é necessária."
+    jwtInvalidSubjectExceptionMessage                                 = "A reivindicação 'sub' (Subject) do JWT é inválida ou está ausente. Um sujeito válido é necessário."
+    jwtInvalidJtiExceptionMessage                                     = "A reivindicação 'jti' (JWT ID) do JWT é inválida ou está ausente. Um identificador único válido é necessário."
+    jwtAlgorithmMismatchExceptionMessage                              = 'Incompatibilidade de algoritmo JWT: Esperado {0}, encontrado {1}.'
 }

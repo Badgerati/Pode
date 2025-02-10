@@ -520,10 +520,12 @@ function Get-PodeAuthApiKeyType {
 
         # Convert to JWT if required
         if ($options.AsJWT) {
+
+
             try {
-                $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret -PrivateKey $options.PrivateKey
-                Test-PodeJwt -Payload $payload
-                $result = @($payload)
+                $result = Confirm-PodeJwt -Token $apiKey -Secret $options.Secret -PublicKey $options.PublicKey -JwtVerificationMode $options.JwtVerificationMode
+                write-podehost "confirm done"
+                Test-PodeJwt -Payload $result -JwtVerificationMode $options.JwtVerificationMode
             }
             catch {
                 if ($_.Exception.Message -ilike '*jwt*') {
@@ -633,7 +635,8 @@ function Get-PodeAuthBearerType {
                 }
             }
 
-            'query' { # support RFC6750
+            'query' {
+                # support RFC6750
                 $token = $WebEvent.Query['access_token']
                 if ([string]::IsNullOrWhiteSpace($token)) {
                     $message = 'No Bearer token found'
@@ -662,8 +665,8 @@ function Get-PodeAuthBearerType {
         # Convert to JWT if required
         if ($options.AsJWT) {
             try {
-                $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret -PrivateKey $options.PrivateKey
-                Test-PodeJwt -Payload $payload
+                $result = Confirm-PodeJwt -Token $token -SecretBytes $options.Secret -PublicKey $options.PublicKey -JwtVerificationMode $options.JwtVerificationMode
+                Test-PodeJwt -Payload $result -JwtVerificationMode $options.JwtVerificationMode
             }
             catch {
                 if ($_.Exception.Message -ilike '*jwt*') {
@@ -677,9 +680,8 @@ function Get-PodeAuthBearerType {
                 throw
             }
 
-            $result = @($payload)
+            #  $result = @($payload)
         }
-
         # Return the validated result
         return $result
     }

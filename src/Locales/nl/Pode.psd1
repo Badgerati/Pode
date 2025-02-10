@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Toegangslimietregel met de naam '{0}' bestaat al."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Toegangslimietregel met de naam '{0}' bestaat niet."
     missingKeyForAlgorithmExceptionMessage                            = 'Een {0}-sleutel is vereist voor {1}-algoritmen ({2}).'
+    jwtIssuedInFutureExceptionMessage                                 = "De 'iat' (Issued At) tijdstempel van de JWT is ingesteld in de toekomst. Het token is nog niet geldig."
+    jwtInvalidIssuerExceptionMessage                                  = "De JWT 'iss' (Issuer) claim is ongeldig of ontbreekt. Verwachte uitgever: '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "De JWT mist de vereiste 'iss' (Issuer) claim. Een geldige uitgever is vereist."
+    jwtInvalidAudienceExceptionMessage                                = "De JWT 'aud' (Audience) claim is ongeldig of ontbreekt. Verwacht publiek: '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "De JWT mist de vereiste 'aud' (Audience) claim. Een geldig publiek is vereist."
+    jwtInvalidSubjectExceptionMessage                                 = "De JWT 'sub' (Subject) claim is ongeldig of ontbreekt. Een geldig subject is vereist."
+    jwtInvalidJtiExceptionMessage                                     = "De JWT 'jti' (JWT ID) claim is ongeldig of ontbreekt. Een geldige unieke identificatie is vereist."
+    jwtAlgorithmMismatchExceptionMessage                              = 'JWT-algoritme komt niet overeen: Verwacht {0}, gevonden {1}.'
 }

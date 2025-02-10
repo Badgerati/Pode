@@ -325,5 +325,14 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "A Rate Limit Rule with the name '{0}' does not exist."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "An Access Limit Rule with the name '{0}' already exists."
     accessLimitRuleDoesNotExistExceptionMessage                       = "An Access Limit Rule with the name '{0}' does not exist."
-    missingKeyForAlgorithmExceptionMessage = 'A {0} key is required for {1} algorithms ({2}).'
+    missingKeyForAlgorithmExceptionMessage                            = 'A {0} key is required for {1} algorithms ({2}).'
+    jwtIssuedInFutureExceptionMessage                                 = "The JWT's 'iat' (Issued At) timestamp is set in the future. The token is not valid yet."
+    jwtInvalidIssuerExceptionMessage                                  = "The JWT 'iss' (Issuer) claim is invalid or missing. Expected issuer: '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "The JWT is missing the required 'iss' (Issuer) claim. A valid issuer is required."
+    jwtInvalidAudienceExceptionMessage                                = "The JWT 'aud' (Audience) claim is invalid or missing. Expected audience: '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "The JWT is missing the required 'aud' (Audience) claim. A valid audience is required."
+    jwtInvalidSubjectExceptionMessage                                 = "The JWT 'sub' (Subject) claim is invalid or missing. A valid subject is required."
+    jwtInvalidJtiExceptionMessage                                     = "The JWT 'jti' (JWT ID) claim is invalid or missing. A valid unique identifier is required."
+    jwtAlgorithmMismatchExceptionMessage                              = 'JWT algorithm mismatch: Expected {0}, found {1}.'
+
 }

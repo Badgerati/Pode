@@ -53,7 +53,10 @@ function New-PodeContext {
         $IgnoreServerConfig,
 
         [string]
-        $ConfigFile
+        $ConfigFile,
+
+        [string]
+        $ApplicationName
     )
 
     # set a random server name if one not supplied
@@ -97,6 +100,12 @@ function New-PodeContext {
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
     $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+    if ([string]::IsNullOrEmpty($ApplicationName)) {
+        $ctx.Server.ApplicationName = (Get-PodeApplicationName)
+    }
+    else {
+        $ctx.Server.ApplicationName = $ApplicationName
+    }
 
     # list of created listeners/receivers
     $ctx.Listeners = @()

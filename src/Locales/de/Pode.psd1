@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert bereits."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert nicht."
     missingKeyForAlgorithmExceptionMessage                            = 'Ein {0}-Schlüssel ist für {1}-Algorithmen ({2}) erforderlich.'
+    jwtIssuedInFutureExceptionMessage                                 = "Der 'iat' (Issued At)-Zeitstempel des JWT ist in der Zukunft gesetzt. Das Token ist noch nicht gültig."
+    jwtInvalidIssuerExceptionMessage                                  = "Der JWT-Anspruch 'iss' (Issuer) ist ungültig oder fehlt. Erwarteter Herausgeber: '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "Dem JWT fehlt der erforderliche 'iss' (Issuer)-Anspruch. Ein gültiger Herausgeber ist erforderlich."
+    jwtInvalidAudienceExceptionMessage                                = "Der JWT-Anspruch 'aud' (Audience) ist ungültig oder fehlt. Erwartete Zielgruppe: '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "Dem JWT fehlt der erforderliche 'aud' (Audience)-Anspruch. Eine gültige Zielgruppe ist erforderlich."
+    jwtInvalidSubjectExceptionMessage                                 = "Der JWT-Anspruch 'sub' (Subject) ist ungültig oder fehlt. Ein gültiges Subjekt ist erforderlich."
+    jwtInvalidJtiExceptionMessage                                     = "Der JWT-Anspruch 'jti' (JWT ID) ist ungültig oder fehlt. Eine gültige eindeutige Kennung ist erforderlich."
+    jwtAlgorithmMismatchExceptionMessage                              = 'JWT-Algorithmus stimmt nicht überein: Erwartet {0}, gefunden {1}.'
 }

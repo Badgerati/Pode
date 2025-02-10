@@ -103,4 +103,39 @@ Start-PodeServer -Threads 2 {
         }
     }
 
+    New-PodeAuthScheme -ApiKey -AsJWT -Secret 'secret' | Add-PodeAuth -Name 'ApiKeySignedJwtAuth' -Sessionless -ScriptBlock {
+        param($jwt)
+
+        if ($jwt.username -ieq 'morty') {
+            return @{
+                User = @{ ID = 'M0R7Y302' }
+            }
+        }
+
+        return $null
+    }
+
+    Add-PodeRoute -Method Get -Path '/auth/apikey/jwt/signed' -Authentication 'ApiKeySignedJwtAuth' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ Result = 'OK' }
+
+    }
+    # API KEY - JWT (not signed)
+    New-PodeAuthScheme -ApiKey -AsJWT | Add-PodeAuth -Name 'ApiKeyNotSignedJwtAuth' -Sessionless -ScriptBlock {
+        param($jwt)
+
+        if ($jwt.username -ieq 'morty') {
+            return @{
+                User = @{ ID = 'M0R7Y302' }
+            }
+        }
+
+        return $null
+    }
+
+    Add-PodeRoute -Method Get -Path '/auth/apikey/jwt/notsigned' -Authentication 'ApiKeyNotSignedJwtAuth' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ Result = 'OK' }
+    }
+
+
+
 }

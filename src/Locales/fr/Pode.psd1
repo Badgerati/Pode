@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Une règle de limite d'accès nommée '{0}' existe déjà."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La règle de limite d'accès '{0}' n'existe pas."
     missingKeyForAlgorithmExceptionMessage                            = 'Une clé {0} est requise pour les algorithmes {1} ({2}).'
+    jwtIssuedInFutureExceptionMessage                                 = "L'horodatage 'iat' (Issued At) du JWT est défini dans le futur. Le jeton n'est pas encore valide."
+    jwtInvalidIssuerExceptionMessage                                  = "La revendication 'iss' (Issuer) du JWT est invalide ou absente. Émetteur attendu : '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "Le JWT ne contient pas la revendication obligatoire 'iss' (Issuer). Un émetteur valide est requis."
+    jwtInvalidAudienceExceptionMessage                                = "La revendication 'aud' (Audience) du JWT est invalide ou absente. Audience attendue : '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "Le JWT ne contient pas la revendication obligatoire 'aud' (Audience). Une audience valide est requise."
+    jwtInvalidSubjectExceptionMessage                                 = "La revendication 'sub' (Subject) du JWT est invalide ou absente. Un sujet valide est requis."
+    jwtInvalidJtiExceptionMessage                                     = "La revendication 'jti' (JWT ID) du JWT est invalide ou absente. Un identifiant unique valide est requis."
+    jwtAlgorithmMismatchExceptionMessage                              = "Incohérence d'algorithme JWT : attendu {0}, trouvé {1}."
 }

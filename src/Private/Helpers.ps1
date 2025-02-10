@@ -3952,3 +3952,44 @@ function ConvertTo-PodeSleep {
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }
+
+<#
+.SYNOPSIS
+    Retrieves the name of the main Pode application script.
+
+.DESCRIPTION
+    The `Get-PodeApplicationName` function determines the name of the primary script (`.ps1`)
+    that started execution. It does this by examining the PowerShell call stack and
+    extracting the first script file that appears.
+
+    If no script file is found in the call stack, the function returns `"NoName"`.
+
+.OUTPUTS
+    [string]
+    Returns the filename of the main application script, or `"NoName"` if no script is found.
+
+.EXAMPLE
+    Get-PodeApplicationName
+
+    This retrieves the name of the main script that launched the Pode application.
+
+.EXAMPLE
+    $AppName = Get-PodeApplicationName
+    Write-Host "Application Name: $AppName"
+
+    This stores the retrieved application name in a variable and prints it.
+
+.NOTES
+    - This function relies on `Get-PSCallStack`, meaning it must be run within a script execution context.
+    - If called interactively or if no `.ps1` script is in the call stack, it will return `"NoName"`.
+    - This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeApplicationName {
+    $scriptFrame = (Get-PSCallStack | Where-Object { $_.Command -match '\.ps1$' } | Select-Object -First 1)
+     if ($scriptFrame) {
+        return    [System.IO.Path]::GetFileName($scriptFrame.Command)
+    }
+    else {
+        return 'NoName'
+    }
+ }

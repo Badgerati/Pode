@@ -145,6 +145,15 @@
 .PARAMETER PrivateKey
     The private key (PEM format) for RSA or ECDSA algorithms used to decode JWT.
 
+.PARAMETER PublicKey
+    The public key (PEM format) for RSA or ECDSA algorithms used to decode JWT.
+
+.PARAMETER JwtVerificationMode
+    Defines how aggressively JWT signatures are checked.
+    - `Strict`: Full validation (signature, header, `kid`, algorithm enforcement).
+    - `Moderate`: Signature check, but allows missing `kid`.
+    - `Lenient`: Signature check, but ignores algorithm mismatches.
+
 .EXAMPLE
     # Create a Basic Authentication scheme
     $basic_auth = New-PodeAuthScheme -Basic
@@ -378,13 +387,23 @@ function New-PodeAuthScheme {
 
         [Parameter(ParameterSetName = 'Bearer')]
         [Parameter(ParameterSetName = 'ApiKey')]
-        [string]
-        $Secret,
+        [object]$Secret,
 
         [Parameter(ParameterSetName = 'Bearer')]
         [Parameter(ParameterSetName = 'ApiKey')]
         [SecureString]
-        $PrivateKey
+        $PrivateKey,
+
+        [Parameter(ParameterSetName = 'Bearer')]
+        [Parameter(ParameterSetName = 'ApiKey')]
+        [String]
+        $PublicKey,
+
+        [Parameter(ParameterSetName = 'Bearer')]
+        [Parameter(ParameterSetName = 'ApiKey')]
+        [ValidateSet('Strict', 'Moderate', 'Lenient')]
+        [string]
+        $JwtVerificationMode = 'Lenient'
     )
     begin {
         $pipelineItemCount = 0
@@ -467,11 +486,17 @@ function New-PodeAuthScheme {
             }
 
             'bearer' {
-                $secretBytes = $null
-                if (![string]::IsNullOrWhiteSpace($Secret)) {
-                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+                if ($Secret) {
+                    if ($Secret -isnot [SecureString]) {
+                        if ( $Secret -is [string]) {
+                            # Convert plain string to SecureString
+                            $secret = ConvertTo-SecureString -String secret  -AsPlainText -Force
+                        }
+                        else {
+                            throw
+                        }
+                    }
                 }
-
                 return @{
                     Name          = 'Bearer'
                     Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
@@ -487,13 +512,15 @@ function New-PodeAuthScheme {
                     Scheme        = 'http'
                     InnerScheme   = $InnerScheme
                     Arguments     = @{
-                        Description = $Description
-                        HeaderTag   = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
-                        Scopes      = $Scope
-                        AsJWT       = $AsJWT
-                        Secret      = $secretBytes
-                        PrivateKey  = $PrivateKey
-                        Location    = $BearerLocation
+                        Description         = $Description
+                        HeaderTag           = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
+                        Scopes              = $Scope
+                        AsJWT               = $AsJWT
+                        Secret              = $Secret
+                        PrivateKey          = $PrivateKey
+                        PublicKey           = $PublicKey
+                        Location            = $BearerLocation
+                        JwtVerificationMode = $JwtVerificationMode
                     }
                 }
             }
@@ -579,6 +606,17 @@ function New-PodeAuthScheme {
             }
 
             'apikey' {
+                if ($Secret) {
+                    if ($Secret -isnot [SecureString]) {
+                        if ( $Secret -is [string]) {
+                            # Convert plain string to SecureString
+                            $Secret = ConvertTo-SecureString -String $Secret  -AsPlainText -Force
+                        }
+                        else {
+                            throw
+                        }
+                    }
+                }
                 # set default location name
                 if ([string]::IsNullOrWhiteSpace($LocationName)) {
                     $LocationName = (@{
@@ -588,10 +626,6 @@ function New-PodeAuthScheme {
                         })[$ApiKeyLocation]
                 }
 
-                $secretBytes = $null
-                if (![string]::IsNullOrWhiteSpace($Secret)) {
-                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
-                }
 
                 return @{
                     Name          = 'ApiKey'
@@ -605,12 +639,14 @@ function New-PodeAuthScheme {
                     InnerScheme   = $InnerScheme
                     Scheme        = 'apiKey'
                     Arguments     = @{
-                        Description  = $Description
-                        Location     = $ApiKeyLocation
-                        LocationName = $LocationName
-                        AsJWT        = $AsJWT
-                        Secret       = $secretBytes
-                        PrivateKey   = $PrivateKey
+                        Description         = $Description
+                        Location            = $ApiKeyLocation
+                        LocationName        = $LocationName
+                        AsJWT               = $AsJWT
+                        Secret              = $Secret
+                        PrivateKey          = $PrivateKey
+                        PublicKey           = $PublicKey
+                        JwtVerificationMode = $JwtVerificationMode
                     }
                 }
             }
@@ -2276,76 +2312,177 @@ function Add-PodeAuthWindowsLocal {
 
 <#
 .SYNOPSIS
-    Convert a Header/Payload into a JWT.
+    Converts a Header/Payload into a signed or unsigned JWT.
 
 .DESCRIPTION
-    Convert a Header/Payload hashtable into a JWT, with the option to sign it.
+    This function converts a hashtable-based JWT header and payload into a JWT string.
+    It automatically includes registered claims such as `exp`, `iat`, `nbf`, `iss`, `sub`, and `jti` if not provided.
+    Supports signing using HMAC, RSA, and ECDSA.
 
 .PARAMETER Header
-    A Hashtable containing the Header information for the JWT.
+    A Hashtable containing the JWT header information, including the signing algorithm (`alg`).
 
 .PARAMETER Payload
-    A Hashtable containing the Payload information for the JWT.
+    A Hashtable containing the JWT payload information, including claims (`iss`, `sub`, `aud`, `exp`, `nbf`, `iat`, `jti`).
 
 .PARAMETER Secret
-    An Optional Secret for signing the JWT, should be a string or byte[]. This is mandatory if the Header algorithm isn't "none".
+    The secret key for HMAC algorithms. Must be a string or byte array.
+    Required for `HS256`, `HS384`, `HS512`.
 
 .PARAMETER PrivateKey
-    The private key (PEM format) for RSA or ECDSA algorithms used to decode JWT.
+    The private key (PEM format) for RSA or ECDSA algorithms.
+    Required for `RS256`, `RS384`, `RS512`, `PS256`, `PS384`, `PS512`, `ES256`, `ES384`, `ES512`.
+
+.PARAMETER Expiration
+    The expiration time for the JWT (in seconds from now). Defaults to 1 hour.
+
+.PARAMETER NotBefore
+    The `nbf` (Not Before) time for the JWT (in seconds from now). Defaults to 0 (immediate use).
+
+.PARAMETER IssuedAt
+    The `iat` (Issued At) time for the JWT. Defaults to the current Unix timestamp.
+
+.PARAMETER Issuer
+    The `iss` (Issuer) claim, identifying the entity that issued the JWT.
+
+.PARAMETER Subject
+    The `sub` (Subject) claim, identifying the principal of the JWT.
+
+.PARAMETER Audience
+    The `aud` (Audience) claim, specifying the intended recipient(s) of the JWT.
+
+.PARAMETER JwtId
+    The `jti` (JWT ID) claim, a unique identifier for the token.
+
+.OUTPUTS
+    [string] The generated JWT.
 
 .EXAMPLE
     ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'John' }
 
 .EXAMPLE
-    ConvertTo-PodeJwt -Header @{ alg = 'hs256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
+    ConvertTo-PodeJwt -Header @{ alg = 'HS256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
+
+.EXAMPLE
+    ConvertTo-PodeJwt -Header @{ alg = 'RS256' } -Payload @{ sub = '123' } -PrivateKey (Get-Content "private.pem" -Raw) -Issuer "auth.example.com" -Audience "myapi.example.com"
+
+.NOTES
+    - If no `exp`, `iat`, or `jti` are provided, they will be automatically generated.
+    - The function does not check claim validity. Use `Test-PodeJwt` to validate claims.
+    - Custom claims can be included in the payload.
 #>
 function ConvertTo-PodeJwt {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory = $true)]
-        [hashtable]
-        $Header,
+        [Parameter()]
+        [hashtable]$Header,
 
         [Parameter(Mandatory = $true)]
-        [hashtable]
-        $Payload,
+        [hashtable]$Payload,
+
+        [ValidateSet('NONE', 'HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512')]
+        [string]
+        $Algorithm = 'HS256',
 
         [Parameter()]
         $Secret = $null,
 
         [Parameter()]
-        [securestring]
-        $PrivateKey
+        [securestring]$PrivateKey,
+
+        [Parameter()]
+        [int]$Expiration = 3600, # Default: 1 hour
+
+        [Parameter()]
+        [int]$NotBefore = 0, # Default: Immediate use
+
+        [Parameter()]
+        [int]$IssuedAt = 0, # Default: Current time
+
+        [Parameter()]
+        [string]$Issuer,
+
+        [Parameter()]
+        [string]$Subject,
+
+        [Parameter()]
+        [string]$Audience,
+
+        [Parameter()]
+        [string]$JwtId
     )
 
-    # validate header
+    # Validate header
     if ([string]::IsNullOrWhiteSpace($Header.alg)) {
-        # No algorithm supplied in JWT Header
-        throw ($PodeLocale.noAlgorithmInJwtHeaderExceptionMessage)
+        if ([string]::IsNullOrWhiteSpace($Algorithm)) {
+            throw ($PodeLocale.noAlgorithmInJwtHeaderExceptionMessage)
+        }
+        $Header['alg'] = $Algorithm.ToUpper()
+    }
+    elseif (( 'NONE', 'HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512' -contains $Header['alg'].ToUpper())) {
+        $Header['alg'] = $Header['alg'].ToUpper()
+    }
+    else {
+        $Header['alg'] = 'HS256'
     }
 
-    # convert the header
-    $header64 = ConvertTo-PodeBase64UrlValue -Value ($Header | ConvertTo-Json -Compress)
+    $Header.typ = 'JWT'
 
-    # convert the payload
+    # Automatically add standard claims if missing
+    $currentUnix = [int][Math]::Floor(([DateTimeOffset]::new([DateTime]::UtcNow)).ToUnixTimeSeconds())
+
+
+    if (! $Payload.ContainsKey('iat')) { $Payload['iat'] = if ($IssuedAt -gt 0) { $IssuedAt } else { $currentUnix } }
+    if (! $Payload.ContainsKey('nbf')) { $Payload['nbf'] = $currentUnix + $NotBefore }
+    if (! $Payload.ContainsKey('exp')) { $Payload['exp'] = $currentUnix + $Expiration }
+    if (! $Payload.ContainsKey('iss')) {
+        if ($Issuer) {
+            $Payload['iss'] = $Issuer
+        }
+        elseif ($PodeContext) {
+            $Payload['iss'] = 'Pode'
+        }
+
+    }
+
+    if ($Subject -and ! $Payload.ContainsKey('sub')) { $Payload['sub'] = $Subject }
+    if (! $Payload.ContainsKey('aud')) {
+        if ($Audience) {
+            $Payload['aud'] = $Audience
+        }
+        elseif ($PodeContext.Server.Application) {
+            $Payload['aud'] = $PodeContext.Server.Application
+        }
+    }
+    if ($JwtId -and ! $Payload.ContainsKey('jti')) { $Payload['jti'] = $JwtId }
+    elseif (! $Payload.ContainsKey('jti')) { $Payload['jti'] = [guid]::NewGuid().ToString() }
+
+    # Convert header & payload to Base64 URL format
+    $header64 = ConvertTo-PodeBase64UrlValue -Value ($Header | ConvertTo-Json -Compress)
     $payload64 = ConvertTo-PodeBase64UrlValue -Value ($Payload | ConvertTo-Json -Compress)
 
-    # combine
+    # Combine header and payload
     $jwt = "$($header64).$($payload64)"
 
-    # convert secret to bytes
+    # Convert secret to bytes if needed
     if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
-        $Secret = [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
+        $Secret = if ($Secret -is [SecureString]) {
+            [System.Text.Encoding]::UTF8.GetBytes( [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey)))
+        }
+        else {
+            [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
+        }
     }
 
-    # make the signature
-    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $Secret  -PrivateKey $PrivateKey
+    # Generate the signature
+    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $Secret -PrivateKey $PrivateKey
 
-    # add the signature and return
+    # Append the signature and return the JWT
     $jwt += ".$($sig)"
     return $jwt
 }
+
 
 <#
 .SYNOPSIS
@@ -2453,52 +2590,149 @@ function ConvertFrom-PodeJwt {
     # it's valid return the payload!
     return $payload
 }
-
 <#
 .SYNOPSIS
-Validates JSON Web Tokens (JWT) claims.
+    Validates a JWT payload by checking its registered claims as defined in RFC 7519.
 
 .DESCRIPTION
-Validates JSON Web Tokens (JWT) claims. Checks time related claims: 'exp' and 'nbf'.
+    This function verifies the validity of a JWT payload by ensuring:
+    - The `exp` (Expiration Time) has not passed.
+    - The `nbf` (Not Before) time is not in the future.
+    - The `iat` (Issued At) time is not in the future.
+    - The `iss` (Issuer) claim is valid based on the verification mode.
+    - The `sub` (Subject) claim is a valid string.
+    - The `aud` (Audience) claim is valid based on the verification mode.
+    - The `jti` (JWT ID) claim is a valid string.
 
 .PARAMETER Payload
-Object containing JWT claims. Some of them are:
-    - exp (expiration time)
-    - nbf (not before)
+    The JWT payload as a [pscustomobject] containing registered claims such as `exp`, `nbf`, `iat`, `iss`, `sub`, `aud`, and `jti`.
+
+.PARAMETER Issuer
+    The expected JWT Issuer. If omitted, uses 'Pode'.
+
+.PARAMETER JwtVerificationMode
+    Defines how aggressively JWT claims should be checked:
+    - `Strict`: Requires all standard claims to be valid (`exp`, `nbf`, `iat`, `iss`, `aud`, `jti`).
+    - `Moderate`: Allows missing `iss` and `aud` but still checks expiration.
+    - `Lenient`: Ignores missing `iss` and `aud`, only verifies `exp`, `nbf`, and `iat`.
 
 .EXAMPLE
-Test-PodeJwt @{exp = 2696258821 }
+  $payload = [pscustomobject]@{
+      iss = "auth.example.com"
+      sub = "1234567890"
+      aud = "myapi.example.com"
+      exp = 1700000000
+      nbf = 1690000000
+      iat = 1690000000
+      jti = "unique-token-id"
+  }
 
-.EXAMPLE
-Test-PodeJwt -Payload @{nbf = 1696258821 }
+  Test-PodeJwt -Payload $payload -JwtVerificationMode "Strict"
+
+  This example validates a JWT payload with full claim verification.
+
+.NOTES
+  - This function does not verify the JWT signature. It only checks the payload claims.
+  - Custom claims outside RFC 7519 are not validated by this function.
+  - Throws an error if a claim is invalid or missing required values.
 #>
 function Test-PodeJwt {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [pscustomobject]
-        $Payload
+        [pscustomobject]$Payload,
+
+        [Parameter()]
+        [string]$Issuer = 'Pode',
+
+        [Parameter()]
+        [ValidateSet('Strict', 'Moderate', 'Lenient')]
+        [string]$JwtVerificationMode = 'Lenient'
     )
 
-    $now = [datetime]::UtcNow
-    $unixStart = [datetime]::new(1970, 1, 1, 0, 0, [DateTimeKind]::Utc)
+    # Get current Unix timestamp
+    $currentUnix = [int][Math]::Floor(([DateTimeOffset]::new([DateTime]::UtcNow)).ToUnixTimeSeconds())
 
-    # validate expiry
-    if (![string]::IsNullOrWhiteSpace($Payload.exp)) {
-        if ($now -gt $unixStart.AddSeconds($Payload.exp)) {
-            # The JWT has expired
+    # Validate Expiration (`exp`) - Applies to ALL modes
+    if ($Payload.exp) {
+        $expUnix = [long]$Payload.exp
+        if ($currentUnix -ge $expUnix) {
             throw ($PodeLocale.jwtExpiredExceptionMessage)
         }
     }
 
-    # validate not-before
-    if (![string]::IsNullOrWhiteSpace($Payload.nbf)) {
-        if ($now -lt $unixStart.AddSeconds($Payload.nbf)) {
-            # The JWT is not yet valid for use
+    # Validate Not Before (`nbf`) - Applies to ALL modes
+    if ($Payload.nbf) {
+        $nbfUnix = [long]$Payload.nbf
+        if ($currentUnix -lt $nbfUnix) {
             throw ($PodeLocale.jwtNotYetValidExceptionMessage)
         }
     }
+
+    # Validate Issued At (`iat`) - Applies to ALL modes
+    if ($Payload.iat) {
+        $iatUnix = [long]$Payload.iat
+        if ($iatUnix -gt $currentUnix) {
+            throw ($PodeLocale.jwtIssuedInFutureExceptionMessage)
+        }
+    }
+
+    # Validate Issuer (`iss`)
+    if ($JwtVerificationMode -eq 'Strict' -or $JwtVerificationMode -eq 'Moderate') {
+        if ($Payload.iss) {
+            if (! $Payload.iss -or $Payload.iss -isnot [string] -or $Payload.iss -ne $Issuer) {
+                throw ($PodeLocale.jwtInvalidIssuerExceptionMessage -f $Issuer)
+            }
+        }
+        elseif ($JwtVerificationMode -eq 'Strict') {
+            throw ($PodeLocale.jwtMissingIssuerExceptionMessage)
+        }
+    }
+
+    # Validate Audience (`aud`)
+    if ($JwtVerificationMode -eq 'Strict' -or $JwtVerificationMode -eq 'Moderate') {
+        if ($Payload.aud) {
+            if (! $Payload.aud -or ($Payload.aud -isnot [string] -and $Payload.aud -isnot [array])) {
+                throw ($PodeLocale.jwtInvalidAudienceExceptionMessage -f $PodeContext.Server.Application)
+            }
+
+            # Enforce application audience check
+            if ($Payload.aud -is [string]) {
+                if ($Payload.aud -ne $PodeContext.Server.ApplicationName) {
+                    throw ($PodeLocale.jwtInvalidAudienceExceptionMessage -f $PodeContext.Server.ApplicationName)
+                }
+            }
+            elseif ($Payload.aud -is [array]) {
+                if ($Payload.aud -notcontains $PodeContext.Server.Application) {
+                    throw ($PodeLocale.jwtInvalidAudienceExceptionMessage -f $PodeContext.Server.ApplicationName)
+                }
+            }
+        }
+        elseif ($JwtVerificationMode -eq 'Strict') {
+            throw ($PodeLocale.jwtMissingAudienceExceptionMessage)
+        }
+    }
+
+    # Validate Subject (`sub`) - Applies to ALL modes
+    if ($Payload.sub) {
+        if (! $Payload.sub -or $Payload.sub -isnot [string]) {
+            throw ($PodeLocale.jwtInvalidSubjectExceptionMessage)
+        }
+    }
+
+    # Validate JWT ID (`jti`) - Only in Strict mode
+    if ($JwtVerificationMode -eq 'Strict') {
+        if ($Payload.jti) {
+            if (! $Payload.jti -or $Payload.jti -isnot [string]) {
+                throw ($PodeLocale.jwtInvalidJtiExceptionMessage)
+            }
+        }
+        else {
+            throw ($PodeLocale.jwtMissingJtiExceptionMessage)
+        }
+    }
 }
+
 
 <#
 .SYNOPSIS

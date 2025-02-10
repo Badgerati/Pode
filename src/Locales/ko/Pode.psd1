@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = "이름이 '{0}'인 액세스 제한 규칙이 이미 존재합니다."
     accessLimitRuleDoesNotExistExceptionMessage                       = "이름이 '{0}'인 액세스 제한 규칙이 존재하지 않습니다."
     missingKeyForAlgorithmExceptionMessage                            = '{1} 알고리즘 ({2}) 에는 {0} 키가 필요합니다.'
+    jwtIssuedInFutureExceptionMessage                                 = "JWT의 'iat' (발행 시간) 타임스탬프가 미래로 설정되어 있습니다. 토큰은 아직 유효하지 않습니다."
+    jwtInvalidIssuerExceptionMessage                                  = "JWT의 'iss' (발행자) 클레임이 잘못되었거나 누락되었습니다. 예상 발행자: '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "JWT에 필요한 'iss' (발행자) 클레임이 없습니다. 유효한 발행자가 필요합니다."
+    jwtInvalidAudienceExceptionMessage                                = "JWT의 'aud' (대상) 클레임이 잘못되었거나 누락되었습니다. 예상 대상: '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "JWT에 필요한 'aud' (대상) 클레임이 없습니다. 유효한 대상이 필요합니다."
+    jwtInvalidSubjectExceptionMessage                                 = "JWT의 'sub' (주체) 클레임이 잘못되었거나 누락되었습니다. 유효한 주체가 필요합니다."
+    jwtInvalidJtiExceptionMessage                                     = "JWT의 'jti' (JWT ID) 클레임이 잘못되었거나 누락되었습니다. 유효한 고유 식별자가 필요합니다."
+    jwtAlgorithmMismatchExceptionMessage                              = 'JWT 알고리즘 불일치: 예상 {0}, 발견된 {1}.'
 }

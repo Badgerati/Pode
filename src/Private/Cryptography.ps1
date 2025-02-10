@@ -401,7 +401,7 @@ function New-PodeJwtSignature {
         }
 
         # RSA (RS256, RS384, RS512, PS256, PS384, PS512)
-        { $_ -match '^R[SP](\d{3})$' } {
+        { $_ -match '^(RS|PS)(\d{3})$' } {
             if ($null -eq $PrivateKey) {
                 throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'private', 'RSA', $Algorithm)
             }
@@ -464,6 +464,236 @@ function New-PodeJwtSignature {
     return [System.Convert]::ToBase64String($signature).Replace('+', '-').Replace('/', '_').TrimEnd('=')
 }
 
+
+<#
+.SYNOPSIS
+    Validates and verifies the authenticity of a JWT (JSON Web Token).
+
+.DESCRIPTION
+    This function confirms the validity of a JWT by:
+    - Checking if the token is properly formatted (header.payload.signature).
+    - Decoding the JWT header and payload.
+    - Ensuring the algorithm (`alg` claim) matches the expected type.
+    - Verifying the JWT signature using HMAC, RSA, or ECDSA.
+    - Applying `JwtVerificationMode` to control signature enforcement.
+    - Returning the decoded JWT payload if validation passes.
+
+.PARAMETER Token
+    The JWT string to be validated. It should be in the format: `header.payload.signature`.
+
+.PARAMETER Algorithm
+    The expected JWT signing algorithm(s). Supported values:
+    - HMAC: `HS256`, `HS384`, `HS512`
+    - RSA: `RS256`, `RS384`, `RS512`, `PS256`, `PS384`, `PS512`
+    - ECDSA: `ES256`, `ES384`, `ES512`
+
+.PARAMETER SecretBytes
+    The secret key (as a byte array) used for HMAC verification.
+
+.PARAMETER PublicKey
+    The public key (PEM format) used for RSA or ECDSA verification.
+
+.PARAMETER JwtVerificationMode
+    Defines how aggressively JWT signatures are verified:
+    - `Strict`: Enforces full signature verification.
+    - `Moderate`: Allows missing `kid` but still verifies the signature.
+    - `Lenient`: Ignores algorithm mismatches but verifies signature.
+
+.OUTPUTS
+    [pscustomobject] Returns the decoded JWT payload if the token is valid.
+
+.EXAMPLE
+    $jwtPayload = Confirm-PodeJwt -Token "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZXhwIjoxNzAwMDAwMDAwfQ.sXK1yP..." `
+                                  -Algorithm "HS256" `
+                                  -SecretBytes ([System.Text.Encoding]::UTF8.GetBytes("SuperSecretKey")) `
+                                  -JwtVerificationMode "Strict"
+
+    This example validates an HMAC-signed JWT with strict signature enforcement.
+
+.EXAMPLE
+    $publicKey = Get-Content "rsa_public.pem" -Raw
+    $jwtPayload = Confirm-PodeJwt -Token "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..." `
+                                  -Algorithm "RS256" `
+                                  -PublicKey $publicKey `
+                                  -JwtVerificationMode "Moderate"
+
+    This example validates an RSA-signed JWT allowing missing `kid` but enforcing signature verification.
+
+.NOTES
+    - Throws an exception if the JWT is invalid, expired, or tampered with.
+    - The function does not check the `exp`, `nbf`, or `iat` claims.
+    - Use `Test-PodeJwt` separately to validate JWT claims.
+#>
+function Confirm-PodeJwt {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Token,
+
+        [Parameter()]
+        [ValidateSet('NONE', 'HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512')]
+        [string[]]$Algorithm,
+
+        [Parameter()]
+        [securestring]$Secret, # Required for HMAC
+
+        [Parameter()]
+        [string]$PublicKey, # Required for RSA/ECDSA
+
+        [Parameter()]
+        [ValidateSet('Strict', 'Moderate', 'Lenient')]
+        [string]$JwtVerificationMode = 'Strict'
+    )
+
+    # Split JWT into header, payload, and signature
+    $parts = $Token -split '\.'
+    write-podehost $parts -Explode
+    if (($parts.Length -ne 3)) {
+        throw ($PodeLocale.invalidJwtSuppliedExceptionMessage)
+    }
+    # Decode the JWT header
+    $header = ConvertFrom-PodeJwtBase64Value -Value $parts[0]
+
+
+    # Decode the JWT payload
+    $payload = ConvertFrom-PodeJwtBase64Value -Value $parts[1]
+    write-podehost $payload -Explode
+    write-podehost $JwtVerificationMode
+    # Apply verification mode for algorithm enforcement
+    if ($JwtVerificationMode -ne 'Lenient') {
+        if ($Algorithm -and $Algorithm.Count -gt 0) {
+            if ($Algorithm -notcontains $header.alg) {
+                throw ($PodeLocale.jwtAlgorithmMismatchExceptionMessage -f ($Algorithm -join ','), $header.alg)
+            }
+        }
+    }
+ 
+
+    $Algorithm = $header.alg
+
+    # check "none" signature, and return payload if no signature
+    $isNoneAlg = ($header.alg -eq 'NONE')
+
+    if ([string]::IsNullOrEmpty($Algorithm)) {
+        throw ($PodeLocale.noAlgorithmInJwtHeaderExceptionMessage)
+    }
+
+    if (($null -eq $Secret) -and( ![string]::IsNullOrWhiteSpace($PublicKey)) -and !$isNoneAlg) {
+      #  Write-PodeHost  ([System.Text.Encoding]::UTF8.GetString($SecretBytes))
+
+        # No JWT signature supplied for {0}
+        throw  ($PodeLocale.noJwtSignatureForAlgorithmExceptionMessage -f $header.alg)
+    }
+    if ((![string]::IsNullOrWhiteSpace($PublicKey) -or ($null -ne $Secret)) -and $isNoneAlg) {
+        # Expected no JWT signature to be supplied
+        throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
+    }
+
+    if((![string]::IsNullOrEmpty($parts[2]) -and $isNoneAlg)){
+        throw ($PodeLocale.invalidJwtSuppliedExceptionMessage)
+    }
+
+
+    $secretBytes = $null
+    if (![string]::IsNullOrWhiteSpace($Secret)) {
+        $secretBytes = [System.Text.Encoding]::UTF8.GetBytes([Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($Secret)))
+    }
+    if ($isNoneAlg -and ($null -ne $SecretBytes) -and ($SecretBytes.Length -gt 0)) {
+        # Expected no JWT signature to be supplied
+        throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
+    }
+
+    if ($isNoneAlg) {
+        return $payload
+    }
+
+    # Prepare data for signature verification
+    $headerPayloadBytes = [System.Text.Encoding]::UTF8.GetBytes("$($parts[0]).$($parts[1])")
+
+    # Convert JWT signature from Base64 URL to Byte Array
+    $fixedSignature = $parts[2].Replace('-', '+').Replace('_', '/')
+    # Add proper Base64 padding
+    switch ($fixedSignature.Length % 4) {
+        1 { $fixedSignature = $fixedSignature.Substring(0, $fixedSignature.Length - 1) }  # Remove invalid character
+        2 { $fixedSignature += '==' }  # Add two padding characters
+        3 { $fixedSignature += '=' }   # Add one padding character
+    }
+    $signatureBytes = [Convert]::FromBase64String($fixedSignature)
+
+    # Verify Signature
+    if ($Algorithm -match '^HS(\d{3})$') {
+        if ($null -eq $SecretBytes) {
+            throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'secret', 'HMAC', $Algorithm)
+        }
+
+        $hmac = switch ($Algorithm) {
+            'HS256' { [System.Security.Cryptography.HMACSHA256]::new() }
+            'HS384' { [System.Security.Cryptography.HMACSHA384]::new() }
+            'HS512' { [System.Security.Cryptography.HMACSHA512]::new() }
+        }
+        write-podehost "signature expected=$( $parts[2])"
+        $hmac.Key = $SecretBytes
+        $expectedSignatureBytes = $hmac.ComputeHash($headerPayloadBytes)
+        $expectedSignature = [Convert]::ToBase64String($expectedSignatureBytes).Replace('+', '-').Replace('/', '_').TrimEnd('=')
+
+        if (($expectedSignature -ne $parts[2])) {
+            throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
+        }
+    }
+    elseif ($Algorithm -match '^(RS|PS)(\d{3})$') {
+        if ([string]::IsNullOrWhiteSpace($PublicKey)) {
+            throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'public', 'RSA', $Algorithm)
+        }
+
+        $rsa = [System.Security.Cryptography.RSA]::Create()
+        $rsa.ImportFromPem($PublicKey)
+
+        $hashAlgo = switch ($Algorithm) {
+            'RS256' { [System.Security.Cryptography.HashAlgorithmName]::SHA256 }
+            'RS384' { [System.Security.Cryptography.HashAlgorithmName]::SHA384 }
+            'RS512' { [System.Security.Cryptography.HashAlgorithmName]::SHA512 }
+            'PS256' { [System.Security.Cryptography.HashAlgorithmName]::SHA256 }
+            'PS384' { [System.Security.Cryptography.HashAlgorithmName]::SHA384 }
+            'PS512' { [System.Security.Cryptography.HashAlgorithmName]::SHA512 }
+        }
+
+        $rsaPadding = if ($Algorithm -match '^PS') {
+            [System.Security.Cryptography.RSASignaturePadding]::Pss
+        }
+        else {
+            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
+        }
+
+        if (!($rsa.VerifyData($headerPayloadBytes, $signatureBytes, $hashAlgo, $rsaPadding))) {
+            throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
+        }
+    }
+    elseif ($Algorithm -match '^ES(\d{3})$') {
+        if ([string]::IsNullOrWhiteSpace($PublicKey)) {
+            throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'public', 'ECDSA', $Algorithm)
+        }
+
+        $ecdsa = [System.Security.Cryptography.ECDsa]::Create()
+        $ecdsa.ImportFromPem($PublicKey)
+
+        $hashAlgo = switch ($Algorithm) {
+            'ES256' { [System.Security.Cryptography.HashAlgorithmName]::SHA256 }
+            'ES384' { [System.Security.Cryptography.HashAlgorithmName]::SHA384 }
+            'ES512' { [System.Security.Cryptography.HashAlgorithmName]::SHA512 }
+        }
+
+        if (!($ecdsa.VerifyData($headerPayloadBytes, $signatureBytes, $hashAlgo))) {
+            throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
+        }
+    }elseif ($Algorithm -eq 'NONE') {
+    }else{
+
+    }
+
+    return $payload
+}
+
+
 function ConvertTo-PodeBase64UrlValue {
     [CmdletBinding()]
     [OutputType([string])]
@@ -493,24 +723,13 @@ function ConvertFrom-PodeJwtBase64Value {
     )
 
     # map chars
-    $Value = ($Value -ireplace '-', '+')
-    $Value = ($Value -ireplace '_', '/')
-
-    # add padding
+    $Value = $Value.Replace('-', '+').Replace('_', '/')
+    # Add proper Base64 padding
     switch ($Value.Length % 4) {
-        1 {
-            $Value = $Value.Substring(0, $Value.Length - 1)
-        }
-
-        2 {
-            $Value += '=='
-        }
-
-        3 {
-            $Value += '='
-        }
+        1 { $Value = $Value.Substring(0, $Value.Length - 1) }  # Remove invalid character
+        2 { $Value += '==' }  # Add two padding characters
+        3 { $Value += '=' }   # Add one padding character
     }
-
     # convert base64 to string
     try {
         $Value = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Value))
@@ -519,7 +738,6 @@ function ConvertFrom-PodeJwtBase64Value {
         # Invalid Base64 encoded value found in JWT
         throw ($PodeLocale.invalidBase64JwtExceptionMessage)
     }
-
     # return json
     try {
         return ($Value | ConvertFrom-Json)

@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = '访问限制规则已存在: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = '访问限制规则不存在: {0}'
     missingKeyForAlgorithmExceptionMessage                            = 'Uma chave {0} é necessária para os algoritmos {1} ({2}).'
+    jwtIssuedInFutureExceptionMessage                                 = "JWT 的 'iat' (签发时间) 时间戳设置在未来。该令牌尚未生效。"
+    jwtInvalidIssuerExceptionMessage                                  = "JWT 的 'iss' (发行者) 声明无效或缺失。预期发行者: '{0}'。"
+    jwtMissingIssuerExceptionMessage                                  = "JWT 缺少必要的 'iss' (发行者) 声明。必须提供有效的发行者。"
+    jwtInvalidAudienceExceptionMessage                                = "JWT 的 'aud' (受众) 声明无效或缺失。预期受众: '{0}'。"
+    jwtMissingAudienceExceptionMessage                                = "JWT 缺少必要的 'aud' (受众) 声明。必须提供有效的受众。"
+    jwtInvalidSubjectExceptionMessage                                 = "JWT 的 'sub' (主题) 声明无效或缺失。必须提供有效的主题。"
+    jwtInvalidJtiExceptionMessage                                     = "JWT 的 'jti' (JWT ID) 声明无效或缺失。必须提供有效的唯一标识符。"
+    jwtAlgorithmMismatchExceptionMessage                              = 'JWT 算法不匹配: 预期 {0}，实际 {1}。'
 }

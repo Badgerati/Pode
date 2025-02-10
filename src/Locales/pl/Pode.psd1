@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Reguła limitu dostępu o nazwie '{0}' już istnieje."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Reguła limitu dostępu o nazwie '{0}' nie istnieje."
     missingKeyForAlgorithmExceptionMessage                            = 'Klucz {0} jest wymagany dla algorytmów {1} ({2}).'
+    jwtIssuedInFutureExceptionMessage                                 = "Znacznik czasu 'iat' (Issued At) w JWT jest ustawiony w przyszłości. Token nie jest jeszcze ważny."
+    jwtInvalidIssuerExceptionMessage                                  = "Pole 'iss' (Issuer) w JWT jest nieprawidłowe lub nieobecne. Oczekiwany wydawca: '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "JWT nie zawiera wymaganego pola 'iss' (Issuer). Wymagany jest prawidłowy wydawca."
+    jwtInvalidAudienceExceptionMessage                                = "Pole 'aud' (Audience) w JWT jest nieprawidłowe lub nieobecne. Oczekiwana publiczność: '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "JWT nie zawiera wymaganego pola 'aud' (Audience). Wymagana jest prawidłowa publiczność."
+    jwtInvalidSubjectExceptionMessage                                 = "Pole 'sub' (Subject) w JWT jest nieprawidłowe lub nieobecne. Wymagany jest prawidłowy podmiot."
+    jwtInvalidJtiExceptionMessage                                     = "Pole 'jti' (JWT ID) w JWT jest nieprawidłowe lub nieobecne. Wymagany jest prawidłowy unikalny identyfikator."
+    jwtAlgorithmMismatchExceptionMessage                              = 'Niezgodność algorytmu JWT: Oczekiwano {0}, znaleziono {1}.'
 }

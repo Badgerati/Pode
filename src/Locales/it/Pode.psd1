@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Una regola di limitazione dell'accesso con il nome '{0}' esiste già."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La regola di limitazione dell'accesso con il nome '{0}' non esiste."
     missingKeyForAlgorithmExceptionMessage                            = 'È necessaria una chiave {0} per gli algoritmi {1} ({2}).'
+    jwtIssuedInFutureExceptionMessage                                 = "Il timestamp 'iat' (Issued At) del JWT è impostato nel futuro. Il token non è ancora valido."
+    jwtInvalidIssuerExceptionMessage                                  = "Il claim 'iss' (Issuer) del JWT non è valido o è mancante. Emittente previsto: '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "Il JWT non ha il claim obbligatorio 'iss' (Issuer). È richiesto un emittente valido."
+    jwtInvalidAudienceExceptionMessage                                = "Il claim 'aud' (Audience) del JWT non è valido o è mancante. Pubblico previsto: '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "Il JWT non ha il claim obbligatorio 'aud' (Audience). È richiesto un pubblico valido."
+    jwtInvalidSubjectExceptionMessage                                 = "Il claim 'sub' (Subject) del JWT non è valido o è mancante. È richiesto un soggetto valido."
+    jwtInvalidJtiExceptionMessage                                     = "Il claim 'jti' (JWT ID) del JWT non è valido o è mancante. È richiesto un identificatore univoco valido."
+    jwtAlgorithmMismatchExceptionMessage                              = "Mancata corrispondenza dell'algoritmo JWT: previsto {0}, trovato {1}."
 }

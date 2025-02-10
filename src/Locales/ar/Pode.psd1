@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = 'تم تعريف قاعدة الحد الأقصى للوصول بالفعل: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = 'قاعدة الحد الأقصى للوصول غير موجودة: {0}'
     missingKeyForAlgorithmExceptionMessage                            = 'مفتاح {0} مطلوب لخوارزميات {1} ({2}).'
+    jwtIssuedInFutureExceptionMessage                                 = "الطابع الزمني 'iat' (وقت الإصدار) لرمز JWT مضبوط في المستقبل. الرمز غير صالح بعد."
+    jwtInvalidIssuerExceptionMessage                                  = "الادعاء 'iss' (المصدر) في JWT غير صالح أو مفقود. المصدر المتوقع: '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "JWT يفتقد إلى الادعاء المطلوب 'iss' (المصدر). مطلوب مصدر صالح."
+    jwtInvalidAudienceExceptionMessage                                = "الادعاء 'aud' (الجمهور) في JWT غير صالح أو مفقود. الجمهور المتوقع: '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "JWT يفتقد إلى الادعاء المطلوب 'aud' (الجمهور). مطلوب جمهور صالح."
+    jwtInvalidSubjectExceptionMessage                                 = "الادعاء 'sub' (الموضوع) في JWT غير صالح أو مفقود. مطلوب موضوع صالح."
+    jwtInvalidJtiExceptionMessage                                     = "الادعاء 'jti' (معرّف JWT) في JWT غير صالح أو مفقود. مطلوب معرّف فريد صالح."
+    jwtAlgorithmMismatchExceptionMessage                              = 'عدم تطابق خوارزمية JWT: المتوقع {0}، ولكن تم العثور على {1}.'
 }

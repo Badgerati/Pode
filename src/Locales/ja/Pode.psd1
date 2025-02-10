@@ -326,4 +326,12 @@
     accessLimitRuleAlreadyExistsExceptionMessage                      = "名前が '{0}' のアクセス制限ルールは既に存在します。"
     accessLimitRuleDoesNotExistExceptionMessage                       = "名前が '{0}' のアクセス制限ルールは存在しません。"
     missingKeyForAlgorithmExceptionMessage                            = '{1} アルゴリズム ({2}) には {0} キーが必要です。'
+    jwtIssuedInFutureExceptionMessage                                 = "JWTの'iat'（発行時刻）タイムスタンプが未来の日付になっています。トークンはまだ有効ではありません。"
+    jwtInvalidIssuerExceptionMessage                                  = "JWTの'iss'（発行者）クレームが無効または欠落しています。期待される発行者: '{0}'。"
+    jwtMissingIssuerExceptionMessage                                  = "JWTに必要な'iss'（発行者）クレームがありません。有効な発行者が必要です。"
+    jwtInvalidAudienceExceptionMessage                                = "JWTの'aud'（受信者）クレームが無効または欠落しています。期待される受信者: '{0}'。"
+    jwtMissingAudienceExceptionMessage                                = "JWTに必要な'aud'（受信者）クレームがありません。有効な受信者が必要です。"
+    jwtInvalidSubjectExceptionMessage                                 = "JWTの'sub'（対象）クレームが無効または欠落しています。有効な対象が必要です。"
+    jwtInvalidJtiExceptionMessage                                     = "JWTの'jti'（JWT ID）クレームが無効または欠落しています。有効な一意識別子が必要です。"
+    jwtAlgorithmMismatchExceptionMessage                              = 'JWTアルゴリズムの不一致: 期待値 {0}、実際の値 {1}。'
 }
