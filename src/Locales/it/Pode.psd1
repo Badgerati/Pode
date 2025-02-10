@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "Il claim 'sub' (Subject) del JWT non è valido o è mancante. È richiesto un soggetto valido."
     jwtInvalidJtiExceptionMessage                                     = "Il claim 'jti' (JWT ID) del JWT non è valido o è mancante. È richiesto un identificatore univoco valido."
     jwtAlgorithmMismatchExceptionMessage                              = "Mancata corrispondenza dell'algoritmo JWT: previsto {0}, trovato {1}."
+    jwtMissingJtiExceptionMessage                                     = "Il JWT non ha il claim obbligatorio 'jti' (JWT ID)."
 }

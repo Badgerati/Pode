@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "Pole 'sub' (Subject) w JWT jest nieprawidłowe lub nieobecne. Wymagany jest prawidłowy podmiot."
     jwtInvalidJtiExceptionMessage                                     = "Pole 'jti' (JWT ID) w JWT jest nieprawidłowe lub nieobecne. Wymagany jest prawidłowy unikalny identyfikator."
     jwtAlgorithmMismatchExceptionMessage                              = 'Niezgodność algorytmu JWT: Oczekiwano {0}, znaleziono {1}.'
+    jwtMissingJtiExceptionMessage                                     = "JWT nie zawiera wymaganego pola 'jti' (JWT ID)."
 }

@@ -334,5 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "The JWT 'sub' (Subject) claim is invalid or missing. A valid subject is required."
     jwtInvalidJtiExceptionMessage                                     = "The JWT 'jti' (JWT ID) claim is invalid or missing. A valid unique identifier is required."
     jwtAlgorithmMismatchExceptionMessage                              = 'JWT algorithm mismatch: Expected {0}, found {1}.'
-
+    jwtMissingJtiExceptionMessage                                     = "The JWT is missing the required 'jti' (JWT ID) claim."
 }

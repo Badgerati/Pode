@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "الادعاء 'sub' (الموضوع) في JWT غير صالح أو مفقود. مطلوب موضوع صالح."
     jwtInvalidJtiExceptionMessage                                     = "الادعاء 'jti' (معرّف JWT) في JWT غير صالح أو مفقود. مطلوب معرّف فريد صالح."
     jwtAlgorithmMismatchExceptionMessage                              = 'عدم تطابق خوارزمية JWT: المتوقع {0}، ولكن تم العثور على {1}.'
+    jwtMissingJtiExceptionMessage                                     = "The JWT is missing the required 'jti' (JWT ID) claim."
 }

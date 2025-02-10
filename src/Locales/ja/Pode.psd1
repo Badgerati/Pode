@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "JWTの'sub'（対象）クレームが無効または欠落しています。有効な対象が必要です。"
     jwtInvalidJtiExceptionMessage                                     = "JWTの'jti'（JWT ID）クレームが無効または欠落しています。有効な一意識別子が必要です。"
     jwtAlgorithmMismatchExceptionMessage                              = 'JWTアルゴリズムの不一致: 期待値 {0}、実際の値 {1}。'
+    jwtMissingJtiExceptionMessage                                     = "JWT に必要な 'jti' (JWT ID) クレームがありません。"
 }

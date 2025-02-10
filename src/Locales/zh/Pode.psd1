@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "JWT 的 'sub' (主题) 声明无效或缺失。必须提供有效的主题。"
     jwtInvalidJtiExceptionMessage                                     = "JWT 的 'jti' (JWT ID) 声明无效或缺失。必须提供有效的唯一标识符。"
     jwtAlgorithmMismatchExceptionMessage                              = 'JWT 算法不匹配: 预期 {0}，实际 {1}。'
+    jwtMissingJtiExceptionMessage                                     = "JWT 缺少必要的 'jti' (JWT ID) 声明。"
 }

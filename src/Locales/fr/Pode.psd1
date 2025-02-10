@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "La revendication 'sub' (Subject) du JWT est invalide ou absente. Un sujet valide est requis."
     jwtInvalidJtiExceptionMessage                                     = "La revendication 'jti' (JWT ID) du JWT est invalide ou absente. Un identifiant unique valide est requis."
     jwtAlgorithmMismatchExceptionMessage                              = "Incohérence d'algorithme JWT : attendu {0}, trouvé {1}."
+    jwtMissingJtiExceptionMessage                                     = "Le JWT ne contient pas la revendication obligatoire 'jti' (JWT ID)."
 }

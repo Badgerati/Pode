@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "La reclamación 'sub' (Subject) del JWT es inválida o falta. Se requiere un sujeto válido."
     jwtInvalidJtiExceptionMessage                                     = "La reclamación 'jti' (JWT ID) del JWT es inválida o falta. Se requiere un identificador único válido."
     jwtAlgorithmMismatchExceptionMessage                              = 'Incompatibilidad de algoritmo JWT: Se esperaba {0}, pero se encontró {1}.'
+    jwtMissingJtiExceptionMessage                                     = "El JWT no tiene la reclamación obligatoria 'jti' (JWT ID)."
 }

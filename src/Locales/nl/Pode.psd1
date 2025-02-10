@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "De JWT 'sub' (Subject) claim is ongeldig of ontbreekt. Een geldig subject is vereist."
     jwtInvalidJtiExceptionMessage                                     = "De JWT 'jti' (JWT ID) claim is ongeldig of ontbreekt. Een geldige unieke identificatie is vereist."
     jwtAlgorithmMismatchExceptionMessage                              = 'JWT-algoritme komt niet overeen: Verwacht {0}, gevonden {1}.'
+    jwtMissingJtiExceptionMessage                                     = "De JWT mist de vereiste 'jti' (JWT ID) claim."
 }

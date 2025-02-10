@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "Der JWT-Anspruch 'sub' (Subject) ist ungültig oder fehlt. Ein gültiges Subjekt ist erforderlich."
     jwtInvalidJtiExceptionMessage                                     = "Der JWT-Anspruch 'jti' (JWT ID) ist ungültig oder fehlt. Eine gültige eindeutige Kennung ist erforderlich."
     jwtAlgorithmMismatchExceptionMessage                              = 'JWT-Algorithmus stimmt nicht überein: Erwartet {0}, gefunden {1}.'
+    jwtMissingJtiExceptionMessage                                     = "Dem JWT fehlt die erforderliche 'jti' (JWT-ID)-Anspruch."
 }

@@ -2322,6 +2322,9 @@ function Add-PodeAuthWindowsLocal {
 .PARAMETER Header
     A Hashtable containing the JWT header information, including the signing algorithm (`alg`).
 
+.PARAMETER Algorithm
+    Alternative way to pass the signing algorithm. Supported values: HS256, HS384, HS512, RS256, RS384, RS512, PS256, PS384, PS512, ES256, ES384, ES512.
+
 .PARAMETER Payload
     A Hashtable containing the JWT payload information, including claims (`iss`, `sub`, `aud`, `exp`, `nbf`, `iat`, `jti`).
 

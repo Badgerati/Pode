@@ -334,4 +334,5 @@
     jwtInvalidSubjectExceptionMessage                                 = "JWT의 'sub' (주체) 클레임이 잘못되었거나 누락되었습니다. 유효한 주체가 필요합니다."
     jwtInvalidJtiExceptionMessage                                     = "JWT의 'jti' (JWT ID) 클레임이 잘못되었거나 누락되었습니다. 유효한 고유 식별자가 필요합니다."
     jwtAlgorithmMismatchExceptionMessage                              = 'JWT 알고리즘 불일치: 예상 {0}, 발견된 {1}.'
+    jwtMissingJtiExceptionMessage                                     = "JWT에 필요한 'jti' (JWT ID) 클레임이 없습니다."
 }
