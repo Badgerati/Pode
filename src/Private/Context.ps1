@@ -99,13 +99,9 @@ function New-PodeContext {
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
     $ctx.Server.Console = $Console
-    $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
-    if ([string]::IsNullOrEmpty($ApplicationName)) {
-        $ctx.Server.ApplicationName = (Get-PodeApplicationName)
-    }
-    else {
-        $ctx.Server.ApplicationName = $ApplicationName
-    }
+    $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName() 
+    $ctx.Server.ApplicationName = $ApplicationName
+
 
     # list of created listeners/receivers
     $ctx.Listeners = @()

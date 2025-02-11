@@ -238,7 +238,7 @@ Describe 'Authentication Requests' {
         $payload = @{ sub = '123'; username = 'morty' }
         $jwt = ConvertTo-PodeJwt -Header $header -Payload $payload -Secret 'secret'
 
-        { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey/jwt/signed" -Method Get -Headers @{ 'X-API-KEY' = "hh$($jwt)";alg= 'hs256'} -ErrorAction Stop } | Should -Throw -ExpectedMessage '*400*'
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey/jwt/signed" -Method Get -Headers @{ 'X-API-KEY' = "hh$($jwt)" } -ErrorAction Stop } | Should -Throw -ExpectedMessage '*400*'
     }
 
     It 'apikey - jwt signed - returns 400 for invalid key - invalid signature' {

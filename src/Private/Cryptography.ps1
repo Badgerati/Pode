@@ -547,49 +547,41 @@ function Confirm-PodeJwt {
 
     # Split JWT into header, payload, and signature
     $parts = $Token -split '\.'
-    write-podehost $parts -Explode
     if (($parts.Length -ne 3)) {
         throw ($PodeLocale.invalidJwtSuppliedExceptionMessage)
     }
+
     # Decode the JWT header
     $header = ConvertFrom-PodeJwtBase64Value -Value $parts[0]
 
 
     # Decode the JWT payload
     $payload = ConvertFrom-PodeJwtBase64Value -Value $parts[1]
-    write-podehost $payload -Explode
-    write-podehost $JwtVerificationMode
+
     # Apply verification mode for algorithm enforcement
-    if ($JwtVerificationMode -ne 'Lenient') {
-        if ($Algorithm -and $Algorithm.Count -gt 0) {
-            if ($Algorithm -notcontains $header.alg) {
-                throw ($PodeLocale.jwtAlgorithmMismatchExceptionMessage -f ($Algorithm -join ','), $header.alg)
-            }
-        }
+    if ($Algorithm -notcontains $header.alg) {
+        throw ($PodeLocale.jwtAlgorithmMismatchExceptionMessage -f ($Algorithm -join ','), $header.alg)
     }
- 
 
     $Algorithm = $header.alg
-
     # check "none" signature, and return payload if no signature
     $isNoneAlg = ($header.alg -eq 'NONE')
-
     if ([string]::IsNullOrEmpty($Algorithm)) {
         throw ($PodeLocale.noAlgorithmInJwtHeaderExceptionMessage)
     }
 
-    if (($null -eq $Secret) -and( ![string]::IsNullOrWhiteSpace($PublicKey)) -and !$isNoneAlg) {
-      #  Write-PodeHost  ([System.Text.Encoding]::UTF8.GetString($SecretBytes))
+    if (($null -eq $Secret) -and ( [string]::IsNullOrWhiteSpace($PublicKey)) -and !$isNoneAlg) {
 
         # No JWT signature supplied for {0}
         throw  ($PodeLocale.noJwtSignatureForAlgorithmExceptionMessage -f $header.alg)
     }
     if ((![string]::IsNullOrWhiteSpace($PublicKey) -or ($null -ne $Secret)) -and $isNoneAlg) {
+
         # Expected no JWT signature to be supplied
         throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
     }
 
-    if((![string]::IsNullOrEmpty($parts[2]) -and $isNoneAlg)){
+    if ((![string]::IsNullOrEmpty($parts[2]) -and $isNoneAlg)) {
         throw ($PodeLocale.invalidJwtSuppliedExceptionMessage)
     }
 
@@ -626,17 +618,22 @@ function Confirm-PodeJwt {
             throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'secret', 'HMAC', $Algorithm)
         }
 
+        # Prepare JWT signing input
+        $headerPayloadBytes = [System.Text.Encoding]::UTF8.GetBytes("$($parts[0]).$($parts[1])")
+
+        # Compute HMAC Signature
         $hmac = switch ($Algorithm) {
             'HS256' { [System.Security.Cryptography.HMACSHA256]::new() }
             'HS384' { [System.Security.Cryptography.HMACSHA384]::new() }
             'HS512' { [System.Security.Cryptography.HMACSHA512]::new() }
         }
-        write-podehost "signature expected=$( $parts[2])"
+
         $hmac.Key = $SecretBytes
         $expectedSignatureBytes = $hmac.ComputeHash($headerPayloadBytes)
         $expectedSignature = [Convert]::ToBase64String($expectedSignatureBytes).Replace('+', '-').Replace('/', '_').TrimEnd('=')
 
-        if (($expectedSignature -ne $parts[2])) {
+        # Compare signatures
+        if ($expectedSignature -ne $parts[2]) {
             throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
         }
     }
@@ -644,7 +641,6 @@ function Confirm-PodeJwt {
         if ([string]::IsNullOrWhiteSpace($PublicKey)) {
             throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'public', 'RSA', $Algorithm)
         }
-
         $rsa = [System.Security.Cryptography.RSA]::Create()
         $rsa.ImportFromPem($PublicKey)
 
@@ -665,6 +661,7 @@ function Confirm-PodeJwt {
         }
 
         if (!($rsa.VerifyData($headerPayloadBytes, $signatureBytes, $hashAlgo, $rsaPadding))) {
+            write-podehost 'RSA verification failed'
             throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
         }
     }
@@ -685,9 +682,6 @@ function Confirm-PodeJwt {
         if (!($ecdsa.VerifyData($headerPayloadBytes, $signatureBytes, $hashAlgo))) {
             throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
         }
-    }elseif ($Algorithm -eq 'NONE') {
-    }else{
-
     }
 
     return $payload
@@ -798,4 +792,100 @@ function ConvertTo-PodeDigestHash {
     }
 
     return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
+}
+
+<#
+  .SYNOPSIS
+    Determines the JWT signing algorithm based on the provided RSA or ECDSA private key.
+
+  .DESCRIPTION
+    This function analyzes a given RSA or ECDSA private key in PEM format and returns the appropriate
+    JWT signing algorithm. For RSA keys, it supports both PKCS#1 v1.5 (RS) and RSA-PSS (PS) padding schemes.
+    For ECDSA keys, it determines the corresponding ES algorithm.
+
+  .PARAMETER PrivateKey
+    A SecureString containing the RSA or ECDSA private key in PEM format.
+
+  .PARAMETER RsaPaddingScheme
+    Specifies the padding scheme to use for RSA signatures.
+    Acceptable values:
+    - 'Pkcs1V15' (for RS256, RS384, RS512)
+    - 'Pss' (for PS256, PS384, PS512)
+    Default: 'Pkcs1V15'.
+
+  .OUTPUTS
+    String - The JWT signing algorithm name (e.g., 'RS256', 'PS256', 'ES256').
+
+  .EXAMPLE
+    # Determine the signing algorithm for an RSA private key using PKCS#1 v1.5 padding
+    $secureKey = ConvertTo-SecureString -String (Get-Content "C:\path\to\privatekey.pem" -Raw) -AsPlainText -Force
+    Get-PodeJwtSigningAlgorithm -PrivateKey $secureKey -RsaPaddingScheme 'Pkcs1V15'
+
+    Output:
+    RS256
+
+  .EXAMPLE
+    # Determine the signing algorithm for an RSA private key using RSA-PSS padding
+    $secureKey = ConvertTo-SecureString -String (Get-Content "C:\path\to\privatekey.pem" -Raw) -AsPlainText -Force
+    Get-PodeJwtSigningAlgorithm -PrivateKey $secureKey -RsaPaddingScheme 'Pss'
+
+    Output:
+    PS256
+
+  .EXAMPLE
+    # Determine the signing algorithm for an ECDSA private key
+    $secureKey = ConvertTo-SecureString -String (Get-Content "C:\path\to\ec_privatekey.pem" -Raw) -AsPlainText -Force
+    Get-PodeJwtSigningAlgorithm -PrivateKey $secureKey
+
+    Output:
+    ES256
+
+  .NOTES
+    - This function only supports PEM-encoded private keys.
+    - The RSA key size determines whether it maps to RS256/RS384/RS512 or PS256/PS384/PS512.
+    - The function does not enforce a specific signing standard but allows flexibility in padding choice.
+#>
+function Get-PodeJwtSigningAlgorithm {
+    param (
+        [System.Security.SecureString]$PrivateKey,
+        [ValidateSet('Pkcs1V15', 'Pss')]
+        [string]$RsaPaddingScheme = 'Pkcs1V15'  # Default to PKCS#1 v1.5 unless specified
+    )
+
+    # Convert SecureString to plain text
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($PrivateKey)
+    $privateKeyContent = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+
+    if ($privateKeyContent -match 'BEGIN RSA PRIVATE KEY|BEGIN PRIVATE KEY') {
+        # RSA Algorithm Detected
+
+        $rsa = [System.Security.Cryptography.RSA]::Create()
+        $rsa.ImportFromPem($privateKeyContent)
+
+        # Determine key size and match to RSA algorithms
+        switch ($rsa.KeySize) {
+            2048 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS256' } else { return 'PS256' } }
+            3072 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS384' } else { return 'PS384' } }
+            4096 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS512' } else { return 'PS512' } }
+            default { throw "Unknown RSA Algorithm (Key Size: $($rsa.KeySize) bits)" }
+        }
+
+    }
+    elseif ($privateKeyContent -match 'BEGIN EC PRIVATE KEY') {
+        # ECDSA Algorithm Detected
+        $ecdsa = [System.Security.Cryptography.ECDsa]::Create()
+        $ecdsa.ImportFromPem($privateKeyContent)
+
+        # Determine key size and map to ES algorithms
+        switch ($ecdsa.KeySize) {
+            256 { return 'ES256' }
+            384 { return 'ES384' }
+            521 { return 'ES512' }
+            default { throw "Unknown ECDSA Algorithm (Key Size: $($ecdsa.KeySize) bits)" }
+        }
+
+    }
+    else {
+        throw 'Unknown Algorithm or Invalid PEM Format'
+    }
 }

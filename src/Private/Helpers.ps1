@@ -3986,10 +3986,53 @@ function Test-PodeIsISEHost {
 #>
 function Get-PodeApplicationName {
     $scriptFrame = (Get-PSCallStack | Where-Object { $_.Command -match '\.ps1$' } | Select-Object -First 1)
-     if ($scriptFrame) {
-        return    [System.IO.Path]::GetFileName($scriptFrame.Command)
+    if ($scriptFrame) {
+        return [System.IO.Path]::GetFileNameWithoutExtension($scriptFrame.Command)
+
     }
     else {
         return 'NoName'
     }
- }
+}
+
+
+<#
+    .SYNOPSIS
+      Displays a deprecation warning message for a function.
+
+    .DESCRIPTION
+      The Write-PodeDeprecationWarning function generates a warning message indicating that
+      a specified function is deprecated and suggests the new replacement function.
+
+    .PARAMETER OldFunction
+      The name of the deprecated function that is being replaced.
+
+    .PARAMETER NewFunction
+      The name of the new function that should be used instead.
+
+    .OUTPUTS
+      None.
+
+    .EXAMPLE
+      Write-PodeDeprecationWarning -OldFunction "New-PodeLoggingMethod" -NewFunction "New-PodeLogger"
+
+      This will display:
+      WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use 'New-PodeLogger' function instead.
+
+    .NOTES
+      Internal function for Pode.
+      Subject to change in future releases.
+#>
+function Write-PodeDeprecationWarning {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $OldFunction,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $NewFunction
+    )
+    # WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use '{0}' function instead.
+    Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f $OldFunction, $NewFunction) -ForegroundColor Yellow
+}

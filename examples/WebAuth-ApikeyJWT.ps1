@@ -1,35 +1,25 @@
 <#
 .SYNOPSIS
-    A PowerShell script to set up a Pode server with JWT authentication and various route configurations.
+    A PowerShell script to set up a Pode server with API key authentication and various route configurations.
 
 .DESCRIPTION
     This script sets up a Pode server that listens on a specified port, enables request and error logging,
-    and configures JWT authentication. It also defines a route to fetch a list of users, requiring authentication.
+    and configures API key authentication. It also defines a route to fetch a list of users, requiring authentication.
 
 .PARAMETER Location
     The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
 
-    .NOTES
-    -------------
-    None Signed
-    Req: Invoke-RestMethod -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJub25lIn0.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.' }
-    -------------
-
-    -------------
-    Signed
-    Req: Invoke-RestMethod -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJoczI1NiJ9.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.WIOvdwk4mNrNC9EtTcQccmLHJc02gAuonXClHMFOjKM' }
-
-    (add -Secret 'secret' to New-PodeAuthScheme below)
-
-    -------------
-
 .EXAMPLE
-    To run the sample: ./WebAuth-ApikeyJWT.ps1
+    To run the sample: ./Web-AuthApiKey.ps1
 
     Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/WebAuth-ApikeyJWT.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthApiKey.ps1
+
+.NOTES
+    Use:
+    Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'test-api-key' }
 
 .NOTES
     Author: Pode Team
@@ -70,11 +60,11 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # setup bearer auth
-    New-PodeAuthScheme -ApiKey -Location $Location -AsJWT | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
-        param($jwt)
+    New-PodeAuthScheme -ApiKey -Location $Location | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+        param($key)
 
         # here you'd check a real user storage, this is just for example
-        if ($jwt.username -ieq 'morty') {
+        if ($key -ieq 'test-api-key') {
             return @{
                 User = @{
                     ID   = 'M0R7Y302'
@@ -102,40 +92,5 @@ Start-PodeServer -Threads 2 {
             )
         }
     }
-
-    New-PodeAuthScheme -ApiKey -AsJWT -Secret 'secret' | Add-PodeAuth -Name 'ApiKeySignedJwtAuth' -Sessionless -ScriptBlock {
-        param($jwt)
-
-        if ($jwt.username -ieq 'morty') {
-            return @{
-                User = @{ ID = 'M0R7Y302' }
-            }
-        }
-
-        return $null
-    }
-
-    Add-PodeRoute -Method Get -Path '/auth/apikey/jwt/signed' -Authentication 'ApiKeySignedJwtAuth' -ScriptBlock {
-        Write-PodeJsonResponse -Value @{ Result = 'OK' }
-
-    }
-    # API KEY - JWT (not signed)
-    New-PodeAuthScheme -ApiKey -AsJWT | Add-PodeAuth -Name 'ApiKeyNotSignedJwtAuth' -Sessionless -ScriptBlock {
-        param($jwt)
-
-        if ($jwt.username -ieq 'morty') {
-            return @{
-                User = @{ ID = 'M0R7Y302' }
-            }
-        }
-
-        return $null
-    }
-
-    Add-PodeRoute -Method Get -Path '/auth/apikey/jwt/notsigned' -Authentication 'ApiKeyNotSignedJwtAuth' -ScriptBlock {
-        Write-PodeJsonResponse -Value @{ Result = 'OK' }
-    }
-
-
 
 }

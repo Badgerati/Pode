@@ -520,12 +520,11 @@ function Get-PodeAuthApiKeyType {
 
         # Convert to JWT if required
         if ($options.AsJWT) {
-
-
             try {
-                $result = Confirm-PodeJwt -Token $apiKey -Secret $options.Secret -PublicKey $options.PublicKey -JwtVerificationMode $options.JwtVerificationMode
-                write-podehost "confirm done"
-                Test-PodeJwt -Payload $result -JwtVerificationMode $options.JwtVerificationMode
+                $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
+              #  $result = Confirm-PodeJwt -Token $apiKey -Secret $options.Secret -PublicKey $options.PublicKey -JwtVerificationMode $options.JwtVerificationMode -Algorithm $options.Algorithm
+              #  Test-PodeJwt -Payload $result -JwtVerificationMode $options.JwtVerificationMode
+                Test-PodeJwt -Payload $payload
             }
             catch {
                 if ($_.Exception.Message -ilike '*jwt*') {
@@ -665,7 +664,15 @@ function Get-PodeAuthBearerType {
         # Convert to JWT if required
         if ($options.AsJWT) {
             try {
-                $result = Confirm-PodeJwt -Token $token -SecretBytes $options.Secret -PublicKey $options.PublicKey -JwtVerificationMode $options.JwtVerificationMode
+                $param = @{
+                    Token               = $token
+                    Secret              = $options.Secret
+                    PublicKey           = $options.PublicKey
+                    JwtVerificationMode = $options.JwtVerificationMode
+                    Algorithm           = $options.Algorithm
+                }
+
+                $result = Confirm-PodeJwt @param
                 Test-PodeJwt -Payload $result -JwtVerificationMode $options.JwtVerificationMode
             }
             catch {

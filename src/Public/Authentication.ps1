@@ -1,212 +1,126 @@
 <#
 .SYNOPSIS
-    Creates a new authentication scheme in Pode.
+Create a new type of Authentication scheme.
 
 .DESCRIPTION
-    The `New-PodeAuthScheme` function defines different types of authentication schemes
-    (Basic, Digest, OAuth2, API Key, etc.) that Pode can use to authenticate incoming
-    requests. It allows configuring various authentication mechanisms, such as
-    credential-based authentication, token authentication, and certificate-based authentication.
+Create a new type of Authentication scheme, which is used to parse the Request for user credentials for validating.
 
 .PARAMETER Basic
-    Enables Basic Authentication using the `Authorization` header with `Base64(username:password)` encoding.
+If supplied, will use the inbuilt Basic Authentication credentials retriever.
 
 .PARAMETER Encoding
-    Specifies the encoding for decoding the Basic Authentication header.
-    Default: `ISO-8859-1`.
+The Encoding to use when decoding the Basic Authorization header.
 
 .PARAMETER HeaderTag
-    Defines the tag used in the `Authorization` header (e.g., `Basic`, `Bearer`, `Digest`).
+The Tag name used in the Authorization header, ie: Basic, Bearer, Digest.
 
 .PARAMETER Form
-    Enables Form-based authentication, allowing credentials to be retrieved from request payloads.
+If supplied, will use the inbuilt Form Authentication credentials retriever.
 
 .PARAMETER UsernameField
-    Specifies the key name for the username in Form authentication payloads.
-    Default: `username`.
+The name of the Username Field in the payload to retrieve the username.
 
 .PARAMETER PasswordField
-    Specifies the key name for the password in Form authentication payloads.
-    Default: `password`.
+The name of the Password Field in the payload to retrieve the password.
 
 .PARAMETER Custom
-    Enables a custom authentication scheme where the validation logic is implemented
-    using a custom ScriptBlock.
+If supplied, will allow you to create a Custom Authentication credentials retriever.
 
 .PARAMETER ScriptBlock
-    A ScriptBlock that defines custom authentication logic for processing incoming requests.
+The ScriptBlock is used to parse the request and retieve user credentials and other information.
 
 .PARAMETER ArgumentList
-    A hashtable of additional arguments that can be passed to the custom ScriptBlock.
+An array of arguments to supply to the Custom Authentication type's ScriptBlock.
 
 .PARAMETER Name
-    The name of the custom authentication scheme.
+The Name of an Authentication type - such as Basic or NTLM.
 
 .PARAMETER Description
-    A short description of the authentication scheme, with optional CommonMark syntax
-    for rich text representation.
+A short description for security scheme. CommonMark syntax MAY be used for rich text representation
 
 .PARAMETER Realm
-    The authentication realm for the protected area.
+The name of scope of the protected area.
 
 .PARAMETER Type
-    The authentication type for custom schemes. Default: `HTTP`.
-    Valid options: `ApiKey`, `Http`, `OAuth2`, `OpenIdConnect`.
+The scheme type for custom Authentication types. Default is HTTP.
 
 .PARAMETER Middleware
-    An array of optional Middleware ScriptBlocks to be executed before the authentication process.
+An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
 
 .PARAMETER PostValidator
-    A script block that runs after user validation to perform additional checks or transformations.
+The PostValidator is a scriptblock that is invoked after user validation.
 
 .PARAMETER Digest
-    Enables Digest Authentication, which secures credentials by hashing them before transmission.
-
-.PARAMETER Algorithm
-    Specifies the hashing algorithm(s) for Digest Authentication.
-    Supported: `MD5`, `SHA-1`, `SHA-256`, `SHA-512`, `SHA-384`, `SHA-512/256`.
-    Default: `MD5`.
-
-.PARAMETER QualityOfProtection
-    Defines the Quality of Protection (QoP) level for Digest Authentication.
-    Options: `auth`, `auth-int`, `auth,auth-int`.
-    Default: `auth` .
+If supplied, will use the inbuilt Digest Authentication credentials retriever.
 
 .PARAMETER Bearer
-    Enables Bearer Authentication, commonly used for OAuth2/JWT-based authentication.
+If supplied, will use the inbuilt Bearer Authentication token retriever.
 
 .PARAMETER ClientCertificate
-    Enables authentication using client certificates.
+If supplied, will use the inbuilt Client Certificate Authentication scheme.
 
 .PARAMETER ClientId
-    Specifies the Client ID for OAuth2 authentication (required for OAuth2 flows).
+The Application ID generated when registering a new app for OAuth2.
 
 .PARAMETER ClientSecret
-    The OAuth2 Client Secret. This is required unless using PKCE.
+The Application Secret generated when registering a new app for OAuth2 (this is optional when using PKCE).
 
 .PARAMETER RedirectUrl
-    Specifies the OAuth2 Redirect URL (default: `<host>/oauth2/callback`).
+An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
 
 .PARAMETER AuthoriseUrl
-    Defines the OAuth2 authorization URL for user authentication.
+The OAuth2 Authorisation URL to authenticate a User. This is optional if you're using an InnerScheme like Basic/Form.
 
 .PARAMETER TokenUrl
-    Specifies the OAuth2 token endpoint URL for retrieving access tokens.
+The OAuth2 Token URL to acquire an access token.
 
 .PARAMETER UserUrl
-    Optional URL to retrieve user profile details from the OAuth2 provider.
+An optional User profile URL to retrieve a user's details - for OAuth2
 
 .PARAMETER UserUrlMethod
-    The HTTP method used when calling the OAuth2 user profile URL.
-    Default: `POST`.
+An optional HTTP method to use when calling the User profile URL - for OAuth2 (Default: Post)
 
 .PARAMETER CodeChallengeMethod
-    The method for sending a PKCE code challenge during OAuth2 authorization.
-    Default: `S256`.
+An optional method for sending a PKCE code challenge when calling the Authorise URL - for OAuth2 (Default: S256)
 
 .PARAMETER UsePKCE
-    If specified, OAuth2 authentication will use PKCE (Proof Key for Code Exchange).
+If supplied, OAuth2 authentication will use PKCE code verifiers - for OAuth2
 
 .PARAMETER OAuth2
-    Enables OAuth2 authentication for handling authorization flows.
+If supplied, will use the inbuilt OAuth2 Authentication scheme.
 
 .PARAMETER Scope
-    Specifies an array of scopes for Bearer/OAuth2 authentication (case-sensitive).
+An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-sensitive)
 
 .PARAMETER ApiKey
-    Enables API Key authentication, allowing keys to be passed in headers, query parameters, or cookies.
+If supplied, will use the inbuilt API key Authentication scheme.
 
-.PARAMETER ApiKeyLocation
-    Defines where to look for the API key (`Header`, `Query`, or `Cookie`).
-    Default: `Header`.
-    Alias: Location
+.PARAMETER Location
+The Location to find an API key: Header, Query, or Cookie. (Default: Header)
 
 .PARAMETER LocationName
-    Specifies the key name to retrieve the API key from (`X-API-KEY`, `api_key`, etc.).
-
-.PARAMETER BearerLocation
-    Defines where to look for the API key (`Header`, `Query`).
-    Default: `Header`.
+The Name of the Header, Query, or Cookie to find an API key. (Default depends on Location. Header/Cookie: X-API-KEY, Query: api_key)
 
 .PARAMETER InnerScheme
-    Defines an optional nested authentication scheme that will run before this scheme.
+An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
 
 .PARAMETER AsCredential
-    If enabled, username/password credentials for Basic/Form authentication
-    will be provided as a `pscredential` object instead of plain text.
+If supplied, username/password credentials for Basic/Form authentication will instead be supplied as a pscredential object.
 
 .PARAMETER AsJWT
-    If enabled, the token or API key for Bearer/API Key authentication
-    will be parsed as a JWT, and the payload will be extracted.
+If supplied, the token/key supplied for Bearer/API key authentication will be parsed as a JWT, and the payload supplied instead.
 
 .PARAMETER Secret
-    A secret key used to sign or verify JWT signatures for Bearer/API Key authentication.
-
-.PARAMETER PrivateKey
-    The private key (PEM format) for RSA or ECDSA algorithms used to decode JWT.
-
-.PARAMETER PublicKey
-    The public key (PEM format) for RSA or ECDSA algorithms used to decode JWT.
-
-.PARAMETER JwtVerificationMode
-    Defines how aggressively JWT signatures are checked.
-    - `Strict`: Full validation (signature, header, `kid`, algorithm enforcement).
-    - `Moderate`: Signature check, but allows missing `kid`.
-    - `Lenient`: Signature check, but ignores algorithm mismatches.
+An optional Secret, used to sign/verify JWT signatures.
 
 .EXAMPLE
-    # Create a Basic Authentication scheme
-    $basic_auth = New-PodeAuthScheme -Basic
+$basic_auth = New-PodeAuthScheme -Basic
 
 .EXAMPLE
-    # Create a Form Authentication scheme with a custom username field
-    $form_auth = New-PodeAuthScheme -Form -UsernameField 'Email'
+$form_auth = New-PodeAuthScheme -Form -UsernameField 'Email'
 
 .EXAMPLE
-    # Create a Digest Authentication scheme supporting SHA-256 and auth-int QoP
-    $digest_auth = New-PodeAuthScheme -Digest -Algorithm 'SHA-256' -QualityOfProtection 'auth-int'
-
-.EXAMPLE
-    # Create a Bearer Authentication scheme for OAuth2
-    $oauth_auth = New-PodeAuthScheme -OAuth2 -ClientId 'abc123' -TokenUrl 'https://auth.example.com/token' -AuthoriseUrl 'https://auth.example.com/auth'
-
-.EXAMPLE
-    # Create an API Key Authentication scheme, passing the key in the query string
-    $api_auth = New-PodeAuthScheme -ApiKey -Location 'Query' -LocationName 'api_key'
-
-.EXAMPLE
-    # Create a custom authentication scheme
-    $custom_auth = New-PodeAuthScheme -Custom -Name 'MyAuth' -ScriptBlock { param($req) return @{ User = "custom-user" } }
-
-.NOTES
-    **Authentication Types Supported:**
-    - `Basic` (username/password over HTTP)
-    - `Digest` (MD5/SHA-based authentication with QoP)
-    - `OAuth2` (Bearer token-based authentication)
-    - `ApiKey` (Key-based authentication via headers, query parameters, or cookies)
-    - `ClientCertificate` (Mutual TLS authentication)
-    - `Custom` (ScriptBlock-defined authentication logic)
-
-    **Digest Authentication Notes:**
-    - `MD5` is supported for legacy compatibility but is **not recommended** for security reasons.
-    - Use `SHA-256` or `SHA-512/256` for stronger security.
-    - `auth-int` should be used when message integrity verification is required.
-    - **Windows Limitations:** Windows' built-in Digest authentication **only supports MD5** and **fails if multiple algorithms are listed** in the `WWW-Authenticate` header.
-        Additionally, `auth-int` is **not supported**.
-        However, you can implement custom Digest authentication using Pode; see `./examples/utilities/DigestClient.ps1` for an example.
-
-    **OAuth2 Notes:**
-    - PKCE is recommended for security (use `-UsePKCE`).
-    - `InnerScheme` can be used for hybrid authentication (e.g., Basic + OAuth2).
-    - The `Secret` parameter is required unless using PKCE.
-
-    **API Key Notes:**
-    - The default location for API keys is `Header`, using `X-API-KEY`.
-    - The key can be extracted from headers, query parameters, or cookies.
-
-    **JWT Handling:**
-    - If `-AsJWT` is enabled, Pode will automatically parse JWTs and extract claims.
-    - A `Secret` must be supplied for signed JWT verification.
+$custom_auth = New-PodeAuthScheme -Custom -ScriptBlock { /* logic */ }
 #>
 function New-PodeAuthScheme {
     [CmdletBinding(DefaultParameterSetName = 'Basic')]
@@ -286,17 +200,6 @@ function New-PodeAuthScheme {
         [switch]
         $Digest,
 
-        [Parameter(ParameterSetName = 'Digest')]
-        [ValidateSet('MD5', 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256')]
-        [string[]]
-        $Algorithm = 'MD5',
-
-
-        [Parameter(ParameterSetName = 'Digest')]
-        [ValidateSet('auth', 'auth-int', 'auth,auth-int'  )]
-        [string[]]
-        $QualityOfProtection = 'auth',
-
         [Parameter(ParameterSetName = 'Bearer')]
         [switch]
         $Bearer,
@@ -353,14 +256,8 @@ function New-PodeAuthScheme {
 
         [Parameter(ParameterSetName = 'ApiKey')]
         [ValidateSet('Header', 'Query', 'Cookie')]
-        [Alias('Location')]
         [string]
-        $ApiKeyLocation = 'Header',
-
-        [Parameter(ParameterSetName = 'Bearer')]
-        [ValidateSet('Header', 'Query' )]
-        [string]
-        $BearerLocation = 'Header',
+        $Location = 'Header',
 
         [Parameter(ParameterSetName = 'ApiKey')]
         [string]
@@ -387,23 +284,8 @@ function New-PodeAuthScheme {
 
         [Parameter(ParameterSetName = 'Bearer')]
         [Parameter(ParameterSetName = 'ApiKey')]
-        [object]$Secret,
-
-        [Parameter(ParameterSetName = 'Bearer')]
-        [Parameter(ParameterSetName = 'ApiKey')]
-        [SecureString]
-        $PrivateKey,
-
-        [Parameter(ParameterSetName = 'Bearer')]
-        [Parameter(ParameterSetName = 'ApiKey')]
-        [String]
-        $PublicKey,
-
-        [Parameter(ParameterSetName = 'Bearer')]
-        [Parameter(ParameterSetName = 'ApiKey')]
-        [ValidateSet('Strict', 'Moderate', 'Lenient')]
         [string]
-        $JwtVerificationMode = 'Lenient'
+        $Secret
     )
     begin {
         $pipelineItemCount = 0
@@ -463,66 +345,42 @@ function New-PodeAuthScheme {
             }
 
             'digest' {
-                return @{
-                    Name          = 'Digest'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthDigestType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = @{
-                        Script         = (Get-PodeAuthDigestPostValidator)
-                        UsingVariables = $null
-                    }
-                    Middleware    = $Middleware
-                    InnerScheme   = $InnerScheme
-                    Scheme        = 'http'
-                    Arguments     = @{
-                        HeaderTag           = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
-                        Algorithm           = $Algorithm
-                        QualityOfProtection = $QualityOfProtection
-                    }
+                # Display a deprecation warning for the old function.
+                # This ensures users are informed that the function is obsolete and should transition to the new function.
+                Write-PodeDeprecationWarning -OldFunction 'New-PodeAuthScheme' -NewFunction 'New-PodeAuthDigestScheme'
+
+                $params = @{
+                    HeaderTag = $HeaderTag
+                    Scope     = $Scope
                 }
+                return New-PodeAuthDigestScheme $params
             }
 
             'bearer' {
+                # Display a deprecation warning for the old function.
+                # This ensures users are informed that the function is obsolete and should transition to the new function.
+                Write-PodeDeprecationWarning -OldFunction 'New-PodeAuthScheme' -NewFunction 'New-PodeAuthBearerScheme'
+
+                $params = @{
+                    HeaderTag           = $HeaderTag
+                    Scope               = $Scope
+                    AsJWT               = $AsJWT
+                }
+
                 if ($Secret) {
                     if ($Secret -isnot [SecureString]) {
                         if ( $Secret -is [string]) {
                             # Convert plain string to SecureString
-                            $secret = ConvertTo-SecureString -String secret  -AsPlainText -Force
+                            $params['Secret'] = ConvertTo-SecureString -String $Secret  -AsPlainText -Force
                         }
                         else {
                             throw
                         }
+                    }else{
+                        $params['Secret']=$Secret
                     }
                 }
-                return @{
-                    Name          = 'Bearer'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthBearerType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = @{
-                        Script         = (Get-PodeAuthBearerPostValidator)
-                        UsingVariables = $null
-                    }
-                    Middleware    = $Middleware
-                    Scheme        = 'http'
-                    InnerScheme   = $InnerScheme
-                    Arguments     = @{
-                        Description         = $Description
-                        HeaderTag           = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
-                        Scopes              = $Scope
-                        AsJWT               = $AsJWT
-                        Secret              = $Secret
-                        PrivateKey          = $PrivateKey
-                        PublicKey           = $PublicKey
-                        Location            = $BearerLocation
-                        JwtVerificationMode = $JwtVerificationMode
-                    }
-                }
+                return New-PodeAuthBearerScheme @params
             }
 
             'form' {
@@ -606,26 +464,19 @@ function New-PodeAuthScheme {
             }
 
             'apikey' {
-                if ($Secret) {
-                    if ($Secret -isnot [SecureString]) {
-                        if ( $Secret -is [string]) {
-                            # Convert plain string to SecureString
-                            $Secret = ConvertTo-SecureString -String $Secret  -AsPlainText -Force
-                        }
-                        else {
-                            throw
-                        }
-                    }
-                }
                 # set default location name
                 if ([string]::IsNullOrWhiteSpace($LocationName)) {
                     $LocationName = (@{
                             Header = 'X-API-KEY'
                             Query  = 'api_key'
                             Cookie = 'X-API-KEY'
-                        })[$ApiKeyLocation]
+                        })[$Location]
                 }
 
+                $secretBytes = $null
+                if (![string]::IsNullOrWhiteSpace($Secret)) {
+                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+                }
 
                 return @{
                     Name          = 'ApiKey'
@@ -639,14 +490,11 @@ function New-PodeAuthScheme {
                     InnerScheme   = $InnerScheme
                     Scheme        = 'apiKey'
                     Arguments     = @{
-                        Description         = $Description
-                        Location            = $ApiKeyLocation
-                        LocationName        = $LocationName
-                        AsJWT               = $AsJWT
-                        Secret              = $Secret
-                        PrivateKey          = $PrivateKey
-                        PublicKey           = $PublicKey
-                        JwtVerificationMode = $JwtVerificationMode
+                        Description  = $Description
+                        Location     = $Location
+                        LocationName = $LocationName
+                        AsJWT        = $AsJWT
+                        Secret       = $secretBytes
                     }
                 }
             }
@@ -2379,7 +2227,7 @@ function ConvertTo-PodeJwt {
     [OutputType([string])]
     param(
         [Parameter()]
-        [hashtable]$Header,
+        [hashtable]$Header = @{},
 
         [Parameter(Mandatory = $true)]
         [hashtable]$Payload,
@@ -2471,7 +2319,7 @@ function ConvertTo-PodeJwt {
     # Convert secret to bytes if needed
     if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
         $Secret = if ($Secret -is [SecureString]) {
-            [System.Text.Encoding]::UTF8.GetBytes( [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey)))
+            [System.Text.Encoding]::UTF8.GetBytes( [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($Secret)))
         }
         else {
             [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
@@ -2691,12 +2539,11 @@ function Test-PodeJwt {
             throw ($PodeLocale.jwtMissingIssuerExceptionMessage)
         }
     }
-
     # Validate Audience (`aud`)
     if ($JwtVerificationMode -eq 'Strict' -or $JwtVerificationMode -eq 'Moderate') {
         if ($Payload.aud) {
             if (! $Payload.aud -or ($Payload.aud -isnot [string] -and $Payload.aud -isnot [array])) {
-                throw ($PodeLocale.jwtInvalidAudienceExceptionMessage -f $PodeContext.Server.Application)
+                throw ($PodeLocale.jwtInvalidAudienceExceptionMessage -f $PodeContext.Server.ApplicationName)
             }
 
             # Enforce application audience check
@@ -2706,7 +2553,7 @@ function Test-PodeJwt {
                 }
             }
             elseif ($Payload.aud -is [array]) {
-                if ($Payload.aud -notcontains $PodeContext.Server.Application) {
+                if ($Payload.aud -notcontains $PodeContext.Server.ApplicationName) {
                     throw ($PodeLocale.jwtInvalidAudienceExceptionMessage -f $PodeContext.Server.ApplicationName)
                 }
             }
@@ -2975,4 +2822,234 @@ function Get-PodeAuthUser {
     }
 
     return $auth.User
+}
+
+<#
+.SYNOPSIS
+    Creates a new Bearer authentication scheme for Pode.
+
+.DESCRIPTION
+    This function defines a Bearer authentication scheme, which allows authentication using either a raw Bearer token
+    or a JWT (JSON Web Token). It supports different security levels for JWT validation and can extract the token
+    from either the request header or query parameters.
+
+.PARAMETER HeaderTag
+    The header tag used to identify the Bearer token in the request.
+    Default: "Bearer".
+
+.PARAMETER Location
+    Defines where the Bearer token is extracted from in the request.
+    - "Header" (Default): Extracts from the `Authorization` header.
+    - "Query": Extracts from a query parameter.
+
+.PARAMETER Scope
+    A list of scopes required for this authentication scheme. If specified, the token must contain these scopes.
+
+.PARAMETER Algorithm
+    Specifies the accepted signing algorithm(s) for JWT validation.
+    Supported values: "NONE", "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512".
+    If not specified, any valid algorithm will be accepted.
+
+.PARAMETER AsJWT
+    Indicates whether the Bearer token should be treated as a JWT.
+    If enabled, the token will be validated as a JWT using the specified algorithm.
+
+.PARAMETER Secret
+    The secret key used to validate HMAC-signed JWTs (HS256, HS384, HS512).
+    Required if using HMAC algorithms and `AsJWT` is enabled.
+
+.PARAMETER PrivateKey
+    The private key (PEM format) used for signing JWTs with RSA or ECDSA algorithms (RS256, ES256, etc.).
+    Required for asymmetric signing methods when `AsJWT` is enabled.
+
+.PARAMETER PublicKey
+    The public key (PEM format) used for verifying JWTs signed with RSA or ECDSA algorithms.
+    Required for asymmetric verification when `AsJWT` is enabled.
+
+.PARAMETER RsaPaddingScheme
+    Specifies the padding scheme to use for RSA signatures.
+    Acceptable values:
+    - 'Pkcs1V15' (for RS256, RS384, RS512)
+    - 'Pss' (for PS256, PS384, PS512)
+    Default: 'Pkcs1V15'.
+
+.PARAMETER JwtVerificationMode
+    Defines the level of strictness for JWT validation.
+    - "Strict": Enforces full verification of claims, signatures, and expiration.
+    - "Moderate": Allows some flexibility, such as missing `kid`.
+    - "Lenient" (Default): Ignores some verification rules but still checks expiration.
+
+.OUTPUTS
+    Returns a hashtable representing the Bearer authentication scheme configuration.
+
+.EXAMPLE
+    # Define a standard Bearer authentication scheme using JWT with HMAC
+    New-PodeAuthBearerScheme -AsJWT -Algorithm "HS256" -Secret (ConvertTo-SecureString "MySecretKey" -AsPlainText -Force)
+
+.EXAMPLE
+    # Define a Bearer authentication scheme using an RSA public/private key pair
+    $privateKey = Get-Content "private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
+    $publicKey = Get-Content "public.pem" -Raw
+    New-PodeAuthBearerScheme -AsJWT -Algorithm "RS256" -PrivateKey $privateKey -PublicKey $publicKey
+
+.EXAMPLE
+    # Define a Bearer authentication scheme with relaxed JWT validation
+    New-PodeAuthBearerScheme -AsJWT -Algorithm "HS256" -Secret (ConvertTo-SecureString "MySecretKey" -AsPlainText -Force) -JwtVerificationMode "Lenient"
+
+.NOTES
+    - If `AsJWT` is not specified, the function assumes a raw Bearer token.
+    - If using HMAC algorithms (HS256, HS384, HS512), the `Secret` parameter is required.
+    - If using RSA/ECDSA algorithms (RS256, ES256, etc.), both `PrivateKey` (for signing) and `PublicKey` (for verification) are required.
+    - The function supports extracting tokens from the Authorization header or query parameters.
+    - The `Algorithm` parameter enforces a specific signing method but is optional.
+    - The `JwtVerificationMode` defines how strictly JWTs are validated.
+#>
+function New-PodeAuthBearerScheme {
+    [CmdletBinding(DefaultParameterSetName = 'Basic')]
+    [OutputType([hashtable])]
+    param(
+        [string]
+        $HeaderTag,
+
+        [ValidateSet('Header', 'Query')]
+        [string]
+        $Location = 'Header',
+
+        [string[]]
+        $Scope,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_NONE')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
+        [switch]
+        $AsJWT,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_HS')]
+        [ValidateSet( 'HS256', 'HS384', 'HS512' )]
+        [string[]]
+        $Algorithm = @(),
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
+        [SecureString]
+        $Secret,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
+        [SecureString]
+        $PrivateKey,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
+        [String]
+        $PublicKey,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_RS_ES')]
+        [ValidateSet('Pkcs1V15', 'Pss')]
+        [string]
+        $RsaPaddingScheme = 'Pkcs1V15',
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
+        [ValidateSet('Strict', 'Moderate', 'Lenient')]
+        [string]
+        $JwtVerificationMode = 'Lenient'
+    )
+
+    # default realm
+    $_realm = 'User'
+
+    # convert any middleware into valid hashtables
+    $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+
+    $alg = switch ($PSCmdlet.ParameterSetName) {
+        'Bearer_RS_ES' {
+            @( Get-PodeJwtSigningAlgorithm -PrivateKey  $PrivateKey -RsaPaddingScheme $RsaPaddingScheme )
+        }
+        'Bearer_HS' {
+            if ( $Algorithm.Count -eq 0) {
+                @('HS256')
+            }
+            else {
+                $Algorithm
+            }
+        }
+        'Bearer_NONE' {
+            @('NONE')
+        }
+    }
+
+    return @{
+        Name          = 'Bearer'
+        Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+        ScriptBlock   = @{
+            Script         = (Get-PodeAuthBearerType)
+            UsingVariables = $null
+        }
+        PostValidator = @{
+            Script         = (Get-PodeAuthBearerPostValidator)
+            UsingVariables = $null
+        }
+        Middleware    = $Middleware
+        Scheme        = 'http'
+        InnerScheme   = $InnerScheme
+        Arguments     = @{
+            Description         = $Description
+            HeaderTag           = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
+            Scopes              = $Scope
+            AsJWT               = $AsJWT
+            Secret              = $Secret
+            PrivateKey          = $PrivateKey
+            PublicKey           = $PublicKey
+            Location            = $Location
+            JwtVerificationMode = $JwtVerificationMode
+            Algorithm           = $alg
+        }
+    }
+}
+
+
+
+function New-PodeAuthDigestScheme {
+    [CmdletBinding(DefaultParameterSetName = 'Basic')]
+    [OutputType([hashtable])]
+    param(
+
+        [Parameter(ParameterSetName = 'Digest')]
+        [string]
+        $HeaderTag,
+
+        [Parameter(ParameterSetName = 'Digest')]
+        [ValidateSet('MD5', 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256')]
+        [string[]]
+        $Algorithm = 'MD5',
+
+        [Parameter(ParameterSetName = 'Digest')]
+        [ValidateSet('auth', 'auth-int', 'auth,auth-int'  )]
+        [string[]]
+        $QualityOfProtection = 'auth'
+    )
+    # default realm
+    $_realm = 'User'
+
+    # convert any middleware into valid hashtables
+    $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+
+    return @{
+        Name          = 'Digest'
+        Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+        ScriptBlock   = @{
+            Script         = (Get-PodeAuthDigestType)
+            UsingVariables = $null
+        }
+        PostValidator = @{
+            Script         = (Get-PodeAuthDigestPostValidator)
+            UsingVariables = $null
+        }
+        Middleware    = $Middleware
+        InnerScheme   = $InnerScheme
+        Scheme        = 'http'
+        Arguments     = @{
+            HeaderTag           = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
+            Algorithm           = $Algorithm
+            QualityOfProtection = $QualityOfProtection
+        }
+    }
 }

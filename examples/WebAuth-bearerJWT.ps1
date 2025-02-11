@@ -36,12 +36,21 @@
 
   .EXAMPLE
     # Example request using PS512 JWT authentication
-    $headers = @{
-        'Authorization' = 'Bearer eyJhbGciOiJQUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Im1vcnR5IiwidXNlcm5hbWUiOiJtb3J0eSIsInR5cGUiOiJIdW1hbiIsImlkIjoiTTBSN1kzMDIiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI2MzQyMzQyMzEsImlzcyI6IlBvZGUiLCJhdWQiOiJXZWJBdXRoLWJlYXJlckpXVC5wczEiLCJuYmYiOjE2OTAwMDAwMDAsImp0aSI6InVuaXF1ZS10b2tlbi1pZCIsInJvbGUiOiJhZG1pbiJ9.Vtkpm8aEtXLF5v79pO3lHyyK0Qh3WOLYD0-5bQfhl82pHCskRRrlh_ODbxXHfXexjCrVZjQdBEexUskEvzKy2vQYHm1Chor__7j2Amjso7ZOOJJ8AENKTguzqLm-Pj4k3t_bdLFJP-e-4Y-IOHlYX3ac0dqkVFB28RwPoYN6UNJ61o0uk-aNk0zTeaptwyxnY4eCU_hQLfZLAAa7e3feDLUR3YXQzwXjNscUQpfjOJqtY3RLVQZ6hdUNn63VdR8GTzeDNYJq-GJjABxFKvOWnYDjFMC605C_83I8KtM1_OOVpQLifp5j7aOjHhAuksLs5NwWk5WlCM2Uc2GVyF6DVA'
+    $alg='PS512'
+   foreach($alg in 'RS256','RS384','RS512','PS256','PS384','PS512','ES256','ES384','ES512'){
+
+    $certsPath="./tests/certs/"
+    $privateKey = Get-Content "$certsPath/$alg-private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
+
+    $jwt= ConvertTo-PodeJwt -Algorithm $alg  -PrivateKey $privateKey   -Payload @{id='id';name='Morty';Type='Human';username='morty'} #-Issuer 'Pode' -Audience 'webauth'
+
+   $headers = @{
+        'Authorization' = "Bearer $jwt"
         'Accept'        = 'application/json'
     }
 
-    $response = Invoke-RestMethod -Uri 'http://localhost:8081/users' -Method Get -Headers $headers
+    $response = Invoke-RestMethod -Uri "http://localhost:8081/auth/bearer/jwt/$alg" -Method Get -Headers $headers
+    }
 
      .EXAMPLE
     # Example request using RS384 JWT authentication
@@ -56,8 +65,9 @@
 
   .EXAMPLE
     # Example request using HS256 JWT authentication
+    $jwt= ConvertTo-PodeJwt -Algorithm HS256 -Secret (ConvertTo-SecureString 'your-256-bit-secret' -AsPlainText -Force) -Payload @{id='id';name='Morty';Type='Human';username='morty'} -Issuer 'Pode' -Audience 'webauth'
     $headers = @{
-        'Authorization' = 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Im1vcnR5IiwidXNlcm5hbWUiOiJtb3J0eSIsInR5cGUiOiJIdW1hbiIsImlkIjoiTTBSN1kzMDIiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI2MzQyMzQyMzEsImlzcyI6ImF1dGguZXhhbXBsZS5jb20iLCJhdWQiOiJteWFwaS5leGFtcGxlLmNvbSIsIm5iZiI6MTY5MDAwMDAwMCwianRpIjoidW5pcXVlLXRva2VuLWlkIiwicm9sZSI6ImFkbWluIn0.MRZ69oPv2MFNFaihvCAzmjCiFSXbwv1tfvSJJTx29wWUKo82YP-mwF6Asb1cgRyQoGhxKgQVpW2V_x1bdElGKg'
+        'Authorization' = "Bearer $jwt"
         'Accept'        = 'application/json'
     }
 
@@ -103,57 +113,102 @@ catch { throw }
 # Import-Module Pode
 
 # create a server, and start listening on port 8081
-Start-PodeServer -Threads 2 {
+Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-    $privateKey = ConvertTo-SecureString -Force -AsPlainText -String @'
------BEGIN PRIVATE KEY-----
-MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC7VJTUt9Us8cKj
-MzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu
-NMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ
-qgtzJ6GR3eqoYSW9b9UMvkBpZODSctWSNGj3P7jRFDO5VoTwCQAWbFnOjDfH5Ulg
-p2PKSQnSJP3AJLQNFNe7br1XbrhV//eO+t51mIpGSDCUv3E0DDFcWDTH9cXDTTlR
-ZVEiR2BwpZOOkE/Z0/BVnhZYL71oZV34bKfWjQIt6V/isSMahdsAASACp4ZTGtwi
-VuNd9tybAgMBAAECggEBAKTmjaS6tkK8BlPXClTQ2vpz/N6uxDeS35mXpqasqskV
-laAidgg/sWqpjXDbXr93otIMLlWsM+X0CqMDgSXKejLS2jx4GDjI1ZTXg++0AMJ8
-sJ74pWzVDOfmCEQ/7wXs3+cbnXhKriO8Z036q92Qc1+N87SI38nkGa0ABH9CN83H
-mQqt4fB7UdHzuIRe/me2PGhIq5ZBzj6h3BpoPGzEP+x3l9YmK8t/1cN0pqI+dQwY
-dgfGjackLu/2qH80MCF7IyQaseZUOJyKrCLtSD/Iixv/hzDEUPfOCjFDgTpzf3cw
-ta8+oE4wHCo1iI1/4TlPkwmXx4qSXtmw4aQPz7IDQvECgYEA8KNThCO2gsC2I9PQ
-DM/8Cw0O983WCDY+oi+7JPiNAJwv5DYBqEZB1QYdj06YD16XlC/HAZMsMku1na2T
-N0driwenQQWzoev3g2S7gRDoS/FCJSI3jJ+kjgtaA7Qmzlgk1TxODN+G1H91HW7t
-0l7VnL27IWyYo2qRRK3jzxqUiPUCgYEAx0oQs2reBQGMVZnApD1jeq7n4MvNLcPv
-t8b/eU9iUv6Y4Mj0Suo/AU8lYZXm8ubbqAlwz2VSVunD2tOplHyMUrtCtObAfVDU
-AhCndKaA9gApgfb3xw1IKbuQ1u4IF1FJl3VtumfQn//LiH1B3rXhcdyo3/vIttEk
-48RakUKClU8CgYEAzV7W3COOlDDcQd935DdtKBFRAPRPAlspQUnzMi5eSHMD/ISL
-DY5IiQHbIH83D4bvXq0X7qQoSBSNP7Dvv3HYuqMhf0DaegrlBuJllFVVq9qPVRnK
-xt1Il2HgxOBvbhOT+9in1BzA+YJ99UzC85O0Qz06A+CmtHEy4aZ2kj5hHjECgYEA
-mNS4+A8Fkss8Js1RieK2LniBxMgmYml3pfVLKGnzmng7H2+cwPLhPIzIuwytXywh
-2bzbsYEfYx3EoEVgMEpPhoarQnYPukrJO4gwE2o5Te6T5mJSZGlQJQj9q4ZB2Dfz
-et6INsK0oG8XVGXSpQvQh3RUYekCZQkBBFcpqWpbIEsCgYAnM3DQf3FJoSnXaMhr
-VBIovic5l0xFkEHskAjFTevO86Fsz1C2aSeRKSqGFoOQ0tmJzBEs1R6KqnHInicD
-TQrKhArgLXX4v3CddjfTRJkFWDbE/CkvKZNOrcf1nhaGCPspRJj2KUkj1Fhl9Cnc
-dn/RsYEONbwQSjIfMPkvxF+8HQ==
------END PRIVATE KEY-----
-'@
-    $publicKey = @'
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo
-4lgOEePzNm0tRgeLezV6ffAt0gunVTLw7onLRnrq0/IzW7yWR7QkrmBL7jTKEn5u
-+qKhbwKfBstIs+bMY2Zkp18gnTxKLxoS2tFczGkPLPgizskuemMghRniWaoLcyeh
-kd3qqGElvW/VDL5AaWTg0nLVkjRo9z+40RQzuVaE8AkAFmxZzow3x+VJYKdjykkJ
-0iT9wCS0DRTXu269V264Vf/3jvredZiKRkgwlL9xNAwxXFg0x/XFw005UWVRIkdg
-cKWTjpBP2dPwVZ4WWC+9aGVd+Gyn1o0CLelf4rEjGoXbAAEgAqeGUxrcIlbjXfbc
-mwIDAQAB
------END PUBLIC KEY-----
-'@
+
+
+    $path = $PSCommandPath
+
+    # Define the key storage path
+    $certsPath = Join-Path -Path (Split-Path -Parent -Path $path) -ChildPath 'certs'
+
+    $JwtVerificationMode = 'Lenient'  # Set your desired verification mode (Lenient or Strict)
+
+    # Ensure the directory exists
+    if (-Not (Test-Path $CertsPath)) {
+        Write-Warning "Certificate folder '$CertsPath' does not exist."
+        Exit
+    }
+
+    # Get all private key files (assuming format: {Algorithm}-private.pem)
+    $privateKeys = Get-ChildItem -Path $CertsPath -Filter '*-private.pem'
+
+    foreach ($privateKeyFile in $privateKeys) {
+        # Extract algorithm name from file name
+        $alg = $privateKeyFile.Name -replace '-private.pem', ''
+
+        # Define corresponding public key path
+        $publicKeyPath = Join-Path -Path $CertsPath -ChildPath $alg-public.pem
+
+        # Ensure the matching public key exists
+        if (! (Test-Path $publicKeyPath)) {
+            Write-Warning "Skipping $($alg): Public key missing ($publicKeyPath)."
+            Continue
+        }
+
+        # Read key contents
+        $privateKey = Get-Content $privateKeyFile.FullName -Raw | ConvertTo-SecureString -AsPlainText -Force
+        $publicKey = Get-Content $publicKeyPath -Raw
+        while ($true) {
+            # Define the authentication location dynamically (e.g., `/auth/bearer/jwt/{algorithm}`)
+            $pathRoute = "/auth/bearer/jwt/$alg"
+            # Register Pode Bearer Authentication
+            Write-PodeHost "🔹 Registering JWT Authentication for: $alg ($Location)"
+
+            $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
+
+            New-PodeAuthBearerScheme -Location $Location -AsJWT -PrivateKey $privateKey -PublicKey $publicKey -RsaPaddingScheme $rsaPaddingScheme -JwtVerificationMode $JwtVerificationMode |
+                Add-PodeAuth -Name "Bearer_JWT_$alg" -Sessionless -ScriptBlock {
+                    param($jwt)
+
+                    # here you'd check a real user storage, this is just for example
+                    if ($jwt.username -ieq 'morty') {
+                        return @{
+                            User = @{
+                                ID   = $jWt.id
+                                Name = $jst.name
+                                Type = $jst.type
+                            }
+                        }
+                    }
+
+                    return $null
+                }
+
+            # GET request to get list of users (since there's no session, authentication will always happen)
+            Add-PodeRoute -Method Get -Path $pathRoute -Authentication "Bearer_JWT_$alg" -ScriptBlock {
+
+                Write-PodeJsonResponse -Value @{
+                    Users = @(
+                        @{
+                            Name = 'Deep Thought'
+                            Age  = 42
+                        },
+                        @{
+                            Name = 'Leeroy Jenkins'
+                            Age  = 1337
+                        }
+                    )
+                }
+            }
+            if ($alg.StartsWith('RS')) {
+                $alg = $alg.Replace('RS', 'PS')
+            }
+            else {
+                break
+            }
+        }
+    }
+
+
 
     # setup bearer auth
-    New-PodeAuthScheme -Bearer -BearerLocation $Location -AsJWT -Secret 'your-256-bit-secret' -PrivateKey $privateKey -PublicKey $publicKey | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme  -Location $Location -AsJWT -Secret (ConvertTo-SecureString 'your-256-bit-secret' -AsPlainText -Force)   -JwtVerificationMode Lenient | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($jwt)
 
         # here you'd check a real user storage, this is just for example
