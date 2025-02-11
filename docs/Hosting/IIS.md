@@ -98,6 +98,18 @@ The first thing you'll need to do so IIS can host your server is, in the same di
 </configuration>
 ```
 
+### PowerShell Permissions
+
+Ensure IIS has access to the `pwsh.exe` processPath referenced in the `web.config` file above. If IIS doesn't have access, you'll see the `HTTP Error 502.5 - ANCM Out-Of-Process Startup Failure` error page.
+
+If IIS doesn't have access to the whole path, you can either:
+
+* Grant the user running your IIS application pool (or website) access to the path and `pwsh.exe`, or
+* Install a standalone version of the `pwsh.exe` from the [PowerShell GitHub](https://github.com/PowerShell/PowerShell/releases), and into a path IIS can access.
+
+!!! tip
+    If you installed PowerShell via the Microsoft Store, and the `pwsh.exe` is under the `WindowsApps` directory path, then IIS won't have access. Because this is WindowsApp, the recommended solution is to install a standalone `pwsh.exe` from the [PowerShell GitHub](https://github.com/PowerShell/PowerShell/releases), and use that path as the processPath in your `web.config`.
+
 ## IIS Setup
 
 With the `web.config` file in place, it's then time to setup the site in IIS. The first thing to do is open up the IIS Manager, then once open, follow the below steps to setup your site:
@@ -272,18 +284,18 @@ Start-PodeServer {
 
 If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set on the [web event](../../Tutorials/WebEvent)'s `$WebEvent.Auth.User` property, and contains the same information as Pode's inbuilt Windows AD authenticator:
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| UserType | string | Specifies if the user is a Domain or Local user |
-| Identity | System.Security.Principal.WindowsIdentity | Returns the WindowsIdentity which can be used for Impersonation |
-| AuthenticationType | string | Value is fixed to LDAP |
-| DistinguishedName | string | The distinguished name of the user |
-| Username | string | The user's username (without domain) |
-| Name | string | The user's fullname |
-| Email | string | The user's email address |
-| FQDN | string | The FQDN of the AD server |
-| Domain | string | The domain part of the user's username |
-| Groups | string[] | All groups of which the the user is a member |
+| Name               | Type                                      | Description                                                     |
+| ------------------ | ----------------------------------------- | --------------------------------------------------------------- |
+| UserType           | string                                    | Specifies if the user is a Domain or Local user                 |
+| Identity           | System.Security.Principal.WindowsIdentity | Returns the WindowsIdentity which can be used for Impersonation |
+| AuthenticationType | string                                    | Value is fixed to LDAP                                          |
+| DistinguishedName  | string                                    | The distinguished name of the user                              |
+| Username           | string                                    | The user's username (without domain)                            |
+| Name               | string                                    | The user's fullname                                             |
+| Email              | string                                    | The user's email address                                        |
+| FQDN               | string                                    | The FQDN of the AD server                                       |
+| Domain             | string                                    | The domain part of the user's username                          |
+| Groups             | string[]                                  | All groups of which the the user is a member                    |
 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
@@ -495,6 +507,20 @@ This can be done using the following example:
     $newIdentity = [Security.Principal.WindowsIdentity]::GetCurrent() | Select-Object -ExpandProperty 'Name'
     Write-PodeTextResponse -Value "You are running this command as the server user $newIdentity"
 })
+```
+
+## IIS Client IP
+
+If you're using Pode's Access or Rate limiting rules, or you just need the Client IP address of the request, then it's worth noting that the Remote Address will always be `localhost` - as IIS forwards the request to Pode running behind-the-scenes.
+
+You can get the originating client IP from the `X-Forwarded-For` header, which IIS does add to the request by default.
+
+For example, if you want to block requests from a certain subnet:
+
+```powershell
+Add-PodeLimitAccessRule -Name 'Example' -Action Deny -Component @(
+    New-PodeLimitIPComponent -IP '10.0.1.0/16' -Location 'XForwardedFor'
+)
 ```
 
 ## Azure Web Apps
