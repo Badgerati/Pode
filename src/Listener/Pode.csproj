@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Kerberos.NET" Version="4.6.55" />
+    <PackageReference Include="Kerberos.NET" Version="4.6.70" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(NETCoreSdkVersion)' >= '8.0'">
