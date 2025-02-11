@@ -1,10 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);SYSLIB0001</NoWarn>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Kerberos.NET" Version="4.6.55" />
   </ItemGroup>
+
+  <PropertyGroup Condition="'$(NETCoreSdkVersion)' >= '8.0'">
+    <TargetFrameworks>$(TargetFrameworks);net8.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(NETCoreSdkVersion)' >= '9.0'">
+    <TargetFrameworks>$(TargetFrameworks);net9.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(NETCoreSdkVersion)' >= '10.0'">
+    <TargetFrameworks>$(TargetFrameworks);net10.0</TargetFrameworks>
+  </PropertyGroup>
 </Project>

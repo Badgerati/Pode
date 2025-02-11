@@ -299,7 +299,7 @@ Date: 22nd June 2022
 * #982: Add * level for errors to enable everything
 
 ### Bugs
-* #956: Fix for importing functionss with inline parameters
+* #956: Fix for importing functions with inline parameters
 * #957: Fix for some OpenAPI properties being dropped
 * #958: Some SMTP attachment boundaries can include double quotes
 * #965: Fix for importing ps1 files
@@ -581,7 +581,7 @@ Date: 19th February 2021
 ```plain
 ### Enhancements
 * #693: Add OperationId OpenAPI support on routes (thanks @glatzert)
-* #698: Add support for Certificate Store Name and Location on `Add-PodeEndoint`
+* #698: Add support for Certificate Store Name and Location on `Add-PodeEndpoint`
 
 ### Bugs
 * #686: Add EndpointName support on `Set-PodeResponseAttachment`
@@ -603,7 +603,7 @@ Date: 3rd February 2021
 * #667: Set the WinIdentity from IIS auth, and add documentation for Kerberos Constrained Delegation (thanks @RobinBeismann!)
 
 ### Bugs
-* #648: Fixes for using global authentcation in OpenAPI and Swagger
+* #648: Fixes for using global authentication in OpenAPI and Swagger
 * #650: Fix for redirecting HTTP to HTTPS on default 80/443 ports
 * #652: Fix for sessions not extending from AJAX requests, or when session data wasn't updated
 * #654: Fix for `-Title` and `-Version` in `Get-PodeOpenApiDefinition` being mandatory
@@ -732,7 +732,7 @@ Date: 24th May 2020
 ### Enhancements
 * #533: Support on states for inclusion/exlcusions when saving, and scopes on states
 * #538: Support to batch log items together before sending them off to be recorded
-* #540: Adds a Ctrl+B shortcutto open the server in the default browser
+* #540: Adds a Ctrl+B shortcut to open the server in the default browser
 * #542: Add new switch to help toggling of Status Page exception message
 * #548: Adds new `Get-PodeSchedule` and `Get-PodeTimer` functions
 * #549: Support for calculating a schedule's next trigger datetime
@@ -1015,7 +1015,7 @@ Date: 28th June 2019
 * #271: Fix in `Convert-PodePathPatternsToRegex` when converting file names - thanks @Fraham!
 
 ### Documentation
-* #284: Notes in documention about referencing JSON payload data in PowerShell 4/5
+* #284: Notes in documentation about referencing JSON payload data in PowerShell 4/5
 ```
 
 ## v0.31.0

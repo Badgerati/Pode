@@ -144,6 +144,7 @@
         'Get-PodeCurrentRunspaceName',
         'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',
+        'Start-PodeSleep',
 
         # routes
         'Add-PodeRoute',
@@ -210,15 +211,15 @@
         'Use-PodeTasks',
         'Close-PodeTask',
         'Test-PodeTaskCompleted',
+        'Test-PodeTaskFailed',
         'Wait-PodeTask',
         'Get-PodeTaskProcess',
+        'Restart-PodeTaskProcess',
 
         # middleware
         'Add-PodeMiddleware',
         'Remove-PodeMiddleware',
         'Clear-PodeMiddleware',
-        'Add-PodeAccessRule',
-        'Add-PodeLimitRule',
         'New-PodeCsrfToken',
         'Get-PodeCsrfMiddleware',
         'Initialize-PodeCsrf',
@@ -227,6 +228,7 @@
         'New-PodeMiddleware',
         'Add-PodeBodyParser',
         'Remove-PodeBodyParser',
+        'Test-PodeMiddleware',
 
         # sessions
         'Enable-PodeSessionMiddleware',
@@ -307,6 +309,12 @@
         'Get-PodeServerDefaultSecret',
         'Wait-PodeDebugger',
         'Get-PodeVersion',
+        'Suspend-PodeServer',
+        'Resume-PodeServer',
+        'Get-PodeServerState',
+        'Test-PodeServerState',
+        'Enable-PodeServer',
+        'Disable-PodeServer',
 
         # openapi
         'Enable-PodeOpenApi',
@@ -319,6 +327,7 @@
         'Test-PodeOADefinitionTag',
         'Test-PodeOADefinition',
         'Rename-PodeOADefinitionTag',
+        'Test-PodeOAEnabled',
 
         # properties
         'New-PodeOAIntProperty',
@@ -498,7 +507,26 @@
         'Test-PodeScopedVariable',
         'Clear-PodeScopedVariables',
         'Get-PodeScopedVariable',
-        'Use-PodeScopedVariables'
+        'Use-PodeScopedVariables',
+
+        # limits
+        'Add-PodeAccessRule',
+        'Add-PodeLimitRule',
+        'Add-PodeLimitRateRule',
+        'Add-PodeLimitAccessRule',
+        'Update-PodeLimitRateRule',
+        'Update-PodeLimitAccessRule',
+        'Test-PodeLimitRateRule',
+        'Test-PodeLimitAccessRule',
+        'Remove-PodeLimitRateRule',
+        'Remove-PodeLimitAccessRule',
+        'Get-PodeLimitRateRule',
+        'Get-PodeLimitAccessRule',
+        'New-PodeLimitIPComponent',
+        'New-PodeLimitRouteComponent',
+        'New-PodeLimitEndpointComponent',
+        'New-PodeLimitMethodComponent',
+        'New-PodeLimitHeaderComponent'
     )
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.

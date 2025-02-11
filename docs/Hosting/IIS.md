@@ -98,6 +98,18 @@ The first thing you'll need to do so IIS can host your server is, in the same di
 </configuration>
 ```
 
+### PowerShell Permissions
+
+Ensure IIS has access to the `pwsh.exe` processPath referenced in the `web.config` file above. If IIS doesn't have access, you'll see the `HTTP Error 502.5 - ANCM Out-Of-Process Startup Failure` error page.
+
+If IIS doesn't have access to the whole path, you can either:
+
+* Grant the user running your IIS application pool (or website) access to the path and `pwsh.exe`, or
+* Install a standalone version of the `pwsh.exe` from the [PowerShell GitHub](https://github.com/PowerShell/PowerShell/releases), and into a path IIS can access.
+
+!!! tip
+    If you installed PowerShell via the Microsoft Store, and the `pwsh.exe` is under the `WindowsApps` directory path, then IIS won't have access. Because this is WindowsApp, the recommended solution is to install a standalone `pwsh.exe` from the [PowerShell GitHub](https://github.com/PowerShell/PowerShell/releases), and use that path as the processPath in your `web.config`.
+
 ## IIS Setup
 
 With the `web.config` file in place, it's then time to setup the site in IIS. The first thing to do is open up the IIS Manager, then once open, follow the below steps to setup your site:
@@ -202,7 +214,7 @@ The server will get a URL path of `/api/etc`, but you can keep your route paths 
 
 Although Pode does have support for HTTPS/WSS, when running via IIS it takes control of HTTPS/WSS for us - this is why the endpoints are forced to HTTP/WS.
 
-You can setup a binding in IIS for HTTPS (still HTPPS for WSS) with a Certificate, and IIS will deal with SSL for you:
+You can setup a binding in IIS for HTTPS (still HTTPS for WSS) with a Certificate, and IIS will deal with SSL for you:
 
 1. Open IIS, and expand the Sites folder
 2. Right click your Site, and select "Edit Bindings..."
@@ -272,18 +284,18 @@ Start-PodeServer {
 
 If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set on the [web event](../../Tutorials/WebEvent)'s `$WebEvent.Auth.User` property, and contains the same information as Pode's inbuilt Windows AD authenticator:
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| UserType | string | Specifies if the user is a Domain or Local user |
-| Identity | System.Security.Principal.WindowsIdentity | Returns the WindowsIdentity which can be used for Impersonation |
-| AuthenticationType | string | Value is fixed to LDAP |
-| DistinguishedName | string | The distinguished name of the user |
-| Username | string | The user's username (without domain) |
-| Name | string | The user's fullname |
-| Email | string | The user's email address |
-| FQDN | string | The FQDN of the AD server |
-| Domain | string | The domain part of the user's username |
-| Groups | string[] | All groups of which the the user is a member |
+| Name               | Type                                      | Description                                                     |
+| ------------------ | ----------------------------------------- | --------------------------------------------------------------- |
+| UserType           | string                                    | Specifies if the user is a Domain or Local user                 |
+| Identity           | System.Security.Principal.WindowsIdentity | Returns the WindowsIdentity which can be used for Impersonation |
+| AuthenticationType | string                                    | Value is fixed to LDAP                                          |
+| DistinguishedName  | string                                    | The distinguished name of the user                              |
+| Username           | string                                    | The user's username (without domain)                            |
+| Name               | string                                    | The user's fullname                                             |
+| Email              | string                                    | The user's email address                                        |
+| FQDN               | string                                    | The FQDN of the AD server                                       |
+| Domain             | string                                    | The domain part of the user's username                          |
+| Groups             | string[]                                  | All groups of which the the user is a member                    |
 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
@@ -337,7 +349,7 @@ Add-PodeAuthIIS -Name 'IISAuth' -ScriptBlock {
 
 ## IIS Advanced Kerberos
 
-Kerberos Authentication can be configured using Active Directory account and 
+Kerberos Authentication can be configured using Active Directory account and
 Group Managed Service Account (gMSA)
 
 gMSA allows automatic password management, if you have more than 1 IIS server running Pode better to use gMSA for IIS AppPool Identity
@@ -423,7 +435,7 @@ Start-PodeServer -StatusPageExceptions Show {
 ### Configuration steps for _Domain Account_:
 
 1. Create Domain Users in AD for Pode AppPool - **Pode.Svc**
-1. Create SPNs: 
+1. Create SPNs:
     ``` cmd
     setspn -d HTTP/PodeServer Contoso\pode.svc
     setspn -d HTTP/PodeServer.Contoso.com Contoso\pode.svc
@@ -431,9 +443,9 @@ Start-PodeServer -StatusPageExceptions Show {
 1. Configure **Pode.Svc** user Delegation - _Trust this user for delegation ..._
 1. Configure Pode Website to use **PodeServer.Contoso.com** as **Host Name**
 1. Configure Pode Website AppPool to use _Contoso\pode.svc_ as **Identity**
-1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder 
+1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder
 1. _**!!! Important !!!**_ Add PTR DNS record _PodeServer.Contoso.com_ pointing to Load Balancer IP. If you have only one server and want to test, replace PTR record for _iis1.Contoso.com_ to _PodeServer.Contoso.com_
-1. Open URLs: 
+1. Open URLs:
     - https://PodeServer.Contoso.com/
     - https://PodeServer.Contoso.com/test-kerberos
     - https://PodeServer.Contoso.com/test-kerberos-impersonation
@@ -462,7 +474,7 @@ Start-PodeServer -StatusPageExceptions Show {
     # Reboot IIS servers to update hosts group membership!
     Restart-Computer -ComputerName "iis1","iis2" -force
     ```
-1. _**!!! Important !!!**_ Both IIS Servers must be rebooted to update Group Membership 
+1. _**!!! Important !!!**_ Both IIS Servers must be rebooted to update Group Membership
 1. On both IIS Servers:
     ``` PowerShell
     Add-WindowsFeature RSAT-AD-PowerShell
@@ -472,16 +484,16 @@ Start-PodeServer -StatusPageExceptions Show {
     ```
 1. Configure Pode Website to use **PodeServer.Contoso.com** as **Host Name**
 1. Configure Pode Website AppPool to use _Contoso\gmsaPodeSvc$_ as **Identity**
-1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder 
+1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder
 1. _**!!! Important !!!**_ Add PTR DNS record _PodeServer.Contoso.com_ pointing to Load Balancer IP. If you have only one server and want to test, replace PTR record for _iis1.Contoso.com_ to _PodeServer.Contoso.com_
-1. Open URLs: 
+1. Open URLs:
     - https://PodeServer.Contoso.com/
     - https://PodeServer.Contoso.com/test-kerberos
     - https://PodeServer.Contoso.com/test-kerberos-impersonation
 
 ### Kerberos Impersonate
 
-Pode can impersonate the user that requests the web page using Kerberos Constrained Delegation (KCD). 
+Pode can impersonate the user that requests the web page using Kerberos Constrained Delegation (KCD).
 
 Requirements:
 
@@ -497,13 +509,27 @@ This can be done using the following example:
 })
 ```
 
+## IIS Client IP
+
+If you're using Pode's Access or Rate limiting rules, or you just need the Client IP address of the request, then it's worth noting that the Remote Address will always be `localhost` - as IIS forwards the request to Pode running behind-the-scenes.
+
+You can get the originating client IP from the `X-Forwarded-For` header, which IIS does add to the request by default.
+
+For example, if you want to block requests from a certain subnet:
+
+```powershell
+Add-PodeLimitAccessRule -Name 'Example' -Action Deny -Component @(
+    New-PodeLimitIPComponent -IP '10.0.1.0/16' -Location 'XForwardedFor'
+)
+```
+
 ## Azure Web Apps
 
 To host your Pode server under IIS using Azure Web Apps, ensure the OS type is Windows and the framework is .NET Core 2.1/3.0.
 
 Your web.config's `processPath` will also need to reference `powershell.exe` not `pwsh.exe`.
 
-Pode can auto-detect if you're using an Azure Web App, but if you're having issues trying setting the `-DisableTermination` and `-Quiet` switches on your [`Start-PodeServer`](../../Functions/Core/Start-PodeServer).
+Pode can auto-detect if you're using an Azure Web App, but if you're having issues trying setting the `-Daemon` switches on your [`Start-PodeServer`](../../Functions/Core/Start-PodeServer).
 
 ## Useful Links
 

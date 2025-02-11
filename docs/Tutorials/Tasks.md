@@ -16,7 +16,7 @@ Add-PodeTask -Name 'Example' -ScriptBlock {
 }
 ```
 
-A task's scriptblock can also return values, that can be retrieved later on (see [Invoking](#Invoking)):
+A task's scriptblock can also return values, that can be retrieved later on (see [Invoking](#invoking)):
 
 ```powershell
 Add-PodeTask -Name 'Example' -ScriptBlock {
@@ -51,7 +51,7 @@ Add-PodeTask -Name 'Example' -ArgumentList @{ Name = 'Rick'; Environment = 'Mult
 }
 ```
 
-Tasks parameters **must** be bound in the param block in order to be used, but the values for the paramters can be set through the `-ArgumentList` hashtable parameter in either the Add-PodeTask definition or when invoking the task. The following snippet would populate the parameters to the task with the same values as the above example but the `-ArgumentList` parameter is populated during invocation. Note that Keys in the `-ArgumentList` hashtable parameter set during invocation override the same Keys set during task creation:
+Tasks parameters **must** be bound in the param block in order to be used, but the values for the parameters can be set through the `-ArgumentList` hashtable parameter in either the Add-PodeTask definition or when invoking the task. The following snippet would populate the parameters to the task with the same values as the above example but the `-ArgumentList` parameter is populated during invocation. Note that Keys in the `-ArgumentList` hashtable parameter set during invocation override the same Keys set during task creation:
 
 ```powershell
 Add-PodeTask -Name 'Example' -ScriptBlock {
@@ -72,7 +72,7 @@ You can invoke a task to run from anywhere, be it a route, schedule, middleware,
 
 ### Asynchronously
 
-When you use [`Invoke-PodeTask`](../../Functions/Tasks/Invoke-PodeTask) with just the name of the task, this will trigger a task to run asynchrounsly by default:
+When you use [`Invoke-PodeTask`](../../Functions/Tasks/Invoke-PodeTask) with just the name of the task, this will trigger a task to run asynchronously by default:
 
 ```powershell
 $task = Invoke-PodeTask -Name 'Example'
@@ -147,8 +147,51 @@ or, to cleverly clean-up early if the task has finished you can use [`Test-PodeT
 ```powershell
 $task = Invoke-PodeTask -Name 'Example'
 
-if (Test-PodeTaskCompleted -Task $task) {
+if (Test-PodeTaskCompleted -Process $task) {
     $task | Close-PodeTask
+}
+```
+
+### Retrying
+
+By default, when a Task process fails Pode will not retry it, and it will be cleaned-up automatically.
+
+However, there are settings that will allow failed Task processes to be retried. The first thing you'll need to do it set `-MaxRetries` on [`Add-PodeTask`](../../Functions/Tasks/Add-PodeTask) - by default this is 0, which prevents the retrying of failed processes.
+
+You then have two choices, auto- or manual retrying.
+
+#### Automatic
+
+To automatically have Pode retry a failed Task process, simply pass `-AutoRetry` to [`Add-PodeTask`](../../Functions/Tasks/Add-PodeTask). Pode will retry the process until either it succeeds, or it hits the max retry counter.
+
+You can also specify a custom delay period; by default Pode will simply retry the process almost immediately (~20secs), but you can specify a custom `-RetryDelay` in minutes.
+
+```powershell
+# auto-retry up to 3 times, at approx. 1 minute intervals
+Add-PodeTask -Name 'Example' -MaxRetries 3 -RetryDelay 1 -AutoRetry -ScriptBlock {
+    # do some work
+    return $user
+}
+```
+
+#### Manual
+
+To manually retry a failed Task process you can use [`Restart-PodeTaskProcess`](../../Functions/Tasks/Restart-PodeTaskProcess) - supplying the failed Task process, which can be retrieved from either [`Invoke-PodeTask`](../../Functions/Tasks/Invoke-PodeTask), [`Get-PodeTaskProcess`](../../Functions/Tasks/Get-PodeTaskProcess), or [`Restart-PodeTaskProcess`](../../Functions/Tasks/Restart-PodeTaskProcess) itself.
+
+You can only restart failed processes, and retrying a process does increment and respect the `-MaxRetries` on `Add-PodeTask`.
+
+```powershell
+# allow the task to be retried up to 3 times
+Add-PodeTask -Name 'Example' -MaxRetries 3 -ScriptBlock {
+    # do some work
+    return $user
+}
+
+# route to get failed processes, and retry them
+Add-PodeRoute -Method Get -Path '/retry-tasks' -ScriptBlock {
+    Get-PodeTaskProcess -State Failed | Foreach-Object {
+        Restart-PodeTaskProcess -Process $_
+    }
 }
 ```
 
@@ -159,6 +202,7 @@ You normally define a task's script using the `-ScriptBlock` parameter however, 
 For example, to create a task from a file that will output `Hello, world`:
 
 * File.ps1
+
 ```powershell
 {
     'Hello, world!' | Out-PodeHost
@@ -166,6 +210,7 @@ For example, to create a task from a file that will output `Hello, world`:
 ```
 
 * Task
+
 ```powershell
 Add-PodeTask -Name 'from-file' -FilePath './Tasks/File.ps1'
 ```
