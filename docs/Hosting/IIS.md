@@ -509,6 +509,20 @@ This can be done using the following example:
 })
 ```
 
+## IIS Client IP
+
+If you're using Pode's Access or Rate limiting rules, or you just need the Client IP address of the request, then it's worth noting that the Remote Address will always be `localhost` - as IIS forwards the request to Pode running behind-the-scenes.
+
+You can get the originating client IP from the `X-Forwarded-For` header, which IIS does add to the request by default.
+
+For example, if you want to block requests from a certain subnet:
+
+```powershell
+Add-PodeLimitAccessRule -Name 'Example' -Action Deny -Component @(
+    New-PodeLimitIPComponent -IP '10.0.1.0/16' -Location 'XForwardedFor'
+)
+```
+
 ## Azure Web Apps
 
 To host your Pode server under IIS using Azure Web Apps, ensure the OS type is Windows and the framework is .NET Core 2.1/3.0.
