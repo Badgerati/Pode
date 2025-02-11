@@ -49,6 +49,10 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
+    # Add-PodeLimitAccessRule -Name 'DenyLocal' -Action Deny -Component @(
+    #     New-PodeLimitIPComponent -IP localhost -Location XForwardedFor
+    # )
+
     Add-PodeTask -Name 'Test' -ScriptBlock {
         Start-Sleep -Seconds 10
         'a message is never late, it arrives exactly when it means to' | Out-Default
@@ -56,7 +60,6 @@ Start-PodeServer {
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Message = 'Hello' }
-        $WebEvent.Request | out-default
     }
 
     Add-PodeRoute -Method Get -Path '/run-task' -ScriptBlock {
