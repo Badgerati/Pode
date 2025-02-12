@@ -9,25 +9,60 @@ function Start-PodeTaskHousekeeper {
 
     Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval $PodeContext.Tasks.HouseKeeping.TimerInterval -ScriptBlock {
         try {
+            # return if no task processes
             if ($PodeContext.Tasks.Processes.Count -eq 0) {
                 return
             }
         $RetentionMinutes = $PodeContext.Tasks.HouseKeeping.RetentionMinutes
             $now = [datetime]::UtcNow
 
+            # loop through each process
             foreach ($key in $PodeContext.Tasks.Processes.Keys.Clone()) {
                 try {
+                    # get the process and the task
                     $process = $PodeContext.Tasks.Processes[$key]
+                    $task = $PodeContext.Tasks.Items[$process.Task]
 
-                    # has it completed or expire? then dispose and remove
-                    if ((($null -ne $process.CompletedTime) -and ($process.CompletedTime.AddMinutes($RetentionMinutes) -lt $now)) -or ($process.ExpireTime -lt $now)) {
+                    # if completed, and no completed time set, then set one and continue
+                    if ($process.Runspace.Handler.IsCompleted -and ($null -eq $process.CompletedTime)) {
+                        $process.CompletedTime = $now
+                        $process.State = 'Completed'
+                        continue
+                    }
+
+                    # if the process is completed, then close and remove
+                    if (($process.State -ieq 'Completed') -and ($process.CompletedTime.AddMinutes(1) -lt $now)) {
                         Close-PodeTaskInternal -Process $process
                         continue
                     }
 
-                    # if completed, and no completed time, set it
-                    if ($process.Runspace.Handler.IsCompleted -and ($null -eq $process.CompletedTime)) {
-                        $process.CompletedTime = $now
+                    # has the process failed?
+                    if ($process.State -ieq 'Failed') {
+                        # if we have hit the max retries, then close and remove
+                        if ($process.Retry.Count -ge $task.Retry.Max) {
+                            Close-PodeTaskInternal -Process $process
+                            continue
+                        }
+
+                        # if we aren't auto-retrying, then continue
+                        if (!$task.Retry.AutoRetry) {
+                            continue
+                        }
+
+                        # if the retry delay hasn't passed, then continue
+                        if (($null -eq $process.Retry.From) -or ($process.Retry.From -gt $now)) {
+                            continue
+                        }
+
+                        # restart the process
+                        Restart-PodeTaskInternal -ProcessId $process.ID
+                        continue
+                    }
+
+                    # if the process is running, and the expire time has passed, then close and remove
+                    if ($process.ExpireTime -lt $now) {
+                        Close-PodeTaskInternal -Process $process
+                        continue
                     }
                 }
                 catch {
@@ -47,19 +82,28 @@ function Close-PodeTaskInternal {
     param(
         [Parameter()]
         [hashtable]
-        $Process
+        $Process,
+
+        [switch]
+        $Keep
     )
 
+    # return if no process
     if ($null -eq $Process) {
         return
     }
 
+    # close the runspace
     Close-PodeDisposable -Disposable $Process.Runspace.Pipeline
     Close-PodeDisposable -Disposable $Process.Result
-    $null = $PodeContext.Tasks.Processes.Remove($Process.ID)
+
+    # remove the process
+    if (!$Keep) {
+        $null = $PodeContext.Tasks.Processes.Remove($Process.ID)
+    }
 }
 
-function Invoke-PodeInternalTask {
+function Invoke-PodeTaskInternal {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]
@@ -111,15 +155,21 @@ function Invoke-PodeInternalTask {
         $PodeContext.Tasks.Processes[$processId] = @{
             ID            = $processId
             Task          = $Task.Name
+            Parameters    = $parameters
             Runspace      = $null
             Result        = $result
             CreateTime    = $createTime
             StartTime     = $null
             CompletedTime = $null
             ExpireTime    = $expireTime
+            Exception     = $null
             Timeout       = @{
                 Value = $Timeout
                 From  = $TimeoutFrom
+            }
+            Retry         = @{
+                Count = 0
+                From  = $null
             }
             State         = 'Pending'
         }
@@ -133,6 +183,69 @@ function Invoke-PodeInternalTask {
 
         # return the task process
         return $PodeContext.Tasks.Processes[$processId]
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+    }
+}
+
+function Restart-PodeTaskInternal {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ProcessId
+    )
+
+    try {
+        # get the process, and return if not found or not failed
+        $process = $PodeContext.Tasks.Processes[$ProcessId]
+        if (($null -eq $process) -or ($process.State -ine 'Failed')) {
+            return
+        }
+
+        # get the task
+        $task = $PodeContext.Tasks.Items[$process.Task]
+
+        # dispose of the old runspace
+        Close-PodeTaskInternal -Process $process -Keep
+
+        # return if we have hit the max retries
+        if ($process.Retry.Count -ge $task.Retry.Max) {
+            return
+        }
+
+        # what is the expire time if using "create" timeout?
+        $expireTime = [datetime]::MaxValue
+        $createTime = [datetime]::UtcNow
+
+        if (($process.Timeout.From -ieq 'Create') -and ($process.Timeout.Value -ge 0)) {
+            $expireTime = $createTime.AddSeconds($process.Timeout.Value)
+        }
+
+        $process.CreateTime = $createTime
+        $process.ExpireTime = $expireTime
+        $process.StartTime = $null
+        $process.CompletedTime = $null
+
+        # reset the process result
+        $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
+        $process.Result = $result
+
+        # reset the process state
+        $process.State = 'Pending'
+        $process.Exception = $null
+        $process.Retry.Count++
+        $process.Retry.From = $null
+
+        # start the task runspace
+        $scriptblock = Get-PodeTaskScriptBlock
+        $runspace = Add-PodeRunspace -Type Tasks -Name $process.Task -ScriptBlock $scriptblock -Parameters $process.Parameters -OutputStream $result -PassThru
+
+        # add runspace to process
+        $process.Runspace = $runspace
+
+        # return the task process
+        return $process
     }
     catch {
         $_ | Write-PodeErrorLog
@@ -171,6 +284,7 @@ function Get-PodeTaskScriptBlock {
                 Lockable  = $PodeContext.Threading.Lockables.Global
                 Sender    = $task
                 Timestamp = [DateTime]::UtcNow
+                Count     = $process.Retry.Count
                 Metadata  = @{}
             }
 
@@ -205,19 +319,23 @@ function Get-PodeTaskScriptBlock {
             # update the state
             if ($null -ne $process) {
                 $process.State = 'Failed'
+                $process.ExpireTime = $null
+                $process.Retry.From = [datetime]::UtcNow.AddMinutes($task.Retry.Delay)
+                $process.Exception = $_
             }
 
             # log the error
             $_ | Write-PodeErrorLog
         }
         finally {
+            $process.CompletedTime = [datetime]::UtcNow
             Reset-PodeRunspaceName
             Invoke-PodeGC
         }
     }
 }
 
-function Wait-PodeNetTaskInternal {
+function Wait-PodeTaskNetInternal {
     [CmdletBinding()]
     [OutputType([object])]
     param(
@@ -252,7 +370,7 @@ function Wait-PodeNetTaskInternal {
         $checkTask.Wait($PodeContext.Tokens.Cancellation.Token)
     }
 
-    # if the main task isnt complete, it timed out
+    # if the main task isn't complete, it timed out
     if (($null -ne $timeoutTask) -and (!$Task.IsCompleted)) {
         # "Task has timed out after $($Timeout)ms")
         throw [System.TimeoutException]::new($PodeLocale.taskTimedOutExceptionMessage -f $Timeout)
@@ -264,13 +382,13 @@ function Wait-PodeNetTaskInternal {
     }
 }
 
-function Wait-PodeTaskInternal {
+function Wait-PodeTaskProcessInternal {
     [CmdletBinding()]
     [OutputType([object])]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]
-        $Task,
+        $Process,
 
         [Parameter()]
         [int]
@@ -283,13 +401,13 @@ function Wait-PodeTaskInternal {
     }
 
     # wait for the pipeline to finish processing
-    $null = $Task.Runspace.Handler.AsyncWaitHandle.WaitOne($Timeout)
+    $null = $Process.Runspace.Handler.AsyncWaitHandle.WaitOne($Timeout)
 
     # get the current result
-    $result = $Task.Result.ReadAll()
+    $result = $Process.Result.ReadAll()
 
     # close the task
-    Close-PodeTask -Task $Task
+    Close-PodeTask -Process $Process
 
     # only return a value if the result has one
     if (($null -ne $result) -and ($result.Count -gt 0)) {
