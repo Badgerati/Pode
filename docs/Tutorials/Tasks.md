@@ -147,8 +147,51 @@ or, to cleverly clean-up early if the task has finished you can use [`Test-PodeT
 ```powershell
 $task = Invoke-PodeTask -Name 'Example'
 
-if (Test-PodeTaskCompleted -Task $task) {
+if (Test-PodeTaskCompleted -Process $task) {
     $task | Close-PodeTask
+}
+```
+
+### Retrying
+
+By default, when a Task process fails Pode will not retry it, and it will be cleaned-up automatically.
+
+However, there are settings that will allow failed Task processes to be retried. The first thing you'll need to do it set `-MaxRetries` on [`Add-PodeTask`](../../Functions/Tasks/Add-PodeTask) - by default this is 0, which prevents the retrying of failed processes.
+
+You then have two choices, auto- or manual retrying.
+
+#### Automatic
+
+To automatically have Pode retry a failed Task process, simply pass `-AutoRetry` to [`Add-PodeTask`](../../Functions/Tasks/Add-PodeTask). Pode will retry the process until either it succeeds, or it hits the max retry counter.
+
+You can also specify a custom delay period; by default Pode will simply retry the process almost immediately (~20secs), but you can specify a custom `-RetryDelay` in minutes.
+
+```powershell
+# auto-retry up to 3 times, at approx. 1 minute intervals
+Add-PodeTask -Name 'Example' -MaxRetries 3 -RetryDelay 1 -AutoRetry -ScriptBlock {
+    # do some work
+    return $user
+}
+```
+
+#### Manual
+
+To manually retry a failed Task process you can use [`Restart-PodeTaskProcess`](../../Functions/Tasks/Restart-PodeTaskProcess) - supplying the failed Task process, which can be retrieved from either [`Invoke-PodeTask`](../../Functions/Tasks/Invoke-PodeTask), [`Get-PodeTaskProcess`](../../Functions/Tasks/Get-PodeTaskProcess), or [`Restart-PodeTaskProcess`](../../Functions/Tasks/Restart-PodeTaskProcess) itself.
+
+You can only restart failed processes, and retrying a process does increment and respect the `-MaxRetries` on `Add-PodeTask`.
+
+```powershell
+# allow the task to be retried up to 3 times
+Add-PodeTask -Name 'Example' -MaxRetries 3 -ScriptBlock {
+    # do some work
+    return $user
+}
+
+# route to get failed processes, and retry them
+Add-PodeRoute -Method Get -Path '/retry-tasks' -ScriptBlock {
+    Get-PodeTaskProcess -State Failed | Foreach-Object {
+        Restart-PodeTaskProcess -Process $_
+    }
 }
 ```
 

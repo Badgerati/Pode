@@ -38,6 +38,22 @@ New-PodeLimitIPComponent -IP '10.0.1.0/16'
 New-PodeLimitIPComponent -IP '10.0.1.0/16' -Group
 ```
 
+By default, Pode will retrieve the IP address for the request from the Remote Address of the connecting socket. If you're using a proxy - such as a WAF, Load Balancer, or even IIS, then you can instead use the IP from the `X-Forwarded-For` header. The default IP used from the header will be the leftmost IP (typically the originating client IP), but you can also use either the rightmost IP (typically the IP of the last proxy), or all IPs.
+
+```powershell
+# use the leftmost IP in the X-Forwarded-For header
+New-PodeLimitIPComponent -IP '10.0.0.92' -Location 'XForwardedFor'
+
+# use the rightmost IP in the X-Forwarded-For header
+New-PodeLimitIPComponent -IP '10.0.0.92' -Location 'XForwardedFor' -XForwardedForType 'Rightmost'
+
+# check all of the IPs in the X-Forwarded-For header
+New-PodeLimitIPComponent -IP '10.0.0.92' -Location 'XForwardedFor' -XForwardedForType 'All'
+```
+
+!!! note
+    When using `-XForwardedForType 'All'`, at least 1 of the IPs must match an IP from the `-IP` parameter.
+
 ## Route
 
 A Route Component can be created via [`New-PodeLimitRouteComponent`](../../../../../Functions/Limit/New-PodeLimitRouteComponent). You can specify none, one, or more Route paths - if none are supplied, then the component will match every Route path. You can also use wildcard/regex to match multiple Routes.
