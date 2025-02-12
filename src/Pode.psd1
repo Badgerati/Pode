@@ -216,8 +216,10 @@
         'Use-PodeTasks',
         'Close-PodeTask',
         'Test-PodeTaskCompleted',
+        'Test-PodeTaskFailed',
         'Wait-PodeTask',
         'Get-PodeTaskProcess',
+        'Restart-PodeTaskProcess',
 
         # middleware
         'Add-PodeMiddleware',
