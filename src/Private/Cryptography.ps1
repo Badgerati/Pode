@@ -856,11 +856,13 @@ function Get-PodeJwtSigningAlgorithm {
         [ValidateSet('Pkcs1V15', 'Pss')]
         [string]$RsaPaddingScheme = 'Pkcs1V15'  # Default to PKCS#1 v1.5 unless specified
     )
-
-    # Convert SecureString to plain text
-    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($PrivateKey)
-    $privateKeyContent = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-
+    #if (Test-PodeIsPSCore) {
+  #      $privateKeyContent = ConvertFrom-SecureString $PrivateKey -AsPlainTex
+   # }
+   # else {
+        # Convert SecureString to plain text
+        $privateKeyContent =  [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($PrivateKey))
+  #  }
     if ($privateKeyContent -match 'BEGIN RSA PRIVATE KEY|BEGIN PRIVATE KEY') {
         # RSA Algorithm Detected
 
