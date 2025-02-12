@@ -174,7 +174,7 @@ function Get-PodeHostIPRegex {
         $Type
     )
 
-    $ip_rgx = '\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|((\d+\.){3}\d+)|\*|all'
+    $ip_rgx = '\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|(((\d{1,2}|1\d{1,2}|2[0-5][0-5])\.){3}(\d{1,2}|1\d{1,2}|2[0-5][0-5]))(\/(\d|[1-2][0-9]|3[0-2]))?|\*|all'
     $host_rgx = '([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
 
     switch ($Type.ToLowerInvariant()) {
@@ -215,7 +215,11 @@ function Get-PodeEndpointInfo {
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
     # validate that we have a valid ip/host:port address
-    if (!(($Address -imatch "^$($cmbdRgx)$") -or ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or ($Address -imatch "[\:]{0,1}$($portRgx)$"))) {
+    if (!(
+        ($Address -imatch "^$($cmbdRgx)$") -or
+        ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or
+        (!$Address.Contains('.') -and $Address -imatch "[\:]{0,1}$($portRgx)$")
+        )) {
         throw ($PodeLocale.failedToParseAddressExceptionMessage -f $Address)#"Failed to parse '$($Address)' as a valid IP/Host:Port address"
     }
 
@@ -255,17 +259,33 @@ function Test-PodeIPAddress {
         $IP,
 
         [switch]
-        $IPOnly
+        $IPOnly,
+
+        [switch]
+        $FailOnEmpty
     )
 
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
+    # fail on empty
+    if ([string]::IsNullOrWhiteSpace($IP)) {
+        return !$FailOnEmpty.IsPresent
+    }
+
+    # all empty, or */all
+    if ($IP -iin @('*', 'all')) {
         return $true
     }
 
+    # are we allowing hostnames?
     if ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$") {
-        return (!$IPOnly)
+        return !$IPOnly.IsPresent
     }
 
+    # check if the IP matches regex
+    if ($IP -imatch "^$(Get-PodeHostIPRegex -Type IP)$") {
+        return $true
+    }
+
+    # if we get here, try parsing with [IPAddress] as a last resort
     try {
         $null = [System.Net.IPAddress]::Parse($IP)
         return $true
@@ -413,11 +433,28 @@ function Get-PodeIPAddress {
         $IP,
 
         [switch]
-        $DualMode
+        $DualMode,
+
+        [switch]
+        $ContainsPort
     )
 
+    # if we have a port, remove it
+    if ($ContainsPort) {
+        $ipRegex = Get-PodeHostIPRegex -Type IP
+        $portRegex = Get-PodePortRegex
+        $regex = "^$($ipRegex)(\:$($portRegex))?$"
+
+        if ($IP -imatch $regex) {
+            $IP = $Matches['host']
+        }
+        else {
+            $IP = ($IP -split ':')[0]
+        }
+    }
+
     # any address for IPv4 (or IPv6 for DualMode)
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
+    if ([string]::IsNullOrEmpty($IP) -or ($IP -iin @('*', 'all'))) {
         if ($DualMode) {
             return [System.Net.IPAddress]::IPv6Any
         }
@@ -449,26 +486,25 @@ function Get-PodeIPAddress {
     return [System.Net.IPAddress]::Parse($IP)
 }
 
-function Test-PodeIPAddressInRange {
+function Test-PodeIPAddressInSubnet {
     param(
         [Parameter(Mandatory = $true)]
+        [byte[]]
         $IP,
 
         [Parameter(Mandatory = $true)]
-        $LowerIP,
+        [byte[]]
+        $Lower,
 
         [Parameter(Mandatory = $true)]
-        $UpperIP
+        [byte[]]
+        $Upper
     )
-
-    if ($IP.Family -ine $LowerIP.Family) {
-        return $false
-    }
 
     $valid = $true
 
     foreach ($i in 0..3) {
-        if (($IP.Bytes[$i] -lt $LowerIP.Bytes[$i]) -or ($IP.Bytes[$i] -gt $UpperIP.Bytes[$i])) {
+        if (($IP[$i] -lt $Lower[$i]) -or ($IP[$i] -gt $Upper[$i])) {
             $valid = $false
             break
         }
@@ -543,11 +579,11 @@ function Get-PodeSubnetRange {
         })
 
     return @{
-        'Lower'   = ($bottom -join '.')
-        'Upper'   = ($top -join '.')
-        'Range'   = ($range -join '.')
-        'Netmask' = ($network -join '.')
-        'IP'      = ($ip_parts -join '.')
+        Lower   = ($bottom -join '.')
+        Upper   = ($top -join '.')
+        Range   = ($range -join '.')
+        Netmask = ($network -join '.')
+        IP      = ($ip_parts -join '.')
     }
 }
 
