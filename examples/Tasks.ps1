@@ -56,6 +56,14 @@ Start-PodeServer {
         "a $($value) is never late, it arrives exactly when it means to" | Out-Default
     }
 
+    Add-PodeTask -Name 'Intermittent' -MaxRetries 3 -AutoRetry -ScriptBlock {
+        if ($TaskEvent.Count -lt 2) {
+            throw "this task is intermittent (attempt $($TaskEvent.Count))"
+        }
+
+        'task completed' | Out-Default
+    }
+
     # create a new timer via a route
     Add-PodeRoute -Method Get -Path '/api/task/sync' -ScriptBlock {
         $result = Invoke-PodeTask -Name 'Test1' -Wait
@@ -73,4 +81,7 @@ Start-PodeServer {
         Write-PodeJsonResponse -Value @{ Result = 'jobs done' }
     }
 
+    Add-PodeRoute -Method Get -Path '/api/task/intermittent' -ScriptBlock {
+        Invoke-PodeTask -Name 'Intermittent'
+    }
 }
