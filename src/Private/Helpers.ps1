@@ -433,11 +433,28 @@ function Get-PodeIPAddress {
         $IP,
 
         [switch]
-        $DualMode
+        $DualMode,
+
+        [switch]
+        $ContainsPort
     )
 
+    # if we have a port, remove it
+    if ($ContainsPort) {
+        $ipRegex = Get-PodeHostIPRegex -Type IP
+        $portRegex = Get-PodePortRegex
+        $regex = "^$($ipRegex)(\:$($portRegex))?$"
+
+        if ($IP -imatch $regex) {
+            $IP = $Matches['host']
+        }
+        else {
+            $IP = ($IP -split ':')[0]
+        }
+    }
+
     # any address for IPv4 (or IPv6 for DualMode)
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
+    if ([string]::IsNullOrEmpty($IP) -or ($IP -iin @('*', 'all'))) {
         if ($DualMode) {
             return [System.Net.IPAddress]::IPv6Any
         }
