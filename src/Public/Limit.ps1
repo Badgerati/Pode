@@ -652,6 +652,15 @@ Creates a new Limit IP component. This supports the WebEvent, SmtpEvent, and Tcp
 .PARAMETER IP
 The IP address(es) to check. Supports raw IPs, subnets, local, and any.
 
+.PARAMETER Location
+Where to get the IP from: RemoteAddress or XForwardedFor. (Default: RemoteAddress)
+
+.PARAMETER XForwardedForType
+If the Location is XForwardedFor, which IP in the X-Forwarded-For header to use: Leftmost, Rightmost, or All. (Default: Leftmost)
+If Leftmost, the first IP in the X-Forwarded-For header will be used.
+If Rightmost, the last IP in the X-Forwarded-For header will be used.
+If All, all IPs in the X-Forwarded-For header will be used - at least one must match.
+
 .PARAMETER Group
 If supplied, IPs in a subnet will be treated as a single entity.
 
@@ -673,6 +682,12 @@ New-PodeLimitIPComponent -IP 'all'
 .EXAMPLE
 New-PodeLimitIPComponent -IP '192.0.1.0/16' -Group
 
+.EXAMPLE
+New-PodeLimitIPComponent -IP '10.0.0.1' -Location XForwardedFor
+
+.EXAMPLE
+New-PodeLimitIPComponent -IP '192.0.1.0/16' -Group -Location XForwardedFor -XForwardedForType Rightmost
+
 .OUTPUTS
 A hashtable containing the options and scriptblock for the IP component.
 The scriptblock will return the IP - or subnet for grouped - if found, or null if not.
@@ -684,6 +699,16 @@ function New-PodeLimitIPComponent {
         [Parameter()]
         [string[]]
         $IP,
+
+        [Parameter()]
+        [ValidateSet('RemoteAddress', 'XForwardedFor')]
+        [string]
+        $Location = 'RemoteAddress',
+
+        [Parameter()]
+        [ValidateSet('Leftmost', 'Rightmost', 'All')]
+        [string]
+        $XForwardedForType = 'Leftmost',
 
         [switch]
         $Group
@@ -741,77 +766,110 @@ function New-PodeLimitIPComponent {
     # pass back the IP component
     return @{
         Options     = @{
-            IP    = $ipDetails
-            Group = $Group.IsPresent
+            IP                = $ipDetails
+            Location          = $Location.ToLowerInvariant()
+            XForwardedForType = $XForwardedForType.ToLowerInvariant()
+            Group             = $Group.IsPresent
         }
         ScriptBlock = {
             param($options)
 
             # current request ip - for webevent, smtpevent, or tcpevent
-            $ip = $null
+            # for webevent, we can get the ip from the remote address or x-forwarded-for
+            $ipAddresses = $null
+
             if ($WebEvent) {
-                $ip = $WebEvent.Request.RemoteEndPoint.Address
+                switch ($options.Location) {
+                    'remoteaddress' {
+                        $ipAddresses = @($WebEvent.Request.RemoteEndPoint.Address)
+                    }
+                    'xforwardedfor' {
+                        $xForwardedFor = $WebEvent.Request.Headers['X-Forwarded-For']
+                        if ([string]::IsNullOrEmpty($xForwardedFor)) {
+                            return $null
+                        }
+
+                        $xffIps = $xForwardedFor.Split(',')
+                        switch ($options.XForwardedForType) {
+                            'leftmost' {
+                                $ipAddresses = @(Get-PodeIPAddress -IP $xffIps[0].Trim() -ContainsPort)
+                            }
+                            'rightmost' {
+                                $ipAddresses = @(Get-PodeIPAddress -IP $xffIps[-1].Trim() -ContainsPort)
+                            }
+                            'all' {
+                                $ipAddresses = @(foreach ($ip in $xffIps) { Get-PodeIPAddress -IP $ip.Trim() -ContainsPort })
+                            }
+                        }
+                    }
+                }
             }
             elseif ($SmtpEvent) {
-                $ip = $SmtpEvent.Request.RemoteEndPoint.Address
+                $ipAddresses = @($SmtpEvent.Request.RemoteEndPoint.Address)
             }
             elseif ($TcpEvent) {
-                $ip = $TcpEvent.Request.RemoteEndPoint.Address
+                $ipAddresses = @($TcpEvent.Request.RemoteEndPoint.Address)
             }
 
-            if ($null -eq $ip) {
+            # if we have no ip addresses, then return null
+            if (($null -eq $ipAddresses) -or ($ipAddresses.Length -eq 0)) {
                 return $null
             }
 
-            $ipDetails = @{
-                Value  = $ip.IPAddressToString
-                Family = $ip.AddressFamily
-                Bytes  = $ip.GetAddressBytes()
-            }
+            # loop through each ip address
+            for ($i = $ipAddresses.Length - 1; $i -ge 0; $i--) {
+                $ip = $ipAddresses[$i]
 
-            # is the ip in the Raw list?
-            if ($options.IP.Raw.ContainsKey($ipDetails.Value)) {
-                return $ipDetails.Value
-            }
-
-            # is the ip in the Subnets list?
-            foreach ($subnet in $options.IP.Subnets.Keys) {
-                $subnetDetails = $options.IP.Subnets[$subnet]
-                if ($subnetDetails.Family -ne $ipDetails.Family) {
-                    continue
+                $ipDetails = @{
+                    Value  = $ip.IPAddressToString
+                    Family = $ip.AddressFamily
+                    Bytes  = $ip.GetAddressBytes()
                 }
 
-                # if the ip is in the subnet range, then return the subnet
-                if (Test-PodeIPAddressInSubnet -IP $ipDetails.Bytes -Lower $subnetDetails.Lower -Upper $subnetDetails.Upper) {
+                # is the ip in the Raw list?
+                if ($options.IP.Raw.ContainsKey($ipDetails.Value)) {
+                    return $ipDetails.Value
+                }
+
+                # is the ip in the Subnets list?
+                foreach ($subnet in $options.IP.Subnets.Keys) {
+                    $subnetDetails = $options.IP.Subnets[$subnet]
+                    if ($subnetDetails.Family -ne $ipDetails.Family) {
+                        continue
+                    }
+
+                    # if the ip is in the subnet range, then return the subnet
+                    if (Test-PodeIPAddressInSubnet -IP $ipDetails.Bytes -Lower $subnetDetails.Lower -Upper $subnetDetails.Upper) {
+                        if ($options.Group) {
+                            return $subnet
+                        }
+
+                        return $ipDetails.Value
+                    }
+                }
+
+                # is the ip local?
+                if ($options.IP.Local) {
+                    if ([System.Net.IPAddress]::IsLoopback($ip)) {
+                        if ($options.Group) {
+                            return 'local'
+                        }
+
+                        return $ipDetails.Value
+                    }
+                }
+
+                # is any allowed?
+                if ($options.IP.Any -and ($i -eq 0)) {
                     if ($options.Group) {
-                        return $subnet
+                        return '*'
                     }
 
                     return $ipDetails.Value
                 }
             }
 
-            # is the ip local?
-            if ($options.IP.Local) {
-                if ([System.Net.IPAddress]::IsLoopback($ip)) {
-                    if ($options.Group) {
-                        return 'local'
-                    }
-
-                    return $ipDetails.Value
-                }
-            }
-
-            # is any allowed?
-            if ($options.IP.Any) {
-                if ($options.Group) {
-                    return '*'
-                }
-
-                return $ipDetails.Value
-            }
-
-            # return null
+            # ip didn't match any rules
             return $null
         }
     }
