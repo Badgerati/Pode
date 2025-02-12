@@ -335,4 +335,7 @@
     jwtInvalidJtiExceptionMessage                                     = "JWT의 'jti' (JWT ID) 클레임이 잘못되었거나 누락되었습니다. 유효한 고유 식별자가 필요합니다."
     jwtAlgorithmMismatchExceptionMessage                              = 'JWT 알고리즘 불일치: 예상 {0}, 발견된 {1}.'
     jwtMissingJtiExceptionMessage                                     = "JWT에 필요한 'jti' (JWT ID) 클레임이 없습니다."
+    deprecatedFunctionWarningMessage                                  = "경고: 함수 '{0}'는 더 이상 지원되지 않으며 향후 버전에서 제거될 예정입니다. 대신 '{1}' 함수를 사용하십시오."
+    unknownAlgorithmOrInvalidPemExceptionMessage                      = '알 수 없는 알고리즘 또는 잘못된 PEM 형식입니다.'
+    unknownAlgorithmWithKeySizeExceptionMessage                       = '알 수 없는 {0} 알고리즘 (키 크기: {1} 비트).'
 }

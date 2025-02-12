@@ -24,9 +24,16 @@
   # Generate only RS256 and ES256 keys for examples
   .\New-JwtKeyPair.ps1 -Mode Example -Algorithm RS256,ES256
 
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/utilities/New-JwtKeyPair.ps1
+
 .NOTES
   - Keys are stored in the respective directories: "./tests/certs" or "./examples/certs"
   - Requires PowerShell 7+
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
 #>
 
 param (
@@ -36,6 +43,44 @@ param (
 
   [string[]]$Algorithm = @('ALL')
 )
+
+
+
+### Helper Functions for Key Export ###
+function Export-RsaPrivateKeyPem {
+  param (
+    [System.Security.Cryptography.RSA]$RsaKey
+  )
+  $pemHeader = '-----BEGIN RSA PRIVATE KEY-----'
+  $pemFooter = '-----END RSA PRIVATE KEY-----'
+  $base64 = [Convert]::ToBase64String($RsaKey.ExportRSAPrivateKey(), 'InsertLineBreaks')
+  return "$pemHeader`n$base64`n$pemFooter"
+}
+
+
+function Export-RsaPublicKeyPem {
+  param ([System.Security.Cryptography.RSA]$RsaKey)
+  $pemHeader = '-----BEGIN RSA PUBLIC KEY-----'
+  $pemFooter = '-----END RSA PUBLIC KEY-----'
+  $base64 = [Convert]::ToBase64String($RsaKey.ExportRSAPublicKey(), 'InsertLineBreaks')
+  return "$pemHeader`n$base64`n$pemFooter"
+}
+
+function Export-EcdsaPrivateKeyPem {
+  param ([System.Security.Cryptography.ECDsa]$EcdsaKey)
+  $pemHeader = '-----BEGIN EC PRIVATE KEY-----'
+  $pemFooter = '-----END EC PRIVATE KEY-----'
+  $base64 = [Convert]::ToBase64String($EcdsaKey.ExportECPrivateKey(), 'InsertLineBreaks')
+  return "$pemHeader`n$base64`n$pemFooter"
+}
+
+function Export-EcdsaPublicKeyPem {
+  param ([System.Security.Cryptography.ECDsa]$EcdsaKey)
+  $pemHeader = '-----BEGIN PUBLIC KEY-----'
+  $pemFooter = '-----END PUBLIC KEY-----'
+  $base64 = [Convert]::ToBase64String($EcdsaKey.ExportSubjectPublicKeyInfo(), 'InsertLineBreaks')
+  return "$pemHeader`n$base64`n$pemFooter"
+}
 
 # Determine output directory based on mode
 $RootPath = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -103,41 +148,3 @@ foreach ($alg in $algorithmsToGenerate) {
 }
 
 Write-Output "🎉 All requested keys generated successfully in: $BaseOutputDirectory"
-
-
-### Helper Functions for Key Export ###
-function Export-RsaPrivateKeyPem {
-  param (
-    [System.Security.Cryptography.RSA]$RsaKey,
-    [string]$Algorithm  # RS256, RS384, RS512
-  )
-  $pemHeader = '-----BEGIN RSA PRIVATE KEY-----'
-  $pemFooter = '-----END RSA PRIVATE KEY-----'
-  $base64 = [Convert]::ToBase64String($RsaKey.ExportPkcs8PrivateKey(), 'InsertLineBreaks')
-  return "$pemHeader`n$base64`n$pemFooter"
-}
-
-
-function Export-RsaPublicKeyPem {
-  param ([System.Security.Cryptography.RSA]$RsaKey)
-  $pemHeader = '-----BEGIN RSA PUBLIC KEY-----'
-  $pemFooter = '-----END RSA PUBLIC KEY-----'
-  $base64 = [Convert]::ToBase64String($RsaKey.ExportRSAPublicKey(), 'InsertLineBreaks')
-  return "$pemHeader`n$base64`n$pemFooter"
-}
-
-function Export-EcdsaPrivateKeyPem {
-  param ([System.Security.Cryptography.ECDsa]$EcdsaKey)
-  $pemHeader = '-----BEGIN EC PRIVATE KEY-----'
-  $pemFooter = '-----END EC PRIVATE KEY-----'
-  $base64 = [Convert]::ToBase64String($EcdsaKey.ExportECPrivateKey(), 'InsertLineBreaks')
-  return "$pemHeader`n$base64`n$pemFooter"
-}
-
-function Export-EcdsaPublicKeyPem {
-  param ([System.Security.Cryptography.ECDsa]$EcdsaKey)
-  $pemHeader = '-----BEGIN PUBLIC KEY-----'
-  $pemFooter = '-----END PUBLIC KEY-----'
-  $base64 = [Convert]::ToBase64String($EcdsaKey.ExportSubjectPublicKeyInfo(), 'InsertLineBreaks')
-  return "$pemHeader`n$base64`n$pemFooter"
-}

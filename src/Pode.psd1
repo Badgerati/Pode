@@ -268,6 +268,7 @@
         'Get-PodeAuthUser',
         'Add-PodeAuthSession',
         'New-PodeAuthBearerScheme',
+        'New-PodeAuthDigestScheme',
 
         # access
         'New-PodeAccessScheme',

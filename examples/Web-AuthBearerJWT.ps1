@@ -74,7 +74,7 @@
     $response = Invoke-RestMethod -Uri 'http://localhost:8081/users' -Method Get -Headers $headers
 
   .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/WebAuth-bearerJWT.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthbearerJWT.ps1
 
   .NOTES
     - This script uses Pode to create a lightweight web server with authentication.

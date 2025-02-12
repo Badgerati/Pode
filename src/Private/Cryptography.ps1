@@ -377,6 +377,11 @@ function New-PodeJwtSignature {
         # Expected no secret to be supplied for no signature
         throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
     }
+    if (($Algorithm -ieq 'none') -and ( $null -ne $PrivateKey)  ) {
+        # Expected no secret to be supplied for no signature
+        throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
+    }
+
     $valueBytes = [System.Text.Encoding]::UTF8.GetBytes($Token)
 
     switch ($Algorithm) {
@@ -867,9 +872,8 @@ function Get-PodeJwtSigningAlgorithm {
             2048 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS256' } else { return 'PS256' } }
             3072 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS384' } else { return 'PS384' } }
             4096 { if ($RsaPaddingScheme -eq 'Pkcs1V15') { return 'RS512' } else { return 'PS512' } }
-            default { throw "Unknown RSA Algorithm (Key Size: $($rsa.KeySize) bits)" }
+            default { throw ($PodeLocale.unknownAlgorithmWithKeySizeExceptionMessage -f 'RSA', $rsa.KeySize) }
         }
-
     }
     elseif ($privateKeyContent -match 'BEGIN EC PRIVATE KEY') {
         # ECDSA Algorithm Detected
@@ -881,11 +885,11 @@ function Get-PodeJwtSigningAlgorithm {
             256 { return 'ES256' }
             384 { return 'ES384' }
             521 { return 'ES512' }
-            default { throw "Unknown ECDSA Algorithm (Key Size: $($ecdsa.KeySize) bits)" }
+            default { throw ($PodeLocale.unknownAlgorithmWithKeySizeExceptionMessage -f $ecdsa.KeySize) }
         }
 
     }
     else {
-        throw 'Unknown Algorithm or Invalid PEM Format'
+        throw $PodeLocale.unknownAlgorithmOrInvalidPemExceptionMessage
     }
 }

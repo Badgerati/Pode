@@ -521,10 +521,10 @@ function Get-PodeAuthApiKeyType {
         # Convert to JWT if required
         if ($options.AsJWT) {
             try {
-                $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
-              #  $result = Confirm-PodeJwt -Token $apiKey -Secret $options.Secret -PublicKey $options.PublicKey -JwtVerificationMode $options.JwtVerificationMode -Algorithm $options.Algorithm
-              #  Test-PodeJwt -Payload $result -JwtVerificationMode $options.JwtVerificationMode
-                Test-PodeJwt -Payload $payload
+                #$payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret  -Algorithm $options.Algorithm
+                   $result = Confirm-PodeJwt -Token $apiKey -Secret $options.Secret   -Algorithm $options.Algorithm
+                #   Test-PodeJwt -Payload $result #-JwtVerificationMode $options.JwtVerificationMode
+                Test-PodeJwt -Payload $result
             }
             catch {
                 if ($_.Exception.Message -ilike '*jwt*') {

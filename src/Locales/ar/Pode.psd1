@@ -334,5 +334,8 @@
     jwtInvalidSubjectExceptionMessage                                 = "الادعاء 'sub' (الموضوع) في JWT غير صالح أو مفقود. مطلوب موضوع صالح."
     jwtInvalidJtiExceptionMessage                                     = "الادعاء 'jti' (معرّف JWT) في JWT غير صالح أو مفقود. مطلوب معرّف فريد صالح."
     jwtAlgorithmMismatchExceptionMessage                              = 'عدم تطابق خوارزمية JWT: المتوقع {0}، ولكن تم العثور على {1}.'
-    jwtMissingJtiExceptionMessage                                     = "The JWT is missing the required 'jti' (JWT ID) claim."
+    jwtMissingJtiExceptionMessage                                     = "JWT يفتقد إلى الادعاء المطلوب 'jti' (معرّف JWT)."
+    deprecatedFunctionWarningMessage                                  = "تحذير: الدالة '{0}' قديمة وسيتم إزالتها في الإصدارات المستقبلية. يرجى استخدام الدالة '{1}' بدلاً منها."
+    unknownAlgorithmOrInvalidPemExceptionMessage                      = 'خوارزمية غير معروفة أو تنسيق PEM غير صالح.'
+    unknownAlgorithmWithKeySizeExceptionMessage                       = 'خوارزمية {0} غير معروفة (حجم المفتاح: {1} بت).'
 }

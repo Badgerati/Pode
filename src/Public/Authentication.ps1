@@ -347,7 +347,7 @@ function New-PodeAuthScheme {
             'digest' {
                 # Display a deprecation warning for the old function.
                 # This ensures users are informed that the function is obsolete and should transition to the new function.
-                Write-PodeDeprecationWarning -OldFunction 'New-PodeAuthScheme' -NewFunction 'New-PodeAuthDigestScheme'
+                Write-PodeDeprecationWarning -OldFunction 'New-PodeAuthScheme -Digest' -NewFunction 'New-PodeAuthDigestScheme'
 
                 $params = @{
                     HeaderTag = $HeaderTag
@@ -359,12 +359,12 @@ function New-PodeAuthScheme {
             'bearer' {
                 # Display a deprecation warning for the old function.
                 # This ensures users are informed that the function is obsolete and should transition to the new function.
-                Write-PodeDeprecationWarning -OldFunction 'New-PodeAuthScheme' -NewFunction 'New-PodeAuthBearerScheme'
+                Write-PodeDeprecationWarning -OldFunction 'New-PodeAuthScheme -Bearer' -NewFunction 'New-PodeAuthBearerScheme'
 
                 $params = @{
-                    HeaderTag           = $HeaderTag
-                    Scope               = $Scope
-                    AsJWT               = $AsJWT
+                    HeaderTag = $HeaderTag
+                    Scope     = $Scope
+                    AsJWT     = $AsJWT
                 }
 
                 if ($Secret) {
@@ -376,8 +376,9 @@ function New-PodeAuthScheme {
                         else {
                             throw
                         }
-                    }else{
-                        $params['Secret']=$Secret
+                    }
+                    else {
+                        $params['Secret'] = $Secret
                     }
                 }
                 return New-PodeAuthBearerScheme @params
@@ -473,9 +474,17 @@ function New-PodeAuthScheme {
                         })[$Location]
                 }
 
-                $secretBytes = $null
-                if (![string]::IsNullOrWhiteSpace($Secret)) {
-                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+                #    $secretBytes = $null
+                #     if (![string]::IsNullOrWhiteSpace($Secret)) {
+                #          $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+                #      }
+                if (! ([string]::IsNullOrEmpty($Secret))) {
+                    $SecretString = ConvertTo-SecureString -String $Secret  -AsPlainText -Force
+                    $alg = @( 'HS256', 'HS384', 'HS512' )
+                }
+                else {
+                    $SecretString = $null
+                    $alg = 'NONE'
                 }
 
                 return @{
@@ -494,7 +503,8 @@ function New-PodeAuthScheme {
                         Location     = $Location
                         LocationName = $LocationName
                         AsJWT        = $AsJWT
-                        Secret       = $secretBytes
+                        Secret       = $SecretString
+                        Algorithm    = $alg
                     }
                 }
             }
@@ -3006,6 +3016,39 @@ function New-PodeAuthBearerScheme {
 }
 
 
+<#
+.SYNOPSIS
+    Creates a new Digest authentication scheme for Pode.
+
+.DESCRIPTION
+    This function defines a Digest authentication scheme in Pode. It allows specifying
+    parameters such as the authentication algorithm, quality of protection, and an optional
+    header tag. The function ensures secure authentication by leveraging Pode’s built-in
+    digest authentication mechanisms.
+
+.PARAMETER HeaderTag
+    An optional custom header tag for the authentication scheme. Defaults to 'Digest'.
+
+.PARAMETER Algorithm
+    Specifies the digest algorithm used for authentication. The default is 'MD5'.
+    Other supported values include 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', and 'SHA-512/256'.
+
+.PARAMETER QualityOfProtection
+    Determines the Quality of Protection (QoP) setting for authentication. The default is 'auth'.
+    Available options are 'auth', 'auth-int', and 'auth,auth-int'.
+
+.OUTPUTS
+    Hashtable containing the defined Digest authentication scheme for Pode.
+
+.EXAMPLE
+    New-PodeAuthDigestScheme -Algorithm 'SHA-256' -QualityOfProtection 'auth-int'
+
+    This example creates a new Digest authentication scheme using SHA-256 and sets
+    the Quality of Protection to 'auth-int'.
+
+.NOTES
+    Internal function for Pode authentication schemes. Subject to change in future updates.
+#>
 
 function New-PodeAuthDigestScheme {
     [CmdletBinding(DefaultParameterSetName = 'Basic')]

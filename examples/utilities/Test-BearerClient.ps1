@@ -1,3 +1,56 @@
+<#
+.SYNOPSIS
+    PowerShell script to test JWT authentication against a Pode server.
+
+.DESCRIPTION
+    This script performs authentication tests against a Pode server using JWT bearer tokens.
+    It iterates over multiple JWT signing algorithms, generates tokens, and sends authenticated
+    requests to verify the implementation.
+
+    - Supports RSA (`RS256`, `RS384`, `RS512`), PSS (`PS256`, `PS384`, `PS512`), and EC (`ES256`, `ES384`, `ES512`) algorithms.
+    - Checks for the availability of private keys before attempting authentication.
+    - Uses `ConvertTo-PodeJwt` for JWT generation.
+    - Sends requests to the Pode authentication API and validates responses.
+
+.PARAMETER ApiBaseUrl
+    The base URL of the Pode authentication endpoint.
+
+.EXAMPLE
+    # Run the script to test JWT authentication
+    ./Test-BearerClient.ps1
+
+.EXAMPLE
+    # Manually specify the authentication API URL
+    $uri = "http://localhost:8081/auth/bearer/jwt"
+    ./Test-BearerClient.ps1 -ApiBaseUrl $uri
+
+ .LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/utilities/Test-BearerClient.ps1
+
+.NOTES
+    - **JWT Authentication Overview:**
+        - The script loads private keys for multiple algorithms.
+        - It generates JWTs using `ConvertTo-PodeJwt` with a test payload.
+        - Each JWT is used to authenticate a request against the Pode API.
+        - Responses are validated and displayed in JSON format.
+
+    - **Pode Compatibility:**
+        - Pode supports various JWT signing algorithms.
+        - Ensure Pode is configured with `New-PodeAuthScheme -BearerJwt` for JWT authentication.
+
+    - **Security Considerations:**
+        - Keep private key files secure.
+        - Use strong signing algorithms (e.g., `RS512`, `PS512`, `ES512`).
+        - Ensure HTTPS is used in production environments.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+param (
+    [string]
+    $ApiBaseUrl = 'http://localhost:8081/auth/bearer/jwt'
+)
 
 try {
     # Determine the script path and Pode module path
@@ -11,13 +64,13 @@ try {
     else {
         Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
     }
- 
+
     # Define the key storage path
     $certsPath = Join-Path -Path $podePath -ChildPath '/examples/certs'
 }
 catch { throw }
 
-$apiBaseUrl = 'http://localhost:8081/auth/bearer/jwt'
+$ApiBaseUrl = 'http://localhost:8081/auth/bearer/jwt'
 
 Write-Output '🔹 Starting JWT Authentication Tests...'
 Write-Output "📁 Checking if certificates directory exists: $certsPath"
@@ -76,7 +129,7 @@ foreach ($alg in $algorithms) {
         'Accept'        = 'application/json'
     }
 
-    $apiUrl = "$apiBaseUrl/$alg"
+    $apiUrl = "$ApiBaseUrl/$alg"
     Write-Output "🌐 Sending request to: $apiUrl"
 
     try {

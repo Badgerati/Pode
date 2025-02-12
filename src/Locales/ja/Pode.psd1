@@ -335,4 +335,7 @@
     jwtInvalidJtiExceptionMessage                                     = "JWTの'jti'（JWT ID）クレームが無効または欠落しています。有効な一意識別子が必要です。"
     jwtAlgorithmMismatchExceptionMessage                              = 'JWTアルゴリズムの不一致: 期待値 {0}、実際の値 {1}。'
     jwtMissingJtiExceptionMessage                                     = "JWT に必要な 'jti' (JWT ID) クレームがありません。"
+    deprecatedFunctionWarningMessage                                  = "警告: 関数 '{0}' は非推奨であり、今後のバージョンで削除されます。代わりに関数 '{1}' を使用してください。"
+    unknownAlgorithmOrInvalidPemExceptionMessage                      = '未知のアルゴリズムまたは無効なPEMフォーマット。'
+    unknownAlgorithmWithKeySizeExceptionMessage                       = '未知の {0} アルゴリズム（キーサイズ: {1} ビット）。'
 }

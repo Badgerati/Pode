@@ -335,4 +335,7 @@
     jwtInvalidJtiExceptionMessage                                     = "Der JWT-Anspruch 'jti' (JWT ID) ist ungültig oder fehlt. Eine gültige eindeutige Kennung ist erforderlich."
     jwtAlgorithmMismatchExceptionMessage                              = 'JWT-Algorithmus stimmt nicht überein: Erwartet {0}, gefunden {1}.'
     jwtMissingJtiExceptionMessage                                     = "Dem JWT fehlt die erforderliche 'jti' (JWT-ID)-Anspruch."
+    deprecatedFunctionWarningMessage                                  = "WARNUNG: Die Funktion '{0}' ist veraltet und wird in zukünftigen Versionen entfernt. Bitte verwenden Sie stattdessen die Funktion '{1}'."
+    unknownAlgorithmOrInvalidPemExceptionMessage                      = 'Unbekannter Algorithmus oder ungültiges PEM-Format.'
+    unknownAlgorithmWithKeySizeExceptionMessage                       = 'Unbekannter {0}-Algorithmus (Schlüsselgröße: {1} Bit).'
 }

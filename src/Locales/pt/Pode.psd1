@@ -335,4 +335,7 @@
     jwtInvalidJtiExceptionMessage                                     = "A reivindicação 'jti' (JWT ID) do JWT é inválida ou está ausente. Um identificador único válido é necessário."
     jwtAlgorithmMismatchExceptionMessage                              = 'Incompatibilidade de algoritmo JWT: Esperado {0}, encontrado {1}.'
     jwtMissingJtiExceptionMessage                                     = "O JWT está sem a reivindicação obrigatória 'jti' (JWT ID)."
+    deprecatedFunctionWarningMessage                                  = "警告: 函数 '{0}' 已被弃用，并将在未来版本中移除。请改用函数 '{1}'。"
+    unknownAlgorithmOrInvalidPemExceptionMessage                      = 'Algoritmo desconhecido ou formato PEM inválido.'
+    unknownAlgorithmWithKeySizeExceptionMessage                       = 'Algoritmo {0} desconhecido (Tamanho da chave: {1} bits).'
 }

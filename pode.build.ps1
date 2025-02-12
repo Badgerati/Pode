@@ -110,6 +110,7 @@ param(
     [string]
     [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
     $SdkVersion = 'net9.0'
+
 )
 
 # Dependency Versions
@@ -880,6 +881,43 @@ function Split-PodeBuildPwshPath {
 
 
 
+### Helper Functions for Key Export ###
+function Export-RsaPrivateKeyPem {
+    param (
+      [System.Security.Cryptography.RSA]$RsaKey
+    )
+    $pemHeader = '-----BEGIN RSA PRIVATE KEY-----'
+    $pemFooter = '-----END RSA PRIVATE KEY-----'
+    $base64 = [Convert]::ToBase64String($RsaKey.ExportRSAPrivateKey(), 'InsertLineBreaks')
+    return "$pemHeader`n$base64`n$pemFooter"
+  }
+
+
+function Export-RsaPublicKeyPem {
+    param ([System.Security.Cryptography.RSA]$RsaKey)
+    $pemHeader = '-----BEGIN RSA PUBLIC KEY-----'
+    $pemFooter = '-----END RSA PUBLIC KEY-----'
+    $base64 = [Convert]::ToBase64String($RsaKey.ExportRSAPublicKey(), 'InsertLineBreaks')
+    return "$pemHeader`n$base64`n$pemFooter"
+}
+
+function Export-EcdsaPrivateKeyPem {
+    param ([System.Security.Cryptography.ECDsa]$EcdsaKey)
+    $pemHeader = '-----BEGIN EC PRIVATE KEY-----'
+    $pemFooter = '-----END EC PRIVATE KEY-----'
+    $base64 = [Convert]::ToBase64String($EcdsaKey.ExportECPrivateKey(), 'InsertLineBreaks')
+    return "$pemHeader`n$base64`n$pemFooter"
+}
+
+function Export-EcdsaPublicKeyPem {
+    param ([System.Security.Cryptography.ECDsa]$EcdsaKey)
+    $pemHeader = '-----BEGIN PUBLIC KEY-----'
+    $pemFooter = '-----END PUBLIC KEY-----'
+    $base64 = [Convert]::ToBase64String($EcdsaKey.ExportSubjectPublicKeyInfo(), 'InsertLineBreaks')
+    return "$pemHeader`n$base64`n$pemFooter"
+}
+
+
 # Check if the script is running under Invoke-Build
 if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
     Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
@@ -1206,8 +1244,85 @@ Add-BuildTask PackageFolder Build, {
 # Testing
 #>
 
+Add-BuildTask CreateCerts {
+
+    $BaseOutputExamplesPath = './examples/certs'
+    if (Test-Path -Path $BaseOutputExamplesPath) {
+        Remove-Item -Path "$BaseOutputExamplesPath/*.pem"
+    }
+    else {
+        New-Item -Path $BaseOutputExamplesPath -ItemType Directory
+    }
+
+    $BaseOutputTestsPath = './tests/certs'
+    if (Test-Path -Path $BaseOutputTestsPath) {
+        Remove-Item -Path "$BaseOutputTestsPath/*.pem"
+    }
+    else {
+        New-Item -Path $BaseOutputTestsPath -ItemType Directory
+    }
+
+
+    # Key settings mapping
+    $keySettings = @{
+        'RS256' = 2048
+        'RS384' = 3072
+        'RS512' = 4096
+        'ES256' = [System.Security.Cryptography.ECCurve]::CreateFromFriendlyName('nistP256')
+        'ES384' = [System.Security.Cryptography.ECCurve]::CreateFromFriendlyName('nistP384')
+        'ES512' = [System.Security.Cryptography.ECCurve]::CreateFromFriendlyName('nistP521')
+    }
+
+
+
+    foreach ($alg in $keySettings.Keys) {
+        if (-Not $keySettings.ContainsKey($alg)) {
+            Write-Output "❌ Unsupported algorithm: $alg. Skipping..."
+            Continue
+        }
+
+        $privateKeyTestsPath = "$BaseOutputTestsPath/$alg-private.pem"
+        $publicKeyTestsPath = "$BaseOutputTestsPath/$alg-public.pem"
+        $privateKeyExamplesPath = "$BaseOutputExamplesPath/$alg-private.pem"
+        $publicKeyExamplesPath = "$BaseOutputExamplesPath/$alg-public.pem"
+
+        Write-Output "🔹 Generating keys for: $alg..."
+
+        if ($alg -match '^RS') {
+            $rsa = [System.Security.Cryptography.RSA]::Create($keySettings[$alg])
+
+            $privatePem = Export-RsaPrivateKeyPem $rsa
+            Set-Content -Path $privateKeyTestsPath -Value $privatePem
+            Set-Content -Path $privateKeyExamplesPath -Value $privatePem
+
+            $publicPem = Export-RsaPublicKeyPem $rsa
+            Set-Content -Path $publicKeyTestsPath -Value $publicPem
+            Set-Content -Path $publicKeyExamplesPath -Value $publicPem
+        }
+        elseif ($alg -match '^ES') {
+            $ec = [System.Security.Cryptography.ECDsa]::Create($keySettings[$alg])
+            if ($null -eq $ec) {
+                throw "Failed to create ECDSA key for $alg. Ensure your system supports ECC."
+            }
+
+            $privatePem = Export-EcdsaPrivateKeyPem $ec
+            Set-Content -Path $privateKeyTestsPath -Value $privatePem
+            Set-Content -Path $privateKeyExamplesPath -Value $privatePem
+
+
+            $publicPem = Export-EcdsaPublicKeyPem $ec
+            Set-Content -Path $publicKeyTestsPath -Value $publicPem
+            Set-Content -Path $publicKeyExamplesPath -Value $publicPem
+        }
+
+        Write-Output "✅ Private Keys generated: $privateKeyTestsPath & $privateKeyExamplesPath"
+        Write-Output "✅ Public Keys generated: $publicKeyExamplesPath & $publicKeyExamplesPath"
+    }
+
+}
+
 # Synopsis: Run the tests
-Add-BuildTask TestNoBuild TestDeps, {
+Add-BuildTask TestNoBuild TestDeps, CreateCerts, {
     $p = (Get-Command Invoke-Pester)
     if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
         Remove-Module Pester -Force -ErrorAction Ignore
