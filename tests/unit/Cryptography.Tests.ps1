@@ -69,14 +69,14 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
         $testSecret = [System.Text.Encoding]::UTF8.GetBytes('SuperSecretKey')
 
         $testPath = $(Split-Path -Parent -Path $(Split-Path -Parent -Path $path))
-        # Load test keys from PEM files (Assume these exist in the test environment)
-        $algorithms = 'ES256', 'ES384', 'ES512'
         if ($PSEdition -eq 'Core') {
-            $algorithms += 'RS256', 'RS384', 'RS512'
-        }
-        $PrivateKey = @{}
-        foreach ($alg in $algorithms) {
-            $PrivateKey[$alg] = Get-Content "$testPath/certs/$alg-private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
+            # Load test keys from PEM files (Assume these exist in the test environment)
+            $algorithms = 'ES256', 'ES384', 'ES512', 'RS256', 'RS384', 'RS512'
+
+            $PrivateKey = @{}
+            foreach ($alg in $algorithms) {
+                $PrivateKey[$alg] = Get-Content "$testPath/certs/$alg-private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
+            }
         }
     }
 
