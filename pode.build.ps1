@@ -58,6 +58,8 @@
     - CleanLibs: Removes the `Libs` folder under `src`.
     - CleanListener: Removes the Listener folder.
     - CleanDocs: Cleans up generated documentation files.
+    - CleanCerts: Cleans up generated Certificate files.
+    - CreateCerts: Create PEM certificates for testing
     - Install-Module: Installs the Pode module locally.
     - Remove-Module: Removes the Pode module from the local registry.
     - SetupPowerShell: Sets up the PowerShell environment for the build.
@@ -884,13 +886,13 @@ function Split-PodeBuildPwshPath {
 ### Helper Functions for Key Export ###
 function Export-RsaPrivateKeyPem {
     param (
-      [System.Security.Cryptography.RSA]$RsaKey
+        [System.Security.Cryptography.RSA]$RsaKey
     )
     $pemHeader = '-----BEGIN RSA PRIVATE KEY-----'
     $pemFooter = '-----END RSA PRIVATE KEY-----'
     $base64 = [Convert]::ToBase64String($RsaKey.ExportRSAPrivateKey(), 'InsertLineBreaks')
     return "$pemHeader`n$base64`n$pemFooter"
-  }
+}
 
 
 function Export-RsaPublicKeyPem {
@@ -963,6 +965,8 @@ Add-BuildTask Default {
     Write-Host "- CleanLibs: Removes the `Libs` folder under `src`."
     Write-Host '- CleanListener: Removes the Listener folder.'
     Write-Host '- CleanDocs: Cleans up generated documentation files.'
+    Write-Host '- CleanCerts: Cleans up generated Certificate files.'
+    Write-Host '- CreateCerts: Create PEM certificates for testing'
     Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
     Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
 }
@@ -1244,7 +1248,7 @@ Add-BuildTask PackageFolder Build, {
 # Testing
 #>
 
-Add-BuildTask CreateCerts {
+Add-BuildTask CreateCerts -If($PSEdition -ieq 'Core') {
 
     $BaseOutputExamplesPath = './examples/certs'
     if (Test-Path -Path $BaseOutputExamplesPath) {
@@ -1277,7 +1281,7 @@ Add-BuildTask CreateCerts {
 
     foreach ($alg in $keySettings.Keys) {
         if (-Not $keySettings.ContainsKey($alg)) {
-            Write-Output "❌ Unsupported algorithm: $alg. Skipping..."
+            Write-Output "Unsupported algorithm: $alg. Skipping..."
             Continue
         }
 
@@ -1286,7 +1290,7 @@ Add-BuildTask CreateCerts {
         $privateKeyExamplesPath = "$BaseOutputExamplesPath/$alg-private.pem"
         $publicKeyExamplesPath = "$BaseOutputExamplesPath/$alg-public.pem"
 
-        Write-Output "🔹 Generating keys for: $alg..."
+        Write-Output "Generating keys for: $alg..."
 
         if ($alg -match '^RS') {
             $rsa = [System.Security.Cryptography.RSA]::Create($keySettings[$alg])
@@ -1315,10 +1319,9 @@ Add-BuildTask CreateCerts {
             Set-Content -Path $publicKeyExamplesPath -Value $publicPem
         }
 
-        Write-Output "✅ Private Keys generated: $privateKeyTestsPath & $privateKeyExamplesPath"
-        Write-Output "✅ Public Keys generated: $publicKeyExamplesPath & $publicKeyExamplesPath"
+        Write-Output "Private Keys generated: $privateKeyTestsPath & $privateKeyExamplesPath"
+        Write-Output "Public Keys generated: $publicKeyExamplesPath & $publicKeyExamplesPath"
     }
-
 }
 
 # Synopsis: Run the tests
@@ -1457,7 +1460,7 @@ Add-BuildTask DocsBuild DocsDeps, DocsHelpBuild, {
 #>
 
 # Synopsis: Clean the build enviroment
-Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
+Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs, CleanCerts
 
 # Synopsis: Clean the Deliverable folder
 Add-BuildTask CleanDeliverable {
@@ -1518,6 +1521,22 @@ Add-BuildTask CleanDocs {
         Write-Host "Removing $path"
         Remove-Item -Path $path -Force | Out-Null
     }
+}
+
+Add-BuildTask CleanCerts {
+    $path = './tests/certs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    $path = './examples/certs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    Write-Host "Cleanup $path done"
 }
 <#
 # Local module management
