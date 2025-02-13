@@ -338,4 +338,5 @@
     deprecatedFunctionWarningMessage                                  = "WARNUNG: Die Funktion '{0}' ist veraltet und wird in zukünftigen Versionen entfernt. Bitte verwenden Sie stattdessen die Funktion '{1}'."
     unknownAlgorithmOrInvalidPemExceptionMessage                      = 'Unbekannter Algorithmus oder ungültiges PEM-Format.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Unbekannter {0}-Algorithmus (Schlüsselgröße: {1} Bit).'
+    jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT-Zertifikatauthentifizierung wird nur in PowerShell 7.0 oder höher unterstützt.'
 }

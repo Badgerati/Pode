@@ -338,4 +338,5 @@
     deprecatedFunctionWarningMessage                                  = "警告: 函数 '{0}' 已被弃用，并将在未来版本中移除。请改用函数 '{1}'。"
     unknownAlgorithmOrInvalidPemExceptionMessage                      = 'Algoritmo desconhecido ou formato PEM inválido.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Algoritmo {0} desconhecido (Tamanho da chave: {1} bits).'
+    jwtCertificateAuthNotSupportedExceptionMessage                    = 'A autenticação de certificado JWT é suportada apenas no PowerShell 7.0 ou superior.'
 }

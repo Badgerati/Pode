@@ -94,7 +94,7 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
         }
     }
 
-    Context 'RSA Signing Tests' {
+    Context 'RSA Signing Tests' -Tag 'No_DesktopEdition' {
         It 'Should generate a valid RSA-SHA256 signature' {
             $alg='RS256'
             $result = New-PodeJwtSignature   -Token $testValue -Algorithm $alg -PrivateKey $PrivateKey[$alg]
@@ -112,7 +112,7 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
         }
     }
 
-    Context 'ECDSA Signing Tests' {
+    Context 'ECDSA Signing Tests' -Tag 'No_DesktopEdition' {
         It 'Should generate a valid ECDSA-SHA256 signature' {
             $result = New-PodeJwtSignature -Token $testValue -Algorithm ES256 -PrivateKey $PrivateKey['ES256']
             $result | Should -Match '^[A-Za-z0-9_-]+$'

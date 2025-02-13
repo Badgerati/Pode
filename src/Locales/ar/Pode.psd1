@@ -338,4 +338,5 @@
     deprecatedFunctionWarningMessage                                  = "تحذير: الدالة '{0}' قديمة وسيتم إزالتها في الإصدارات المستقبلية. يرجى استخدام الدالة '{1}' بدلاً منها."
     unknownAlgorithmOrInvalidPemExceptionMessage                      = 'خوارزمية غير معروفة أو تنسيق PEM غير صالح.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'خوارزمية {0} غير معروفة (حجم المفتاح: {1} بت).'
+    jwtCertificateAuthNotSupportedExceptionMessage                    = 'مصادقة شهادة JWT مدعومة فقط في PowerShell 7.0 أو أحدث.'
 }

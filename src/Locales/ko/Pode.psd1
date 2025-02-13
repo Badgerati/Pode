@@ -338,4 +338,5 @@
     deprecatedFunctionWarningMessage                                  = "경고: 함수 '{0}'는 더 이상 지원되지 않으며 향후 버전에서 제거될 예정입니다. 대신 '{1}' 함수를 사용하십시오."
     unknownAlgorithmOrInvalidPemExceptionMessage                      = '알 수 없는 알고리즘 또는 잘못된 PEM 형식입니다.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = '알 수 없는 {0} 알고리즘 (키 크기: {1} 비트).'
+    jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT 인증서 인증은 PowerShell 7.0 이상에서만 지원됩니다.'
 }

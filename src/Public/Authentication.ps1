@@ -2969,12 +2969,16 @@ function New-PodeAuthBearerScheme {
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
-    $alg = switch ($PSCmdlet.ParameterSetName) {
+    switch ($PSCmdlet.ParameterSetName) {
         'Bearer_RS_ES' {
-            @( Get-PodeJwtSigningAlgorithm -PrivateKey  $PrivateKey -RsaPaddingScheme $RsaPaddingScheme )
+            if ($PSVersionTable.PSVersion.Major -lt 7) {
+                # JWT certificate authentication is supported only in PowerShell 7.0 or greater.
+                throw $PodeLocale.jwtCertificateAuthNotSupportedExceptionMessage
+            }
+            $alg = @( Get-PodeJwtSigningAlgorithm -PrivateKey  $PrivateKey -RsaPaddingScheme $RsaPaddingScheme )
         }
         'Bearer_HS' {
-            if ( $Algorithm.Count -eq 0) {
+            $alg = if ( $Algorithm.Count -eq 0) {
                 @('HS256')
             }
             else {
@@ -2982,7 +2986,7 @@ function New-PodeAuthBearerScheme {
             }
         }
         'Bearer_NONE' {
-            @('NONE')
+            $alg = @('NONE')
         }
     }
 

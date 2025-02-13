@@ -338,4 +338,5 @@
     deprecatedFunctionWarningMessage                                  = "WARNING: The function '{0}' is deprecated and will be removed in future releases. Please use the '{1}' function instead."
     unknownAlgorithmOrInvalidPemExceptionMessage                      = 'Unknown algorithm or invalid PEM format.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Unknown {0} algorithm (Key Size: {1} bits).'
+    jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT certificate authentication is supported only in PowerShell 7.0 or greater.'
 }

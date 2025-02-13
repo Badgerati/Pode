@@ -7,7 +7,8 @@ BeforeAll {
     $CertsPath = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/tests/certs/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 }
-Describe 'Authentication Requests' {
+
+Describe 'JWT Bearer Authentication Requests' -Tag 'No_DesktopEdition' {
 
     BeforeAll {
         $Port = 8080
@@ -25,74 +26,6 @@ Describe 'Authentication Requests' {
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
                 }
-
-                # Load test keys from PEM files (Assume these exist in the test environment)
-
-
-                <#           New-PodeAuthBearerScheme -AsJWT -Secret $using:secret | Add-PodeAuth -Name 'BearerJWTSecret' -Sessionless -ScriptBlock {
-                    param($jwt)
-
-                    # here you'd check a real user storage, this is just for example
-                    if ($jwt.username -ieq 'morty') {
-                        return @{
-                            User = @{
-                                ID   = $jWt.id
-                                Name = $jst.name
-                                Type = $jst.type
-                            }
-                        }
-                    }
-
-                    return $null
-                }
-
-                Add-PodeRoute -Method Get -Path '/auth/bearer/jwt/secret' -Authentication 'BearerJWTSecret' -ScriptBlock {
-                    Write-PodeJsonResponse -Value @{ Result = 'OK' }
-                }
-
-
-
-                New-PodeAuthBearerScheme -AsJWT -Secret $using:secret -Algorithm HS256 -JwtVerificationMode Strict | Add-PodeAuth -Name 'Bearer_JWT_Secret_HS256' -Sessionless -ScriptBlock {
-                    param($jwt)
-
-                    # here you'd check a real user storage, this is just for example
-                    if ($jwt.username -ieq 'morty') {
-                        return @{
-                            User = @{
-                                ID   = $jWt.id
-                                Name = $jst.name
-                                Type = $jst.type
-                            }
-                        }
-                    }
-
-                    return $null
-                }
-
-                Add-PodeRoute -Method Get -Path '/auth/bearer/jwt/secret/HS256' -Authentication 'Bearer_JWT_Secret_HS256' -ScriptBlock {
-                    Write-PodeJsonResponse -Value @{ Result = 'OK' }
-                }
-
-                New-PodeAuthBearerScheme -AsJWT -Secret $using:secret -Algorithm HS384  -JwtVerificationMode Strict | Add-PodeAuth -Name 'Bearer_JWT_Secret_HS384' -Sessionless -ScriptBlock {
-                    param($jwt)
-
-                    # here you'd check a real user storage, this is just for example
-                    if ($jwt.username -ieq 'morty') {
-                        return @{
-                            User = @{
-                                ID   = $jWt.id
-                                Name = $jst.name
-                                Type = $jst.type
-                            }
-                        }
-                    }
-
-                    return $null
-                }
-
-                Add-PodeRoute -Method Get -Path '/auth/bearer/jwt/secret/HS384' -Authentication 'Bearer_JWT_Secret_HS384' -ScriptBlock {
-                    Write-PodeJsonResponse -Value @{ Result = 'OK' }
-                }#>
 
                 foreach ($alg in ('HS256', 'HS384', 'HS512')) {
                     New-PodeAuthBearerScheme -AsJWT -Secret $using:secret -Algorithm $alg -JwtVerificationMode Strict | Add-PodeAuth -Name "Bearer_JWT_Secret_strict_$alg" -Sessionless -ScriptBlock {
@@ -152,7 +85,7 @@ Describe 'Authentication Requests' {
                     }
 
                     if (! (Test-Path $privateKeyPath)) {
-                        Write-Warning "⚠️ Skipping $($alg): Private key file not found ($privateKeyPath)"
+                        Write-Warning "Skipping $($alg): Private key file not found ($privateKeyPath)"
                         Continue
                     }
                     # Ensure the matching public key exists
@@ -169,7 +102,7 @@ Describe 'Authentication Requests' {
                     $pathRoute = "/auth/bearer/jwt/key/lenient/$alg"
                     $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
                     # Register Pode Bearer Authentication
-                    Write-PodeHost "🔹 Registering JWT Authentication for: $alg ($Location)"
+                    Write-PodeHost "Registering JWT Authentication for: $alg ($Location)"
                     New-PodeAuthBearerScheme  -AsJWT -PrivateKey $privateKey -PublicKey $publicKey -JwtVerificationMode Lenient -RsaPaddingScheme $rsaPaddingScheme |
                         Add-PodeAuth -Name "Bearer_JWT_lenient_$alg" -Sessionless -ScriptBlock {
                             param($jwt)
@@ -216,9 +149,6 @@ Describe 'Authentication Requests' {
                         Write-PodeJsonResponse -Value @{ Result = 'OK' }
                     }
                 }
-
-
-
             }
         }
 
@@ -406,6 +336,4 @@ Describe 'Authentication Requests' {
             { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer/jwt/secret/strict/$_" -Method Get -Headers $headers -ErrorAction Stop } | Should -Throw -ExpectedMessage '*401*'
         }
     }
-
-
 }

@@ -338,4 +338,5 @@
     deprecatedFunctionWarningMessage                                  = "WAARSCHUWING: De functie '{0}' is verouderd en zal in toekomstige versies worden verwijderd. Gebruik in plaats daarvan de functie '{1}'."
     unknownAlgorithmOrInvalidPemExceptionMessage                      = 'Onbekend algoritme of ongeldig PEM-formaat.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Onbekend {0}-algoritme (Sleutelgrootte: {1} bits).'
+    jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT-certificaatverificatie wordt alleen ondersteund in PowerShell 7.0 of hoger.'
 }

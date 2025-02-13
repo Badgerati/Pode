@@ -338,4 +338,5 @@
     deprecatedFunctionWarningMessage                                  = "警告: 関数 '{0}' は非推奨であり、今後のバージョンで削除されます。代わりに関数 '{1}' を使用してください。"
     unknownAlgorithmOrInvalidPemExceptionMessage                      = '未知のアルゴリズムまたは無効なPEMフォーマット。'
     unknownAlgorithmWithKeySizeExceptionMessage                       = '未知の {0} アルゴリズム（キーサイズ: {1} ビット）。'
+    jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT 証明書認証は PowerShell 7.0 以上でのみサポートされています。'
 }
