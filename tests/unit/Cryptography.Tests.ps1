@@ -70,7 +70,10 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
 
         $testPath = $(Split-Path -Parent -Path $(Split-Path -Parent -Path $path))
         # Load test keys from PEM files (Assume these exist in the test environment)
-        $algorithms = 'RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512'
+        $algorithms = 'ES256', 'ES384', 'ES512'
+        if ($PSEdition -eq 'Core') {
+            $algorithms += 'RS256', 'RS384', 'RS512'
+        }
         $PrivateKey = @{}
         foreach ($alg in $algorithms) {
             $PrivateKey[$alg] = Get-Content "$testPath/certs/$alg-private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
@@ -96,7 +99,7 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
 
     Context 'RSA Signing Tests' -Tag 'No_DesktopEdition' {
         It 'Should generate a valid RSA-SHA256 signature' {
-            $alg='RS256'
+            $alg = 'RS256'
             $result = New-PodeJwtSignature   -Token $testValue -Algorithm $alg -PrivateKey $PrivateKey[$alg]
             $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
@@ -140,7 +143,7 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
         }
 
         It 'Should throw an error if a private key is provided with NONE' {
-            { New-PodeJwtSignature -Token $testValue -Algorithm NONE -PrivateKey $PrivateKey['ES512']} | Should -Throw
+            { New-PodeJwtSignature -Token $testValue -Algorithm NONE -PrivateKey $PrivateKey['ES512'] } | Should -Throw
         }
     }
 
