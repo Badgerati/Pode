@@ -6,13 +6,16 @@ Bearer authentication lets you authenticate a user based on a token, with option
 Authorization: Bearer <token>
 ```
 
+!!! note
+     `New-PodeAuthScheme` with the param `-Bearer` has been deprecated. Please use `New-PodeAuthBearerScheme`.
+
 ## Setup
 
-To start using Bearer authentication in Pode you can use `New-PodeAuthScheme -Bearer`, and then pipe the returned object into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token` from the Authorization token:
+To start using Bearer authentication in Pode, use `New-PodeAuthBearerScheme`, and then pipe the returned object into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token` from the Authorization token:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Bearer | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user
@@ -22,13 +25,13 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the request's header contains an `Authorization` key, and whether the value of that key starts with the `Bearer` tag. The `New-PodeAuthScheme -Bearer` function can be supplied parameters to customize the tag using `-HeaderTag`. You can also change the location to Query by using the `-BearerLocation` parameter.
+By default, Pode will check if the request's header contains an `Authorization` key, and whether the value of that key starts with the `Bearer` tag. The `New-PodeAuthBearerScheme` function can be supplied parameters to customize the tag using `-HeaderTag`. You can also change the location to Query by using the `-Location` parameter.
 
 For example, to look for a bearer token in a query parameter:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Bearer -BearerLocation Query | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme -Location Query | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user
@@ -40,11 +43,66 @@ Start-PodeServer {
 
 **Note:** Per [RFC 6750](https://datatracker.ietf.org/doc/html/rfc6750), using the Authorization header is the recommended method for sending bearer tokens. Query parameters should only be used when headers are not feasible, as query strings may be logged in URLs, potentially exposing sensitive information.
 
-You can also optionally return a `Scope` property alongside the `User`. If you specify any scopes with [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme), then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.
+### JWT Support
+
+`New-PodeAuthBearerScheme` now includes support for JWT authentication with various security levels and algorithms. You can configure JWT validation using parameters such as `-AsJWT`, `-Algorithm`, `-Secret`, `-PublicKey`, and `-JwtVerificationMode`.
+
+#### JwtVerificationMode
+
+The `-JwtVerificationMode` parameter defines how aggressively JWT claims should be checked:
+
+- **Strict**: Requires all standard claims to be valid:
+  - `exp` (Expiration Time): Ensures the token has not expired.
+  - `nbf` (Not Before): Ensures the token is not used before a certain time.
+  - `iat` (Issued At): Verifies when the token was created.
+  - `iss` (Issuer): Checks the authority that issued the token.
+  - `aud` (Audience): Ensures the token is intended for this application (defaults to the main script filename but can be overridden with `Start-PodeServer -ApplicationName`).
+  - `jti` (JWT ID): Ensures token uniqueness to prevent reuse.
+
+- **Moderate**: Allows missing `iss` (Issuer) and `aud` (Audience) but still checks expiration (`exp`).
+
+- **Lenient**: Ignores missing `iss` and `aud`, only verifies expiration (`exp`), not-before (`nbf`), and issued-at (`iat`).
+
+Example using an HMAC JWT validation:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Bearer -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme -AsJWT -Algorithm 'HS256' -Secret (ConvertTo-SecureString "MySecretKey" -AsPlainText -Force) -JwtVerificationMode 'Strict' |
+        Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+            param($token)
+
+            # validate and decode JWT, then extract user details
+
+            return @{ User = $user }
+        }
+}
+```
+
+Example using RSA for JWT validation:
+
+```powershell
+Start-PodeServer {
+    $privateKey = Get-Content "private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
+    $publicKey = Get-Content "public.pem" -Raw
+
+    New-PodeAuthBearerScheme -AsJWT -Algorithm 'RS256' -PrivateKey $privateKey -PublicKey $publicKey -JwtVerificationMode 'Moderate' |
+        Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+            param($token)
+
+            # validate JWT and extract user
+
+            return @{ User = $user }
+        }
+}
+```
+
+### Scope Validation
+
+You can optionally return a `Scope` property alongside the `User`. If you specify any scopes with `New-PodeAuthBearerScheme`, they will be validated in the Bearer's post validator. A 403 will be returned if the scope is invalid.
+
+```powershell
+Start-PodeServer {
+    New-PodeAuthBearerScheme -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user
@@ -56,7 +114,7 @@ Start-PodeServer {
 
 ## Middleware
 
-Once configured, you can start using Bearer authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
+Once configured, you can start using Bearer authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware or as custom Route Middleware.
 
 The following will use Bearer authentication to validate every request on every Route:
 
@@ -76,10 +134,6 @@ Start-PodeServer {
 }
 ```
 
-## JWT
-
-You can supply a JWT using Bearer authentication. For more details, [see here](../JWT).
-
 ## Full Example
 
 The following full example of Bearer authentication will set up and configure authentication, validate the token, and then validate on a specific Route:
@@ -89,24 +143,25 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # setup bearer authentication to validate a user
-    New-PodeAuthScheme -Bearer | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
-        param($token)
+    New-PodeAuthBearerScheme -AsJWT -Algorithm 'HS256' -Secret (ConvertTo-SecureString "MySecretKey" -AsPlainText -Force) -JwtVerificationMode 'Lenient' |
+        Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+            param($token)
 
-        # here you'd check a real storage, this is just for example
-        if ($token -eq 'test-token') {
-            return @{
-                User = @{
-                    'ID' = 'M0R7Y302'
-                    'Name' = 'Morty'
-                    'Type' = 'Human'
+            # here you'd check a real storage, this is just for example
+            if ($token -eq 'test-token') {
+                return @{
+                    User = @{
+                        'ID' = 'M0R7Y302'
+                        'Name' = 'Morty'
+                        'Type' = 'Human'
+                    }
+                    # Scope = 'read'
                 }
-                # Scope = 'read'
             }
-        }
 
-        # authentication failed
-        return $null
-    }
+            # authentication failed
+            return $null
+        }
 
     # check the request on this route against the authentication
     Add-PodeRoute -Method Get -Path '/cpu' -Authentication 'Authenticate' -ScriptBlock {
