@@ -2525,7 +2525,8 @@ function New-PodeAuthKeyTab {
     Creates a new Bearer authentication scheme for Pode.
 
 .DESCRIPTION
-    Defines a Bearer authentication scheme that allows authentication using a raw Bearer token or JWT. Supports JWT validation with configurable security levels and token extraction from headers or query parameters.
+    Defines a Bearer authentication scheme that allows authentication using a raw Bearer token or JWT.
+    Supports JWT validation with configurable security levels and token extraction from headers or query parameters.
 
 .PARAMETER HeaderTag
     The header tag used for the Bearer token (default: "Bearer").
@@ -2586,9 +2587,6 @@ function New-PodeAuthKeyTab {
 
 .EXAMPLE
     New-PodeAuthBearerScheme -AsJWT -Algorithm "RS256" -PrivateKey (Get-Content "private.pem" -Raw) -PublicKey (Get-Content "public.pem" -Raw)
-
-.NOTES
-    This function is an internal Pode function and is subject to change.
 #>
 function New-PodeAuthBearerScheme {
     [CmdletBinding(DefaultParameterSetName = 'Basic')]
@@ -2604,6 +2602,7 @@ function New-PodeAuthBearerScheme {
         [string[]]
         $Scope,
 
+        # Parameter sets using -AsJWT require certain mandatory parameters (e.g. Secret for HMAC)
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
@@ -2615,7 +2614,7 @@ function New-PodeAuthBearerScheme {
         $AsJWT,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_HS')]
-        [ValidateSet( 'HS256', 'HS384', 'HS512' )]
+        [ValidateSet('HS256', 'HS384', 'HS512')]
         [string[]]
         $Algorithm = @(),
 
@@ -2623,17 +2622,18 @@ function New-PodeAuthBearerScheme {
         [SecureString]
         $Secret,
 
+        # Certificate-based parameters for RSA/ECDSA
         [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
         [string]
         $Certificate,
 
-        [Parameter(Mandatory = $false,ParameterSetName = 'CertFile')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [string]
         $CertificateKey = $null,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [SecureString]
-        $CertificatePassword, # Password for PFX certificate
+        $CertificatePassword,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
         [string]
@@ -2665,6 +2665,7 @@ function New-PodeAuthBearerScheme {
         [string]
         $RsaPaddingScheme = 'Pkcs1V15',
 
+        # Mode for verifying the JWT claims if AsJWT is used
         [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
@@ -2675,14 +2676,17 @@ function New-PodeAuthBearerScheme {
         $JwtVerificationMode = 'Lenient'
     )
 
-    # Default realm
+    # The default authentication realm
     $_realm = 'User'
 
-    # Convert middleware into valid hashtables
+    # Convert any middleware to valid hashtables, if used in Pode
+    # (Assumes ConvertTo-PodeMiddleware is a function available in your codebase)
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
+    # Determine parameter set behavior for different JWT signing methods
     switch ($PSCmdlet.ParameterSetName) {
         'CertFile' {
+            # If using a file-based certificate, ensure it exists, then load it
             if (!(Test-Path -Path $Certificate -PathType Leaf)) {
                 throw ($PodeLocale.pathNotExistExceptionMessage -f $Certificate)
             }
@@ -2691,16 +2695,18 @@ function New-PodeAuthBearerScheme {
         }
 
         'certthumb' {
+            # Retrieve a certificate from the local store by thumbprint
             $X509Certificate = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
         }
 
         'certname' {
+            # Retrieve a certificate from the local store by name
             $X509Certificate = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
         }
 
-
         'Bearer_HS' {
-            $alg = if ( $Algorithm.Count -eq 0) {
+            # If no algorithm is provided for HMAC, default to HS256
+            $alg = if ($Algorithm.Count -eq 0) {
                 @('HS256')
             }
             else {
@@ -2708,16 +2714,22 @@ function New-PodeAuthBearerScheme {
             }
             break
         }
+
         'Bearer_NONE' {
+            # Use the 'NONE' algorithm, meaning no signature check
             $alg = @('NONE')
             break
         }
     }
 
+    # If an X509 certificate is being used, detect the signing algorithm
     if ($null -ne $X509Certificate) {
-        $alg = @( Get-PodeJwtSigningAlgorithm -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme  )
+        # Retrieve appropriate JWT algorithms (e.g., RS256, ES256) from the provided certificate
+        $alg = @( Get-PodeJwtSigningAlgorithm -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme )
     }
 
+    # Return the Bearer authentication scheme configuration as a hashtable
+    # This hashtable is how Pode recognizes and initializes the scheme
     return @{
         Name          = 'Bearer'
         Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)

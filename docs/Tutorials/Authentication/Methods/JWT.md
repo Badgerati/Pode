@@ -1,169 +1,164 @@
-# Bearer
 
-Bearer authentication lets you authenticate a user based on a token, with optional support for scopes:
+## Create a JWT
 
-```plain
-Authorization: Bearer <token>
-```
+Pode provides a [`ConvertTo-PodeJwt`](../../../../Functions/Authentication/ConvertTo-PodeJwt) command that builds and signs a JWT for you. You can provide:
 
-!!! note
-     `New-PodeAuthScheme` with the param `-Bearer` has been deprecated. Please use `New-PodeAuthBearerScheme`.
+- **`-Header`**: A hashtable defining fields like `alg`, `typ`, etc.
+- **`-Payload`**: A hashtable for JWT claims (e.g., `sub`, `exp`, `nbf`, and other custom claims).
+- **`-Secret`**/**`-Certificate`**/**`-CertificateThumbprint`**, etc.: If you want to sign the JWT (for HS*, RS*, ES*, PS* algorithms).
+- **`-IgnoreSignature`**: If you want a token with no signature (alg = none).
+- **`-Authentication`**: To reference an existing named authentication scheme, automatically pulling its parameters (algorithm, secret, certificate, etc.) so the generated JWT is recognized by that scheme.
 
-## Setup
+### Using `-Authentication`
 
-To start using Bearer authentication in Pode, use `New-PodeAuthBearerScheme`, and then pipe the returned object into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token` from the Authorization token:
+If you have already set up an authentication scheme, for instance:
 
 ```powershell
-Start-PodeServer {
-    New-PodeAuthBearerScheme | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
-        param($token)
+New-PodeAuthBearerScheme -AsJWT -Algorithm 'RS256' -Certificate 'C:\path\to\cert.pfx' -CertificatePassword (ConvertTo-SecureString "CertPass" -AsPlainText -Force) |
+    Add-PodeAuth -Name 'ExampleApiKeyCert'
+```
 
-        # check if the token is valid, and get user
+then you can **reuse** this scheme’s configuration when creating a token by calling:
 
-        return @{ User = $user }
-    }
+```powershell
+$jwt = ConvertTo-PodeJwt -Authentication 'ExampleApiKeyCert'
+
+# e.g., return the new JWT to a client
+Write-PodeJsonResponse -StatusCode 200 -Value @{ jwt_token = $jwt }
+```
+
+Pode automatically looks up the **`ExampleApiKeyCert`** auth scheme, retrieves its signing algorithm and key/certificate, and uses those to generate a valid JWT. This ensures that the JWT you create can later be **decoded and verified** by the same auth scheme without having to re-specify all parameters (secret, certificate, etc.).
+
+### Example
+
+Below is a short example of how you might implement a **login** route that returns a signed JWT:
+
+```powershell
+Add-PodeRoute -Method Post -Path '/user/login' -ScriptBlock {
+    param()
+
+    # In a real scenario, you'd validate the incoming credentials from $WebEvent.data
+    $username = $WebEvent.Data['username']
+    $password = $WebEvent.Data['password']
+
+    # If valid, generate a JWT that matches the 'ExampleApiKeyCert' scheme
+    $jwt = ConvertTo-PodeJwt -Authentication 'ExampleApiKeyCert'
+
+    Write-PodeJsonResponse -StatusCode 200 -Value @{ jwt_token = $jwt }
 }
 ```
 
-By default, Pode will check if the request's header contains an `Authorization` key, and whether the value of that key starts with the `Bearer` tag. The `New-PodeAuthBearerScheme` function can be supplied parameters to customize the tag using `-HeaderTag`. You can also change the location to Query by using the `-Location` parameter.
+In this example, the **`-Authentication`** parameter ensures Pode uses the RS256 certificate-based configuration already defined by the `ExampleApiKeyCert` auth scheme, producing a token that is verifiable by that same scheme on future requests.
 
-For example, to look for a bearer token in a query parameter:
+---
+
+### Customizing the Header/Payload
+
+When generating a JWT using **`ConvertTo-PodeJwt`**, you can specify parameters that either:
+
+1. **Manually** define the header/payload using `-Header` and `-Payload`, or
+2. **Automatically** set standard claims via shortcut parameters like `-Expiration`, `-Issuer`, `-Audience`, etc.
+
+You can also combine these approaches—Pode merges everything into the final token unless you use **`-NoStandardClaims`** to disable automatic claims.
+
+Below are the **primary parameters** you can pass to **`ConvertTo-PodeJwt`**:
+
+#### Header and Payload
+
+- **`-Header`**: A hashtable for JWT header fields (e.g., `alg`, `typ`).
+- **`-Payload`**: A hashtable for arbitrary/custom claims (e.g., `role`, `scope`, etc.).
+- **`-NoStandardClaims`**: If specified, **no** standard claims are auto-generated (e.g., no `exp`, `nbf`, `iat`, etc.). This is useful if you want full control over claims in `-Payload`.
+
+#### Standard Claims Parameters
+
+These automatically populate or override common JWT claims:
+
+- **`-Expiration`** (`int`, default 3600)
+  - Sets the `exp` (expiration time) to the current time + `Expiration` (in seconds).
+  - For example, **3600** means `exp` = now + 1 hour.
+
+- **`-NotBefore`** (`int`, default 0)
+  - Sets the `nbf` (not-before) to current time + `NotBefore` (in seconds).
+  - **0** = immediate validity; **60** = valid 1 minute from now, etc.
+
+- **`-IssuedAt`** (`int`, default 0)
+  - Sets the `iat` (issued-at) time.
+  - **0** means “use current time.” Any other integer is added to the current time as seconds.
+
+- **`-Issuer`** (`string`)
+  - Sets the `iss` (issuer) claim, e.g. `"auth.example.com"`.
+
+- **`-Subject`** (`string`)
+  - Sets the `sub` (subject) claim, e.g. `"user123"`.
+
+- **`-Audience`** (`string`)
+  - Sets the `aud` (audience) claim, e.g. `"myapi.example.com"`.
+
+- **`-JwtId`** (`string`)
+  - Sets the `jti` (JWT ID) claim, a unique identifier for the token.
+
+If you **also** supply the same claims in your `-Payload` hashtable, Pode typically defers to your explicit claim unless **`-NoStandardClaims`** is omitted, in which case these parameters can overwrite the payload-based claims.
+
+---
+
+### Example Usage
+
+Below is an example that **automatically** sets standard claims for expiration (1 hour from now), not-before (starts immediately), and an issuer, while also providing a custom header/payload:
 
 ```powershell
-Start-PodeServer {
-    New-PodeAuthBearerScheme -Location Query | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
-        param($token)
+$header = @{
+    alg = 'HS256'
+    typ = 'JWT'
+}
 
-        # check if the token is valid, and get user
+$payload = @{
+    role = 'admin'
+    customClaim = 'someValue'
+}
 
-        return @{ User = $user }
-    }
+$jwt = ConvertTo-PodeJwt `
+    -Header $header `
+    -Payload $payload `
+    -Secret 'SuperSecretKey' `
+    -Expiration 3600 `
+    -NotBefore 0 `
+    -Issuer 'auth.example.com' `
+    -Subject 'user123' `
+    -Audience 'myapi.example.com' `
+    -JwtId 'unique-token-id'
+
+Write-PodeJsonResponse -Value @{ token = $jwt }
+```
+
+This produces a JWT that includes:
+
+- A header with `alg = HS256`, `typ = JWT`.
+- Standard claims: `exp`, `nbf`, `iat`, `iss`, `sub`, `aud`, `jti`.
+- Custom claims: `role`, `customClaim`.
+
+If you **don’t** want Pode to generate any standard claims at all (perhaps you want to define everything in `-Payload` yourself), include **`-NoStandardClaims`**:
+
+```powershell
+$jwt = ConvertTo-PodeJwt -NoStandardClaims -Payload @{ sub='user123'; customKey='abc' } -Secret 'SuperSecretKey'
+```
+
+No `exp`, `nbf`, or `iat` will be automatically added.
+
+Similarly, if you have a named scheme:
+
+```powershell
+New-PodeAuthBearerScheme -AsJWT -Algorithm 'RS256' -Certificate 'C:\cert.pfx' -CertificatePassword (ConvertTo-SecureString "CertPass" -AsPlainText -Force) |
+    Add-PodeAuth -Name 'ExampleApiKeyCert'
+
+Add-PodeRoute -Method Post -Path '/login' -ScriptBlock {
+    $jwt = ConvertTo-PodeJwt `
+        -Authentication 'ExampleApiKeyCert' `
+        -Issuer 'auth.example.com' `
+        -Expiration 3600 `
+        -Subject 'user123'
+
+    Write-PodeJsonResponse -Value @{ token = $jwt }
 }
 ```
 
-**Note:** Per [RFC 6750](https://datatracker.ietf.org/doc/html/rfc6750), using the Authorization header is the recommended method for sending bearer tokens. Query parameters should only be used when headers are not feasible, as query strings may be logged in URLs, potentially exposing sensitive information.
-
-### JWT Support
-
-`New-PodeAuthBearerScheme` now includes support for JWT authentication with various security levels and algorithms. You can configure JWT validation using parameters such as `-AsJWT`, `-Algorithm`, `-Secret`, `-PublicKey`, and `-JwtVerificationMode`.
-
-#### JwtVerificationMode
-
-The `-JwtVerificationMode` parameter defines how aggressively JWT claims should be checked:
-
-- `Strict`: Requires all standard claims to be valid (`exp`, `nbf`, `iat`, `iss`, `aud`, `jti`).
-- `Moderate`: Allows missing `iss` and `aud` but still checks expiration.
-- `Lenient`: Ignores missing `iss` and `aud`, only verifies `exp`, `nbf`, and `iat`.
-
-Example using an HMAC JWT validation:
-
-```powershell
-Start-PodeServer {
-    New-PodeAuthBearerScheme -AsJWT -Algorithm 'HS256' -Secret (ConvertTo-SecureString "MySecretKey" -AsPlainText -Force) -JwtVerificationMode 'Strict' |
-        Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
-            param($token)
-
-            # validate and decode JWT, then extract user details
-
-            return @{ User = $user }
-        }
-}
-```
-
-Example using RSA for JWT validation:
-
-```powershell
-Start-PodeServer {
-    $privateKey = Get-Content "private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
-    $publicKey = Get-Content "public.pem" -Raw
-
-    New-PodeAuthBearerScheme -AsJWT -Algorithm 'RS256' -PrivateKey $privateKey -PublicKey $publicKey -JwtVerificationMode 'Moderate' |
-        Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
-            param($token)
-
-            # validate JWT and extract user
-
-            return @{ User = $user }
-        }
-}
-```
-
-### Scope Validation
-
-You can optionally return a `Scope` property alongside the `User`. If you specify any scopes with `New-PodeAuthBearerScheme`, they will be validated in the Bearer's post validator. A 403 will be returned if the scope is invalid.
-
-```powershell
-Start-PodeServer {
-    New-PodeAuthBearerScheme -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
-        param($token)
-
-        # check if the token is valid, and get user
-
-        return @{ User = $user; Scope = 'read' }
-    }
-}
-```
-
-## Middleware
-
-Once configured, you can start using Bearer authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware or as custom Route Middleware.
-
-The following will use Bearer authentication to validate every request on every Route:
-
-```powershell
-Start-PodeServer {
-    Add-PodeAuthMiddleware -Name 'GlobalAuthValidation' -Authentication 'Authenticate'
-}
-```
-
-Whereas the following example will use Bearer authentication to only validate requests on a specific Route:
-
-```powershell
-Start-PodeServer {
-    Add-PodeRoute -Method Get -Path '/info' -Authentication 'Authenticate' -ScriptBlock {
-        # logic
-    }
-}
-```
-
-## Full Example
-
-The following full example of Bearer authentication will set up and configure authentication, validate the token, and then validate on a specific Route:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    # setup bearer authentication to validate a user
-    New-PodeAuthBearerScheme -AsJWT -Algorithm 'HS256' -Secret (ConvertTo-SecureString "MySecretKey" -AsPlainText -Force) -JwtVerificationMode 'Lenient' |
-        Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
-            param($token)
-
-            # here you'd check a real storage, this is just for example
-            if ($token -eq 'test-token') {
-                return @{
-                    User = @{
-                        'ID' = 'M0R7Y302'
-                        'Name' = 'Morty'
-                        'Type' = 'Human'
-                    }
-                    # Scope = 'read'
-                }
-            }
-
-            # authentication failed
-            return $null
-        }
-
-    # check the request on this route against the authentication
-    Add-PodeRoute -Method Get -Path '/cpu' -Authentication 'Authenticate' -ScriptBlock {
-        Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
-    }
-
-    # this route will not be validated against the authentication
-    Add-PodeRoute -Method Get -Path '/memory' -ScriptBlock {
-        Write-PodeJsonResponse -Value @{ 'memory' = 14 }
-    }
-}
-```
-
+Here, Pode automatically applies the RS256 certificate from **`ExampleApiKeyCert`** and merges your standard-claims parameters, producing a token recognized by that same scheme upon verification.
