@@ -118,7 +118,7 @@ $Versions = @{
     MkDocs      = '1.6.1'
     PSCoveralls = '1.0.0'
     DotNet      = $SdkVersion
-    MkDocsTheme = '9.5.44'
+    MkDocsTheme = '9.6.4'
     PlatyPS     = '0.14.2'
 }
 
