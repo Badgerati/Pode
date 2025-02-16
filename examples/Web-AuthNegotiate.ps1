@@ -47,9 +47,10 @@ Start-PodeServer -Threads 2 {
 
     # setup negotiate auth
     New-PodeAuthScheme -Negotiate -KeytabPath '.\pode-user.keytab' | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
-        param($identity)
-        $identity | out-default
-        return @{ User = $identity }
+        param($claim)
+        $claim | Out-Default
+        $claim.Identity.Name | Out-Default
+        return @{ User = $claim }
     }
 
     # example JSON route, requiring negotiate auth

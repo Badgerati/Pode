@@ -343,7 +343,7 @@ function Get-PodeAuthNegotiateType {
 
         # authenticate the user
         try {
-            $identity = $options.Authenticator.Authenticate($header)
+            $claim = $options.Authenticator.Authenticate($header)
         }
         catch {
             $_ | Write-PodeErrorLog -Level Debug
@@ -353,7 +353,7 @@ function Get-PodeAuthNegotiateType {
             }
         }
 
-        return @($identity)
+        return @($claim)
     }
 }
 

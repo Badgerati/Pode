@@ -16,24 +16,33 @@ namespace Pode
         public PodeKerberosAuth(string keytabPath)
         {
             KeytabPath = keytabPath;
-            Keytab = new KeyTable(File.ReadAllBytes(keytabPath));
+            Keytab = new KeyTable(File.ReadAllBytes(KeytabPath));
             Authenticator = new KerberosAuthenticator(Keytab);
 
-            Validator = new KerberosValidator(Keytab);
-            Validator.ValidateAfterDecrypt = ValidationActions.Pac;
+            Validator = new KerberosValidator(Keytab)
+            {
+                ValidateAfterDecrypt = ValidationActions.Pac
+            };
         }
 
         public void Validate(string token)
         {
-            token = token?.Trim();
+            // error if token not provided
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            // trim token and get the last part if it contains spaces
+            token = token.Trim();
             if (token.IndexOf(' ') >= 1)
             {
                 var split = token.Split(' ');
                 token = split[split.Length - 1];
             }
 
-            var result = Validator.Validate(Convert.FromBase64String(token));
-            result.Wait();
+            // validate the token
+            Validator.Validate(Convert.FromBase64String(token)).Wait();
         }
 
         public ClaimsPrincipal Authenticate(string token)

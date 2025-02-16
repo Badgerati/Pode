@@ -2661,3 +2661,77 @@ function Get-PodeAuthUser {
 
     return $auth.User
 }
+
+<#
+.SYNOPSIS
+A simple helper function, to help generate a new Keytab file for use with Kerberos authentication.
+
+.DESCRIPTION
+A simple helper function, to help generate a new Keytab file for use with Kerberos authentication.
+
+.PARAMETER Hostname
+The Hostname to use for the Keytab file.
+
+.PARAMETER DomainName
+The Domain Name to use for the Keytab file.
+
+.PARAMETER Username
+The Username to use for the Keytab file.
+
+.PARAMETER Password
+The Password to use for the Keytab file. (Default: * - this will prompt for a password)
+
+.PARAMETER FilePath
+The File Path to save the Keytab file. (Default: pode.keytab)
+
+.PARAMETER Crypto
+The Encryption type to use for the Keytab file. (Default: All)
+
+.EXAMPLE
+New-PodeAuthKeyTab -Hostname 'pode.example.com' -DomainName 'example.com' -Username 'example\pode_user'
+
+.EXAMPLE
+New-PodeAuthKeyTab -Hostname 'pode.example.com' -DomainName 'example.com' -Username 'example\pode_user' -Password 'pa$$word!'
+
+.EXAMPLE
+New-PodeAuthKeyTab -Hostname 'pode.example.com' -DomainName 'example.com' -Username 'example\pode_user' -FilePath 'custom_name.keytab'
+
+.EXAMPLE
+New-PodeAuthKeyTab -Hostname 'pode.example.com' -DomainName 'example.com' -Username 'example\pode_user' -Crypto 'AES256-SHA1'
+
+.NOTES
+This function uses the ktpass command to generate the Keytab file.
+#>
+function New-PodeAuthKeyTab {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Hostname,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $DomainName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Username,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Password = '*',
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $FilePath = 'pode.keytab',
+
+        [Parameter()]
+        [ValidateSet('All', 'DES-CBC-CRC', 'DES-CBC-MD5', 'RC4-HMAC-NT', 'AES256-SHA1', 'AES128-SHA1')]
+        [string]
+        $Crypto = 'All'
+    )
+
+    ktpass /princ HTTP/$Hostname@$DomainName /mapuser $Username /pass $Password /out $FilePath /crypto $Crypto /ptype KRB5_NT_PRINCIPAL /mapop set
+}
