@@ -72,7 +72,12 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
 
         # Load test keys from PEM files (Assume these exist in the test environment)
         $algorithms = 'ES256', 'ES384', 'ES512', 'RS256', 'RS384', 'RS512'
-
+        $flags = if ($IsMacOS) {
+            [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
+        }
+        else {
+            [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+        }
         $PrivateKey = @{}
         foreach ($alg in $algorithms) {
             $PfxBytes = [System.IO.File]::ReadAllBytes("$testPath/certs/$alg.pfx")
@@ -80,7 +85,7 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
             $PrivateKey[$alg] = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
                 $PfxBytes,
                     (ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force),
-                [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+                $flags
             )
 
         }

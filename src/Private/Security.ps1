@@ -162,10 +162,12 @@ function Get-PodeCertificateByFile {
 
     # read the cert bytes from the file to avoid the use of obsolete constructors
     $certBytes = [System.IO.File]::ReadAllBytes($path)
-    if (! $IsMacOS){
-        $flags=[System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+    $flags = if ($IsMacOS) {
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
     }
-    
+    else {
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+    }
     if ($null -ne $SecurePassword) {
         return [X509Certificates.X509Certificate2]::new($certBytes, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $flags)
     }
