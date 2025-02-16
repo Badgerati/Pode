@@ -51,5 +51,7 @@ extra:
       link: https://github.com/badgerati/pode
     - icon: fontawesome/brands/x-twitter
       link: https://twitter.com/badgerati
+    - icon: fontawesome/brands/bluesky
+      link: https://bsky.app/profile/badgerati.bsky.social
     - icon: fontawesome/brands/docker
       link: https://hub.docker.com/r/badgerati/pode

@@ -316,6 +316,47 @@ function Get-PodeAuthClientCertificateType {
     }
 }
 
+function Get-PodeAuthNegotiateType {
+    return {
+        param($options)
+
+        # do we have an auth header?
+        $header = Get-PodeHeader -Name 'Authorization'
+        if ($null -eq $header) {
+            return @{
+                Message = 'No Authorization header found'
+                Code    = 401
+            }
+        }
+
+        # validate the supplied token
+        try {
+            $options.Authenticator.Validate($header)
+        }
+        catch {
+            $_ | Write-PodeErrorLog -Level Debug
+            return @{
+                Message = 'Invalid Authorization header'
+                Code    = 400
+            }
+        }
+
+        # authenticate the user
+        try {
+            $claim = $options.Authenticator.Authenticate($header)
+        }
+        catch {
+            $_ | Write-PodeErrorLog -Level Debug
+            return @{
+                Message = 'Authentication failed'
+                Code    = 401
+            }
+        }
+
+        return @($claim)
+    }
+}
+
 function Get-PodeAuthApiKeyType {
     return {
         param($options)

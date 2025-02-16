@@ -272,6 +272,7 @@
         'Test-PodeAuthExists',
         'Get-PodeAuthUser',
         'Add-PodeAuthSession',
+        'New-PodeAuthKeyTab',
 
         # access
         'New-PodeAccessScheme',
