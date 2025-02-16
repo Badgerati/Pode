@@ -1,6 +1,6 @@
 # Negotiate
 
-Negotiate authentication lets you use Kerberos or NTLM authentication with an Active Directory (AD) server. This enables the use of, for example, `-UseDefaultCredentials` on `Invoke-WebRequest` and `Invoke-RestMethod`.
+Negotiate authentication lets you use Kerberos or NTLM authentication with an Active Directory (AD) server. This enables the use of, for example, `-UseDefaultCredentials` on `Invoke-WebRequest` and `Invoke-RestMethod`. The Negotiate authentication in Pode is built using the [Kerberos.NET](https://github.com/dotnet/Kerberos.NET) library.
 
 !!! important
     To use the Negotiate authentication you will require a valid keytab file, which can be generated using the [ktpass](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ktpass) command-line tool.
