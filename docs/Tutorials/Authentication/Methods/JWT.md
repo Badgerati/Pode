@@ -1,5 +1,4 @@
-
-## Create a JWT
+# Create a JWT
 
 Pode provides a [`ConvertTo-PodeJwt`](../../../../Functions/Authentication/ConvertTo-PodeJwt) command that builds and signs a JWT for you. You can provide:
 

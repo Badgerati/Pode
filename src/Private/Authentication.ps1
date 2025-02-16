@@ -650,7 +650,7 @@ function Get-PodeAuthBearerType {
                     $message = 'No Bearer token found'
                     return @{
                         Message   = $message
-                        Code      = 400  # RFC 6750: Malformed request should return 400
+                        Code      = 401
                         Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message
                     }
                 }

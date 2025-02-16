@@ -161,8 +161,8 @@ if (-Not (Test-Path $certsPath)) {
             Write-Error "API request failed for $($alg): $_"
         }
 
-        Write-Output 'Waiting 10 seconds before next test...'
-        Start-Sleep 10
+        Write-Output 'Waiting 3 seconds before next test...'
+        Start-Sleep 3
     }
 }
 Write-Output 'All JWT authentication tests completed!'

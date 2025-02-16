@@ -2602,14 +2602,6 @@ function New-PodeAuthBearerScheme {
         [string[]]
         $Scope,
 
-        # Parameter sets using -AsJWT require certain mandatory parameters (e.g. Secret for HMAC)
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_NONE')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertBytes')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
         [switch]
         $AsJWT,
 
