@@ -493,6 +493,9 @@ function Invoke-PodeBuildDotnetBuild {
         $AssemblyVersion = ''
     }
 
+    # restore dependencies
+    dotnet restore
+
     # Use dotnet publish for .NET Core and .NET 5+
     dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
 

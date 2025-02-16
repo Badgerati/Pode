@@ -10,7 +10,7 @@
 .EXAMPLE
     To run the sample: ./Web-AuthFormAd.ps1
 
-    This examples shows how to use session persistant authentication using Windows Active Directory.
+    This examples shows how to use session persistent authentication using Windows Active Directory.
     The example used here is Form authentication, sent from the <form> in HTML.
 
     Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
@@ -67,7 +67,7 @@ Start-PodeServer -Threads 2 {
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
             Username = $WebEvent.Auth.User.Name
-            Views = $WebEvent.Session.Data.Views
+            Views    = $WebEvent.Session.Data.Views
         }
     }
 
