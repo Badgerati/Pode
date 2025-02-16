@@ -96,8 +96,8 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
                         AsJWT               = $true
                         RsaPaddingScheme    = $rsaPaddingScheme
                         JwtVerificationMode = 'Lenient'
-                        PfxPath             = $privateKeyPath
-                        PfxPassword         = $securePassword
+                        Certificate         = $privateKeyPath
+                        CertificatePassword = $securePassword
                     }
 
                     New-PodeAuthBearerScheme  @param |
@@ -182,7 +182,7 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
 
                 # Read key contents
                 $payload = @{ sub = '123'; username = 'morty' }
-                $jwt = ConvertTo-PodeJwt -PfxPath $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -PfxPassword $securePassword -Payload $payload
+                $jwt = ConvertTo-PodeJwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -CertificatePassword $securePassword -Payload $payload
                 $headers = @{ 'Authorization' = "Bearer $jwt"; 'Accept' = 'application/json' }
 
                 # Make request to correct algorithm path
@@ -208,12 +208,12 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
 
                 $payload = @{ sub = '123'; username = 'morty' }
                 $params = @{
-                    Payload          = $payload
-                    PfxPath          = $privateKeyPath
-                    PfxPassword      = $securePassword
-                    RsaPaddingScheme = $rsaPaddingScheme
-                    Issuer           = 'Pode'
-                    Audience         = $applicationName
+                    Payload             = $payload
+                    Certificate         = $privateKeyPath
+                    CertificatePassword = $securePassword
+                    RsaPaddingScheme    = $rsaPaddingScheme
+                    Issuer              = 'Pode'
+                    Audience            = $applicationName
                 }
                 $jwt = ConvertTo-PodeJwt  @params
                 $headers = @{ 'Authorization' = "Bearer $jwt"; 'Accept' = 'application/json' }

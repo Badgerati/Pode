@@ -145,6 +145,10 @@ function Get-PodeCertificateByFile {
         $Password = $null,
 
         [Parameter()]
+        [securestring]
+        $SecurePassword = $null,
+
+        [Parameter()]
         [string]
         $Key = $null
     )
@@ -156,13 +160,22 @@ function Get-PodeCertificateByFile {
 
     $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
 
+    # read the cert bytes from the file to avoid the use of obsolete constructors
+    $certBytes = [System.IO.File]::ReadAllBytes($path)
+    if (! $IsMacOS){
+        $flags=[System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+    }
+    
+    if ($null -ne $SecurePassword) {
+        return [X509Certificates.X509Certificate2]::new($certBytes, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $flags)
+    }
     # cert + password
     if (![string]::IsNullOrWhiteSpace($Password)) {
-        return [X509Certificates.X509Certificate2]::new($path, $Password)
+        return [X509Certificates.X509Certificate2]::new($certBytes, $Password, $flags)
     }
 
     # plain cert
-    return [X509Certificates.X509Certificate2]::new($path)
+    return [X509Certificates.X509Certificate2]::new($certBytes, $null, $flags)
 }
 
 function Get-PodeCertificateByPemFile {

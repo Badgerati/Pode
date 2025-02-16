@@ -97,7 +97,7 @@ if (-Not (Test-Path $certsPath)) {
             } 
         }
         else {
-            $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText
+            $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
             $privateKeyPath = if ($alg.StartsWith('PS')) {
                 "$certsPath/$($alg.Replace('PS','RS')).pfx"
                 $rsaPaddingScheme = 'Pss'
@@ -120,23 +120,23 @@ if (-Not (Test-Path $certsPath)) {
 
         try {
             if ($_ -eq 'Password') {
-                $jwt = ConvertTo-PodeJwt -PfxPath $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -PfxPassword $securePassword -Payload @{
+                $jwt = ConvertTo-PodeJwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -CertificatePassword $securePassword -Payload @{
                     id       = 'id'
                     name     = 'Morty'
                     Type     = 'Human'
                     username = 'morty'
                 }                 
-                ConvertFrom-PodeJwt -Token $jwt -PfxPath $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -PfxPassword $securePassword
+                ConvertFrom-PodeJwt -Token $jwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -CertificatePassword $securePassword
                 $apiUrl = "$ApiBaseUrl/$alg-pwd"
             }
             else {
-                $jwt = ConvertTo-PodeJwt -PfxPath $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -Payload @{
+                $jwt = ConvertTo-PodeJwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -Payload @{
                     id       = 'id'
                     name     = 'Morty'
                     Type     = 'Human'
                     username = 'morty'
                 } 
-                ConvertFrom-PodeJwt -Token $jwt -PfxPath $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme  
+                ConvertFrom-PodeJwt -Token $jwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme  
                 $apiUrl = "$ApiBaseUrl/$alg"
             }
         }

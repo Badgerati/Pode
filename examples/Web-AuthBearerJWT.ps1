@@ -144,8 +144,8 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
                 AsJWT               = $true
                 RsaPaddingScheme    = $rsaPaddingScheme
                 JwtVerificationMode = $JwtVerificationMode
-                PfxPath             = $privateKeyFile.FullName
-                PfxPassword         = $securePassword
+                Certificate         = $privateKeyFile.FullName
+                CertificatePassword = $securePassword
             }
 
             New-PodeAuthBearerScheme @param |
