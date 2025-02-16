@@ -117,11 +117,11 @@ param(
 
 # Dependency Versions
 $Versions = @{
-    Pester      = '5.6.1'
+    Pester      = '5.7.1'
     MkDocs      = '1.6.1'
     PSCoveralls = '1.0.0'
     DotNet      = $SdkVersion
-    MkDocsTheme = '9.5.44'
+    MkDocsTheme = '9.6.4'
     PlatyPS     = '0.14.2'
 }
 
@@ -497,7 +497,10 @@ function Invoke-PodeBuildDotnetBuild {
         $AssemblyVersion = ''
     }
 
-    # Perform the build for the target runtime
+    # restore dependencies
+    dotnet restore
+
+    # Use dotnet publish for .NET Core and .NET 5+
     dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
 
     # Throw an error if the build fails
