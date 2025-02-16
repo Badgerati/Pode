@@ -5,6 +5,10 @@
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Kerberos.NET" Version="4.6.77" />
+  </ItemGroup>
+
   <PropertyGroup Condition="'$(NETCoreSdkVersion)' >= '8.0'">
     <TargetFrameworks>$(TargetFrameworks);net8.0</TargetFrameworks>
   </PropertyGroup>
