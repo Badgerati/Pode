@@ -1,3 +1,5 @@
+using namespace Pode
+
 <#
 .SYNOPSIS
 Create a new type of Authentication scheme.
@@ -113,6 +115,12 @@ If supplied, the token/key supplied for Bearer/API key authentication will be pa
 .PARAMETER Secret
 An optional Secret, used to sign/verify JWT signatures.
 
+.PARAMETER Negotiate
+If supplied, will use the inbuilt Negotiate Authentication scheme (Kerberos/NTLM).
+
+.PARAMETER KeytabPath
+The path to the Keytab file for Negotiate authentication.
+
 .EXAMPLE
 $basic_auth = New-PodeAuthScheme -Basic
 
@@ -179,7 +187,14 @@ function New-PodeAuthScheme {
         [string]
         $Description,
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'Basic')]
+        [Parameter(ParameterSetName = 'Bearer')]
+        [Parameter(ParameterSetName = 'Digest')]
+        [Parameter(ParameterSetName = 'Form')]
+        [Parameter(ParameterSetName = 'Custom')]
+        [Parameter(ParameterSetName = 'ClientCertificate')]
+        [Parameter(ParameterSetName = 'OAuth2')]
+        [Parameter(ParameterSetName = 'ApiKey')]
         [string]
         $Realm,
 
@@ -208,7 +223,7 @@ function New-PodeAuthScheme {
         [switch]
         $ClientCertificate,
 
-        [Parameter(ParameterSetName = 'OAuth2', Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'OAuth2')]
         [string]
         $ClientId,
 
@@ -224,7 +239,7 @@ function New-PodeAuthScheme {
         [string]
         $AuthoriseUrl,
 
-        [Parameter(ParameterSetName = 'OAuth2', Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'OAuth2')]
         [string]
         $TokenUrl,
 
@@ -285,7 +300,15 @@ function New-PodeAuthScheme {
         [Parameter(ParameterSetName = 'Bearer')]
         [Parameter(ParameterSetName = 'ApiKey')]
         [string]
-        $Secret
+        $Secret,
+
+        [Parameter(ParameterSetName = 'Negotiate')]
+        [switch]
+        $Negotiate,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Negotiate')]
+        [string]
+        $KeytabPath
     )
     begin {
         $pipelineItemCount = 0
@@ -503,8 +526,24 @@ function New-PodeAuthScheme {
                         Location     = $Location
                         LocationName = $LocationName
                         AsJWT        = $AsJWT
-                        Secret       = $SecretString
-                        Algorithm    = $alg
+                        Secret       = $secretBytes
+                    }
+                }
+            }
+
+            'negotiate' {
+                return @{
+                    Name          = 'Negotiate'
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthNegotiateType)
+                        UsingVariables = $null
+                    }
+                    PostValidator = $null
+                    Middleware    = $Middleware
+                    InnerScheme   = $InnerScheme
+                    Scheme        = 'http'
+                    Arguments     = @{
+                        Authenticator = [PodeKerberosAuth]::new($KeytabPath)
                     }
                 }
             }
@@ -2370,7 +2409,7 @@ function ConvertTo-PodeJwt {
         'SecretBytes' {
             if (!([string]::IsNullOrWhiteSpace($Header.alg))) {
                 if ([string]::IsNullOrWhiteSpace($Algorithm)   ) {
-                    $Algorithm =  $Header.alg.ToUpper()
+                    $Algorithm = $Header.alg.ToUpper()
                 }
             }
             if (($Algorithm -ieq 'none')) {
@@ -2428,8 +2467,8 @@ function ConvertTo-PodeJwt {
         $Header['alg'] = Get-PodeJwtSigningAlgorithm -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme
 
         $params = @{
-            X509Certificate = $X509Certificate
-            RsaPaddingScheme= $RsaPaddingScheme
+            X509Certificate  = $X509Certificate
+            RsaPaddingScheme = $RsaPaddingScheme
         }
     }
 
@@ -3097,6 +3136,80 @@ function Get-PodeAuthUser {
     }
 
     return $auth.User
+}
+
+<#
+.SYNOPSIS
+A simple helper function, to help generate a new Keytab file for use with Kerberos authentication.
+
+.DESCRIPTION
+A simple helper function, to help generate a new Keytab file for use with Kerberos authentication.
+
+.PARAMETER Hostname
+The Hostname to use for the Keytab file.
+
+.PARAMETER DomainName
+The Domain Name to use for the Keytab file.
+
+.PARAMETER Username
+The Username to use for the Keytab file.
+
+.PARAMETER Password
+The Password to use for the Keytab file. (Default: * - this will prompt for a password)
+
+.PARAMETER FilePath
+The File Path to save the Keytab file. (Default: pode.keytab)
+
+.PARAMETER Crypto
+The Encryption type to use for the Keytab file. (Default: All)
+
+.EXAMPLE
+New-PodeAuthKeyTab -Hostname 'pode.example.com' -DomainName 'example.com' -Username 'example\pode_user'
+
+.EXAMPLE
+New-PodeAuthKeyTab -Hostname 'pode.example.com' -DomainName 'example.com' -Username 'example\pode_user' -Password 'pa$$word!'
+
+.EXAMPLE
+New-PodeAuthKeyTab -Hostname 'pode.example.com' -DomainName 'example.com' -Username 'example\pode_user' -FilePath 'custom_name.keytab'
+
+.EXAMPLE
+New-PodeAuthKeyTab -Hostname 'pode.example.com' -DomainName 'example.com' -Username 'example\pode_user' -Crypto 'AES256-SHA1'
+
+.NOTES
+This function uses the ktpass command to generate the Keytab file.
+#>
+function New-PodeAuthKeyTab {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Hostname,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $DomainName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Username,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Password = '*',
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $FilePath = 'pode.keytab',
+
+        [Parameter()]
+        [ValidateSet('All', 'DES-CBC-CRC', 'DES-CBC-MD5', 'RC4-HMAC-NT', 'AES256-SHA1', 'AES128-SHA1')]
+        [string]
+        $Crypto = 'All'
+    )
+
+    ktpass /princ HTTP/$Hostname@$DomainName /mapuser $Username /pass $Password /out $FilePath /crypto $Crypto /ptype KRB5_NT_PRINCIPAL /mapop set
 }
 
 <#
