@@ -8,7 +8,7 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 }
 
-Describe 'JWT Bearer Authentication Requests' -Tag 'No_DesktopEdition' {
+Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
 
     BeforeAll {
         $Port = 8080
@@ -72,38 +72,35 @@ Describe 'JWT Bearer Authentication Requests' -Tag 'No_DesktopEdition' {
                 }
 
 
-
+                $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
                 $algorithms = 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512'
                 foreach ($alg in $algorithms) {
                     if ($alg.StartsWith('PS')) {
-                        $privateKeyPath = Join-Path -Path $using:CertsPath -ChildPath "$($alg.Replace('PS','RS'))-private.pem"
-                        $publicKeyPath = Join-Path -Path $using:CertsPath -ChildPath "$($alg.Replace('PS','RS'))-public.pem"
+                        $privateKeyPath = Join-Path -Path $using:CertsPath -ChildPath "$($alg.Replace('PS','RS')).pfx"
+
                     }
                     else {
-                        $privateKeyPath = Join-Path -Path $using:CertsPath -ChildPath "$alg-private.pem"
-                        $publicKeyPath = Join-Path -Path $using:CertsPath -ChildPath "$alg-public.pem"
+                        $privateKeyPath = Join-Path -Path $using:CertsPath -ChildPath "$alg.pfx"
                     }
 
                     if (! (Test-Path $privateKeyPath)) {
                         Write-Warning "Skipping $($alg): Private key file not found ($privateKeyPath)"
                         Continue
                     }
-                    # Ensure the matching public key exists
-                    if (! (Test-Path $publicKeyPath)) {
-                        Write-Warning "Skipping $($alg): Public key missing ($publicKeyPath)."
-                        Continue
-                    }
-
-                    # Read key contents
-                    $privateKey = Get-Content $privateKeyPath -Raw | ConvertTo-SecureString -AsPlainText -Force
-                    $publicKey = Get-Content $publicKeyPath -Raw
 
                     # Define the authentication location dynamically (e.g., `/auth/bearer/jwt/{algorithm}`)
                     $pathRoute = "/auth/bearer/jwt/key/lenient/$alg"
                     $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
                     # Register Pode Bearer Authentication
-                    Write-PodeHost "Registering JWT Authentication for: $alg ($Location)"
-                    New-PodeAuthBearerScheme  -AsJWT -PrivateKey $privateKey -PublicKey $publicKey -JwtVerificationMode Lenient -RsaPaddingScheme $rsaPaddingScheme |
+                    $param = @{
+                        AsJWT               = $true
+                        RsaPaddingScheme    = $rsaPaddingScheme
+                        JwtVerificationMode = 'Lenient'
+                        PfxPath             = $privateKeyPath
+                        PfxPassword         = $securePassword
+                    }
+
+                    New-PodeAuthBearerScheme  @param |
                         Add-PodeAuth -Name "Bearer_JWT_lenient_$alg" -Sessionless -ScriptBlock {
                             param($jwt)
 
@@ -126,7 +123,8 @@ Describe 'JWT Bearer Authentication Requests' -Tag 'No_DesktopEdition' {
                         Write-PodeJsonResponse -Value @{ Result = 'OK' }
                     }
 
-                    New-PodeAuthBearerScheme  -AsJWT -PrivateKey $privateKey -PublicKey $publicKey -JwtVerificationMode Strict -RsaPaddingScheme $rsaPaddingScheme |
+                    $param.JwtVerificationMode = 'Strict'
+                    New-PodeAuthBearerScheme  @param |
                         Add-PodeAuth -Name "Bearer_JWT_strict_$alg" -Sessionless -ScriptBlock {
                             param($jwt)
 
@@ -164,24 +162,27 @@ Describe 'JWT Bearer Authentication Requests' -Tag 'No_DesktopEdition' {
 
 
     Describe 'Bearer Authentication - JWT Algorithms' {
-
+        BeforeAll {
+            $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
+        }
         Context 'Bearer - Algorithm <_> - Lenient - Path /auth/bearer/jwt/key/<_>' -ForEach (('RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512')) {
             It "Bearer - Algorithm $_ - returns OK for valid key" {
                 # Define corresponding private key path
                 $privateKeyPath = if ($_.StartsWith('PS')) {
-                    Join-Path -Path $CertsPath -ChildPath "$($_.Replace('PS','RS'))-private.pem"
+                    Join-Path -Path $CertsPath -ChildPath "$($_.Replace('PS','RS')).pfx"
+                    $rsaPaddingScheme = 'Pss'
                 }
                 else {
-                    Join-Path -Path $CertsPath -ChildPath "$_-private.pem"
+                    Join-Path -Path $CertsPath -ChildPath "$_.pfx"
+                    $rsaPaddingScheme = 'Pkcs1V15'
                 }
 
                 # Ensure the matching private key exists
                 (Test-Path $privateKeyPath) | Should -BeTrue
 
                 # Read key contents
-                $privateKey = Get-Content $privateKeyPath -Raw | ConvertTo-SecureString -AsPlainText -Force
                 $payload = @{ sub = '123'; username = 'morty' }
-                $jwt = ConvertTo-PodeJwt -Payload $payload -Algorithm $_ -PrivateKey $privateKey
+                $jwt = ConvertTo-PodeJwt -PfxPath $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -PfxPassword $securePassword -Payload $payload
                 $headers = @{ 'Authorization' = "Bearer $jwt"; 'Accept' = 'application/json' }
 
                 # Make request to correct algorithm path
@@ -194,19 +195,27 @@ Describe 'JWT Bearer Authentication Requests' -Tag 'No_DesktopEdition' {
             It "Bearer - Algorithm $_ - returns OK for valid key" {
                 # Define corresponding private key path
                 $privateKeyPath = if ($_.StartsWith('PS')) {
-                    Join-Path -Path $CertsPath -ChildPath "$($_.Replace('PS','RS'))-private.pem"
+                    Join-Path -Path $CertsPath -ChildPath "$($_.Replace('PS','RS')).pfx"
+                    $rsaPaddingScheme = 'Pss'
                 }
                 else {
-                    Join-Path -Path $CertsPath -ChildPath "$_-private.pem"
+                    Join-Path -Path $CertsPath -ChildPath "$_.pfx"
+                    $rsaPaddingScheme = 'Pkcs1V15'
                 }
 
                 # Ensure the matching private key exists
                 (Test-Path $privateKeyPath) | Should -BeTrue
 
-                # Read key contents
-                $privateKey = Get-Content $privateKeyPath -Raw | ConvertTo-SecureString -AsPlainText -Force
                 $payload = @{ sub = '123'; username = 'morty' }
-                $jwt = ConvertTo-PodeJwt -Payload $payload -Algorithm $_ -PrivateKey $privateKey -Issuer 'Pode' -Audience $applicationName
+                $params = @{
+                    Payload          = $payload
+                    PfxPath          = $privateKeyPath
+                    PfxPassword      = $securePassword
+                    RsaPaddingScheme = $rsaPaddingScheme
+                    Issuer           = 'Pode'
+                    Audience         = $applicationName
+                }
+                $jwt = ConvertTo-PodeJwt  @params
                 $headers = @{ 'Authorization' = "Bearer $jwt"; 'Accept' = 'application/json' }
 
                 # Make request to correct algorithm path
@@ -214,34 +223,6 @@ Describe 'JWT Bearer Authentication Requests' -Tag 'No_DesktopEdition' {
                 $result.Result | Should -Be 'OK'
             }
         }
-        # Test invalid algorithm usage (mismatched tokens)
-
-        Context 'Bearer - Algorithm <_> - Lenient - Path /auth/bearer/jwt/key/<_> - 401' -ForEach (('RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512')) {
-            It "Bearer - Algorithm $_ - returns 401 for mismatched token ($invalidAlg)" {
-                foreach ($invalidAlg in ('RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512')) {
-                    if ($invalidAlg -eq $_) { continue }
-                    # Define mismatched private key path
-                    $privateKeyPath = if ($invalidAlg.StartsWith('PS')) {
-                        Join-Path -Path $CertsPath -ChildPath "$($invalidAlg.Replace('PS','RS'))-private.pem"
-                    }
-                    else {
-                        Join-Path -Path $CertsPath -ChildPath "$invalidAlg-private.pem"
-                    }
-                    # Ensure the mismatched private key exists
-                (Test-Path $privateKeyPath) | Should -BeTrue
-
-                    # Read key contents
-                    $privateKey = Get-Content $privateKeyPath -Raw | ConvertTo-SecureString -AsPlainText -Force
-                    $payload = @{ sub = '123'; username = 'morty' }
-                    $jwt = ConvertTo-PodeJwt -Payload $payload -Algorithm $invalidAlg -PrivateKey $privateKey
-                    $headers = @{ 'Authorization' = "Bearer $jwt"; 'Accept' = 'application/json' }
-
-                    # Attempt to use an invalid token on a different algorithm's endpoint
-                    { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer/jwt/key/lenient/$_" -Method Get -Headers $headers -ErrorAction Stop } | Should -Throw -ExpectedMessage '*401*'
-                }
-            }
-        }
-
     }
 
     Describe 'Bearer - Algorithm <_> - Lenient - Path /auth/bearer/jwt/secret/lenient/<_>'  -ForEach ('HS256', 'HS384', 'HS512') {

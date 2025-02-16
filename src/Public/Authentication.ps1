@@ -2170,70 +2170,82 @@ function Add-PodeAuthWindowsLocal {
 
 <#
 .SYNOPSIS
-    Converts a Header/Payload into a signed or unsigned JWT.
+Converts a Header/Payload into a signed or unsigned JWT.
 
 .DESCRIPTION
-    This function converts a hashtable-based JWT header and payload into a JWT string.
-    It automatically includes registered claims such as `exp`, `iat`, `nbf`, `iss`, `sub`, and `jti` if not provided.
-    Supports signing using HMAC, RSA, and ECDSA.
+Converts a hashtable-based JWT header and payload into a JWT string. Automatically includes registered claims such as `exp`, `iat`, `nbf`, `iss`, `sub`, and `jti` if not provided. Supports signing using HMAC, RSA, and ECDSA.
 
 .PARAMETER Header
-    A Hashtable containing the JWT header information, including the signing algorithm (`alg`).
-
-.PARAMETER Algorithm
-    Alternative way to pass the signing algorithm. Supported values: HS256, HS384, HS512, RS256, RS384, RS512, PS256, PS384, PS512, ES256, ES384, ES512.
+  A hashtable containing JWT header information including the `alg` (algorithm).
 
 .PARAMETER Payload
-    A Hashtable containing the JWT payload information, including claims (`iss`, `sub`, `aud`, `exp`, `nbf`, `iat`, `jti`).
+  A hashtable containing JWT payload information, including claims (`iss`, `sub`, `aud`, `exp`, `nbf`, `iat`, `jti`).
+
+.PARAMETER Algorithm
+  The signing algorithm. Supported values: NONE, HS256, HS384, HS512, RS256, RS384, RS512, PS256, PS384, PS512, ES256, ES384, ES512.
 
 .PARAMETER Secret
-    The secret key for HMAC algorithms. Must be a string or byte array.
-    Required for `HS256`, `HS384`, `HS512`.
+  The secret key for HMAC algorithms, required for `HS256`, `HS384`, and `HS512`.
 
-.PARAMETER PrivateKey
-    The private key (PEM format) for RSA or ECDSA algorithms.
-    Required for `RS256`, `RS384`, `RS512`, `PS256`, `PS384`, `PS512`, `ES256`, `ES384`, `ES512`.
+.PARAMETER X509Certificate
+  The private key certificate for RSA or ECDSA algorithms.
+
+.PARAMETER PfxPath
+  Path to the PFX certificate file.
+
+.PARAMETER PfxBytes
+  PFX certificate in byte array format.
+
+.PARAMETER PfxPassword
+  Password for the PFX certificate if protected.
+
+.PARAMETER RsaPaddingScheme
+  RSA padding scheme to use, default is `Pkcs1V15`.
+
+.PARAMETER Authentication
+  Pode authentication method for signing the JWT.
 
 .PARAMETER Expiration
-    The expiration time for the JWT (in seconds from now). Defaults to 1 hour.
+  Expiration time for the JWT in seconds (default: 3600).
 
 .PARAMETER NotBefore
-    The `nbf` (Not Before) time for the JWT (in seconds from now). Defaults to 0 (immediate use).
+  `nbf` claim in seconds (default: 0).
 
 .PARAMETER IssuedAt
-    The `iat` (Issued At) time for the JWT. Defaults to the current Unix timestamp.
+  `iat` claim as Unix timestamp.
 
 .PARAMETER Issuer
-    The `iss` (Issuer) claim, identifying the entity that issued the JWT.
+  `iss` claim specifying the token issuer.
 
 .PARAMETER Subject
-    The `sub` (Subject) claim, identifying the principal of the JWT.
+  `sub` claim specifying the token subject.
 
 .PARAMETER Audience
-    The `aud` (Audience) claim, specifying the intended recipient(s) of the JWT.
+  `aud` claim specifying the token audience.
 
 .PARAMETER JwtId
-    The `jti` (JWT ID) claim, a unique identifier for the token.
+  `jti` claim as a unique identifier.
+
+.PARAMETER NoStandardClaims
+  If set, disables automatic inclusion of standard claims.
 
 .OUTPUTS
-    [string] The generated JWT.
+  [string] - Returns the generated JWT string.
 
 .EXAMPLE
-    ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'John' }
+ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'John' }
 
 .EXAMPLE
-    ConvertTo-PodeJwt -Header @{ alg = 'HS256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
+ConvertTo-PodeJwt -Header @{ alg = 'HS256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
 
 .EXAMPLE
-    ConvertTo-PodeJwt -Header @{ alg = 'RS256' } -Payload @{ sub = '123' } -PrivateKey (Get-Content "private.pem" -Raw) -Issuer "auth.example.com" -Audience "myapi.example.com"
+ConvertTo-PodeJwt -Header @{ alg = 'RS256' } -Payload @{ sub = '123' } -PrivateKey (Get-Content "private.pem" -Raw) -Issuer "auth.example.com" -Audience "myapi.example.com"
 
 .NOTES
-    - If no `exp`, `iat`, or `jti` are provided, they will be automatically generated.
-    - The function does not check claim validity. Use `Test-PodeJwt` to validate claims.
-    - Custom claims can be included in the payload.
+This function is an internal Pode function and is subject to change.
 #>
 function ConvertTo-PodeJwt {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType([string])]
     param(
         [Parameter()]
@@ -2242,15 +2254,42 @@ function ConvertTo-PodeJwt {
         [Parameter(Mandatory = $true)]
         [hashtable]$Payload,
 
-        [ValidateSet('NONE', 'HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512')]
+        [Parameter( ParameterSetName = 'Default')]
+        [Parameter( ParameterSetName = 'SecretBytes')]
+        [ValidateSet('NONE', 'HS256', 'HS384', 'HS512')]
         [string]
-        $Algorithm = 'HS256',
+        $Algorithm ,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SecretBytes')]
         $Secret = $null,
 
-        [Parameter()]
-        [securestring]$PrivateKey,
+        [Parameter( Mandatory = $true, ParameterSetName = 'X509Certificate')]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]
+        $X509Certificate,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Certificate_PFX_File')]
+        [string]
+        $PfxPath,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Certificate_PFX_Memory')]
+        [byte[]]
+        $PfxBytes,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Certificate_PFX_File')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Certificate_PFX_Memory')]
+        [SecureString]
+        $PfxPassword, # Password for PFX certificate
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'X509Certificate')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Certificate_PFX_File')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Certificate_PFX_Memory')]
+        [ValidateSet('Pkcs1V15', 'Pss')]
+        [string]
+        $RsaPaddingScheme = 'Pkcs1V15',
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'AuthenticationMethod')]
+        [string]
+        $Authentication,
 
         [Parameter()]
         [int]$Expiration = 3600, # Default: 1 hour
@@ -2271,13 +2310,20 @@ function ConvertTo-PodeJwt {
         [string]$Audience,
 
         [Parameter()]
-        [string]$JwtId
+        [string]$JwtId,
+
+        [Parameter()]
+        [switch]
+        $NoStandardClaims
     )
 
     # Validate header
-    if ([string]::IsNullOrWhiteSpace($Header.alg)) {
-        if ([string]::IsNullOrWhiteSpace($Algorithm)) {
-            throw ($PodeLocale.noAlgorithmInJwtHeaderExceptionMessage)
+    <#     if (![string]::IsNullOrWhiteSpace($Header.alg)) {
+        if (![string]::IsNullOrWhiteSpace($Algorithm)   ) {
+            $Algorithm = [string]::IsNullOrWhiteSpace($Header.alg .ToUpper()
+        }
+    }
+          throw ($PodeLocale.noAlgorithmInJwtHeaderExceptionMessage)
         }
         $Header['alg'] = $Algorithm.ToUpper()
     }
@@ -2286,38 +2332,139 @@ function ConvertTo-PodeJwt {
     }
     else {
         $Header['alg'] = 'HS256'
+    }#>
+
+    switch ($PSCmdlet.ParameterSetName) {
+        'Certificate_PFX_File' {
+
+            if (!(Test-Path -Path $PfxPath -PathType Leaf)) {
+                throw ($PodeLocale.pathNotExistExceptionMessage -f $PfxPath)
+            }
+
+            $PfxBytes = [System.IO.File]::ReadAllBytes($PfxPath)
+
+            $X509Certificate = if ($null -ne $PfxPassword) {
+                [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxBytes, (Convert-PodeSecureStringToPlainText -SecureString $PfxPassword), [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+            }
+            else {
+                [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+                    $PfxBytes,
+                    $null, # No password
+                    [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+                )
+            }
+            break
+        }
+
+        'Certificate_PFX_Memory' {
+            $X509Certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new()
+            if ($null -ne $PfxPassword) {
+                $X509Certificate.Import($PfxBytes, (Convert-PodeSecureStringToPlainText -SecureString $PfxPassword), [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+            }
+            else {
+                $X509Certificate.Import($PfxBytes, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+            }
+            break
+        }
+
+        'SecretBytes' {
+            if (!([string]::IsNullOrWhiteSpace($Header.alg))) {
+                if ([string]::IsNullOrWhiteSpace($Algorithm)   ) {
+                    $Algorithm =  $Header.alg.ToUpper()
+                }
+            }
+            if (($Algorithm -ieq 'none')) {
+                # Expected no secret to be supplied for no signature
+                throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
+            }
+            # Convert secret to bytes if needed
+            if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
+                $Secret = if ($Secret -is [SecureString]) {
+                    Convert-PodeSecureStringToByteArray -SecureString $Secret
+                }
+                else {
+                    [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
+                }
+
+                if ($null -eq $Secret) {
+                    throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'secret', 'HMAC', $Header['alg'])
+                }
+            }
+            if ([string]::IsNullOrWhiteSpace($Algorithm)) {
+                $Algorithm = 'HS256'
+            }
+
+            $Header['alg'] = $Algorithm.ToUpper()
+            $params = @{
+                Algorithm   = $Algorithm.ToUpper()
+                SecretBytes = $Secret
+            }
+            break
+        }
+
+        'X509Certificate' {
+            if ($null -eq $X509Certificate) {
+                throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'private', 'RSA/ECSDA', $Header['alg'])
+            }
+            break
+        }
+        'AuthenticationMethod' {
+            if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
+                if (($Header['alg'] -ieq 'none') -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication).Algorithm -notcontains 'none') {
+                    # Expected no secret to be supplied for no signature
+                    throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
+                }
+                $params = @{
+                    Authentication = $Authentication
+                }
+            }
+            else {
+                throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage)
+            }
+        }
     }
 
-    $Header.typ = 'JWT'
+    if ( $X509Certificate) {
+        $Header['alg'] = Get-PodeJwtSigningAlgorithm -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme
 
-    # Automatically add standard claims if missing
-    $currentUnix = [int][Math]::Floor(([DateTimeOffset]::new([DateTime]::UtcNow)).ToUnixTimeSeconds())
-
-
-    if (! $Payload.ContainsKey('iat')) { $Payload['iat'] = if ($IssuedAt -gt 0) { $IssuedAt } else { $currentUnix } }
-    if (! $Payload.ContainsKey('nbf')) { $Payload['nbf'] = $currentUnix + $NotBefore }
-    if (! $Payload.ContainsKey('exp')) { $Payload['exp'] = $currentUnix + $Expiration }
-    if (! $Payload.ContainsKey('iss')) {
-        if ($Issuer) {
-            $Payload['iss'] = $Issuer
-        }
-        elseif ($PodeContext) {
-            $Payload['iss'] = 'Pode'
-        }
-
-    }
-
-    if ($Subject -and ! $Payload.ContainsKey('sub')) { $Payload['sub'] = $Subject }
-    if (! $Payload.ContainsKey('aud')) {
-        if ($Audience) {
-            $Payload['aud'] = $Audience
-        }
-        elseif ($PodeContext.Server.Application) {
-            $Payload['aud'] = $PodeContext.Server.Application
+        $params = @{
+            X509Certificate = $X509Certificate
+            RsaPaddingScheme= $RsaPaddingScheme
         }
     }
-    if ($JwtId -and ! $Payload.ContainsKey('jti')) { $Payload['jti'] = $JwtId }
-    elseif (! $Payload.ContainsKey('jti')) { $Payload['jti'] = [guid]::NewGuid().ToString() }
+
+    if (! $NoStandardClaims) {
+        $Header.typ = 'JWT'
+
+        # Automatically add standard claims if missing
+        $currentUnix = [int][Math]::Floor(([DateTimeOffset]::new([DateTime]::UtcNow)).ToUnixTimeSeconds())
+
+
+        if (! $Payload.ContainsKey('iat')) { $Payload['iat'] = if ($IssuedAt -gt 0) { $IssuedAt } else { $currentUnix } }
+        if (! $Payload.ContainsKey('nbf')) { $Payload['nbf'] = $currentUnix + $NotBefore }
+        if (! $Payload.ContainsKey('exp')) { $Payload['exp'] = $currentUnix + $Expiration }
+        if (! $Payload.ContainsKey('iss')) {
+            if ($Issuer) {
+                $Payload['iss'] = $Issuer
+            }
+            elseif ($PodeContext) {
+                $Payload['iss'] = 'Pode'
+            }
+
+        }
+
+        if ($Subject -and ! $Payload.ContainsKey('sub')) { $Payload['sub'] = $Subject }
+        if (! $Payload.ContainsKey('aud')) {
+            if ($Audience) {
+                $Payload['aud'] = $Audience
+            }
+            elseif ($PodeContext.Server.Application) {
+                $Payload['aud'] = $PodeContext.Server.Application
+            }
+        }
+        if ($JwtId -and ! $Payload.ContainsKey('jti')) { $Payload['jti'] = $JwtId }
+        elseif (! $Payload.ContainsKey('jti')) { $Payload['jti'] = [guid]::NewGuid().ToString() }
+    }
 
     # Convert header & payload to Base64 URL format
     $header64 = ConvertTo-PodeBase64UrlValue -Value ($Header | ConvertTo-Json -Compress)
@@ -2326,20 +2473,16 @@ function ConvertTo-PodeJwt {
     # Combine header and payload
     $jwt = "$($header64).$($payload64)"
 
-    # Convert secret to bytes if needed
-    if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
-        $Secret = if ($Secret -is [SecureString]) {
-            [System.Text.Encoding]::UTF8.GetBytes( [Runtime.InteropServices.Marshal]::PtrToStringUni([Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($Secret)))
-        }
-        else {
-            [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
-        }
+    $sig = if ($Header['alg'] -ne 'none') {
+        $params['Token'] = $jwt
+        # Generate the signature
+        New-PodeJwtSignature @params
+    }
+    else {
+        [string]::Empty
     }
 
-    # Generate the signature
-    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $Secret -PrivateKey $PrivateKey
-
-    # Append the signature and return the JWT
+    #  Append the signature and return the JWT
     $jwt += ".$($sig)"
     return $jwt
 }
@@ -2347,25 +2490,48 @@ function ConvertTo-PodeJwt {
 
 <#
 .SYNOPSIS
-    Convert and return the payload of a JWT token.
+    Converts and returns the payload of a JWT token.
 
 .DESCRIPTION
-    Convert and return the payload of a JWT token, verifying the signature by default with support to ignore the signature.
+    Converts and returns the payload of a JWT token, verifying the signature by default with an option to ignore the signature.
 
 .PARAMETER Token
-    The JWT token.
+    The JWT token to be decoded.
 
 .PARAMETER Secret
-    The Secret, as a string or byte[], to verify the token's signature.
+    The secret key used to verify the token's signature (string or byte array).
 
-.PARAMETER PrivateKey
-    The private key (PEM format) for RSA or ECDSA algorithms used to decode JWT.
+.PARAMETER X509Certificate
+    The X509 certificate used for RSA or ECDSA verification.
+
+.PARAMETER PfxPath
+    The file path to the PFX certificate used for verification.
+
+.PARAMETER PfxBytes
+    The PFX certificate in byte array format used for verification.
+
+.PARAMETER PfxPassword
+    The password for the PFX certificate if protected.
+
+.PARAMETER RsaPaddingScheme
+    The RSA padding scheme to be used (default: Pkcs1V15).
 
 .PARAMETER IgnoreSignature
-    Skip signature verification, and return the decoded payload.
+    Skips signature verification and returns the decoded payload directly.
+
+.PARAMETER Authentication
+    The authentication method from Pode's context used for JWT verification.
+
+.OUTPUTS
+    [pscustomobject] - Returns the decoded JWT payload as a PowerShell object.
 
 .EXAMPLE
-    ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI1NTMyMTQsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMyJ9.LP-O8OKwix91a-SZwVK35gEClLZQmsORbW0un2Z4RkY"
+    ConvertFrom-PodeJwt -Token "<JWT_TOKEN>" -Secret "MySecretKey"
+    This example decodes a JWT token and verifies its signature using an HMAC secret.
+
+.EXAMPLE
+    ConvertFrom-PodeJwt -Token "<JWT_TOKEN>" -X509Certificate $Certificate
+    This example decodes and verifies a JWT token using an X509 certificate.
 #>
 function ConvertFrom-PodeJwt {
     [CmdletBinding(DefaultParameterSetName = 'Secret')]
@@ -2375,17 +2541,128 @@ function ConvertFrom-PodeJwt {
         [string]
         $Token,
 
-        [Parameter(ParameterSetName = 'Signed')]
-        $Secret = $null,
-
         [Parameter(ParameterSetName = 'Ignore')]
         [switch]
         $IgnoreSignature,
 
-        [Parameter(ParameterSetName = 'Signed')]
-        [securestring]
-        $PrivateKey
+        [Parameter(Mandatory = $true, ParameterSetName = 'SecretBytes')]
+        $Secret = $null,
+
+        [Parameter( Mandatory = $true, ParameterSetName = 'X509Certificate')]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]
+        $X509Certificate,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Certificate_PFX_File')]
+        [string]
+        $PfxPath,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Certificate_PFX_Memory')]
+        [byte[]]
+        $PfxBytes,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Certificate_PFX_File')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Certificate_PFX_Memory')]
+        [SecureString]
+        $PfxPassword, # Password for PFX certificate
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'X509Certificate')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Certificate_PFX_File')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Certificate_PFX_Memory')]
+        [ValidateSet('Pkcs1V15', 'Pss')]
+        [string]
+        $RsaPaddingScheme = 'Pkcs1V15',
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'AuthenticationMethod')]
+        [string]
+        $Authentication
     )
+    switch ($PSCmdlet.ParameterSetName) {
+        'Certificate_PFX_File' {
+
+            if (!(Test-Path -Path $PfxPath -PathType Leaf)) {
+                throw ($PodeLocale.pathNotExistExceptionMessage -f $PfxPath)
+            }
+
+            $PfxBytes = [System.IO.File]::ReadAllBytes($PfxPath)
+
+            $X509Certificate = if ($null -ne $PfxPassword) {
+                [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxBytes, (Convert-PodeSecureStringToPlainText -SecureString $PfxPassword), [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+            }
+            else {
+                [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+                    $PfxBytes,
+                    $null, # No password
+                    [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+                )
+            }
+            break
+        }
+
+        'Certificate_PFX_Memory' {
+            $X509Certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new()
+            if ($null -ne $PfxPassword) {
+                $X509Certificate.Import($PfxBytes, (Convert-PodeSecureStringToPlainText -SecureString $PfxPassword), [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+            }
+            else {
+                $X509Certificate.Import($PfxBytes, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+            }
+            break
+        }
+
+        'SecretBytes' {
+            # Convert secret to bytes if needed
+            if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
+                $Secret = if ($Secret -is [SecureString]) {
+                    Convert-PodeSecureStringToByteArray -SecureString $Secret
+                }
+                else {
+                    [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
+                }
+
+                if ($null -eq $Secret) {
+                    throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'secret', 'HMAC', $Header['alg'])
+                }
+            }
+
+            $params = @{
+                Secret = $Secret
+            }
+            break
+        }
+
+        'X509Certificate' {
+            if ($null -eq $X509Certificate) {
+                throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'private', 'RSA/ECSDA', $Header['alg'])
+            }
+            if (($Header['alg'] -ieq 'none')) {
+                # Expected no secret to be supplied for no signature
+                throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
+            }
+            break
+        }
+
+        'AuthenticationMethod' {
+            if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
+                if (($Header['alg'] -ieq 'none') -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication).Algorithm -notcontains 'none') {
+                    # Expected no secret to be supplied for no signature
+                    throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
+                }
+                $params = @{
+                    Authentication = $Authentication
+                }
+            }
+            else {
+                throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage)
+            }
+        }
+    }
+
+    if ( $X509Certificate) {
+        $params = @{
+            X509Certificate = $X509Certificate
+        }
+    }
+    $params['Token'] = $Token
 
     # get the parts
     $parts = ($Token -isplit '\.')
@@ -2435,21 +2712,9 @@ function ConvertFrom-PodeJwt {
         return $payload
     }
 
-    # otherwise, we have an alg for the signature, so we need to validate it
-    if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
-        $Secret = [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
-    }
+    $params['Algorithm'] = $header.alg
 
-    $sig = "$($parts[0]).$($parts[1])"
-    $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret -PrivateKey $PrivateKey
-
-    if ($sig -ne $parts[2]) {
-        # Invalid JWT signature supplied
-        throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
-    }
-
-    # it's valid return the payload!
-    return $payload
+    return Confirm-PodeJwt @params
 }
 <#
 .SYNOPSIS
@@ -2839,80 +3104,52 @@ function Get-PodeAuthUser {
     Creates a new Bearer authentication scheme for Pode.
 
 .DESCRIPTION
-    This function defines a Bearer authentication scheme, which allows authentication using either a raw Bearer token
-    or a JWT (JSON Web Token). It supports different security levels for JWT validation and can extract the token
-    from either the request header or query parameters.
+    Defines a Bearer authentication scheme that allows authentication using a raw Bearer token or JWT. Supports JWT validation with configurable security levels and token extraction from headers or query parameters.
 
 .PARAMETER HeaderTag
-    The header tag used to identify the Bearer token in the request.
-    Default: "Bearer".
+    The header tag used for the Bearer token (default: "Bearer").
 
 .PARAMETER Location
-    Defines where the Bearer token is extracted from in the request.
-    - "Header" (Default): Extracts from the `Authorization` header.
-    - "Query": Extracts from a query parameter.
+    Specifies the token extraction location: `Header` (default) or `Query`.
 
 .PARAMETER Scope
-    A list of scopes required for this authentication scheme. If specified, the token must contain these scopes.
+    A list of required scopes for the authentication scheme.
 
 .PARAMETER Algorithm
-    Specifies the accepted signing algorithm(s) for JWT validation.
-    Supported values: "NONE", "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512".
-    If not specified, any valid algorithm will be accepted.
+    Accepted JWT signing algorithms: NONE, HS256, HS384, HS512, RS256, RS384, RS512, PS256, PS384, PS512, ES256, ES384, ES512.
 
 .PARAMETER AsJWT
-    Indicates whether the Bearer token should be treated as a JWT.
-    If enabled, the token will be validated as a JWT using the specified algorithm.
+    Indicates if the Bearer token should be treated and validated as a JWT.
 
 .PARAMETER Secret
-    The secret key used to validate HMAC-signed JWTs (HS256, HS384, HS512).
-    Required if using HMAC algorithms and `AsJWT` is enabled.
+    The HMAC secret key for JWT validation (required for HS256, HS384, HS512).
 
-.PARAMETER PrivateKey
-    The private key (PEM format) used for signing JWTs with RSA or ECDSA algorithms (RS256, ES256, etc.).
-    Required for asymmetric signing methods when `AsJWT` is enabled.
+.PARAMETER PfxPath
+    Path to the PFX certificate for RSA/ECDSA JWT validation.
 
-.PARAMETER PublicKey
-    The public key (PEM format) used for verifying JWTs signed with RSA or ECDSA algorithms.
-    Required for asymmetric verification when `AsJWT` is enabled.
+.PARAMETER PfxBytes
+    PFX certificate as a byte array.
+
+.PARAMETER PfxPassword
+    Password for the PFX certificate if needed.
 
 .PARAMETER RsaPaddingScheme
-    Specifies the padding scheme to use for RSA signatures.
-    Acceptable values:
-    - 'Pkcs1V15' (for RS256, RS384, RS512)
-    - 'Pss' (for PS256, PS384, PS512)
-    Default: 'Pkcs1V15'.
+    RSA padding scheme: `Pkcs1V15` (default) or `Pss`.
 
 .PARAMETER JwtVerificationMode
-    Defines the level of strictness for JWT validation.
-    - "Strict": Enforces full verification of claims, signatures, and expiration.
-    - "Moderate": Allows some flexibility, such as missing `kid`.
-    - "Lenient" (Default): Ignores some verification rules but still checks expiration.
+    JWT validation strictness: `Strict`, `Moderate`, or `Lenient` (default).
 
 .OUTPUTS
-    Returns a hashtable representing the Bearer authentication scheme configuration.
+    [hashtable] - Returns the Bearer authentication scheme configuration.
 
 .EXAMPLE
-    # Define a standard Bearer authentication scheme using JWT with HMAC
     New-PodeAuthBearerScheme -AsJWT -Algorithm "HS256" -Secret (ConvertTo-SecureString "MySecretKey" -AsPlainText -Force)
 
 .EXAMPLE
-    # Define a Bearer authentication scheme using an RSA public/private key pair
-    $privateKey = Get-Content "private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
-    $publicKey = Get-Content "public.pem" -Raw
-    New-PodeAuthBearerScheme -AsJWT -Algorithm "RS256" -PrivateKey $privateKey -PublicKey $publicKey
-
-.EXAMPLE
-    # Define a Bearer authentication scheme with relaxed JWT validation
-    New-PodeAuthBearerScheme -AsJWT -Algorithm "HS256" -Secret (ConvertTo-SecureString "MySecretKey" -AsPlainText -Force) -JwtVerificationMode "Lenient"
+    New-PodeAuthBearerScheme -AsJWT -Algorithm "RS256" -PrivateKey (Get-Content "private.pem" -Raw) -PublicKey (Get-Content "public.pem" -Raw)
 
 .NOTES
-    - If `AsJWT` is not specified, the function assumes a raw Bearer token.
-    - If using HMAC algorithms (HS256, HS384, HS512), the `Secret` parameter is required.
-    - If using RSA/ECDSA algorithms (RS256, ES256, etc.), both `PrivateKey` (for signing) and `PublicKey` (for verification) are required.
-    - The function supports extracting tokens from the Authorization header or query parameters.
-    - The `Algorithm` parameter enforces a specific signing method but is optional.
-    - The `JwtVerificationMode` defines how strictly JWTs are validated.
+    This function is an internal Pode function and is subject to change.
 #>
 function New-PodeAuthBearerScheme {
     [CmdletBinding(DefaultParameterSetName = 'Basic')]
@@ -2928,8 +3165,9 @@ function New-PodeAuthBearerScheme {
         [string[]]
         $Scope,
 
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_PFX_File')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_NONE')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_PFX_Memory')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
         [switch]
         $AsJWT,
@@ -2943,39 +3181,70 @@ function New-PodeAuthBearerScheme {
         [SecureString]
         $Secret,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_PFX_File')]
+        [string]
+        $PfxPath, # Path to PFX certificate
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_PFX_Memory')]
+        [byte[]]
+        $PfxBytes, # PFX as a byte array (for in-memory usage)
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_PFX_File')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_PFX_Memory')]
         [SecureString]
-        $PrivateKey,
+        $PfxPassword, # Password for PFX certificate
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
-        [String]
-        $PublicKey,
-
-        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_RS_ES')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_PFX_File')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_PFX_Memory')]
         [ValidateSet('Pkcs1V15', 'Pss')]
         [string]
         $RsaPaddingScheme = 'Pkcs1V15',
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_RS_ES')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_PFX_File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_PFX_Memory')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
         [ValidateSet('Strict', 'Moderate', 'Lenient')]
         [string]
         $JwtVerificationMode = 'Lenient'
     )
 
-    # default realm
+    # Default realm
     $_realm = 'User'
 
-    # convert any middleware into valid hashtables
+    # Convert middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
     switch ($PSCmdlet.ParameterSetName) {
-        'Bearer_RS_ES' {
-            if ($PSVersionTable.PSVersion.Major -lt 7) {
-                # JWT certificate authentication is supported only in PowerShell 7.0 or greater.
-                throw $PodeLocale.jwtCertificateAuthNotSupportedExceptionMessage
+        'Bearer_PFX_File' {
+            if (!(Test-Path -Path $PfxPath -PathType Leaf)) {
+                throw ($PodeLocale.pathNotExistExceptionMessage -f $PfxPath)
             }
-            $alg = @( Get-PodeJwtSigningAlgorithm -PrivateKey  $PrivateKey -RsaPaddingScheme $RsaPaddingScheme )
+
+            $PfxBytes = [System.IO.File]::ReadAllBytes($PfxPath)
+
+            $x509Certificate = if ($null -ne $PfxPassword) {
+                [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($PfxBytes, (Convert-PodeSecureStringToPlainText -SecureString $PfxPassword), [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+            }
+            else {
+                [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+                    $PfxBytes,
+                    $null, # No password
+                    [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+                )
+            }
+            $alg = @( Get-PodeJwtSigningAlgorithm -X509Certificate $x509Certificate -RsaPaddingScheme $RsaPaddingScheme  )
+            break
+        }
+        'Bearer_PFX_Memory' {
+            $x509Certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new()
+            if ($null -ne $PfxPassword) {
+                $x509Certificate.Import($PfxBytes, (Convert-PodeSecureStringToPlainText -SecureString $PfxPassword), [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+            }
+            else {
+                $x509Certificate.Import($PfxBytes, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+            }
+            $alg = @( Get-PodeJwtSigningAlgorithm -X509Certificate $x509Certificate -RsaPaddingScheme $RsaPaddingScheme  )
+            break
         }
         'Bearer_HS' {
             $alg = if ( $Algorithm.Count -eq 0) {
@@ -2984,9 +3253,11 @@ function New-PodeAuthBearerScheme {
             else {
                 $Algorithm
             }
+            break
         }
         'Bearer_NONE' {
             $alg = @('NONE')
+            break
         }
     }
 
@@ -3010,15 +3281,13 @@ function New-PodeAuthBearerScheme {
             Scopes              = $Scope
             AsJWT               = $AsJWT
             Secret              = $Secret
-            PrivateKey          = $PrivateKey
-            PublicKey           = $PublicKey
             Location            = $Location
             JwtVerificationMode = $JwtVerificationMode
             Algorithm           = $alg
+            X509Certificate     = $x509Certificate
         }
     }
 }
-
 
 <#
 .SYNOPSIS

@@ -1,18 +1,18 @@
 <#
-  .SYNOPSIS
+.SYNOPSIS
     A PowerShell script to set up a Pode server with JWT authentication and various route configurations.
 
-  .DESCRIPTION
+.DESCRIPTION
     This script initializes a Pode server that listens on a specified port, enables request and error logging,
     and configures JWT authentication using either the request header or query parameters. It also defines
     a protected route to fetch a list of users, requiring authentication.
 
-  .PARAMETER Location
+.PARAMETER Location
     Specifies where the API key (JWT token) is expected.
     Valid values: 'Header', 'Query'.
     Default: 'Header'.
 
-  .EXAMPLE
+.EXAMPLE
     # Run the sample
     ./WebAuth-bearerJWT.ps1
 
@@ -34,43 +34,21 @@
         "role": "admin"
     }
 
-  .EXAMPLE
+.EXAMPLE
     # Example request using PS512 JWT authentication
-    $alg='PS512'
-   foreach($alg in 'RS256','RS384','RS512','PS256','PS384','PS512','ES256','ES384','ES512'){
+    $jwt = ConvertTo-PodeJwt -PfxPath ./cert.pfx -RsaPaddingScheme Pss -PfxPassword (ConvertTo-SecureString 'mySecret' -AsPlainText -Force)
+    $headers = @{ 'Authorization' = "Bearer $jwt" }
+    $response = Invoke-RestMethod -Uri 'http://localhost:8081/auth/bearer/jwt/PS512' -Method Get -Headers $headers
 
-    $certsPath="./tests/certs/"
-    $privateKey = Get-Content "$certsPath/$alg-private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
-
-    $jwt= ConvertTo-PodeJwt -Algorithm $alg  -PrivateKey $privateKey   -Payload @{id='id';name='Morty';Type='Human';username='morty'} #-Issuer 'Pode' -Audience 'webauth'
-
-   $headers = @{
-        'Authorization' = "Bearer $jwt"
-        'Accept'        = 'application/json'
-    }
-
-    $response = Invoke-RestMethod -Uri "http://localhost:8081/auth/bearer/jwt/$alg" -Method Get -Headers $headers
-    }
-
-     .EXAMPLE
+.EXAMPLE
     # Example request using RS384 JWT authentication
-    $headers = @{
-        'Authorization' = 'Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Im1vcnR5IiwidXNlcm5hbWUiOiJtb3J0eSIsInR5cGUiOiJIdW1hbiIsImlkIjoiTTBSN1kzMDIiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI2MzQyMzQyMzEsImlzcyI6IlBvZGUiLCJhdWQiOiJXZWJBdXRoLWJlYXJlckpXVC5wczEiLCJuYmYiOjE2OTAwMDAwMDAsImp0aSI6InVuaXF1ZS10b2tlbi1pZCIsInJvbGUiOiJhZG1pbiJ9.h8oQKzYpRp1Mc5d-U-6HisQ04l4ucQpBn46WLun6goM-rapweVoj4xC3MPJ5nvP8Z5iEu1mxpF3KDskihI_BxOQMffFECleyf6Yw3IPY7IwV5DeEdmMOMSD8XlelxswMUBG_3wBPOuhKmFSN7rmXKbXaFWIC9ggEWNoK0e2B8ccNqaVZ_3EJAYQHpMivWIFBYQ5rav96ZcCoye19kFuLeMDEprtyBYVcdO-wCzEw2O-7BDul3ynhTY9znXGW7qBT7SyEB-VSo1X2lGten-L2w6vL4CA6RXQYeEiokjXw4OCFsnvkj736TrMKZg4WJ3ONsgnkhHavVL7BsTERPdaWeg'
-        'Accept'        = 'application/json'
-    }
-
+    $headers = @{ 'Authorization' = 'Bearer <your-jwt>' }
     $response = Invoke-RestMethod -Uri 'http://localhost:8081/users' -Method Get -Headers $headers
 
-
-
-  .EXAMPLE
+.EXAMPLE
     # Example request using HS256 JWT authentication
-    $jwt= ConvertTo-PodeJwt -Algorithm HS256 -Secret (ConvertTo-SecureString 'your-256-bit-secret' -AsPlainText -Force) -Payload @{id='id';name='Morty';Type='Human';username='morty'} -Issuer 'Pode' -Audience 'webauth'
-    $headers = @{
-        'Authorization' = "Bearer $jwt"
-        'Accept'        = 'application/json'
-    }
-
+    $jwt = ConvertTo-PodeJwt -Algorithm HS256 -Secret (ConvertTo-SecureString 'secret' -AsPlainText -Force) -Payload @{id='id';name='Morty'}
+    $headers = @{ 'Authorization' = "Bearer $jwt" }
     $response = Invoke-RestMethod -Uri 'http://localhost:8081/users' -Method Get -Headers $headers
 
   .LINK
@@ -135,25 +113,24 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
         Exit
     }
 
-    # Get all private key files (assuming format: {Algorithm}-private.pem)
-    $privateKeys = Get-ChildItem -Path $CertsPath -Filter '*-private.pem'
+    $privateKeys = Get-ChildItem -Path $CertsPath -Filter '*.pfx'
+
+    # $privateKeys += Get-ChildItem -Path $CertsPath -Filter  '*-private-encrypted.pem'
 
     foreach ($privateKeyFile in $privateKeys) {
-        # Extract algorithm name from file name
-        $alg = $privateKeyFile.Name -replace '-private.pem', ''
+        if ($privateKeyFile.Name.Contains('-no-pass.pfx')) {
+            # Extract algorithm name from file name
+            $alg = $privateKeyFile.Name -replace '-no-pass.pfx', ''
 
-        # Define corresponding public key path
-        $publicKeyPath = Join-Path -Path $CertsPath -ChildPath $alg-public.pem
+            $securePassword = $null
+        }
+        else {
+            # Extract algorithm name from file name
+            $alg = $privateKeyFile.Name -replace '.pfx', '-pwd'
 
-        # Ensure the matching public key exists
-        if (! (Test-Path $publicKeyPath)) {
-            Write-Warning "Skipping $($alg): Public key missing ($publicKeyPath)."
-            Continue
+            $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText
         }
 
-        # Read key contents
-        $privateKey = Get-Content $privateKeyFile.FullName -Raw | ConvertTo-SecureString -AsPlainText -Force
-        $publicKey = Get-Content $publicKeyPath -Raw
         while ($true) {
             # Define the authentication location dynamically (e.g., `/auth/bearer/jwt/{algorithm}`)
             $pathRoute = "/auth/bearer/jwt/$alg"
@@ -162,7 +139,16 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
 
             $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
 
-            New-PodeAuthBearerScheme -Location $Location -AsJWT -PrivateKey $privateKey -PublicKey $publicKey -RsaPaddingScheme $rsaPaddingScheme -JwtVerificationMode $JwtVerificationMode |
+            $param = @{
+                Location            = $Location
+                AsJWT               = $true
+                RsaPaddingScheme    = $rsaPaddingScheme
+                JwtVerificationMode = $JwtVerificationMode
+                PfxPath             = $privateKeyFile.FullName
+                PfxPassword         = $securePassword
+            }
+
+            New-PodeAuthBearerScheme @param |
                 Add-PodeAuth -Name "Bearer_JWT_$alg" -Sessionless -ScriptBlock {
                     param($jwt)
 

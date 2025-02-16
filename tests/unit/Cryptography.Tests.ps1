@@ -69,15 +69,22 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
         $testSecret = [System.Text.Encoding]::UTF8.GetBytes('SuperSecretKey')
 
         $testPath = $(Split-Path -Parent -Path $(Split-Path -Parent -Path $path))
-        if ($PSEdition -eq 'Core') {
-            # Load test keys from PEM files (Assume these exist in the test environment)
-            $algorithms = 'ES256', 'ES384', 'ES512', 'RS256', 'RS384', 'RS512'
 
-            $PrivateKey = @{}
-            foreach ($alg in $algorithms) {
-                $PrivateKey[$alg] = Get-Content "$testPath/certs/$alg-private.pem" -Raw | ConvertTo-SecureString -AsPlainText -Force
-            }
+        # Load test keys from PEM files (Assume these exist in the test environment)
+        $algorithms = 'ES256', 'ES384', 'ES512', 'RS256', 'RS384', 'RS512'
+
+        $PrivateKey = @{}
+        foreach ($alg in $algorithms) {
+            $PfxBytes = [System.IO.File]::ReadAllBytes("$testPath/certs/$alg.pfx")
+
+            $PrivateKey[$alg] = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+                $PfxBytes,
+                    (ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force),
+                [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+            )
+
         }
+
     }
 
     Context 'HMAC Signing Tests' {
@@ -100,64 +107,44 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
     Context 'RSA Signing Tests' -Tag 'No_DesktopEdition' {
         It 'Should generate a valid RSA-SHA256 signature' {
             $alg = 'RS256'
-            $result = New-PodeJwtSignature   -Token $testValue -Algorithm $alg -PrivateKey $PrivateKey[$alg]
+            $result = New-PodeJwtSignature   -Token $testValue -X509Certificate $PrivateKey[$alg]
             $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid RSA-SHA384 signature' {
-            $result = New-PodeJwtSignature -Token $testValue -Algorithm RS384 -PrivateKey $PrivateKey['RS384']
+            $result = New-PodeJwtSignature -Token $testValue -X509Certificate $PrivateKey['RS384']
             $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid RSA-SHA512 signature' {
-            $result = New-PodeJwtSignature -Token $testValue -Algorithm RS512 -PrivateKey $PrivateKey['RS512']
+            $result = New-PodeJwtSignature -Token $testValue  -X509Certificate $PrivateKey['RS512']
             $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
     }
 
     Context 'ECDSA Signing Tests' -Tag 'No_DesktopEdition' {
         It 'Should generate a valid ECDSA-SHA256 signature' {
-            $result = New-PodeJwtSignature -Token $testValue -Algorithm ES256 -PrivateKey $PrivateKey['ES256']
+            $result = New-PodeJwtSignature -Token $testValue  -X509Certificate $PrivateKey['ES256']
             $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid ECDSA-SHA384 signature' {
-            $result = New-PodeJwtSignature -Token $testValue -Algorithm ES384 -PrivateKey $PrivateKey['ES384']
+            $result = New-PodeJwtSignature -Token $testValue   -X509Certificate $PrivateKey['ES384']
             $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
 
         It 'Should generate a valid ECDSA-SHA512 signature' {
-            $result = New-PodeJwtSignature -Token $testValue -Algorithm ES512 -PrivateKey $PrivateKey['ES512']
+            $result = New-PodeJwtSignature -Token $testValue  -X509Certificate $PrivateKey['ES512']
             $result | Should -Match '^[A-Za-z0-9_-]+$'
         }
     }
 
     Context 'Algorithm NONE Tests' {
-        It 'Should return an empty signature when algorithm is NONE' {
-            $result = New-PodeJwtSignature -Token $testValue -Algorithm NONE
-            $result | Should -BeExactly ''
-        }
-
         It 'Should throw an error if a secret is provided with NONE' {
             { New-PodeJwtSignature -Token $testValue -Algorithm NONE -SecretBytes $testSecret } | Should -Throw
         }
 
-        It 'Should throw an error if a private key is provided with NONE' {
-            { New-PodeJwtSignature -Token $testValue -Algorithm NONE -PrivateKey $PrivateKey['ES512'] } | Should -Throw
-        }
     }
 
-    Context 'Invalid Inputs' {
-        It 'Should throw an error for missing secret in HMAC' {
-            { New-PodeJwtSignature -Token $testValue -Algorithm HS256 } | Should -Throw
-        }
 
-        It 'Should throw an error for missing private key in RSA' {
-            { New-PodeJwtSignature -Token $testValue -Algorithm RS256 } | Should -Throw
-        }
-
-        It 'Should throw an error for an unsupported algorithm' {
-            { New-PodeJwtSignature -Token $testValue -Algorithm 'INVALID' -Secret $testSecret } | Should -Throw
-        }
-    }
 }

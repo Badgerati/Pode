@@ -522,7 +522,7 @@ function Get-PodeAuthApiKeyType {
         if ($options.AsJWT) {
             try {
                 #$payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret  -Algorithm $options.Algorithm
-                   $result = Confirm-PodeJwt -Token $apiKey -Secret $options.Secret   -Algorithm $options.Algorithm
+                $result = Confirm-PodeJwt -Token $apiKey -Secret $options.Secret   -Algorithm $options.Algorithm
                 #   Test-PodeJwt -Payload $result #-JwtVerificationMode $options.JwtVerificationMode
                 Test-PodeJwt -Payload $result
             }
@@ -659,19 +659,17 @@ function Get-PodeAuthBearerType {
 
         # Trim and build the result
         $token = $token.Trim()
-        $result = @($token)
+        #$result = @($token)
 
         # Convert to JWT if required
         if ($options.AsJWT) {
             try {
                 $param = @{
-                    Token               = $token
-                    Secret              = $options.Secret
-                    PublicKey           = $options.PublicKey
-                    JwtVerificationMode = $options.JwtVerificationMode
-                    Algorithm           = $options.Algorithm
+                    Token           = $token
+                    Secret          = $options.Secret
+                    X509Certificate = $options.X509Certificate
+                    Algorithm       = $options.Algorithm
                 }
-
                 $result = Confirm-PodeJwt @param
                 Test-PodeJwt -Payload $result -JwtVerificationMode $options.JwtVerificationMode
             }
@@ -687,7 +685,9 @@ function Get-PodeAuthBearerType {
                 throw
             }
 
-            #  $result = @($payload)
+        }
+        else {
+            $result = $token
         }
         # Return the validated result
         return $result

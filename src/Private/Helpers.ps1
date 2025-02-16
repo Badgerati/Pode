@@ -4053,3 +4053,80 @@ function Write-PodeDeprecationWarning {
     # WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use '{0}' function instead.
     Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f $OldFunction, $NewFunction) -ForegroundColor Yellow
 }
+
+<#
+.SYNOPSIS
+    Converts a SecureString to plain text.
+
+.DESCRIPTION
+    This function takes a SecureString input and converts it into a plain text string.
+    Supports pipeline input for seamless integration with other cmdlets.
+
+.PARAMETER SecureString
+    The SecureString that needs to be converted.
+
+.OUTPUTS
+    [string] Plain text representation of the SecureString.
+
+.NOTES
+    Internal Pode function - subject to change.
+#>
+function Convert-PodeSecureStringToPlainText {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline)]
+        [securestring]$SecureString
+    )
+
+    process {
+        $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
+        try {
+            [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+        }
+        finally {
+            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    Converts a SecureString to a UTF8 byte array.
+
+.DESCRIPTION
+    This function takes a SecureString input and converts it into a UTF8 encoded byte array.
+    Supports pipeline input for seamless integration with other cmdlets.
+
+.PARAMETER SecureString
+    The SecureString that needs to be converted.
+
+.OUTPUTS
+    [byte[]] A UTF8 encoded byte array representation of the SecureString.
+
+.NOTES
+    Internal Pode function - subject to change.
+#>
+function Convert-PodeSecureStringToByteArray {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline)]
+        [securestring]
+        $SecureString
+    )
+
+    process {
+        if ($null -ne $SecureString) {
+            $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
+            try {
+                [System.Text.Encoding]::UTF8.GetBytes([Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr))
+            }
+            finally {
+                [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+            }
+        }
+        else {
+            $null
+        }
+    }
+}

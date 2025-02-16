@@ -336,7 +336,7 @@
     jwtAlgorithmMismatchExceptionMessage                              = "Mancata corrispondenza dell'algoritmo JWT: previsto {0}, trovato {1}."
     jwtMissingJtiExceptionMessage                                     = "Il JWT non ha il claim obbligatorio 'jti' (JWT ID)."
     deprecatedFunctionWarningMessage                                  = "ATTENZIONE: La funzione '{0}' è obsoleta e verrà rimossa nelle versioni future. Si prega di utilizzare invece la funzione '{1}'."
-    unknownAlgorithmOrInvalidPemExceptionMessage                      = 'Algoritmo sconosciuto o formato PEM non valido.'
+    unknownAlgorithmOrInvalidPfxExceptionMessage                      = 'Algoritmo sconosciuto o formato PEM non valido.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Algoritmo {0} sconosciuto (Dimensione chiave: {1} bit).'
     jwtCertificateAuthNotSupportedExceptionMessage                    = "L'autenticazione tramite certificato JWT è supportata solo in PowerShell 7.0 o versioni successive."
 }

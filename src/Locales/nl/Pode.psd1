@@ -336,7 +336,7 @@
     jwtAlgorithmMismatchExceptionMessage                              = 'JWT-algoritme komt niet overeen: Verwacht {0}, gevonden {1}.'
     jwtMissingJtiExceptionMessage                                     = "De JWT mist de vereiste 'jti' (JWT ID) claim."
     deprecatedFunctionWarningMessage                                  = "WAARSCHUWING: De functie '{0}' is verouderd en zal in toekomstige versies worden verwijderd. Gebruik in plaats daarvan de functie '{1}'."
-    unknownAlgorithmOrInvalidPemExceptionMessage                      = 'Onbekend algoritme of ongeldig PEM-formaat.'
+    unknownAlgorithmOrInvalidPfxExceptionMessage                      = 'Onbekend algoritme of ongeldig PEM-formaat.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Onbekend {0}-algoritme (Sleutelgrootte: {1} bits).'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT-certificaatverificatie wordt alleen ondersteund in PowerShell 7.0 of hoger.'
 }

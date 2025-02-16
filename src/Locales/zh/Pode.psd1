@@ -336,7 +336,7 @@
     jwtAlgorithmMismatchExceptionMessage                              = 'JWT 算法不匹配: 预期 {0}，实际 {1}。'
     jwtMissingJtiExceptionMessage                                     = "JWT 缺少必要的 'jti' (JWT ID) 声明。"
     deprecatedFunctionWarningMessage                                  = "警告: 函数 '{0}' 已被弃用，并将在未来版本中移除。请改用函数 '{1}'。"
-    unknownAlgorithmOrInvalidPemExceptionMessage                      = '未知算法或无效的 PEM 格式。'
+    unknownAlgorithmOrInvalidPfxExceptionMessage                      = '未知算法或无效的 PEM 格式。'
     unknownAlgorithmWithKeySizeExceptionMessage                       = '未知 {0} 算法（密钥大小: {1} 位）。'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT 证书身份验证仅支持 PowerShell 7.0 或更高版本。'
 }
