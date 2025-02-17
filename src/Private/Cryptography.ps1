@@ -793,9 +793,20 @@ function Get-PodeJwtSigningAlgorithm {
     $key = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($X509Certificate)
     if ($null -ne $key) {
         Write-Verbose 'RSA Private Key detected.'
+        try {
+            $keySize = $key.KeySize
+        }
+        catch {
+            # Use reflection to access the private 'KeySizeValue' field
+            $bindingFlags = [System.Reflection.BindingFlags] 'NonPublic, Instance'
+            $keySizeField = $key.GetType().GetField('KeySizeValue', $bindingFlags)
 
+            # Retrieve the value of the 'KeySizeValue' field this is a workaround of an issue with .net for Linux
+            Write-Verbose "Keysize obtained by reflection  $($keySizeField.GetValue($key))"
+            $keySize = $keySizeField.GetValue($key)
+        }
         # Determine RSA key size
-        switch ($key.KeySize) {
+        switch ($keySize) {
             2048 { return $(if ($RsaPaddingScheme -eq 'Pkcs1V15') { 'RS256' } else { 'PS256' }) }
             3072 { return $(if ($RsaPaddingScheme -eq 'Pkcs1V15') { 'RS384' } else { 'PS384' }) }
             4096 { return $(if ($RsaPaddingScheme -eq 'Pkcs1V15') { 'RS512' } else { 'PS512' }) }
