@@ -779,7 +779,28 @@ function ConvertTo-PodeDigestHash {
     return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
 }
 
+<#
+.SYNOPSIS
+   Determines the JWT signing algorithm based on the provided X.509 certificate.
 
+.DESCRIPTION
+   This function extracts the private key (RSA or ECDSA) from a given X.509 certificate (PFX) and determines the appropriate JSON Web Token (JWT) signing algorithm.
+   For RSA keys, the function attempts to read the key size using the `KeySize` property. On Linux with .NET 9, this property is write-only, so a reflection-based workaround is used to retrieve the private `KeySizeValue` field.
+   For ECDSA keys, the algorithm is selected directly based on the key size.
+
+.PARAMETER X509Certificate
+   A System.Security.Cryptography.X509Certificates.X509Certificate2 object representing the certificate (PFX) from which the private key is extracted.
+
+.PARAMETER RsaPaddingScheme
+   Specifies the RSA padding scheme to use. Acceptable values are 'Pkcs1V15' (default) and 'Pss'.
+
+.EXAMPLE
+   PS> Get-PodeJwtSigningAlgorithm -X509Certificate $myCert -RsaPaddingScheme 'Pkcs1V15'
+   Determines and returns the appropriate JWT signing algorithm (e.g., 'RS256', 'RS384', 'RS512' for RSA or 'ES256', 'ES384', 'ES512' for ECDSA) based on the certificate's key.
+
+.NOTES
+   This function includes a reflection-based workaround for .NET 9 on Linux where the RSA `KeySize` property is write-only. Refer to https://github.com/dotnet/runtime/issues/112622 for more details.
+#>
 function Get-PodeJwtSigningAlgorithm {
     param (
 
@@ -797,6 +818,7 @@ function Get-PodeJwtSigningAlgorithm {
             $keySize = $key.KeySize
         }
         catch {
+            # Exception is 'Cannot get property value because "KeySize" is a write-only property.'
             # Use reflection to access the private 'KeySizeValue' field
             $bindingFlags = [System.Reflection.BindingFlags] 'NonPublic, Instance'
             $keySizeField = $key.GetType().GetField('KeySizeValue', $bindingFlags)
