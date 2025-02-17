@@ -1,32 +1,36 @@
 <#
 .SYNOPSIS
-    A sample PowerShell script to set up a Pode server with session persistent authentication for logins on websites.
+    A sample PowerShell script to set up a Pode server with session persistent authentication using a user file.
 
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081 with session persistent authentication.
-    It demonstrates a login system using form authentication.
+    It demonstrates a login system using form authentication against a user file.
 
 .EXAMPLE
-    To run the sample: ./Web-AuthFormMerged.ps1
+    To run the sample: ./Web-AuthFormFile.ps1
 
-    This examples shows how to use session persistant authentication, for things like logins on websites.
+    This examples shows how to use session persistant authentication using a user file.
     The example used here is Form authentication, sent from the <form> in HTML.
 
     Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
-    page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
-    back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
-    take you back to the login page.
+    page. Here, you can type the details for a user in the json file. Clicking 'Login' will take you back to the home
+    page with a greeting and a view counter. Clicking 'Logout' will purge the session and take you back to
+    the login page.
+
+    username = r.sanchez
+    password = pickle
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormMerged.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthFormFile.ps1
 
 .NOTES
     Author: Pode Team
     License: MIT License
 #>
+
 try {
     # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     $podePath = Split-Path -Parent -Path $ScriptPath
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules
@@ -47,63 +51,30 @@ Start-PodeServer -Threads 2 {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set the view engine
     Set-PodeViewEngine -Type Pode
 
-    # enable error logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
-    # setup form auth (<form> in HTML)
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login1' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($username, $password)
-
-        # here you'd check a real user storage, this is just for example
-        if ($username -eq 'morty' -and $password -eq 'pickle') {
-            return @{
-                User = @{
-                    ID ='M0R7Y302'
-                    Name = 'Morty'
-                    Type = 'Human'
-                }
-            }
-        }
-
-        return @{ Message = 'Invalid details supplied' }
+    # setup form auth against user file (<form> in HTML)
+    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './users/users.json' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+        param($user)
+        return @{ User = $user }
     }
-
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login2' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($username, $password)
-
-        # here you'd check a real user storage, this is just for example
-        if ($username -eq 'morty' -and $password -eq 'bob') {
-            return @{
-                User = @{
-                    ID ='M0R7Y302'
-                    Name = 'Morty'
-                    Type = 'Human'
-                }
-            }
-        }
-
-        return @{ Message = 'Invalid details supplied' }
-    }
-
-    Merge-PodeAuth -Name 'Login' -Authentication Login1, Login2
 
 
     # home page:
     # redirects to login page if not authenticated
     Add-PodeRoute -Method Get -Path '/' -Authentication Login -ScriptBlock {
-        $session:Views++
+        $WebEvent.Session.Data.Views++
+        $session:TestData | Out-Default
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
             Username = $WebEvent.Auth.User.Name
-            Views = $session:Views
-            Expiry = Get-PodeSessionExpiry
+            Views    = $WebEvent.Session.Data.Views
         }
     }
 

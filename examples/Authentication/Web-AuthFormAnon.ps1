@@ -1,29 +1,30 @@
 <#
 .SYNOPSIS
-    PowerShell script to set up a Pode server with Form authentication and RBAC access.
+    A sample PowerShell script to set up a Pode server with session persistent authentication for a login system.
 
 .DESCRIPTION
-    This script sets up a Pode server that listens on a specified port and uses Form authentication
-    for securing access to different pages. Role-based access control (RBAC) is also implemented
-    to restrict access to certain pages based on user roles.
+    This script sets up a Pode server listening on port 8081 with session persistent authentication.
 
 .EXAMPLE
-    To run the sample: ./Web-AuthFormAccess.ps1
+    To run the sample: ./Web-AuthFormAnon.ps1
 
-    This examples shows how to use session persistant authentication with access.
-    The example used here is Form authentication and RBAC access on pages, sent from the <form> in HTML.
+
+    This examples shows how to use session persistant authentication, for things like logins on websites.
+    The example used here is Form authentication, sent from the <form> in HTML.
 
     Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
     page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
     back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
     take you back to the login page.
 
-    - The Home and Login pages are accessible by all.
-    - The About page is only accessible by Developers (for morty it will load)
-    - The Register page is only accessible by QAs (for morty this will 403)
+    With Authentication
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+
+    Anonymous
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormAccess.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthFormAnon.ps1
 
 .NOTES
     Author: Pode Team
@@ -31,7 +32,7 @@
 #>
 try {
     # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     $podePath = Split-Path -Parent -Path $ScriptPath
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules
@@ -43,6 +44,9 @@ try {
     }
 }
 catch { throw }
+
+# or just:
+# Import-Module Pode
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
@@ -67,8 +71,9 @@ Start-PodeServer -Threads 2 {
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{
                 User = @{
+                    ID ='M0R7Y302'
                     Name = 'Morty'
-                    Roles = @('Developer')
+                    Type = 'Human'
                 }
             }
         }
@@ -76,34 +81,23 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
-    # set RBAC access
-    New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'Rbac' -Match One
-
 
     # home page:
     # redirects to login page if not authenticated
-    Add-PodeRoute -Method Get -Path '/' -Authentication Login -ScriptBlock {
-        $session:Views++
+    Add-PodeRoute -Method Get -Path '/' -Authentication Login -AllowAnon -ScriptBlock {
+        if (Test-PodeAuthUser) {
+            $session:Views++
 
-        Write-PodeViewResponse -Path 'auth-home' -Data @{
-            Username = $WebEvent.Auth.User.Name
-            Views = $session:Views
-            Expiry = Get-PodeSessionExpiry
+            Write-PodeViewResponse -Path 'auth-home' -Data @{
+                Username = $WebEvent.Auth.User.Name
+                Views = $session:Views
+            }
         }
-    }
-
-
-    # about page:
-    # only Developers can access this page
-    Add-PodeRoute -Method Get -Path '/about' -Authentication Login -Access Rbac -Role Developer -ScriptBlock {
-        Write-PodeViewResponse -Path 'auth-about'
-    }
-
-
-    # register page:
-    # only QAs can access this page
-    Add-PodeRoute -Method Get -Path '/register' -Authentication Login -Access Rbac -Role QA -ScriptBlock {
-        Write-PodeViewResponse -Path 'auth-register'
+        else {
+            Write-PodeViewResponse -Path 'auth-home-anon' -Data @{
+                Views = $session:Views
+            }
+        }
     }
 
 

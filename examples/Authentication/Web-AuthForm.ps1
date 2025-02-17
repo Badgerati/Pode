@@ -22,7 +22,7 @@
     You will be redirected to the login page, where you can log in with the credentials provided above.
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthForm.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthForm.ps1
 
 .NOTES
     Author: Pode Team
@@ -31,7 +31,7 @@
 
 try {
     # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     $podePath = Split-Path -Parent -Path $ScriptPath
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules

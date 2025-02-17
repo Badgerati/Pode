@@ -1,32 +1,40 @@
 <#
 .SYNOPSIS
-    A PowerShell script to set up a Pode server with sessionless Bearer authentication for REST APIs.
+    A PowerShell script to set up a Pode server with API key authentication and various route configurations.
 
 .DESCRIPTION
-    This script sets up a Pode server that listens on a specified port, enables sessionless Bearer authentication,
-    and provides an endpoint to get a list of users.
+    This script sets up a Pode server that listens on a specified port, enables request and error logging,
+    and configures API key authentication. It also defines a route to fetch a list of users, requiring authentication.
+
+.PARAMETER Location
+    The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
 
 .EXAMPLE
-    To run the sample: ./Web-AuthBasicBearer.ps1
+    To run the sample: ./Web-AuthApiKey.ps1
 
-    Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ Authorization = 'Bearer test-token' } -ResponseHeadersVariable headers
-
-.EXAMPLE
-    "No Authorization header found" 
-
-    Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -ResponseHeadersVariable headers -Verbose -SkipHttpErrorCheck
-    $headers | Format-List
+    Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthBasicBearer.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthApiKey.ps1
+
+.NOTES
+    Use:
+    Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'test-api-key' }
 
 .NOTES
     Author: Pode Team
     License: MIT License
 #>
+param(
+    [Parameter()]
+    [ValidateSet('Header', 'Query', 'Cookie')]
+    [string]
+    $Location = 'Header'
+)
+
 try {
     # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     $podePath = Split-Path -Parent -Path $ScriptPath
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules
@@ -49,20 +57,20 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # setup bearer auth
-    New-PodeAuthScheme -Bearer -Scope write | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
-        param($token)
+    New-PodeAuthScheme -ApiKey -Location $Location | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+        param($key)
 
         # here you'd check a real user storage, this is just for example
-        if ($token -ieq 'test-token') {
+        if ($key -ieq 'test-api-key') {
             return @{
                 User = @{
-                    ID ='M0R7Y302'
+                    ID   = 'M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'
                 }
-                Scope = 'write'
             }
         }
 
@@ -70,16 +78,16 @@ Start-PodeServer -Threads 2 {
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ErrorContentType 'application/json' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{
                     Name = 'Deep Thought'
-                    Age = 42
+                    Age  = 42
                 },
                 @{
                     Name = 'Leeroy Jenkins'
-                    Age = 1337
+                    Age  = 1337
                 }
             )
         }

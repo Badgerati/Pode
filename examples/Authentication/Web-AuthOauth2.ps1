@@ -1,29 +1,29 @@
 <#
 .SYNOPSIS
-    A sample PowerShell script to set up a Pode server with session persistent authentication using Google Cloud and OpenID Connect Discovery.
+    A sample PowerShell script to set up a Pode server with session persistent authentication using Azure AD and OAuth2.
 
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081. It demonstrates how to use session persistent authentication
-    with Google Cloud and OpenID Connect Discovery.
+    with Azure AD and OAuth2.
 
 .EXAMPLE
-    To run the sample: ./Web-AuthOauth2Oidc.ps1
+    To run the sample: ./Web-AuthOauth2.ps1
 
-    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to Google.
-    There, login to Google account and you'll be redirected back to the home page
+    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to Azure.
+    There, login to Azure and you'll be redirected back to the home page
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthOauth2Oidc.ps1
-    
+    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthOauth2.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
 
-    Important!!! You'll need to register a new project/app in Google Cloud, and note your clientId and secret in the variables below.
+    Important!!! You'll need to register a new app in Azure, and note your clientId, secret, and tenant in the variables below.
 #>
 try {
     # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     $podePath = Split-Path -Parent -Path $ScriptPath
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules
@@ -52,12 +52,12 @@ Start-PodeServer -Threads 2 {
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
-    # setup auth against Google Cloud (the following are from registering an app in the portal)
+    # setup auth against Azure AD (the following are from registering an app in the portal)
     $clientId = '<client-id-from-portal>'
     $clientSecret = '<client-secret-from-portal>'
-    $url = 'https://accounts.google.com/.well-known/openid-configuration'
+    $tenantId = '<tenant-from-portal>'
 
-    $scheme = ConvertFrom-PodeOIDCDiscovery -Url $url -ClientId $clientId -ClientSecret $clientSecret
+    $scheme = New-PodeAuthAzureADScheme -Tenant $tenantId -ClientId $clientId -ClientSecret $clientSecret
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($user, $accessToken, $refreshToken)
         return @{ User = $user }
@@ -71,12 +71,12 @@ Start-PodeServer -Threads 2 {
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
             Username = $WebEvent.Auth.User.name
-            Views = $WebEvent.Session.Data.Views
+            Views    = $WebEvent.Session.Data.Views
         }
     }
 
 
-    # login - this will just redirect to google
+    # login - this will just redirect to azure
     Add-PodeRoute -Method Get -Path '/login' -Authentication Login
 
 

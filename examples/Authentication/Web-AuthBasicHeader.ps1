@@ -27,7 +27,7 @@
     Invoke-WebRequest -Uri http://localhost:8081/logout -Method Post -Headers @{ 'pode.sid' = "$session" }
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthBasicHeader.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthBasicHeader.ps1
 
 .NOTES
     Author: Pode Team
@@ -35,7 +35,7 @@
 #>
 try {
     # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     $podePath = Split-Path -Parent -Path $ScriptPath
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules

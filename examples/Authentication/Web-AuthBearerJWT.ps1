@@ -52,7 +52,7 @@
     $response = Invoke-RestMethod -Uri 'http://localhost:8081/users' -Method Get -Headers $headers
 
   .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthbearerJWT.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthbearerJWT.ps1
 
   .NOTES
     - This script uses Pode to create a lightweight web server with authentication.
@@ -74,7 +74,7 @@ param(
 
 try {
     # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     $podePath = Split-Path -Parent -Path $ScriptPath
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules
@@ -99,11 +99,8 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-
-    $path = $PSCommandPath
-
-    # Define the key storage path
-    $certsPath = Join-Path -Path (Split-Path -Parent -Path $path) -ChildPath 'certs'
+     # Define the key storage path
+    $certsPath = Join-Path -Path $ScriptPath -ChildPath 'certs'
 
     $JwtVerificationMode = 'Lenient'  # Set your desired verification mode (Lenient or Strict)
 

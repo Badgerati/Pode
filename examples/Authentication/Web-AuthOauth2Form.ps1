@@ -4,16 +4,16 @@
 
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081. It demonstrates how to use session persistent authentication
-    with Azure AD and OAuth2.
+    with Azure AD and OAuth2, using a form for login without redirection.
 
 .EXAMPLE
-    To run the sample: ./Web-AuthOauth2.ps1
+    To run the sample: ./Web-AuthFormCreds.ps1
 
-    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to Azure.
-    There, login to Azure and you'll be redirected back to the home page
+    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the /login form.
+    There, enter you Azure AD email/password, Pode with authenticate and then take you to the home page
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthOauth2.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthFormCreds.ps1
 
 .NOTES
     Author: Pode Team
@@ -23,7 +23,7 @@
 #>
 try {
     # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     $podePath = Split-Path -Parent -Path $ScriptPath
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules
@@ -52,12 +52,13 @@ Start-PodeServer -Threads 2 {
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
-    # setup auth against Azure AD (the following are from registering an app in the portal)
+    # setup form auth against Azure AD (the following are from registering an app in the portal)
     $clientId = '<client-id-from-portal>'
     $clientSecret = '<client-secret-from-portal>'
     $tenantId = '<tenant-from-portal>'
 
-    $scheme = New-PodeAuthAzureADScheme -Tenant $tenantId -ClientId $clientId -ClientSecret $clientSecret
+    $form = New-PodeAuthScheme -Form
+    $scheme = New-PodeAuthAzureADScheme -Tenant $tenantId -ClientId $clientId -ClientSecret $clientSecret -InnerScheme $form
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($user, $accessToken, $refreshToken)
         return @{ User = $user }
@@ -76,8 +77,12 @@ Start-PodeServer -Threads 2 {
     }
 
 
-    # login - this will just redirect to azure
-    Add-PodeRoute -Method Get -Path '/login' -Authentication Login
+    # login - enter creds to authorise against Azure AD
+    Add-PodeRoute -Method Get -Path '/login' -Authentication Login -Login -ScriptBlock {
+        Write-PodeViewResponse -Path 'auth-login' -FlashMessages
+    }
+
+    Add-PodeRoute -Method Post -Path '/login' -Authentication Login -Login
 
 
     # logout check:

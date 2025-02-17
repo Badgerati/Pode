@@ -1,38 +1,34 @@
 <#
 .SYNOPSIS
-    A sample PowerShell script to set up a Pode server with session persistent authentication for a login system.
+    A sample PowerShell script to set up a Pode server with session persistent authentication for logins on websites.
 
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081 with session persistent authentication.
+    It demonstrates a login system using form authentication and session authentication on the main home page route and form authentication on login.
 
 .EXAMPLE
-    To run the sample: ./Web-AuthFormAnon.ps1
-
+    To run the sample: ./Web-AuthFormSessionAuth.ps1
 
     This examples shows how to use session persistant authentication, for things like logins on websites.
-    The example used here is Form authentication, sent from the <form> in HTML.
+    The example used here is Form authentication, sent from the <form> in HTML. But also used is Session Authentication
+    on the main home page route and Form Auth on Login.
 
     Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
     page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
     back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
     take you back to the login page.
 
-    With Authentication
-    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
-
-    Anonymous
-    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
-
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormAnon.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthFormSessionAuth.ps1
 
 .NOTES
     Author: Pode Team
     License: MIT License
 #>
+
 try {
     # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     $podePath = Split-Path -Parent -Path $ScriptPath
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules
@@ -81,22 +77,19 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
+    # setup session auth
+    Add-PodeAuthSession -Name 'SessionAuth' -FailureUrl '/login'
+
 
     # home page:
     # redirects to login page if not authenticated
-    Add-PodeRoute -Method Get -Path '/' -Authentication Login -AllowAnon -ScriptBlock {
-        if (Test-PodeAuthUser) {
-            $session:Views++
+    Add-PodeRoute -Method Get -Path '/' -Authentication SessionAuth -ScriptBlock {
+        $session:Views++
 
-            Write-PodeViewResponse -Path 'auth-home' -Data @{
-                Username = $WebEvent.Auth.User.Name
-                Views = $session:Views
-            }
-        }
-        else {
-            Write-PodeViewResponse -Path 'auth-home-anon' -Data @{
-                Views = $session:Views
-            }
+        Write-PodeViewResponse -Path 'auth-home' -Data @{
+            Username = $WebEvent.Auth.User.Name
+            Views = $session:Views
+            Expiry = Get-PodeSessionExpiry
         }
     }
 
@@ -119,5 +112,5 @@ Start-PodeServer -Threads 2 {
     # logout check:
     # when the logout button is click, this endpoint is invoked. The logout flag set below informs this call
     # to purge the currently authenticated session, and then redirect back to the login page
-    Add-PodeRoute -Method Post -Path '/logout' -Authentication Login -Logout
+    Add-PodeRoute -Method Post -Path '/logout' -Authentication SessionAuth -Logout
 }
