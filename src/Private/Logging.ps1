@@ -301,7 +301,9 @@ function Write-PodeRequestLog {
         Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
+            Hostname = "$($Request.Scheme.ToLowerInvariant())://$($Request.Host.ToLowerInvariant())"
             Resource = $Path
+            Query = '-'
             Protocol = "HTTP/$($Request.ProtocolVersion)"
             Referrer = $Request.UrlReferrer
             Agent    = $Request.UserAgent
@@ -313,6 +315,14 @@ function Write-PodeRequestLog {
         }
     }
 
+    # set query if exists
+    if ($Request.Url.OriginalString.IndexOf('?') -gt 0) {
+        $query = $Request.Url.OriginalString.SubString($Request.Url.OriginalString.IndexOf('?') + 1 )
+        if (![string]::IsNUllOrWhiteSpace($query) {
+            $item.Request.Query = $query
+        }
+    }
+    
     # set size if >0
     if ($Response.ContentLength64 -gt 0) {
         $item.Response.Size = $Response.ContentLength64
