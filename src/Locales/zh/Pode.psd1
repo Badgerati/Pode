@@ -339,4 +339,6 @@
     unknownAlgorithmOrInvalidPfxExceptionMessage                      = '未知算法或无效的 PEM 格式。'
     unknownAlgorithmWithKeySizeExceptionMessage                       = '未知 {0} 算法（密钥大小: {1} 位）。'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT 证书身份验证仅支持 PowerShell 7.0 或更高版本。'
+    jwtNoExpirationExceptionMessage                                   = "JWT 缺少必要的 'exp' (到期时间) 声明。必须提供有效的到期时间。"
+    bearerTokenAuthMethodNotSupportedExceptionMessage                 = '使用请求正文进行Bearer令牌认证仅支持HTTP PUT、POST或PATCH方法。'
 }

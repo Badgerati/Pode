@@ -339,4 +339,6 @@
     unknownAlgorithmOrInvalidPfxExceptionMessage                      = '未知のアルゴリズムまたは無効なPEMフォーマット。'
     unknownAlgorithmWithKeySizeExceptionMessage                       = '未知の {0} アルゴリズム（キーサイズ: {1} ビット）。'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT 証明書認証は PowerShell 7.0 以上でのみサポートされています。'
+    jwtNoExpirationExceptionMessage                                   = "JWTに有効期限がありません。'exp'（有効期限）クレームが必要です。"
+    bearerTokenAuthMethodNotSupportedExceptionMessage = "リクエスト本文を使用したBearerトークン認証は、HTTP PUT、POST、PATCHメソッドでのみサポートされています。"
 }

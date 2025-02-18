@@ -258,7 +258,7 @@
         'Add-PodeAuthUserFile',
         'ConvertTo-PodeJwt',
         'ConvertFrom-PodeJwt',
-        'Test-PodeJwt'
+        'Test-PodeJwt',
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
         'Test-PodeAuthUser',
@@ -270,6 +270,7 @@
         'New-PodeAuthKeyTab',
         'New-PodeAuthBearerScheme',
         'New-PodeAuthDigestScheme',
+        'Update-PodeJwt',
 
         # access
         'New-PodeAccessScheme',

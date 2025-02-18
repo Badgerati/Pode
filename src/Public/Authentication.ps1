@@ -385,7 +385,7 @@ function New-PodeAuthScheme {
                 Write-PodeDeprecationWarning -OldFunction 'New-PodeAuthScheme -Bearer' -NewFunction 'New-PodeAuthBearerScheme'
 
                 $params = @{
-                    HeaderTag = $HeaderTag
+                    BearerTag = $HeaderTag
                     Scope     = $Scope
                     AsJWT     = $AsJWT
                 }
@@ -2528,7 +2528,7 @@ function New-PodeAuthKeyTab {
     Defines a Bearer authentication scheme that allows authentication using a raw Bearer token or JWT.
     Supports JWT validation with configurable security levels and token extraction from headers or query parameters.
 
-.PARAMETER HeaderTag
+.PARAMETER BearerTag
     The header tag used for the Bearer token (default: "Bearer").
 
 .PARAMETER Location
@@ -2593,9 +2593,9 @@ function New-PodeAuthBearerScheme {
     [OutputType([hashtable])]
     param(
         [string]
-        $HeaderTag,
+        $BearerTag,
 
-        [ValidateSet('Header', 'Query')]
+        [ValidateSet('Header', 'Query','Body')]
         [string]
         $Location = 'Header',
 
@@ -2738,7 +2738,7 @@ function New-PodeAuthBearerScheme {
         InnerScheme   = $InnerScheme
         Arguments     = @{
             Description         = $Description
-            HeaderTag           = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
+            BearerTag           = (Protect-PodeValue -Value $BearerTag -Default 'Bearer')
             Scopes              = $Scope
             AsJWT               = $AsJWT
             Secret              = $Secret
@@ -2783,7 +2783,6 @@ function New-PodeAuthBearerScheme {
 .NOTES
     Internal function for Pode authentication schemes. Subject to change in future updates.
 #>
-
 function New-PodeAuthDigestScheme {
     [CmdletBinding(DefaultParameterSetName = 'Basic')]
     [OutputType([hashtable])]

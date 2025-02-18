@@ -339,4 +339,6 @@
     unknownAlgorithmOrInvalidPfxExceptionMessage                      = 'Algorithme inconnu ou format PEM invalide.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Algorithme {0} inconnu (Taille de clé : {1} bits).'
     jwtCertificateAuthNotSupportedExceptionMessage                    = "L'authentification par certificat JWT est prise en charge uniquement à partir de PowerShell 7.0."
+    jwtNoExpirationExceptionMessage                                   = "Le JWT ne contient pas la revendication obligatoire 'exp' (Expiration). Une expiration valide est requise."
+    bearerTokenAuthMethodNotSupportedExceptionMessage                 = "L'authentification par jeton Bearer via le corps de la requête est prise en charge uniquement avec les méthodes HTTP PUT, POST ou PATCH."
 }

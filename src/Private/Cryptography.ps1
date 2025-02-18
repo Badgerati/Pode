@@ -411,9 +411,9 @@ function New-PodeJwtSignature {
         }
         'AuthenticationMethod' {
             if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
-                $method = $PodeContext.Server.Authentications.Methods[$Authentication]
+                $method = $PodeContext.Server.Authentications.Methods[$Authentication].Scheme.Arguments
                 $alg = $method.Algorithm
-                $X509Certificate = $method.Certificate
+                $X509Certificate = $method.X509Certificate
                 if ($null -ne $method.Secret) {
                     $secretBytes = Convert-PodeSecureStringToByteArray -SecureString $method.Secret
                 }
@@ -854,3 +854,352 @@ function Get-PodeJwtSigningAlgorithm {
     }
 }
 
+
+
+
+<#
+.SYNOPSIS
+    Generates a JSON Web Token (JWT) based on the specified headers, payload, and signing credentials.
+.DESCRIPTION
+    This function creates a JWT by combining a Base64URL-encoded header and payload. Depending on the
+    configured parameters, it supports various signing algorithms, including HMAC- and certificate-based
+    signatures. You can also omit a signature by specifying 'none'.
+
+.PARAMETER Header
+    Additional header values for the JWT. Defaults to an empty hashtable if not specified.
+
+.PARAMETER Payload
+    The required hashtable specifying the token’s claims.
+
+.PARAMETER Algorithm
+    A string representing the signing algorithm to be used. Accepts 'NONE', 'HS256', 'HS384', or 'HS512'.
+
+.PARAMETER Secret
+    Used in conjunction with HMAC signing. Can be either a byte array or a SecureString. Required if you
+    select the 'SecretBytes' parameter set.
+
+.PARAMETER X509Certificate
+    An X509Certificate2 object used for RSA/ECDSA-based signing. Required if you select the 'CertRaw' parameter set.
+
+.PARAMETER Certificate
+    The path to a certificate file used for signing. Required if you select the 'CertFile' parameter set.
+
+.PARAMETER CertificateKey
+    Optional path to an associated certificate key file.
+
+.PARAMETER CertificatePassword
+    An optional SecureString password for a certificate file.
+
+.PARAMETER CertificateThumbprint
+    A string thumbprint of a certificate in the local store. Required if you select the 'CertThumb' parameter set.
+
+.PARAMETER CertificateName
+    A string name of a certificate in the local store. Required if you select the 'CertName' parameter set.
+
+.PARAMETER CertificateStoreName
+    The store name to search for the specified certificate. Defaults to 'My'.
+
+.PARAMETER CertificateStoreLocation
+    The certificate store location for the specified certificate. Defaults to 'CurrentUser'.
+
+.PARAMETER RsaPaddingScheme
+    Specifies the RSA padding scheme to use. Accepts 'Pkcs1V15' or 'Pss'. Defaults to 'Pkcs1V15'.
+
+.PARAMETER Authentication
+    The name of a configured authentication method in Pode. Required if you select the 'AuthenticationMethod' parameter set.
+
+.PARAMETER Expiration
+    Time in seconds until the token expires. Defaults to 3600 (1 hour).
+
+.PARAMETER NotBefore
+    Time in seconds to offset the NotBefore claim. Defaults to 0 for immediate use.
+
+.PARAMETER IssuedAt
+    Time in seconds to offset the IssuedAt claim. Defaults to 0 for current time.
+
+.PARAMETER Issuer
+    Identifies the principal that issued the token.
+
+.PARAMETER Subject
+    Identifies the principal that is the subject of the token.
+
+.PARAMETER Audience
+    Specifies the recipients that the token is intended for.
+
+.PARAMETER JwtId
+    A unique identifier for the token.
+
+.PARAMETER NoStandardClaims
+    A switch that, if used, prevents automatically adding iat, nbf, exp, iss, sub, aud, and jti claims.
+
+.OUTPUTS
+    System.String
+    The resulting JWT string.
+
+
+.EXAMPLE
+    New-PodeJwt -Header [pscustomobject]@{ alg = 'none' } -Payload [pscustomobject]@{ sub = '123'; name = 'John' }
+
+.EXAMPLE
+    New-PodeJwt -Header [pscustomobject]@{ alg = 'HS256' } -Payload [pscustomobject]@{ sub = '123'; name = 'John' } -Secret 'abc'
+
+.EXAMPLE
+    New-PodeJwt -Header [pscustomobject]@{ alg = 'RS256' } -Payload [pscustomobject]@{ sub = '123' } -PrivateKey (Get-Content "private.pem" -Raw) -Issuer "auth.example.com" -Audience "myapi.example.com"
+#>
+function New-PodeJwt {
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [pscustomobject]$Header,
+
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Payload,
+
+        [Parameter(ParameterSetName = 'Default')]
+        [Parameter(ParameterSetName = 'Secret')]
+        [ValidateSet('NONE', 'HS256', 'HS384', 'HS512')]
+        [string]$Algorithm,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Secret')]
+        [byte[]]
+        $Secret = $null,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]
+        $X509Certificate,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
+        [string]$Certificate,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [string]$CertificateKey = $null,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [SecureString]$CertificatePassword,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
+        [string]$CertificateThumbprint,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
+        [string]$CertificateName,
+
+        [Parameter(ParameterSetName = 'CertName')]
+        [Parameter(ParameterSetName = 'CertThumb')]
+        [System.Security.Cryptography.X509Certificates.StoreName]
+        $CertificateStoreName = 'My',
+
+        [Parameter(ParameterSetName = 'CertName')]
+        [Parameter(ParameterSetName = 'CertThumb')]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        $CertificateStoreLocation = 'CurrentUser',
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertRaw')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertName')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertThumb')]
+        [ValidateSet('Pkcs1V15', 'Pss')]
+        [string]
+        $RsaPaddingScheme = 'Pkcs1V15',
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'AuthenticationMethod')]
+        [string]
+        $Authentication,
+
+        [Parameter()]
+        [int]
+        $Expiration = 3600, # Default: 1 hour
+
+        [Parameter()]
+        [int]
+        $NotBefore = 0, # Default: Immediate
+
+        [Parameter()]
+        [int]$IssuedAt = 0, # Default: Current time
+
+        [Parameter()]
+        [string]$Issuer,
+
+        [Parameter()]
+        [string]$Subject,
+
+        [Parameter()]
+        [string]$Audience,
+
+        [Parameter()]
+        [string]$JwtId,
+
+        [Parameter()]
+        [switch]
+        $NoStandardClaims
+    )
+    if (!($Header.PSObject.Properties['alg'])) {
+        $Header | Add-Member -MemberType NoteProperty -Name "alg" -Value ''
+    }
+
+    # Determine actions based on parameter set
+    switch ($PSCmdlet.ParameterSetName) {
+        'CertFile' {
+            if (!(Test-Path -Path $Certificate -PathType Leaf)) {
+                throw ($PodeLocale.pathNotExistExceptionMessage -f $Certificate)
+            }
+
+            # Retrieve X509 certificate from a file
+            $X509Certificate = Get-PodeCertificateByFile -Certificate $Certificate -SecurePassword $CertificatePassword -Key $CertificateKey
+            break
+        }
+
+        'certthumb' {
+            # Retrieve X509 certificate from store by thumbprint
+            $X509Certificate = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+        }
+
+        'certname' {
+            # Retrieve X509 certificate from store by name
+            $X509Certificate = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+        }
+
+        'Secret' {
+            # If algorithm was already set in the header, default to it if none provided
+            if (!([string]::IsNullOrWhiteSpace($Header.alg))) {
+                if ([string]::IsNullOrWhiteSpace($Algorithm)) {
+                    $Algorithm = $Header.alg.ToUpper()
+                }
+            }
+
+            # Validate that 'none' has no secret
+            if (($Algorithm -ieq 'none')) {
+                throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
+            }
+
+            # Convert secret to a byte array if needed
+            if ($null -eq $Secret) {
+                throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'secret', 'HMAC', $Header.alg)
+            }
+
+
+            if ([string]::IsNullOrWhiteSpace($Algorithm)) {
+                $Algorithm = 'HS256'
+            }
+
+            $Header.alg = $Algorithm.ToUpper()
+            $params = @{
+                Algorithm   = $Algorithm.ToUpper()
+                SecretBytes = $Secret
+            }
+            break
+        }
+
+        'CertRaw' {
+            # Validate that a raw certificate is present
+            if ($null -eq $X509Certificate) {
+                throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'private', 'RSA/ECSDA', $Header.alg)
+            }
+            break
+        }
+
+        'AuthenticationMethod' {
+            # Retrieve authentication details from Pode's context
+            if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
+                # If 'none' was set in the header but is not supported by the method, throw
+                if (($Header.alg -ieq 'none') -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication).Algorithm -notcontains 'none') {
+                    throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
+                }
+                $Header.alg = $PodeContext.Server.Authentications.Methods[$Authentication].Scheme.Arguments.Algorithm[0]
+                $params = @{
+                    Authentication = $Authentication
+                }
+            }
+            else {
+                throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage)
+            }
+        }
+    }
+
+    # Configure the JWT header and parameters if using a certificate
+    if ($null -ne $X509Certificate) {
+        $Header.alg = Get-PodeJwtSigningAlgorithm -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme
+        $params = @{
+            X509Certificate  = $X509Certificate
+            RsaPaddingScheme = $RsaPaddingScheme
+        }
+    }
+
+    # Optionally add standard claims if not suppressed
+    if (!$NoStandardClaims) {
+        if (! $Header.PSObject.Properties['typ']) {
+            $Header | Add-Member -MemberType NoteProperty -Name "typ" -Value 'JWT'
+        }
+        else {
+            $Header.typ = 'JWT'
+        }
+
+        # Current Unix time
+        $currentUnix = [int][Math]::Floor(([DateTimeOffset]::new([DateTime]::UtcNow)).ToUnixTimeSeconds())
+
+        if (! $Payload.PSObject.Properties['iat']) {
+            $Payload | Add-Member -MemberType NoteProperty -Name "iat" -Value $(if ($IssuedAt -gt 0) { $IssuedAt } else { $currentUnix })
+        }
+        if (! $Payload.PSObject.Properties['nbf']) {
+            $Payload | Add-Member -MemberType NoteProperty -Name "nbf" -Value ($currentUnix + $NotBefore)
+        }
+        if (! $Payload.PSObject.Properties['exp']) {
+            $Payload | Add-Member -MemberType NoteProperty -Name "exp" -Value ($currentUnix + $Expiration)
+        }
+
+        if (! $Payload.PSObject.Properties['iss']) {
+            if ([string]::IsNullOrEmpty($Issuer)) {
+                if ($null -ne $PodeContext) {
+                    $Payload | Add-Member -MemberType NoteProperty -Name "iss" -Value 'Pode'
+                }
+            }
+            else {
+                $Payload | Add-Member -MemberType NoteProperty -Name "iss" -Value $Issuer
+            }
+        }
+
+        if (! $Payload.PSObject.Properties['sub'] -and ![string]::IsNullOrEmpty($Subject)) {
+            $Payload | Add-Member -MemberType NoteProperty -Name "sub" -Value $Subject
+        }
+
+        if (! $Payload.PSObject.Properties['aud']) {
+            if ([string]::IsNullOrEmpty($Audience)) {
+                if (($null -ne $PodeContext) -and ($null -ne $PodeContext.Server.Application)) {
+                    $Payload | Add-Member -MemberType NoteProperty -Name "aud" -Value $PodeContext.Server.Application
+                }
+            }
+            else {
+                $Payload | Add-Member -MemberType NoteProperty -Name "aud" -Value $Audience
+            }
+        }
+
+        if (! $Payload.PSObject.Properties['jti'] ) {
+            if ([string]::IsNullOrEmpty($JwtId)) {
+                $Payload | Add-Member -MemberType NoteProperty -Name "jti" -Value (New-PodeGuid)
+            }
+            else {
+                $Payload | Add-Member -MemberType NoteProperty -Name "jti" -Value $JwtId
+            }
+        }
+    }
+
+    # Encode header and payload as Base64URL
+    $header64 = ConvertTo-PodeBase64UrlValue -Value ($Header | ConvertTo-Json -Compress)
+    $payload64 = ConvertTo-PodeBase64UrlValue -Value ($Payload | ConvertTo-Json -Compress)
+
+    # Combine header and payload
+    $jwt = "$($header64).$($payload64)"
+
+    # Generate signature if not 'none'
+    $sig = if ($Header.alg -ne 'none') {
+        $params['Token'] = $jwt
+        New-PodeJwtSignature @params
+    }
+    else {
+        [string]::Empty
+    }
+
+    # Concatenate signature to form the final JWT
+    $jwt += ".$($sig)"
+    return $jwt
+}

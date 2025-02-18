@@ -599,7 +599,7 @@ function Get-PodeAuthBearerType {
         A hashtable containing the following keys:
         - Realm: The authentication realm.
         - Scopes: Expected scopes for the token.
-        - HeaderTag: The expected Authorization header tag (e.g., 'Bearer').
+        - BearerTag: The expected Authorization header tag (e.g., 'Bearer').
         - AsJWT: Boolean indicating if the token should be processed as a JWT.
         - Secret: Secret key for JWT verification.
 
@@ -664,8 +664,8 @@ function Get-PodeAuthBearerType {
                     }
                 }
 
-                if ($atoms[0] -ine $options.HeaderTag) {
-                    $message = "Authorization header is not $($options.HeaderTag)"
+                if ($atoms[0] -ine $options.BearerTag) {
+                    $message = "Authorization header is not $($options.BearerTag)"
                     return @{
                         Message   = $message
                         Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message)
@@ -676,7 +676,7 @@ function Get-PodeAuthBearerType {
 
             'query' {
                 # support RFC6750
-                $token = $WebEvent.Query['access_token']
+                $token = $WebEvent.Query[$options.BearerTag]
                 if ([string]::IsNullOrWhiteSpace($token)) {
                     $message = 'No Bearer token found'
                     return @{
@@ -686,6 +686,20 @@ function Get-PodeAuthBearerType {
                     }
                 }
             }
+
+            'body' {
+                # support RFC6750
+                $token = $WebEvent.Data.($options.BearerTag)
+                if ([string]::IsNullOrWhiteSpace($token)) {
+                    $message = 'No Bearer token found'
+                    return @{
+                        Message   = $message
+                        Code      = 400  # RFC 6750: Malformed request should return 400
+                        Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message
+                    }
+                }
+            }
+
             default {
                 $message = "Invalid Bearer Token location: $($options.Location)"
                 return @{
@@ -2303,4 +2317,59 @@ function New-PodeAuthChallenge {
     }
 
     return ($items -join ', ')
+}
+
+
+<#
+.SYNOPSIS
+    Validates that the HTTP method supports bearer token authentication in the body.
+
+.DESCRIPTION
+    This function checks if the provided HTTP method is one that typically supports request bodies (e.g., PUT, POST, PATCH) when bearer token authentication is expected in the body. Throws an error if the method is not supported.
+
+.PARAMETER Method
+    The HTTP method to validate (e.g., GET, POST, PUT, PATCH).
+
+.PARAMETER Authentication
+    The authentication scheme to validate against Pode's configured authentications.
+
+.EXAMPLE
+    Test-PodeBodyAuthMethod -Method 'POST' -Authentication 'Bearer'
+    # Validates successfully as POST supports body authentication.
+
+.EXAMPLE
+    Test-PodeBodyAuthMethod -Method 'GET' -Authentication 'Bearer'
+    # Throws an error as GET does not support body authentication.
+
+.NOTES
+    Internal Pode function for HTTP authentication validation. Subject to change.
+#>
+function Test-PodeBodyAuthMethod {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $Method,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Authentication
+    )
+
+    if (![string]::IsNullOrWhiteSpace($Authentication) -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
+        $uberAuth = $PodeContext.Server.Authentications.Methods[$Authentication]
+        if ($uberAuth.ContainsKey('Authentications')) {
+            $authentications = $uberAuth.Authentications
+        }
+        else {
+            $authentications = @($Authentication)
+        }
+        foreach ($auth in $authentications) {
+            $arguments = $PodeContext.Server.Authentications.Methods[$auth].Scheme.Arguments
+            if (($null -ne $arguments ) -and $arguments.ContainsKey('Location') -and $arguments['Location'] -eq 'body') {
+                $Method | Foreach-Object({ if ($_ -inotmatch '^(PUT|POST|PATCH|DELETE)$') {
+                            throw $PodeContext.bearerTokenAuthMethodNotSupportedExceptionMessage
+                        } })
+            }
+        }
+    }
 }

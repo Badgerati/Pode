@@ -339,4 +339,6 @@
     unknownAlgorithmOrInvalidPfxExceptionMessage                      = 'Nieznany algorytm lub nieprawidłowy format PEM.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Nieznany algorytm {0} (Rozmiar klucza: {1} bitów).'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'Uwierzytelnianie certyfikatem JWT jest obsługiwane tylko w PowerShell 7.0 lub nowszym.'
+    jwtNoExpirationExceptionMessage                                   = "JWT nie zawiera wymaganego pola 'exp' (Expiration). Wymagany jest prawidłowy czas wygaśnięcia."
+    bearerTokenAuthMethodNotSupportedExceptionMessage                 = 'Uwierzytelnianie tokenem Bearer za pomocą treści żądania jest obsługiwane tylko dla metod HTTP PUT, POST lub PATCH.'
 }

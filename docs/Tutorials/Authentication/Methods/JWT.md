@@ -8,50 +8,7 @@ Pode provides a [`ConvertTo-PodeJwt`](../../../../Functions/Authentication/Conve
 - **`-IgnoreSignature`**: If you want a token with no signature (alg = none).
 - **`-Authentication`**: To reference an existing named authentication scheme, automatically pulling its parameters (algorithm, secret, certificate, etc.) so the generated JWT is recognized by that scheme.
 
-### Using `-Authentication`
-
-If you have already set up an authentication scheme, for instance:
-
-```powershell
-New-PodeAuthBearerScheme -AsJWT -Algorithm 'RS256' -Certificate 'C:\path\to\cert.pfx' -CertificatePassword (ConvertTo-SecureString "CertPass" -AsPlainText -Force) |
-    Add-PodeAuth -Name 'ExampleApiKeyCert'
-```
-
-then you can **reuse** this scheme’s configuration when creating a token by calling:
-
-```powershell
-$jwt = ConvertTo-PodeJwt -Authentication 'ExampleApiKeyCert'
-
-# e.g., return the new JWT to a client
-Write-PodeJsonResponse -StatusCode 200 -Value @{ jwt_token = $jwt }
-```
-
-Pode automatically looks up the **`ExampleApiKeyCert`** auth scheme, retrieves its signing algorithm and key/certificate, and uses those to generate a valid JWT. This ensures that the JWT you create can later be **decoded and verified** by the same auth scheme without having to re-specify all parameters (secret, certificate, etc.).
-
-### Example
-
-Below is a short example of how you might implement a **login** route that returns a signed JWT:
-
-```powershell
-Add-PodeRoute -Method Post -Path '/user/login' -ScriptBlock {
-    param()
-
-    # In a real scenario, you'd validate the incoming credentials from $WebEvent.data
-    $username = $WebEvent.Data['username']
-    $password = $WebEvent.Data['password']
-
-    # If valid, generate a JWT that matches the 'ExampleApiKeyCert' scheme
-    $jwt = ConvertTo-PodeJwt -Authentication 'ExampleApiKeyCert'
-
-    Write-PodeJsonResponse -StatusCode 200 -Value @{ jwt_token = $jwt }
-}
-```
-
-In this example, the **`-Authentication`** parameter ensures Pode uses the RS256 certificate-based configuration already defined by the `ExampleApiKeyCert` auth scheme, producing a token that is verifiable by that same scheme on future requests.
-
----
-
-### Customizing the Header/Payload
+## Customizing the Header/Payload
 
 When generating a JWT using **`ConvertTo-PodeJwt`**, you can specify parameters that either:
 
@@ -62,7 +19,7 @@ You can also combine these approaches—Pode merges everything into the final to
 
 Below are the **primary parameters** you can pass to **`ConvertTo-PodeJwt`**:
 
-#### Header and Payload
+### Header and Payload
 
 - **`-Header`**: A hashtable for JWT header fields (e.g., `alg`, `typ`).
 - **`-Payload`**: A hashtable for arbitrary/custom claims (e.g., `role`, `scope`, etc.).
@@ -161,3 +118,47 @@ Add-PodeRoute -Method Post -Path '/login' -ScriptBlock {
 ```
 
 Here, Pode automatically applies the RS256 certificate from **`ExampleApiKeyCert`** and merges your standard-claims parameters, producing a token recognized by that same scheme upon verification.
+
+## Using `-Authentication`
+
+If you have already set up an authentication scheme, for instance:
+
+```powershell
+New-PodeAuthBearerScheme -AsJWT -Algorithm 'RS256' -Certificate 'C:\path\to\cert.pfx' -CertificatePassword (ConvertTo-SecureString "CertPass" -AsPlainText -Force) |
+    Add-PodeAuth -Name 'ExampleApiKeyCert'
+```
+
+then you can **reuse** this scheme’s configuration when creating a token by calling:
+
+```powershell
+$jwt = ConvertTo-PodeJwt -Authentication 'ExampleApiKeyCert'
+
+# e.g., return the new JWT to a client
+Write-PodeJsonResponse -StatusCode 200 -Value @{ jwt_token = $jwt }
+```
+
+Pode automatically looks up the **`ExampleApiKeyCert`** auth scheme, retrieves its signing algorithm and key/certificate, and uses those to generate a valid JWT. This ensures that the JWT you create can later be **decoded and verified** by the same auth scheme without having to re-specify all parameters (secret, certificate, etc.).
+
+### Example
+
+Below is a short example of how you might implement a **login** route that returns a signed JWT:
+
+```powershell
+Add-PodeRoute -Method Post -Path '/user/login' -ScriptBlock {
+    param()
+
+    # In a real scenario, you'd validate the incoming credentials from $WebEvent.data
+    $username = $WebEvent.Data['username']
+    $password = $WebEvent.Data['password']
+
+    # If valid, generate a JWT that matches the 'ExampleApiKeyCert' scheme
+    $jwt = ConvertTo-PodeJwt -Authentication 'ExampleApiKeyCert'
+
+    Write-PodeJsonResponse -StatusCode 200 -Value @{ jwt_token = $jwt }
+}
+```
+
+In this example, the **`-Authentication`** parameter ensures Pode uses the RS256 certificate-based configuration already defined by the `ExampleApiKeyCert` auth scheme, producing a token that is verifiable by that same scheme on future requests.
+
+
+# Extend Token Lifetime

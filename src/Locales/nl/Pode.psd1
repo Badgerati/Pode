@@ -339,4 +339,6 @@
     unknownAlgorithmOrInvalidPfxExceptionMessage                      = 'Onbekend algoritme of ongeldig PEM-formaat.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Onbekend {0}-algoritme (Sleutelgrootte: {1} bits).'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT-certificaatverificatie wordt alleen ondersteund in PowerShell 7.0 of hoger.'
+    jwtNoExpirationExceptionMessage                                   = "De JWT mist de vereiste 'exp' (Expiration) claim. Een geldige vervaldatum is vereist."
+    bearerTokenAuthMethodNotSupportedExceptionMessage                 = 'Bearer-tokenverificatie met de aanvraagtekst wordt alleen ondersteund met HTTP PUT-, POST- of PATCH-methoden.'
 }

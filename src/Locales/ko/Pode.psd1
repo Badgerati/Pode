@@ -339,4 +339,6 @@
     unknownAlgorithmOrInvalidPfxExceptionMessage                      = '알 수 없는 알고리즘 또는 잘못된 PEM 형식입니다.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = '알 수 없는 {0} 알고리즘 (키 크기: {1} 비트).'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT 인증서 인증은 PowerShell 7.0 이상에서만 지원됩니다.'
+    jwtNoExpirationExceptionMessage                                   = "JWT에 'exp' (만료 시간) 클레임이 없습니다. 유효한 만료 시간이 필요합니다."
+    bearerTokenAuthMethodNotSupportedExceptionMessage                 = '요청 본문을 사용한 Bearer 토큰 인증은 HTTP PUT, POST, PATCH 메서드에서만 지원됩니다.'
 }

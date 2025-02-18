@@ -155,7 +155,7 @@ function Get-PodeCertificateByFile {
 
     # cert + key
     if (![string]::IsNullOrWhiteSpace($Key)) {
-        return (Get-PodeCertificateByPemFile -Certificate $Certificate -Password $Password -Key $Key)
+        return (Get-PodeCertificateByPemFile -Certificate $Certificate -Password $Password -SecurePassword $SecurePassword -Key $Key)
     }
 
     $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
@@ -191,6 +191,10 @@ function Get-PodeCertificateByPemFile {
         $Password = $null,
 
         [Parameter()]
+        [securestring]
+        $SecurePassword = $null,
+
+        [Parameter()]
         [string]
         $Key = $null
     )
@@ -204,35 +208,85 @@ function Get-PodeCertificateByPemFile {
     if ([version]$PSVersionTable.PSVersion -ge [version]'7.0.0') {
         $cert = [X509Certificates.X509Certificate2]::new($certPath)
         $keyText = [System.IO.File]::ReadAllText($keyPath)
-        $rsa = [RSA]::Create()
+        try {
+            $rsa = [RSA]::Create()
 
-        # .NET5
-        if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
-            if ([string]::IsNullOrWhiteSpace($Password)) {
-                $rsa.ImportFromPem($keyText)
-            }
+            # .NET5
+            if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
+                if ([string]::IsNullOrWhiteSpace($Password) -and ($null -eq $SecurePassword )) {
+                    $rsa.ImportFromPem($keyText)
+                }
+                else {
+                    if ($null -ne $SecurePassword) {
+                        $rsa.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword))
+                    }
+                    else {
+                        $rsa.ImportFromEncryptedPem($keyText, $Password)
+                    }
+                }
+            } # .NET3
             else {
-                $rsa.ImportFromEncryptedPem($keyText, $Password)
+                $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
+                $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
+
+                if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
+                    $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
+                    $rsa.ImportRSAPrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
+                    if ($null -ne $SecurePassword) {
+                        $rsa.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $keyBytes, [ref]$null)
+                    }
+                    else {
+                        $rsa.ImportEncryptedPkcs8PrivateKey($Password, $keyBytes, [ref]$null)
+                    }
+                }
             }
+            $cert = [X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
         }
+        catch {
+            $ecsd = [ECDSA]::Create()
+            if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
+                if ([string]::IsNullOrWhiteSpace($Password) -and ($null -eq $SecurePassword )) {
+                    $ecsd.ImportFromPem($keyText)
+                }
+                else {
+                    if ($null -ne $SecurePassword) {
+                        $ecsd.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword))
+                    }
+                    else {
+                        $ecsd.ImportFromEncryptedPem($keyText, $Password)
+                    }
+                }
+            }
 
-        # .NET3
-        else {
-            $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
-            $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
 
-            if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
-                $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
+            # .NET3
+            else {
+                $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
+                $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
+
+                if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
+                    $ecsd.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
+                    $ecsd.ImportRSAPrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
+                    if ($null -ne $SecurePassword) {
+                        $ecsd.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $keyBytes, [ref]$null)
+                    }
+                    else {
+                        $ecsd.ImportEncryptedPkcs8PrivateKey($Password, $keyBytes, [ref]$null)
+                    }
+                }
             }
-            elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
-                $rsa.ImportRSAPrivateKey($keyBytes, [ref]$null)
-            }
-            elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
-                $rsa.ImportEncryptedPkcs8PrivateKey($Password, $keyBytes, [ref]$null)
-            }
+
+
+            $cert = [X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
         }
-
-        $cert = [X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
         $cert = [X509Certificates.X509Certificate2]::new($cert.Export([X509Certificates.X509ContentType]::Pkcs12))
     }
 
@@ -241,6 +295,9 @@ function Get-PodeCertificateByPemFile {
         $tempFile = Join-Path (Split-Path -Parent -Path $certPath) 'temp.pfx'
 
         try {
+            if ($null -ne $SecurePassword) {
+                $Password = Convert-PodeSecureStringToPlainText -SecureString $SecurePassword
+            }
             if ([string]::IsNullOrWhiteSpace($Password)) {
                 $Password = [string]::Empty
             }

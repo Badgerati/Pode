@@ -339,4 +339,6 @@
     unknownAlgorithmOrInvalidPfxExceptionMessage                      = 'خوارزمية غير معروفة أو تنسيق PEM غير صالح.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'خوارزمية {0} غير معروفة (حجم المفتاح: {1} بت).'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'مصادقة شهادة JWT مدعومة فقط في PowerShell 7.0 أو أحدث.'
+    jwtNoExpirationExceptionMessage                                   = "JWT يفتقد إلى الادعاء المطلوب 'exp' (انتهاء الصلاحية)."
+    bearerTokenAuthMethodNotSupportedExceptionMessage                 = 'مصادقة رمز Bearer باستخدام نص الطلب مدعومة فقط مع طرق HTTP PUT أو POST أو PATCH.'
 }

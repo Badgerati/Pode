@@ -339,4 +339,6 @@
     unknownAlgorithmOrInvalidPfxExceptionMessage                      = 'Unknown algorithm or invalid PEM format.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Unknown {0} algorithm (Key Size: {1} bits).'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT certificate authentication is supported only in PowerShell 7.0 or greater.'
+    jwtNoExpirationExceptionMessage                                   = 'The JWT is missing the required expiration time (exp) claim. A valid expiration time is required.'
+    bearerTokenAuthMethodNotSupportedExceptionMessage                 = 'Bearer token authentication using the request body is only supported with HTTP PUT, POST, or PATCH methods.'
 }
