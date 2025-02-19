@@ -1688,7 +1688,6 @@ function Test-PodeAuthValidation {
         }
 
 
-
         # Authentication failure handling
         if (($null -eq $result) -or ($result.Count -eq 0) -or (Test-PodeIsEmpty $result.User)) {
             $code = (Protect-PodeValue -Value $result.Code -Default 401)
@@ -2366,7 +2365,7 @@ function Test-PodeBodyAuthMethod {
         foreach ($auth in $authentications) {
             $arguments = $PodeContext.Server.Authentications.Methods[$auth].Scheme.Arguments
             if (($null -ne $arguments ) -and $arguments.ContainsKey('Location') -and $arguments['Location'] -eq 'body') {
-                $Method | Foreach-Object({ if ($_ -inotmatch '^(PUT|POST|PATCH|DELETE)$') {
+                $Method | Foreach-Object({ if ($_ -inotmatch '^(PUT|POST|PATCH)$') {
                             throw $PodeContext.bearerTokenAuthMethodNotSupportedExceptionMessage
                         } })
             }

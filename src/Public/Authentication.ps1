@@ -2538,7 +2538,7 @@ function New-PodeAuthKeyTab {
     A list of required scopes for the authentication scheme.
 
 .PARAMETER Algorithm
-    Accepted JWT signing algorithms: NONE, HS256, HS384, HS512, RS256, RS384, RS512, PS256, PS384, PS512, ES256, ES384, ES512.
+    Accepted JWT signing algorithms:  HS256, HS384, HS512.
 
 .PARAMETER AsJWT
     Indicates if the Bearer token should be treated and validated as a JWT.

@@ -208,24 +208,33 @@ function Test-PodeJwt {
 	This example decodes and verifies a JWT token using an X509 certificate.
 #>
 function ConvertFrom-PodeJwt {
-    [CmdletBinding(DefaultParameterSetName = 'Secret')]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType([pscustomobject])]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Secret')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Ignore')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'AuthenticationMethod')]
         [string]
         $Token,
 
+        [Parameter(Mandatory = $false, ParameterSetName = 'Default')]
         [Parameter(ParameterSetName = 'Ignore')]
         [switch]
         $IgnoreSignature,
 
-        [Parameter(ParameterSetName = 'Ignore')]
         [ValidateSet('Header', 'Payload', 'Signature', 'Header,Payload', 'Header,Signature', 'Payload,Signature', 'Header,Payload,Signature')]
         [string]
         $Outputs = 'Payload',
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'SecretBytes')]
+        [switch]
+        $HumanReadable,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Secret')]
         [object]
         $Secret = $null,
 
@@ -275,8 +284,17 @@ function ConvertFrom-PodeJwt {
         [string]
         $Authentication
     )
+    $parameterSetName = $PSCmdlet.ParameterSetName
+
+    if ($parameterSetName -eq 'Default') {
+        if ($null -ne $WebEvent -and $null -ne $WebEvent.Auth.Name) {
+            $parameterSetName = 'AuthenticationMethod'
+            $Authentication = $WebEvent.Auth.Name
+        }
+    }
+
     # Determine how to verify the JWT based on the supplied parameters
-    switch ($PSCmdlet.ParameterSetName) {
+    switch ($parameterSetName) {
         'CertFile' {
             # Validate that the certificate file exists and then load it
             if (!(Test-Path -Path $Certificate -PathType Leaf)) {
@@ -296,24 +314,29 @@ function ConvertFrom-PodeJwt {
             $X509Certificate = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
         }
 
-        'SecretBytes' {
+        'Secret' {
             # Convert the secret to a byte array if necessary for HMAC verification
-            if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
-                $Secret = if ($Secret -is [SecureString]) {
-                    Convert-PodeSecureStringToByteArray -SecureString $Secret
+            if ($null -ne $Secret   ) {
+                if ($Secret -is [string]) {
+                    $params = @{
+                        Secret = ConvertTo-SecureString -String $Secret -AsPlainText -Force
+                    }
+                }
+                elseif ($Secret -is [byte[]]) {
+                    $params = @{
+                        Secret = [System.Text.Encoding]::UTF8.GetString($Secret)
+                    }
                 }
                 else {
-                    [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
-                }
-
-                # If no valid secret is found, throw an error
-                if ($null -eq $Secret) {
-                    throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'secret', 'HMAC', $Header['alg'])
+                    $params = @{
+                        Secret = $Secret
+                    }
                 }
             }
+            else {
+                # If no valid secret is found, throw an error
 
-            $params = @{
-                Secret = $Secret
+                throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'secret', 'HMAC', $Header['alg'])
             }
             break
         }
@@ -329,8 +352,14 @@ function ConvertFrom-PodeJwt {
         'AuthenticationMethod' {
             # Validate that the specified authentication method exists in the current Pode context
             if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
-                $params = @{
-                    Authentication = $Authentication
+                $token = Get-PodeBearenToken
+                $authArgs = $PodeContext.Server.Authentications.Methods[$Authentication].Scheme.Arguments
+                $params = @{}
+                if ($null -ne $authArgs.X509Certificate) {
+                    $X509Certificate = $authArgs.X509Certificate
+                }
+                if ($null -ne $method.Secret) {
+                    $params['Secret'] = $method.Secret
                 }
             }
             else {
@@ -372,56 +401,69 @@ function ConvertFrom-PodeJwt {
     $signature = $parts[2]
 
     # If ignoring the signature, return the payload immediately
-    if ($IgnoreSignature) {
-        switch ($Outputs) {
-            'Header' { return $header }
-            'Payload' { return $payload }
-            'Signature' { return $signature }
-            'Header,Payload' {
-                return [ordered]@{Header = $header; Payload = $payload }
-            }
-            'Header,Signature' {
-                return [ordered]@{Header = $header; Signature = $signature }
-            }
-            'Payload,Signature' {
-                return [ordered]@{Payload = $payload; Signature = $signature }
-            }
-            'Header,Payload,Signature' {
-                return [ordered]@{Header = $header; Payload = $payload; Signature = $signature }
-            }
-            default { return $payload }
+    if (! $IgnoreSignature) {
+
+
+
+        # Some JWTs may specify "none" as the algorithm (no signature)
+        $isNoneAlg = ($header.alg -ieq 'none')
+
+        # If signature is missing but an algorithm is expected, throw an error
+        if ([string]::IsNullOrWhiteSpace($signature) -and !$isNoneAlg) {
+            throw ($PodeLocale.noJwtSignatureForAlgorithmExceptionMessage -f $header.alg)
+        }
+
+        # If "none" is indicated but a signature was supplied, throw an error
+        if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
+            throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
+        }
+
+        # If alg is "none" but a secret was provided, throw an error
+        if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
+            throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
+        }
+
+        # If "none" signature, return the payload since there's nothing to verify
+        if ($isNoneAlg) {
+            return $payload
+        }
+
+        # At this point, we have a valid signature with a known algorithm
+        $params['Algorithm'] = $header.alg
+        
+        # Confirm-PodeJwt will finalize verification based on the algorithm and parameters
+        $null = Confirm-PodeJwt @params
+    }
+    if ($HumanReadable) {
+        if ($payload.iat) {
+            $payload.iat = [System.DateTimeOffset]::FromUnixTimeSeconds($payload.iat).UtcDateTime
+        }
+        if ($payload.nbf) {
+            $payload.nbf = [System.DateTimeOffset]::FromUnixTimeSeconds($payload.nbf).UtcDateTime
+        }
+        if ($payload.exp) {
+            $payload.exp = [System.DateTimeOffset]::FromUnixTimeSeconds($payload.exp).UtcDateTime
         }
     }
 
-
-    # Some JWTs may specify "none" as the algorithm (no signature)
-    $isNoneAlg = ($header.alg -ieq 'none')
-
-    # If signature is missing but an algorithm is expected, throw an error
-    if ([string]::IsNullOrWhiteSpace($signature) -and !$isNoneAlg) {
-        throw ($PodeLocale.noJwtSignatureForAlgorithmExceptionMessage -f $header.alg)
+    switch ($Outputs) {
+        'Header' { return $header }
+        'Payload' { return $payload }
+        'Signature' { return $signature }
+        'Header,Payload' {
+            return [ordered]@{Header = $header; Payload = $payload }
+        }
+        'Header,Signature' {
+            return [ordered]@{Header = $header; Signature = $signature }
+        }
+        'Payload,Signature' {
+            return [ordered]@{Payload = $payload; Signature = $signature }
+        }
+        'Header,Payload,Signature' {
+            return [ordered]@{Header = $header; Payload = $payload; Signature = $signature }
+        }
+        default { return $payload }
     }
-
-    # If "none" is indicated but a signature was supplied, throw an error
-    if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
-        throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
-    }
-
-    # If alg is "none" but a secret was provided, throw an error
-    if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
-        throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
-    }
-
-    # If "none" signature, return the payload since there's nothing to verify
-    if ($isNoneAlg) {
-        return $payload
-    }
-
-    # At this point, we have a valid signature with a known algorithm
-    $params['Algorithm'] = $header.alg
-
-    # Confirm-PodeJwt will finalize verification based on the algorithm and parameters
-    return Confirm-PodeJwt @params
 }
 
 <#
@@ -443,7 +485,7 @@ function ConvertFrom-PodeJwt {
 
 .PARAMETER Secret
     Used in conjunction with HMAC signing. Can be either a byte array or a SecureString. Required if you
-    select the 'SecretBytes' parameter set.
+    select the 'Secret' parameter set.
 
 .PARAMETER X509Certificate
     An X509Certificate2 object used for RSA/ECDSA-based signing. Required if you select the 'CertRaw' parameter set.
@@ -524,11 +566,11 @@ function ConvertTo-PodeJwt {
         [hashtable]$Payload,
 
         [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'SecretBytes')]
+        [Parameter(ParameterSetName = 'Secret')]
         [ValidateSet('NONE', 'HS256', 'HS384', 'HS512')]
         [string]$Algorithm,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'SecretBytes')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Secret')]
         $Secret = $null,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
@@ -679,7 +721,7 @@ function ConvertTo-PodeJwt {
                 -Payload $psPayload -Header $psHeader
         }
 
-        'SecretBytes' {
+        'Secret' {
             # Convert secret to a byte array if needed
             if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
                 $Secret = if ($Secret -is [SecureString]) {
@@ -773,8 +815,9 @@ function ConvertTo-PodeJwt {
     This example updates the expiration time of a JWT token by extending it by 1 hour using an X509 certificate.
 #>
 function Update-PodeJwt {
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'SecretBytes')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Secret')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
@@ -786,7 +829,7 @@ function Update-PodeJwt {
         [int]
         $ExpirationExtension = 0,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'SecretBytes')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Secret')]
         $Secret = $null,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
@@ -823,27 +866,17 @@ function Update-PodeJwt {
         $Authentication
     )
 
-    if ($PSCmdlet.ParameterSetName -eq 'AuthenticationMethod') {
+    $parameterSetName = $PSCmdlet.ParameterSetName
 
-        if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
-            $options = $PodeContext.Server.Authentications.Methods[$Authentication].Scheme.Arguments
-            switch ($options.Location.ToLowerInvariant()) {
-                'header' {
-                    $atoms = $(Get-PodeHeader -Name 'Authorization') -isplit '\s+'
-                    $token = $atoms[1]
-                }
-                'query' {
-                    $token = $WebEvent.Query[$options.BearerTag]
-                }
-                'body' {
-                    $token = $WebEvent.Data.($options.BearerTag)
-                }
+    if ($parameterSetName -eq 'Default') {
+        if ($null -ne $WebEvent -and $null -ne $WebEvent.Auth.Name) {
+            $parameterSetName = 'AuthenticationMethod'
+            $Authentication = $WebEvent.Auth.Name
+        }
+    }
 
-            }
-        }
-        else {
-            throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage)
-        }
+    if ($parameterSetName -eq 'AuthenticationMethod') {
+        $token = Get-PodeBearenToken
     }
 
     $jwt = ConvertFrom-PodeJwt -Token $Token -IgnoreSignature -Outputs 'Header,Payload'
@@ -866,7 +899,7 @@ function Update-PodeJwt {
         $rsaPaddingScheme = 'Pkcs1V15'
     }
 
-    $params = switch ($PSCmdlet.ParameterSetName) {
+    $params = switch ($parameterSetName) {
         # If the secret is provided as a byte array, use it for signing
         'CertFile' {
             @{
@@ -901,7 +934,7 @@ function Update-PodeJwt {
             }
         }
         # If the secret is provided as a byte array, use it for signing
-        'SecretBytes' {
+        'Secret' {
             @{
                 Payload = $jwt.Payload
                 Header  = $jwt.Header

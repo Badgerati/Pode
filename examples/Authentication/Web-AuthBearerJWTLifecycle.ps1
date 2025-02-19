@@ -1,75 +1,69 @@
 <#
 .SYNOPSIS
-    A PowerShell script to set up a Pode server with JWT authentication and various route configurations.
+  A PowerShell script demonstrating the full lifecycle of JWT authentication using X.509 certificates in Pode.
 
 .DESCRIPTION
-    This script initializes a Pode server that listens on a specified port, enables request and error logging,
-    and configures JWT authentication using either the request header or query parameters. It also defines
-    a protected route to fetch a list of users, requiring authentication.
+  This script sets up a Pode server that listens on a specified port and enables JWT authentication using X.509 certificates.
+  It showcases the full JWT authentication lifecycle, including login, renewal, validation, and retrieval of user information.
+  Authentication is performed using JWT tokens signed with the selected cryptographic algorithm.
 
 .PARAMETER Location
-    Specifies where the API key (JWT token) is expected.
-    Valid values: 'Header', 'Query'.
-    Default: 'Header'.
+  Specifies where the API key (JWT token) is expected.
+  Valid values: 'Header', 'Query'.
+  Default: 'Header'.
+
+.PARAMETER Algorithm
+  Specifies the cryptographic algorithm used for JWT signing and verification.
+  Valid values: 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512'.
+  Default: 'ES512'.
 
 .EXAMPLE
-    # Run the sample
-    ./WebAuth-bearerJWT.ps1
+  # Run the sample
+  ./WebAuth-bearerJWT.ps1
 
-    JWT payload:
-    {
-        "sub": "1234567890",
-        "name": "morty",
-        "username":"morty",
-        "type": "Human",
-        "id" : "M0R7Y302",
-        "admin": true,
-        "iat": 1516239022,
-        "exp": 2634234231,
-        "iss": "auth.example.com",
-        "sub": "1234567890",
-        "aud": "myapi.example.com",
-        "nbf": 1690000000,
-        "jti": "unique-token-id",
-        "role": "admin"
-    }
+  JWT payload example:
+  {
+      "sub": "1234567890",
+      "name": "morty",
+      "username": "morty",
+      "type": "Human",
+      "id": "M0R7Y302",
+      "admin": true,
+      "iat": 1516239022,
+      "exp": 2634234231,
+      "iss": "auth.example.com",
+      "aud": "myapi.example.com",
+      "nbf": 1690000000,
+      "jti": "unique-token-id",
+      "role": "admin"
+  }
 
-.EXAMPLE
-    # Example request using PS512 JWT authentication
-    $jwt = ConvertTo-PodeJwt -PfxPath ./cert.pfx -RsaPaddingScheme Pss -PfxPassword (ConvertTo-SecureString 'mySecret' -AsPlainText -Force)
-    $headers = @{ 'Authorization' = "Bearer $jwt" }
-    $response = Invoke-RestMethod -Uri 'http://localhost:8081/auth/bearer/jwt/PS512' -Method Get -Headers $headers
+.LINK
+  https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthbearerJWTLifecycle.ps1
 
-.EXAMPLE
-    # Example request using RS384 JWT authentication
-    $headers = @{ 'Authorization' = 'Bearer <your-jwt>' }
-    $response = Invoke-RestMethod -Uri 'http://localhost:8081/users' -Method Get -Headers $headers
+.NOTES
+  - This script uses Pode to create a lightweight web server with authentication.
+  - JWT authentication is handled via Bearer tokens passed in either the header or query parameters.
+  - JWTs are signed using X.509 certificates and verified based on the selected algorithm.
+  - The script implements endpoints for login, token renewal, and token validation.
+  - Ensure the private key is securely stored and managed for RS256-based JWT signing.
+  - Using query parameters for authentication is **discouraged** due to security risks.
+  - Always use HTTPS in production to protect sensitive authentication data.
 
-.EXAMPLE
-    # Example request using HS256 JWT authentication
-    $jwt = ConvertTo-PodeJwt -Algorithm HS256 -Secret (ConvertTo-SecureString 'secret' -AsPlainText -Force) -Payload @{id='id';name='Morty'}
-    $headers = @{ 'Authorization' = "Bearer $jwt" }
-    $response = Invoke-RestMethod -Uri 'http://localhost:8081/users' -Method Get -Headers $headers
-
-  .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Authentication/Web-AuthbearerJWT.ps1
-
-  .NOTES
-    - This script uses Pode to create a lightweight web server with authentication.
-    - JWT authentication is handled via Bearer tokens passed in either the header or query.
-    - Ensure the private key is securely stored and managed for RS256-based JWT signing.
-    - Using query parameters for authentication is **discouraged** due to security risks.
-    - Always use HTTPS in production to protect sensitive authentication data.
-
-    Author: Pode Team
-    License: MIT License
+  Author: Pode Team
+  License: MIT License
 #>
 
 param(
     [Parameter()]
     [ValidateSet('Header', 'Query' )]
     [string]
-    $Location = 'Header'
+    $Location = 'Header',
+
+    [Parameter()]
+    [ValidateSet( 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512')]
+    [string]
+    $Algorithm = 'ES512'
 )
 
 try {
@@ -93,7 +87,7 @@ function Test-User {
         [string]$username,
         [string]$password
     )
-    if ($username -eq 'morty' -or $password -eq 'pickle') {
+    if ($username -eq 'morty' -and $password -eq 'pickle') {
         return @{
             Id       = 'M0R7Y302'
             Username = 'morty.smith'
@@ -143,44 +137,49 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
 
     # Ensure the directory exists
     if (! (Test-Path $CertsPath)) {
-        Write-Warning "Certificate folder '$CertsPath' does not exist."
-        Exit
+        throw "Certificate folder '$CertsPath' does not exist."
     }
 
+    # $SecurePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
 
-    # $privateKeys += Get-ChildItem -Path $CertsPath -Filter  '*-private-encrypted.pem'
+    if (Test-PodeIsPSCore) {
+        $certificate = join-path -path $CertsPath -ChildPath "$Algorithm.pem"
+        if (! (Test-Path $certificate)) {
+            throw "Key file '$certificate' does not exist."
 
-    $alg = 'ES512'
-    $certificate = join-path -path $CertsPath -ChildPath "$alg.pem"
-    if (! (Test-Path $certificate)) {
-        Write-Warning "Key file '$certificate' does not exist."
-        continue
+        }
+        #$certificateKey = join-path -path $CertsPath -ChildPath "$Algorithm-private-encrypted.pem"
+        $certificateKey = join-path -path $CertsPath -ChildPath "$Algorithm-private.pem"
+        if (! (Test-Path $certificateKey)) {
+            throw "Key file '$certificateKey' does not exist."
+
+        }
+        $param = @{
+            Location            = $Location
+            AsJWT               = $true
+            JwtVerificationMode = $JwtVerificationMode
+            Certificate         = $certificate
+            CertificateKey      = $certificateKey
+            #  CertificatePassword = $securePassword
+        }
     }
-    #$certificateKey = join-path -path $CertsPath -ChildPath "$alg-private-encrypted.pem"
-    $certificateKey = join-path -path $CertsPath -ChildPath "$alg-private.pem"
-    if (! (Test-Path $certificateKey)) {
-        Write-Warning "Key file '$certificateKey' does not exist."
-        continue
+    else {
+        $certificate = join-path -path $CertsPath -ChildPath "$Algorithm.pfx"
+        if (! (Test-Path $certificate)) {
+            throw "Key file '$certificate' does not exist."
+        }
+        $param = @{
+            Location            = $Location
+            AsJWT               = $true
+            JwtVerificationMode = $JwtVerificationMode
+            Certificate         = $certificate
+            #  CertificatePassword = $securePassword
+        }
     }
-
-
-    $SecurePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
 
     # Register Pode Bearer Authentication
-    Write-PodeHost "🔹 Registering JWT Authentication algorithm:(ES512) location: ($Location)"
-
-    $authentications += $authName
-    $param = @{
-        Location            = $Location
-        AsJWT               = $true
-        JwtVerificationMode = $JwtVerificationMode
-        Certificate         = $certificate
-        CertificateKey      = $certificateKey
-        #  CertificatePassword = $securePassword
-    }
-
     New-PodeAuthBearerScheme @param |
-        Add-PodeAuth -Name 'Bearer_JWT_ES512' -Sessionless -ScriptBlock {
+        Add-PodeAuth -Name "Bearer_JWT_$Algorithm" -Sessionless -ScriptBlock {
             param($jwt)
 
             # here you'd check a real user storage, this is just for example
@@ -204,14 +203,17 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
         }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -PassThru -Method Get -Path '/auth/bearer/jwt/ES512' -Authentication 'Bearer_JWT_ES512' -ScriptBlock {
-        write-podehost $WebEvent.Request.Headers  -Explode
+    Add-PodeRoute -PassThru -Method Get -Path "/auth/bearer/jwt/$Algorithm" -Authentication "Bearer_JWT_$Algorithm" -ScriptBlock {
         Write-PodeJsonResponse -Value $WebEvent.auth.User
-    } | Set-PodeOARouteInfo -Summary 'Get my info.'  -Tags 'user' -OperationId "myinfo_$alg"
+    } | Set-PodeOARouteInfo -Summary 'Get my info.'  -Tags 'user' -OperationId "myinfo_$Algorithm"
 
 
 
-    Add-PodeRoute -PassThru -Method Post -Path '/auth/bearer/jwt/login' -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Post -Path '/auth/bearer/jwt/login' -ArgumentList $Algorithm -ScriptBlock {
+        param(
+            [string]
+            $Algorithm
+        )
         try {
             # In a real scenario, you'd validate the incoming credentials from $WebEvent.data
             $username = $WebEvent.Data.username
@@ -229,10 +231,7 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
             }
 
             # If valid, generate a JWT that matches the 'ExampleApiKeyCert' scheme
-            $jwt = ConvertTo-PodeJwt  -Payload $payload -Authentication 'Bearer_JWT_ES512' -Expiration 600
-            write-podehost $jwt
-            $r = ConvertFrom-PodeJwt -Token $jwt -IgnoreSignature -Outputs 'Header,Payload'
-            write-podehost $r -Explode
+            $jwt = ConvertTo-PodeJwt  -Payload $payload -Authentication "Bearer_JWT_$Algorithm" -Expiration 600
             Write-PodeJsonResponse -StatusCode 200 -Value @{
                 'success' = $true
                 'user'    = $user
@@ -263,12 +262,10 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
                 )  -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'
 
-    Add-PodeRoute -PassThru -Method Post -Path '/auth/bearer/jwt/renew' -Authentication 'Bearer_JWT_ES512' -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Post -Path '/auth/bearer/jwt/renew' -Authentication "Bearer_JWT_$Algorithm" -ScriptBlock {
         try {
-            $atoms = $(Get-PodeHeader -Name 'Authorization') -isplit '\s+'
-            $token = $atoms[1]
 
-            $jwt = Update-PodeJwt -Token $token -Authentication 'Bearer_JWT_ES512'
+            $jwt = Update-PodeJwt
 
             Write-PodeJsonResponse -StatusCode 200 -Value @{
                 'success' = $true
@@ -289,11 +286,9 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
             )  -PassThru |
             Add-PodeOAResponse -StatusCode 401 -Description 'Invalid JWT token supplied'
 
-    Add-PodeRoute -PassThru -Method Post -Path '/auth/bearer/jwt/info' -Authentication 'Bearer_JWT_ES512' -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Post -Path '/auth/bearer/jwt/info' -Authentication "Bearer_JWT_$Algorithm" -ScriptBlock {
         try {
-            $atoms = $(Get-PodeHeader -Name 'Authorization') -isplit '\s+'
-            $token = $atoms[1]
-            $jwtInfo = ConvertFrom-PodeJwt -Token $token -IgnoreSignature -Outputs  'Header,Payload'
+            $jwtInfo = ConvertFrom-PodeJwt -Outputs  'Header,Payload,Signature' -HumanReadable
             Write-PodeJsonResponse -StatusCode 200 -Value $jwtInfo
         }
         catch {
@@ -305,7 +300,7 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
                 New-PodeOAObjectProperty -Properties (
                         ( New-PodeOABoolProperty -Name 'success' -Description 'Operation success' -Example $true),
                         (New-PodeOAObjectProperty -Name Header ),
-                         ( New-PodeOAObjectProperty -Name Payload)
+                         ( New-PodeOAObjectProperty -Name Payload), ( New-PodeOAStringProperty -Name Signature)
                 )
             )
         )  -PassThru |

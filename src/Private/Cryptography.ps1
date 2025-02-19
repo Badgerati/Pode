@@ -413,7 +413,9 @@ function New-PodeJwtSignature {
             if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
                 $method = $PodeContext.Server.Authentications.Methods[$Authentication].Scheme.Arguments
                 $alg = $method.Algorithm
-                $X509Certificate = $method.X509Certificate
+                if ($null -ne $method.X509Certificate) {
+                    $X509Certificate = $method.X509Certificate
+                }
                 if ($null -ne $method.Secret) {
                     $secretBytes = Convert-PodeSecureStringToByteArray -SecureString $method.Secret
                 }
@@ -1034,7 +1036,7 @@ function New-PodeJwt {
         $NoStandardClaims
     )
     if (!($Header.PSObject.Properties['alg'])) {
-        $Header | Add-Member -MemberType NoteProperty -Name "alg" -Value ''
+        $Header | Add-Member -MemberType NoteProperty -Name 'alg' -Value ''
     }
 
     # Determine actions based on parameter set
@@ -1128,7 +1130,7 @@ function New-PodeJwt {
     # Optionally add standard claims if not suppressed
     if (!$NoStandardClaims) {
         if (! $Header.PSObject.Properties['typ']) {
-            $Header | Add-Member -MemberType NoteProperty -Name "typ" -Value 'JWT'
+            $Header | Add-Member -MemberType NoteProperty -Name 'typ' -Value 'JWT'
         }
         else {
             $Header.typ = 'JWT'
@@ -1138,47 +1140,47 @@ function New-PodeJwt {
         $currentUnix = [int][Math]::Floor(([DateTimeOffset]::new([DateTime]::UtcNow)).ToUnixTimeSeconds())
 
         if (! $Payload.PSObject.Properties['iat']) {
-            $Payload | Add-Member -MemberType NoteProperty -Name "iat" -Value $(if ($IssuedAt -gt 0) { $IssuedAt } else { $currentUnix })
+            $Payload | Add-Member -MemberType NoteProperty -Name 'iat' -Value $(if ($IssuedAt -gt 0) { $IssuedAt } else { $currentUnix })
         }
         if (! $Payload.PSObject.Properties['nbf']) {
-            $Payload | Add-Member -MemberType NoteProperty -Name "nbf" -Value ($currentUnix + $NotBefore)
+            $Payload | Add-Member -MemberType NoteProperty -Name 'nbf' -Value ($currentUnix + $NotBefore)
         }
         if (! $Payload.PSObject.Properties['exp']) {
-            $Payload | Add-Member -MemberType NoteProperty -Name "exp" -Value ($currentUnix + $Expiration)
+            $Payload | Add-Member -MemberType NoteProperty -Name 'exp' -Value ($currentUnix + $Expiration)
         }
 
         if (! $Payload.PSObject.Properties['iss']) {
             if ([string]::IsNullOrEmpty($Issuer)) {
                 if ($null -ne $PodeContext) {
-                    $Payload | Add-Member -MemberType NoteProperty -Name "iss" -Value 'Pode'
+                    $Payload | Add-Member -MemberType NoteProperty -Name 'iss' -Value 'Pode'
                 }
             }
             else {
-                $Payload | Add-Member -MemberType NoteProperty -Name "iss" -Value $Issuer
+                $Payload | Add-Member -MemberType NoteProperty -Name 'iss' -Value $Issuer
             }
         }
 
         if (! $Payload.PSObject.Properties['sub'] -and ![string]::IsNullOrEmpty($Subject)) {
-            $Payload | Add-Member -MemberType NoteProperty -Name "sub" -Value $Subject
+            $Payload | Add-Member -MemberType NoteProperty -Name 'sub' -Value $Subject
         }
 
         if (! $Payload.PSObject.Properties['aud']) {
             if ([string]::IsNullOrEmpty($Audience)) {
                 if (($null -ne $PodeContext) -and ($null -ne $PodeContext.Server.Application)) {
-                    $Payload | Add-Member -MemberType NoteProperty -Name "aud" -Value $PodeContext.Server.Application
+                    $Payload | Add-Member -MemberType NoteProperty -Name 'aud' -Value $PodeContext.Server.Application
                 }
             }
             else {
-                $Payload | Add-Member -MemberType NoteProperty -Name "aud" -Value $Audience
+                $Payload | Add-Member -MemberType NoteProperty -Name 'aud' -Value $Audience
             }
         }
 
         if (! $Payload.PSObject.Properties['jti'] ) {
             if ([string]::IsNullOrEmpty($JwtId)) {
-                $Payload | Add-Member -MemberType NoteProperty -Name "jti" -Value (New-PodeGuid)
+                $Payload | Add-Member -MemberType NoteProperty -Name 'jti' -Value (New-PodeGuid)
             }
             else {
-                $Payload | Add-Member -MemberType NoteProperty -Name "jti" -Value $JwtId
+                $Payload | Add-Member -MemberType NoteProperty -Name 'jti' -Value $JwtId
             }
         }
     }
@@ -1202,4 +1204,28 @@ function New-PodeJwt {
     # Concatenate signature to form the final JWT
     $jwt += ".$($sig)"
     return $jwt
+}
+
+
+
+
+function Get-PodeBearenToken {
+    if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
+        $authOptions = $PodeContext.Server.Authentications.Methods[$Authentication].Scheme.Arguments
+        switch ($authOptions.Location.ToLowerInvariant()) {
+            'header' {
+                $atoms = $(Get-PodeHeader -Name 'Authorization') -isplit '\s+'
+                return $atoms[1]
+            }
+            'query' {
+                return $WebEvent.Query[$options.BearerTag]
+            }
+            'body' {
+                return $WebEvent.Data.($options.BearerTag)
+            }
+        }
+    }
+    else {
+        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage)
+    }
 }
