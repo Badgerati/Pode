@@ -1473,34 +1473,31 @@ Add-BuildTask CreateCerts  CleanCerts, {
 
             $cert = New-SelfSignedCert -Subject 'CN=Test RSA' -KeyType RSA -KeySize $rsa.KeySize
 
-            # Export the private key as PEM (for ECDSA or RSA)
-            $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
+            if ($PSVersionTable.PSVersion.Major -ge 7) {
+                # Export the private key as PEM (for ECDSA or RSA)
+                $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
 
-            # Generate unencrypted private key
-            $privatePem = Export-PrivateKeyPem $privateKey
-            Set-Content -Path $privateKeyTestsPath -Value $privatePem
-            Set-Content -Path $privateKeyExamplesPath -Value $privatePem
+                # Generate unencrypted private key
+                $privatePem = Export-PrivateKeyPem $privateKey
+                Set-Content -Path $privateKeyTestsPath -Value $privatePem
+                Set-Content -Path $privateKeyExamplesPath -Value $privatePem
 
-            # Generate encrypted private key
-            $privatePemEnc = Export-PrivateKeyPem $privateKey -Password $SecurePassword
-            Set-Content -Path $privateKeyTestsEncPath -Value $privatePemEnc
-            Set-Content -Path $privateKeyExamplesEncPath -Value $privatePemEnc
+                # Generate encrypted private key
+                $privatePemEnc = Export-PrivateKeyPem $privateKey -Password $SecurePassword
+                Set-Content -Path $privateKeyTestsEncPath -Value $privatePemEnc
+                Set-Content -Path $privateKeyExamplesEncPath -Value $privatePemEnc
 
-            # Generate public key
-            $publicPem = Export-RsaPublicKeyPem $rsa
-            Set-Content -Path $publicKeyTestsPath -Value $publicPem
-            Set-Content -Path $publicKeyExamplesPath -Value $publicPem
+                # Generate public key
+                $publicPem = Export-RsaPublicKeyPem $rsa
+                Set-Content -Path $publicKeyTestsPath -Value $publicPem
+                Set-Content -Path $publicKeyExamplesPath -Value $publicPem
 
-            $certPem = "-----BEGIN CERTIFICATE-----`n" +
-            [Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks') +
-            "`n-----END CERTIFICATE-----"
-            $certPem | Out-File -FilePath $pemTestsPath
-            $certPem | Out-File -FilePath $pemExamplesPath
-
-
-            #$privateKeyPem = $privateKey.ExportPkcs8PrivateKeyPem()
-          #  $privateKeyPem | Out-File   $privateKeyTestsPath
-         #   $privateKeyPem | Out-File   $privateKeyExamplesPath
+                $certPem = "-----BEGIN CERTIFICATE-----`n" +
+                [Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks') +
+                "`n-----END CERTIFICATE-----"
+                $certPem | Out-File -FilePath $pemTestsPath
+                $certPem | Out-File -FilePath $pemExamplesPath
+            }
 
             # Generate PFX (Includes private key & public certificate)
             Export-TestCertificate -Certificate $cert -Path $pfxTestsPath -Password $SecurePassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
@@ -1518,30 +1515,30 @@ Add-BuildTask CreateCerts  CleanCerts, {
             }
             # Create a self-signed ECDSA certificate
             $cert = New-SelfSignedCert -Subject 'CN=Test ECDSA' -KeyType ECDSA -KeySize $ec.KeySize
-            $privateKey = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::GetECDsaPrivateKey($cert)
-            # Generate unencrypted private key
-            $privatePem = Export-PrivateKeyPem $privateKey
-            Set-Content -Path $privateKeyTestsPath -Value $privatePem
-            Set-Content -Path $privateKeyExamplesPath -Value $privatePem
 
-            # Generate encrypted private key
-            $privatePemEnc = Export-PrivateKeyPem $privateKey -Password $SecurePassword
-            Set-Content -Path $privateKeyTestsEncPath -Value $privatePemEnc
-            Set-Content -Path $privateKeyExamplesEncPath -Value $privatePemEnc
+            if ($PSVersionTable.PSVersion.Major -ge 7) {
+                $privateKey = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::GetECDsaPrivateKey($cert)
+                # Generate unencrypted private key
+                $privatePem = Export-PrivateKeyPem $privateKey
+                Set-Content -Path $privateKeyTestsPath -Value $privatePem
+                Set-Content -Path $privateKeyExamplesPath -Value $privatePem
 
-            # Generate public key
-            $publicPem = Export-EcdsaPublicKeyPem $privateKey
-            Set-Content -Path $publicKeyTestsPath -Value $publicPem
-            Set-Content -Path $publicKeyExamplesPath -Value $publicPem
+                # Generate encrypted private key
+                $privatePemEnc = Export-PrivateKeyPem $privateKey -Password $SecurePassword
+                Set-Content -Path $privateKeyTestsEncPath -Value $privatePemEnc
+                Set-Content -Path $privateKeyExamplesEncPath -Value $privatePemEnc
 
-            # Create a self-signed ECDSA certificate
-            #      $cert = New-SelfSignedCert -Subject 'CN=Test ECDSA' -KeyType ECDSA -KeySize $ec.KeySize
+                # Generate public key
+                $publicPem = Export-EcdsaPublicKeyPem $privateKey
+                Set-Content -Path $publicKeyTestsPath -Value $publicPem
+                Set-Content -Path $publicKeyExamplesPath -Value $publicPem
 
-            $certPem = "-----BEGIN CERTIFICATE-----`n" +
-            [Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks') +
-            "`n-----END CERTIFICATE-----"
-            $certPem | Out-File -FilePath $pemTestsPath
-            $certPem | Out-File -FilePath $pemExamplesPath
+                $certPem = "-----BEGIN CERTIFICATE-----`n" +
+                [Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks') +
+                "`n-----END CERTIFICATE-----"
+                $certPem | Out-File -FilePath $pemTestsPath
+                $certPem | Out-File -FilePath $pemExamplesPath
+            }
 
             # Generate PFX (Includes private key & public certificate)
             Export-TestCertificate -Certificate $cert -Path $pfxTestsPath -Password $SecurePassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
