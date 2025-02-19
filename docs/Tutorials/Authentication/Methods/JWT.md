@@ -161,4 +161,139 @@ Add-PodeRoute -Method Post -Path '/user/login' -ScriptBlock {
 In this example, the **`-Authentication`** parameter ensures Pode uses the RS256 certificate-based configuration already defined by the `ExampleApiKeyCert` auth scheme, producing a token that is verifiable by that same scheme on future requests.
 
 
-# Extend Token Lifetime
+Below is an **updated JWT Lifecycle guide** for Pode, clarifying that **Pode automatically validates the token** when you attach `-Authentication` to a route, and that **`ConvertFrom-PodeJwt`** is generally used for **inspecting** or **debugging** token contents.
+
+
+## Managing the JWT Lifecycle in Pode
+
+In many scenarios, you need more than just generating JWTs—you also need endpoints or logic for **renewing** and **inspecting** tokens. Pode’s built-in commands and authentication features enable these patterns quickly:
+
+1. **Creating a JWT**: Use [`ConvertTo-PodeJwt`](https://github.com/Badgerati/Pode/blob/develop/Functions/Authentication/ConvertTo-PodeJwt.ps1) to build and sign a JWT.
+2. **Automatic Validation**: Rely on Pode’s bearer auth if a route uses `-Authentication 'YourBearerScheme'`.
+3. **Decoding/Inspecting a JWT**: Use `ConvertFrom-PodeJwt` if you want to explicitly decode the JWT for debugging or extracting claims.
+4. **Renewing/Extending a JWT**: Use `Update-PodeJwt` to reissue a token with a new expiration.
+
+## 1. Creating a JWT
+
+See the [“Create a JWT” guide](#create-a-jwt) for details on using `ConvertTo-PodeJwt`. You can:
+
+- Define a scheme in Pode (e.g., `Bearer_JWT_ES512`) that holds your algorithm and certificates/secrets.
+- Generate tokens by referencing `-Authentication 'Bearer_JWT_ES512'`.
+- Optionally set custom claims, expiration, issuer, etc.
+
+This creation step often happens inside a **login** route, as shown in the example below:
+
+```powershell
+function Test-User {
+    param($username, $password)
+    if ($username -eq 'morty' -and $password -eq 'pickle') {
+        return @{
+            Id       = 'M0R7Y302'
+            Username = 'morty.smith'
+            Name     = 'Morty Smith'
+            Groups   = 'Domain Users'
+        }
+    }
+    throw 'Invalid credentials'
+}
+
+Add-PodeRoute -Method Post -Path '/auth/login' -ScriptBlock {
+    try {
+        $username = $WebEvent.Data.username
+        $password = $WebEvent.Data.password
+        $user = Test-User $username $password  # Validate credentials in some real store
+
+        $payload = @{
+            sub  = $user.Id
+            name = $user.Name
+            # ... more custom claims ...
+        }
+
+        # Generate JWT recognized by the scheme 'Bearer_JWT_ES512'
+        $jwt = ConvertTo-PodeJwt -Payload $payload -Authentication 'Bearer_JWT_ES512' -Expiration 600
+
+        Write-PodeJsonResponse -StatusCode 200 -Value @{
+            success = $true
+            user    = $user
+            jwt     = $jwt
+        }
+    }
+    catch {
+        Write-PodeJsonResponse -StatusCode 401 -Value @{ error = 'Invalid credentials' }
+    }
+}
+```
+
+## 2. Automatic Validation
+
+Once you have a named bearer scheme (e.g., `Bearer_JWT_ES512`), **any** route that includes `-Authentication 'Bearer_JWT_ES512'` is automatically protected. Pode will:
+
+- Extract the JWT from the HTTP `Authorization` header (or another location if specified).
+- Decode and verify the signature based on the scheme’s configuration.
+- Reject the request if invalid; otherwise, set `$WebEvent.Auth.User` with any relevant user/claims data.
+
+```powershell
+Add-PodeRoute -Method Get -Path '/secure' -Authentication 'Bearer_JWT_ES512' -ScriptBlock {
+    # If we get here, the token is valid
+    $user = $WebEvent.Auth.User
+    Write-PodeJsonResponse -Value @{ user = $user; message = 'Welcome!' }
+}
+```
+
+No need to manually call `ConvertFrom-PodeJwt`—Pode handles validation behind the scenes.
+
+## 3. Decoding/Inspecting a JWT
+
+Sometimes you want to **inspect** a token or decode it for debugging. That’s where `ConvertFrom-PodeJwt` is handy. For example, you might have a route that **also** includes `-Authentication 'Bearer_JWT_ES512'` (so the user needs a valid token to get in), but within the route you call `ConvertFrom-PodeJwt` to see the raw contents or claims:
+
+```powershell
+Add-PodeRoute -Method Post -Path '/auth/bearer/jwt/info' -Authentication 'Bearer_JWT_ES512' -ScriptBlock {
+    try {
+        # Although Pode already validated the token, we can decode it ourselves for debugging
+        $decoded = ConvertFrom-PodeJwt -Outputs 'Header,Payload,Signature' -HumanReadable
+        Write-PodeJsonResponse -Value $decoded
+    }
+    catch {
+        Write-PodeJsonResponse -StatusCode 401 -Value @{ error = 'Invalid JWT token supplied' }
+    }
+}
+```
+
+This route returns the **header, payload, and signature** in JSON, with timestamps (like `exp`, `nbf`, `iat`) converted to human-readable dates.
+
+## 4. Renewing/Extending a JWT with `Update-PodeJwt`
+
+Use `Update-PodeJwt` to **extend** an existing token’s lifetime. Typically, you create a `/renew` endpoint:
+
+```powershell
+Add-PodeRoute -Method Post -Path '/auth/bearer/jwt/renew' -Authentication 'Bearer_JWT_ES512' -ScriptBlock {
+    try {
+        # Reads the current valid JWT, reissues it with a fresh 'exp' claim
+        $newToken = Update-PodeJwt
+        Write-PodeJsonResponse -StatusCode 200 -Value @{ success = $true; jwt = $newToken }
+    }
+    catch {
+        Write-PodeJsonResponse -StatusCode 401 -Value @{ error = 'Invalid JWT token supplied' }
+    }
+}
+```
+
+Pode fetches the token from `$WebEvent`, checks the original scheme (here, `Bearer_JWT_ES512`), and re-signs with updated expiration. The rest of the claims stay the same. The client can then discard the old token and use the newly returned token moving forward.
+
+---
+
+## Full Lifecycle Example
+
+**1.** **Login** (create token)
+**2.** **Make Authenticated Requests** (Pode automatically validates)
+**3.** **Renew** (use `Update-PodeJwt` if needed)
+**4.** **Debug** (optionally decode token with `ConvertFrom-PodeJwt`)
+
+This covers a typical JWT flow in Pode:
+
+- The user logs in at `/auth/login`, gets a JWT.
+- They pass that JWT in subsequent requests, which are auto-validated by `-Authentication 'Bearer_JWT_ES512'`.
+- If the token is about to expire, they can call `/auth/bearer/jwt/renew` to get a fresh one.
+- If you need to debug claims, you can build an endpoint that calls `ConvertFrom-PodeJwt` or look at `$WebEvent.Auth.User`.
+
+For more details, see the [Pode GitHub examples](https://github.com/Badgerati/Pode/tree/develop/examples/Authentication) or the relevant [`ConvertTo-PodeJwt`](https://github.com/Badgerati/Pode/blob/develop/Functions/Authentication/ConvertTo-PodeJwt.ps1) and [`Update-PodeJwt`](https://github.com/Badgerati/Pode/blob/develop/Functions/Authentication/Update-PodeJwt.ps1) source files.

@@ -1,44 +1,44 @@
 
 <#
 .SYNOPSIS
-	Validates a JWT payload by checking its registered claims as defined in RFC 7519.
+    Validates a JWT payload by checking its registered claims as defined in RFC 7519.
 
 .DESCRIPTION
-	This function verifies the validity of a JWT payload by ensuring:
-	- The `exp` (Expiration Time) has not passed.
-	- The `nbf` (Not Before) time is not in the future.
-	- The `iat` (Issued At) time is not in the future.
-	- The `iss` (Issuer) claim is valid based on the verification mode.
-	- The `sub` (Subject) claim is a valid string.
-	- The `aud` (Audience) claim is valid based on the verification mode.
-	- The `jti` (JWT ID) claim is a valid string.
+    This function verifies the validity of a JWT payload by ensuring:
+    - The `exp` (Expiration Time) has not passed.
+    - The `nbf` (Not Before) time is not in the future.
+    - The `iat` (Issued At) time is not in the future.
+    - The `iss` (Issuer) claim is valid based on the verification mode.
+    - The `sub` (Subject) claim is a valid string.
+    - The `aud` (Audience) claim is valid based on the verification mode.
+    - The `jti` (JWT ID) claim is a valid string.
 
 .PARAMETER Payload
-	The JWT payload as a [pscustomobject] containing registered claims such as `exp`, `nbf`, `iat`, `iss`, `sub`, `aud`, and `jti`.
+    The JWT payload as a [pscustomobject] containing registered claims such as `exp`, `nbf`, `iat`, `iss`, `sub`, `aud`, and `jti`.
 
 .PARAMETER Issuer
-	The expected JWT Issuer. If omitted, uses 'Pode'.
+    The expected JWT Issuer. If omitted, uses 'Pode'.
 
 .PARAMETER JwtVerificationMode
-	Defines how aggressively JWT claims should be checked:
-	- `Strict`: Requires all standard claims to be valid (`exp`, `nbf`, `iat`, `iss`, `aud`, `jti`).
-	- `Moderate`: Allows missing `iss` and `aud` but still checks expiration.
-	- `Lenient`: Ignores missing `iss` and `aud`, only verifies `exp`, `nbf`, and `iat`.
+    Defines how aggressively JWT claims should be checked:
+    - `Strict`: Requires all standard claims to be valid (`exp`, `nbf`, `iat`, `iss`, `aud`, `jti`).
+    - `Moderate`: Allows missing `iss` and `aud` but still checks expiration.
+    - `Lenient`: Ignores missing `iss` and `aud`, only verifies `exp`, `nbf`, and `iat`.
 
 .EXAMPLE
-	$payload = [pscustomobject]@{
-		iss = "auth.example.com"
-		sub = "1234567890"
-		aud = "myapi.example.com"
-		exp = 1700000000
-		nbf = 1690000000
-		iat = 1690000000
-		jti = "unique-token-id"
-	}
+    $payload = [pscustomobject]@{
+        iss = "auth.example.com"
+        sub = "1234567890"
+        aud = "myapi.example.com"
+        exp = 1700000000
+        nbf = 1690000000
+        iat = 1690000000
+        jti = "unique-token-id"
+    }
 
-	Test-PodeJwt -Payload $payload -JwtVerificationMode "Strict"
+    Test-PodeJwt -Payload $payload -JwtVerificationMode "Strict"
 
-	This example validates a JWT payload with full claim verification.
+    This example validates a JWT payload with full claim verification.
 #>
 function Test-PodeJwt {
     [CmdletBinding()]
@@ -148,65 +148,83 @@ function Test-PodeJwt {
 
 <#
 .SYNOPSIS
-	Converts and returns the payload of a JWT token.
+    Converts a JWT token into a PowerShell object, optionally verifying its signature.
 
 .DESCRIPTION
-	Converts and returns the payload of a JWT token, verifying the signature by default
-	with an option to ignore the signature.
+    The ConvertFrom-PodeJwt function takes a JWT token and decodes its header, payload,
+    and signature. By default, it verifies the signature using a specified secret,
+    certificate, or Pode authentication method. If IgnoreSignature is specified,
+    the function decodes and returns the token payload without verification.
 
 .PARAMETER Token
-	The JWT token to be decoded.
-
-.PARAMETER Secret
-	The secret key used to verify the token's signature (string or byte array).
-
-.PARAMETER Certificate
-	The path to a certificate used for RSA or ECDSA verification.
-
-.PARAMETER CertificatePassword
-	The password for the certificate file referenced in Certificate.
-
-.PARAMETER CertificateKey
-	A key file to be paired with a PEM certificate file referenced in Certificate.
-
-.PARAMETER CertificateThumbprint
-	A certificate thumbprint to use for RSA or ECDSA verification. (Windows).
-
-.PARAMETER CertificateName
-	A certificate subject name to use for RSA or ECDSA verification. (Windows).
-
-.PARAMETER CertificateStoreName
-	The name of a certificate store where a certificate can be found (Default: My) (Windows).
-
-.PARAMETER CertificateStoreLocation
-	The location of a certificate store where a certificate can be found (Default: CurrentUser) (Windows).
-
-.PARAMETER X509Certificate
-	The raw X509 certificate used for RSA or ECDSA verification.
-
-.PARAMETER RsaPaddingScheme
-	The RSA padding scheme to be used (default: Pkcs1V15).
+    The JWT token to be decoded and optionally verified.
 
 .PARAMETER IgnoreSignature
-	Skips signature verification and returns the decoded payload directly.
+    Indicates that the JWT token signature should be ignored
+    and the payload returned directly without verification.
 
 .PARAMETER Outputs
-    Defines which parts of the JWT to return. Defaults to 'Payload'.
+    Determines which parts of the JWT should be returned:
+    Header, Payload, Signature, or any combination thereof. Defaults to 'Payload'.
+
+.PARAMETER HumanReadable
+    Converts UNIX timestamps (e.g., iat, nbf, exp) into DateTime objects for easier reading.
+
+.PARAMETER Secret
+    A string or byte array used for HMAC-based signature verification.
+
+.PARAMETER Certificate
+    The path to a file containing an X.509 certificate for RSA/ECDSA signature verification.
+
+.PARAMETER CertificateKey
+    The path to a PEM key file that pairs with the certificate
+    for RSA/ECDSA signature verification.
+
+.PARAMETER CertificatePassword
+    A SecureString containing a password for the certificate file, if required.
+
+.PARAMETER CertificateThumbprint
+    A thumbprint to retrieve a certificate from the Windows certificate store.
+
+.PARAMETER CertificateName
+    A subject name to retrieve a certificate from the Windows certificate store.
+
+.PARAMETER CertificateStoreName
+    The name of the Windows certificate store to search (default: My).
+
+.PARAMETER CertificateStoreLocation
+    The location of the Windows certificate store to search (default: CurrentUser).
+
+.PARAMETER X509Certificate
+    A raw X.509 certificate object used for RSA/ECDSA signature verification.
+
+.PARAMETER RsaPaddingScheme
+    Specifies the RSA padding scheme to use (Pkcs1V15 or Pss).
+    Defaults to Pkcs1V15.
 
 .PARAMETER Authentication
-	The authentication method from Pode's context used for JWT verification.
+    A Pode authentication method name whose configuration is used
+    for signature verification.
 
 .OUTPUTS
-	[pscustomobject] - Returns the decoded JWT payload as a PowerShell object.
+    [pscustomobject] or [System.Collections.Specialized.OrderedDictionary].
+    Returns one or more parts of the JWT (Header, Payload, Signature)
+    as PowerShell objects or dictionaries.
 
 .EXAMPLE
-	ConvertFrom-PodeJwt -Token "<JWT_TOKEN>" -Secret "MySecretKey"
-	This example decodes a JWT token and verifies its signature using an HMAC secret.
+    ConvertFrom-PodeJwt -Token $jwtToken -Secret 'mysecret'
+    Decodes and verifies the JWT token using an HMAC secret.
 
 .EXAMPLE
-	ConvertFrom-PodeJwt -Token "<JWT_TOKEN>" -X509Certificate $Certificate
-	This example decodes and verifies a JWT token using an X509 certificate.
+    ConvertFrom-PodeJwt -Token $jwtToken -Certificate './certs/myCert.pem'
+    Decodes and verifies the JWT token using an X.509 certificate from a file.
+
+.NOTES
+    - This function is tailored for use with Pode, a PowerShell web server framework.
+    - When signature verification is enabled, the appropriate key or certificate must be provided.
+    - Use HTTPS in production to safeguard tokens.
 #>
+
 function ConvertFrom-PodeJwt {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType([pscustomobject])]
@@ -284,8 +302,11 @@ function ConvertFrom-PodeJwt {
         [string]
         $Authentication
     )
+
+    # Identify which parameter set was chosen at runtime
     $parameterSetName = $PSCmdlet.ParameterSetName
 
+    # If set to 'Default', but a WebEvent context has an authentication name, switch to 'AuthenticationMethod'
     if ($parameterSetName -eq 'Default') {
         if ($null -ne $WebEvent -and $null -ne $WebEvent.Auth.Name) {
             $parameterSetName = 'AuthenticationMethod'
@@ -293,68 +314,50 @@ function ConvertFrom-PodeJwt {
         }
     }
 
-    # Determine how to verify the JWT based on the supplied parameters
+    # Prepare a hashtable for parameters required for validation (e.g., certificate, secret, etc.)
+    # We'll populate it in the following switch statement.
+    $params = @{}
+
+    # Depending on the chosen parameter set, load/prepare the resources for signature validation.
     switch ($parameterSetName) {
         'CertFile' {
-            # Validate that the certificate file exists and then load it
             if (!(Test-Path -Path $Certificate -PathType Leaf)) {
                 throw ($PodeLocale.pathNotExistExceptionMessage -f $Certificate)
             }
             $X509Certificate = Get-PodeCertificateByFile -Certificate $Certificate -SecurePassword $CertificatePassword -Key $CertificateKey
-            break
         }
-
-        'certthumb' {
-            # Retrieve certificate by thumbprint in a specific store name/location
+        'CertThumb' {
             $X509Certificate = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
         }
-
-        'certname' {
-            # Retrieve certificate by subject name in a specific store name/location
+        'CertName' {
             $X509Certificate = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
         }
-
         'Secret' {
-            # Convert the secret to a byte array if necessary for HMAC verification
-            if ($null -ne $Secret   ) {
+            if ($null -ne $Secret) {
                 if ($Secret -is [string]) {
-                    $params = @{
-                        Secret = ConvertTo-SecureString -String $Secret -AsPlainText -Force
-                    }
+                    $params = @{ Secret = ConvertTo-SecureString -String $Secret -AsPlainText -Force }
                 }
                 elseif ($Secret -is [byte[]]) {
-                    $params = @{
-                        Secret = [System.Text.Encoding]::UTF8.GetString($Secret)
-                    }
+                    $params = @{ Secret = [System.Text.Encoding]::UTF8.GetString($Secret) }
                 }
                 else {
-                    $params = @{
-                        Secret = $Secret
-                    }
+                    $params = @{ Secret = $Secret }
                 }
             }
             else {
-                # If no valid secret is found, throw an error
-
                 throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'secret', 'HMAC', $Header['alg'])
             }
-            break
         }
-
         'CertRaw' {
-            # Validate raw certificate object if a cert-based algorithm is used
             if ($null -eq $X509Certificate) {
                 throw ($PodeLocale.missingKeyForAlgorithmExceptionMessage -f 'private', 'RSA/ECSDA', $Header['alg'])
             }
-            break
         }
-
         'AuthenticationMethod' {
             # Validate that the specified authentication method exists in the current Pode context
             if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
                 $token = Get-PodeBearenToken
                 $authArgs = $PodeContext.Server.Authentications.Methods[$Authentication].Scheme.Arguments
-                $params = @{}
                 if ($null -ne $authArgs.X509Certificate) {
                     $X509Certificate = $authArgs.X509Certificate
                 }
@@ -367,22 +370,17 @@ function ConvertFrom-PodeJwt {
             }
         }
         'Ignore' {
-            $params = @{}
-        }
-    }
-    # If we have a valid X509Certificate, add it to the parameters
-    if ($X509Certificate) {
-        $params = @{
-            X509Certificate = $X509Certificate
+            # If ignoring signature, no additional data is needed.
         }
     }
 
-    # Always pass the token for further processing
+    if ($X509Certificate) {
+        $params['X509Certificate'] = $X509Certificate
+    }
+
     $params['Token'] = $Token
 
-    # Split the JWT into its three parts: header, payload, and signature
-    $parts = ($Token -isplit '\.')
-
+    $parts = ($Token -split '\.')
     # Verify that the token has exactly three parts
     if ($parts.Length -ne 3) {
         throw ($PodeLocale.invalidJwtSuppliedExceptionMessage)
@@ -430,10 +428,11 @@ function ConvertFrom-PodeJwt {
 
         # At this point, we have a valid signature with a known algorithm
         $params['Algorithm'] = $header.alg
-        
+
         # Confirm-PodeJwt will finalize verification based on the algorithm and parameters
         $null = Confirm-PodeJwt @params
     }
+
     if ($HumanReadable) {
         if ($payload.iat) {
             $payload.iat = [System.DateTimeOffset]::FromUnixTimeSeconds($payload.iat).UtcDateTime
@@ -447,9 +446,15 @@ function ConvertFrom-PodeJwt {
     }
 
     switch ($Outputs) {
-        'Header' { return $header }
-        'Payload' { return $payload }
-        'Signature' { return $signature }
+        'Header' {
+            return $header
+        }
+        'Payload' {
+            return $payload
+        }
+        'Signature' {
+            return $signature
+        }
         'Header,Payload' {
             return [ordered]@{Header = $header; Payload = $payload }
         }
@@ -462,7 +467,9 @@ function ConvertFrom-PodeJwt {
         'Header,Payload,Signature' {
             return [ordered]@{Header = $header; Payload = $payload; Signature = $signature }
         }
-        default { return $payload }
+        default {
+            return $payload
+        }
     }
 }
 
@@ -760,7 +767,6 @@ function ConvertTo-PodeJwt {
     }
 }
 
-
 <#
 .SYNOPSIS
     Updates the expiration time of a JWT token.
@@ -912,7 +918,7 @@ function Update-PodeJwt {
             }
         }
         # If the certificate thumbprint is provided, use it for signing
-        'certthumb' {
+        'CertThumb' {
             @{
                 Payload                  = $jwt.Payload
                 Header                   = $jwt.Header
@@ -923,7 +929,7 @@ function Update-PodeJwt {
             }
         }
         # If the certificate name is provided, use it for signing
-        'certname' {
+        'CertName' {
             @{
                 Payload                  = $jwt.Payload
                 Header                   = $jwt.Header
@@ -959,5 +965,5 @@ function Update-PodeJwt {
     }
 
     # Update the JWT with the new expiration time
-    return  New-PodeJwt @params
+    return New-PodeJwt @params
 }
