@@ -299,6 +299,7 @@ function Write-PodeRequestLog {
         RfcUserIdentity = '-'
         User            = '-'
         Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
+        UtcDate         = [DateTime]::Now.ToUniversalTime()
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
             Hostname = "$($Request.Scheme.ToLowerInvariant())://$($Request.Host.ToLowerInvariant())"
