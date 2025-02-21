@@ -10,388 +10,68 @@ BeforeAll {
 
     $PodeContext = @{ 'Server' = $null; }
 }
-Describe 'Test-PodeIPAccess' {
-    Context 'Invalid parameters' {
-        It 'Throws error for invalid IP' {
-            { Test-PodeIPAccess -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeIPAccess'
-        }
-    }
-}
-
-Describe 'Test-PodeIPLimit' {
-    Context 'Invalid parameters' {
-        It 'Throws error for invalid IP' {
-            { Test-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeIPLimit'
-        }
-    }
-}
 
 Describe 'Add-PodeLimitRule' {
     BeforeAll {
-        Mock Add-PodeIPLimit { } }
+        Mock Add-PodeLimitRateRule { }
+        Mock New-PodeLimitIPComponent { return @{} }
+    }
 
     Context 'Valid parameters' {
         It 'Adds single IP address' {
             Add-PodeLimitRule -Type 'IP' -Values '127.0.0.1' -Limit 1 -Seconds 1
-            Assert-MockCalled Add-PodeIPLimit -Times 1 -Scope It
+            Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
+            Assert-MockCalled Add-PodeLimitRateRule -Times 1 -Scope It
         }
 
         It 'Adds single subnet' {
             Add-PodeLimitRule -Type 'IP' -Values '10.10.0.0/24' -Limit 1 -Seconds 1
-            Assert-MockCalled Add-PodeIPLimit -Times 1 -Scope It
+            Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
+            Assert-MockCalled Add-PodeLimitRateRule -Times 1 -Scope It
         }
 
         It 'Adds 3 IP addresses' {
             Add-PodeLimitRule -Type 'IP' -Values @('127.0.0.1', '127.0.0.2', '127.0.0.3') -Limit 1 -Seconds 1
-            Assert-MockCalled Add-PodeIPLimit -Times 3 -Scope It
+            Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
+            Assert-MockCalled Add-PodeLimitRateRule -Times 1 -Scope It
         }
 
         It 'Adds 3 subnets' {
             Add-PodeLimitRule -Type 'IP' -Value @('10.10.0.0/24', '10.10.1.0/24', '10.10.2.0/24') -Limit 1 -Seconds 1
-            Assert-MockCalled Add-PodeIPLimit -Times 3 -Scope It
+            Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
+            Assert-MockCalled Add-PodeLimitRateRule -Times 1 -Scope It
         }
     }
 }
 
 Describe 'Add-PodeAccessRule' {
     BeforeAll {
-        Mock Add-PodeIPAccess { }
+        Mock Add-PodeLimitAccessRule { }
+        Mock New-PodeLimitIPComponent { return @{} }
     }
     Context 'Valid parameters' {
         It 'Adds single IP address' {
             Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values '127.0.0.1'
-            Assert-MockCalled Add-PodeIPAccess -Times 1 -Scope It
+            Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
+            Assert-MockCalled Add-PodeLimitAccessRule -Times 1 -Scope It
         }
 
         It 'Adds single subnet' {
             Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values '10.10.0.0/24'
-            Assert-MockCalled Add-PodeIPAccess -Times 1 -Scope It
+            Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
+            Assert-MockCalled Add-PodeLimitAccessRule -Times 1 -Scope It
         }
 
         It 'Adds 3 IP addresses' {
             Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values @('127.0.0.1', '127.0.0.2', '127.0.0.3')
-            Assert-MockCalled Add-PodeIPAccess -Times 3 -Scope It
+            Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
+            Assert-MockCalled Add-PodeLimitAccessRule -Times 1 -Scope It
         }
 
         It 'Adds 3 subnets' {
             Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values @('10.10.0.0/24', '10.10.1.0/24', '10.10.2.0/24')
-            Assert-MockCalled Add-PodeIPAccess -Times 3 -Scope It
-        }
-    }
-}
-
-Describe 'Add-PodeIPLimit' {
-    Context 'Invalid parameters' {
-        It 'Throws error for invalid IP' {
-            { Add-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeIPLimit'
-        }
-
-        It 'Throws error for negative limit' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit -1 -Seconds 1 } | Should -Throw -ExpectedMessage ($PodeLocale.limitValueCannotBeZeroOrLessExceptionMessage -f '127.0.0.1') #'*0 or less*'
-        }
-
-        It 'Throws error for negative seconds' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds -1 } | Should -Throw -ExpectedMessage ($PodeLocale.secondsValueCannotBeZeroOrLessExceptionMessage -f '127.0.0.1') #'*0 or less*'
-        }
-
-        It 'Throws error for zero limit' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 0 -Seconds 1 } | Should -Throw -ExpectedMessage ($PodeLocale.limitValueCannotBeZeroOrLessExceptionMessage -f '127.0.0.1') #'*0 or less*'
-        }
-
-        It 'Throws error for zero seconds' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds 0 } | Should -Throw -ExpectedMessage ($PodeLocale.secondsValueCannotBeZeroOrLessExceptionMessage -f '127.0.0.1') #'*0 or less*'
-        }
-    }
-
-    Context 'Valid parameters' {
-        It 'Adds an IP to limit' {
-            $PodeContext.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
-            Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds 1
-
-            $a = $PodeContext.Server.Limits.Rules.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('127.0.0.1') | Should -Be $true
-
-            $k = $a['127.0.0.1']
-            $k.Limit | Should -Be 1
-            $k.Seconds | Should -Be 1
-
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
-        }
-
-        It 'Adds any IP to limit' {
-            $PodeContext.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
-            Add-PodeIPLimit -IP 'all' -Limit 1 -Seconds 1
-
-            $a = $PodeContext.Server.Limits.Rules.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('all') | Should -Be $true
-
-            $k = $a['all']
-            $k.Limit | Should -Be 1
-            $k.Seconds | Should -Be 1
-
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(0, 0, 0, 0)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(255, 255, 255, 255)
-        }
-
-        It 'Adds a subnet mask to limit' {
-            $PodeContext.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
-            Add-PodeIPLimit -IP '10.10.0.0/24' -Limit 1 -Seconds 1
-
-            $a = $PodeContext.Server.Limits.Rules.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('10.10.0.0/24') | Should -Be $true
-
-            $k = $a['10.10.0.0/24']
-            $k.Limit | Should -Be 1
-            $k.Seconds | Should -Be 1
-            $k.Grouped | Should -Be $false
-
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(10, 10, 0, 0)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(10, 10, 0, 255)
-        }
-
-        It 'Adds a grouped subnet mask to limit' {
-            $PodeContext.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
-            Add-PodeIPLimit -IP '10.10.0.0/24' -Limit 1 -Seconds 1 -Group
-
-            $a = $PodeContext.Server.Limits.Rules.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('10.10.0.0/24') | Should -Be $true
-
-            $k = $a['10.10.0.0/24']
-            $k.Limit | Should -Be 1
-            $k.Seconds | Should -Be 1
-            $k.Grouped | Should -Be $true
-
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(10, 10, 0, 0)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(10, 10, 0, 255)
-        }
-
-        It 'Throws error for invalid IP' {
-            $PodeContext.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
-            { Add-PodeIPLimit -IP '256.0.0.0' -Limit 1 -Seconds 1 } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
-        }
-    }
-}
-
-Describe 'Add-PodeIPAccess' {
-    Context 'Valid parameters' {
-        It 'Adds an IP to allow' {
-            $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Access 'Allow' -IP '127.0.0.1'
-
-            $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('127.0.0.1') | Should -Be $true
-
-            $k = $a['127.0.0.1']
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
-        }
-
-        It 'Adds any IP to allow' {
-            $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Access 'Allow' -IP 'all'
-
-            $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('all') | Should -Be $true
-
-            $k = $a['all']
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(0, 0, 0, 0)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(255, 255, 255, 255)
-        }
-
-        It 'Adds a subnet mask to allow' {
-            $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Access 'Allow' -IP '10.10.0.0/24'
-
-            $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('10.10.0.0/24') | Should -Be $true
-
-            $k = $a['10.10.0.0/24']
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(10, 10, 0, 0)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(10, 10, 0, 255)
-        }
-
-        It 'Adds an IP to deny' {
-            $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Access 'Deny' -IP '127.0.0.1'
-
-            $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('127.0.0.1') | Should -Be $true
-
-            $k = $a['127.0.0.1']
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
-        }
-
-        It 'Adds any IP to deny' {
-            $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Access 'Deny' -IP 'all'
-
-            $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('all') | Should -Be $true
-
-            $k = $a['all']
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(0, 0, 0, 0)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(255, 255, 255, 255)
-        }
-
-        It 'Adds a subnet mask to deny' {
-            $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Access 'Deny' -IP '10.10.0.0/24'
-
-            $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('10.10.0.0/24') | Should -Be $true
-
-            $k = $a['10.10.0.0/24']
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(10, 10, 0, 0)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(10, 10, 0, 255)
-        }
-
-        It 'Adds an IP to allow and removes one from deny' {
-            $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-
-            # add to deny first
-            Add-PodeIPAccess -Access 'Deny' -IP '127.0.0.1'
-
-            $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('127.0.0.1') | Should -Be $true
-
-            # add to allow, deny Should -Be removed
-            Add-PodeIPAccess -Access 'Allow' -IP '127.0.0.1'
-
-            # check allow
-            $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('127.0.0.1') | Should -Be $true
-
-            $k = $a['127.0.0.1']
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
-
-            # check deny
-            $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 0
-            $a.ContainsKey('127.0.0.1') | Should -Be $false
-        }
-
-        It 'Adds an IP to deny and removes one from allow' {
-            $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-
-            # add to allow first
-            Add-PodeIPAccess -Access 'Allow' -IP '127.0.0.1'
-
-            $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('127.0.0.1') | Should -Be $true
-
-            # add to deny, allow Should -Be removed
-            Add-PodeIPAccess -Access 'Deny' -IP '127.0.0.1'
-
-            # check deny
-            $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 1
-            $a.ContainsKey('127.0.0.1') | Should -Be $true
-
-            $k = $a['127.0.0.1']
-            $k.Lower | Should -Not -Be $null
-            $k.Lower.Family | Should -Be 'InterNetwork'
-            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
-
-            $k.Upper | Should -Not -Be $null
-            $k.Upper.Family | Should -Be 'InterNetwork'
-            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
-
-            # check allow
-            $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should -Not -Be $null
-            $a.Count | Should -Be 0
-            $a.ContainsKey('127.0.0.1') | Should -Be $false
-        }
-
-        It 'Throws error for invalid IP' {
-            $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            { Add-PodeIPAccess -Access 'Allow' -IP '256.0.0.0' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
+            Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
+            Assert-MockCalled Add-PodeLimitAccessRule -Times 1 -Scope It
         }
     }
 }

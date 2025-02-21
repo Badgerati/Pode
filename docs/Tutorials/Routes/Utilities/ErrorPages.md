@@ -57,7 +57,7 @@ Start-PodeServer {
 
 When a response is returned with a status code of 400+, then Pode will attempt to render these as styled error pages. By default, Pode has inbuilt error pages that will be used (these show the status code, description, the URL, and if enabled the exception message/stacktrace).
 
-The inbuilt error pages are of types HTML, JSON, and XML. By default Pode will always attempt to use the HTML error pages however, if you set, say [strict content typing](#strict-typing), then Pode will also attempt to use the JSON/XML error pages if the request's content type header is set appropriately.
+The inbuilt error pages are of types HTML, JSON, and XML. By default Pode will always attempt to use the HTML error pages however, if you set, say [strict content typing](#strict-typing), then Pode will also attempt to use the JSON/XML error pages if the request's content type header is set appropriately. You can also optionally supply the `-ErrorContentType` parameter on `Add-PodeRoute`, and this will set the content-type of the error page for Pode to response back using.
 
 ### Custom
 
