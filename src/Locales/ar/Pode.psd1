@@ -346,4 +346,6 @@
     certificateUnknownEkusStrictModeExceptionMessage                  = 'تحتوي الشهادة على EKUs غير معروفة. وضع التحقق الصارم يرفضها. المكتشف: {0}'
     failedToCreateCertificateRequestExceptionMessage                  = 'فشل في إنشاء طلب الشهادة.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'طول مفتاح الشهادة غير مدعوم: {0} بت. يُرجى استخدام طول مفتاح مدعوم.'
+    invalidTypeExceptionMessage                                       = 'خطأ: نوع غير صالح لـ {0}. المتوقع {1}، لكن تم استلام [{2}].'
 }
+

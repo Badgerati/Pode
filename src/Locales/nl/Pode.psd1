@@ -346,4 +346,5 @@
     certificateUnknownEkusStrictModeExceptionMessage                  = "Certificaat bevat onbekende EKU's. Strikte modus wijst het af. Gevonden: {0}"
     failedToCreateCertificateRequestExceptionMessage                  = 'Kan geen certificaataanvraag genereren.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'Niet-ondersteunde certificaatsleutellengte: {0} bits. Gebruik een ondersteunde sleutellengte.'
+    invalidTypeExceptionMessage                                       = 'Fout: Ongeldig type voor {0}. Verwacht {1}, maar ontvangen [{2}].'
 }

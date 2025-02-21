@@ -4109,6 +4109,7 @@ function Convert-PodeSecureStringToPlainText {
 #>
 function Convert-PodeSecureStringToByteArray {
     [CmdletBinding()]
+    [OutputType([byte[]])]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline)]
         [securestring]
@@ -4126,7 +4127,7 @@ function Convert-PodeSecureStringToByteArray {
             }
         }
         else {
-            $null
+            return [byte[]]::new(0)  # Return empty byte array instead of $null
         }
     }
 }

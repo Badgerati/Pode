@@ -346,4 +346,5 @@
     certificateUnknownEkusStrictModeExceptionMessage                  = '인증서에 알 수 없는 EKU가 포함되어 있습니다. 엄격한 모드에서 거부되었습니다. 발견된 값: {0}'
     failedToCreateCertificateRequestExceptionMessage                  = '인증서 요청 생성에 실패했습니다.'
     unsupportedCertificateKeyLengthExceptionMessage                   = '지원되지 않는 인증서 키 길이: {0}비트. 지원되는 키 길이를 사용하세요.'
+    invalidTypeExceptionMessage                                       = '오류: {0}의 타입이 잘못되었습니다. 예상된 타입: {1}, 받은 타입: [{2}].'
 }

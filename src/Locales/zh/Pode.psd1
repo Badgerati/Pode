@@ -346,4 +346,5 @@
     certificateUnknownEkusStrictModeExceptionMessage                  = '证书包含未知的 EKU。严格模式拒绝它。发现: {0}'
     failedToCreateCertificateRequestExceptionMessage                  = '生成证书请求失败。'
     unsupportedCertificateKeyLengthExceptionMessage                   = '不支持的证书密钥长度: {0} 位。请使用受支持的密钥长度。'
+    invalidTypeExceptionMessage                                       = '错误: {0} 的类型无效。期望 {1}，但收到 [{2}]。'
 }

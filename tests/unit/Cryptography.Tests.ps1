@@ -1,3 +1,5 @@
+using namespace System.Security.Cryptography
+
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 param()
 BeforeAll {
@@ -69,25 +71,55 @@ Describe 'New-PodeJwtSignature Function Tests' -Tags 'JWT' {
         $testSecret = [System.Text.Encoding]::UTF8.GetBytes('SuperSecretKey')
 
         $testPath = $(Split-Path -Parent -Path $(Split-Path -Parent -Path $path))
+        $certificateTypes = @{
+            'RS256' = @{
+                KeyType          = 'RSA'
+                KeyLength        = 2048
+                RsaPaddingScheme = 'Pkcs1V15'
+            }
+            'RS384' = @{
+                KeyType          = 'RSA'
+                KeyLength        = 3072
+                RsaPaddingScheme = 'Pkcs1V15'
+            }
+            'RS512' = @{
+                KeyType          = 'RSA'
+                KeyLength        = 4096
+                RsaPaddingScheme = 'Pkcs1V15'
+            }
+            'PS256' = @{
+                KeyType          = 'RSA'
+                KeyLength        = 2048
+                RsaPaddingScheme = 'Pss'
+            }
+            'PS384' = @{
+                KeyType          = 'RSA'
+                KeyLength        = 3072
+                RsaPaddingScheme = 'Pss'
+            }
+            'PS512' = @{
+                KeyType          = 'RSA'
+                KeyLength        = 4096
+                RsaPaddingScheme = 'Pss'
+            }
+            'ES256' = @{
+                KeyType   = 'ECDSA'
+                KeyLength = 256
+            }
+            'ES384' = @{
+                KeyType   = 'ECDSA'
+                KeyLength = 384
+            }
+            'ES512' = @{
+                KeyType   = 'ECDSA'
+                KeyLength = 521
+            }
+        }
 
-        # Load test keys from PEM files (Assume these exist in the test environment)
-        $algorithms = 'ES256', 'ES384', 'ES512', 'RS256', 'RS384', 'RS512'
-        $flags = if ($IsMacOS) {
-            [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
-        }
-        else {
-            [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
-        }
         $PrivateKey = @{}
-        foreach ($alg in $algorithms) {
-            $PfxBytes = [System.IO.File]::ReadAllBytes("$testPath/certs/$alg.pfx")
 
-            $PrivateKey[$alg] = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
-                $PfxBytes,
-                    (ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force),
-                $flags
-            )
-
+        foreach ($alg in $certificateTypes.keys) {
+            $PrivateKey[$alg]  = New-PodeSelfSignedCertificate -Loopback -KeyType $certificateTypes[$alg].KeyType -KeyLength $certificateTypes[$alg].KeyLength -CertificatePurpose CodeSigning -Ephemeral
         }
 
     }

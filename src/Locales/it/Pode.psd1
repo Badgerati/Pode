@@ -346,4 +346,5 @@
     certificateUnknownEkusStrictModeExceptionMessage                  = 'Il certificato contiene EKU sconosciuti. La modalità rigorosa lo rifiuta. Trovato: {0}'
     failedToCreateCertificateRequestExceptionMessage                  = 'Errore nella generazione della richiesta di certificato.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'Lunghezza della chiave del certificato non supportata: {0} bit. Utilizzare una lunghezza di chiave supportata.'
+    invalidTypeExceptionMessage                                       = 'Errore: Tipo non valido per {0}. Atteso {1}, ma ricevuto [{2}].'
 }

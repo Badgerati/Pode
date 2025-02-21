@@ -278,16 +278,16 @@ function ConvertFrom-PodeJwt {
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [X509Certificates.StoreName]
+        [System.Security.Cryptography.X509Certificates.StoreName]
         $CertificateStoreName = 'My',
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [X509Certificates.StoreLocation]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
         $CertificateStoreLocation = 'CurrentUser',
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
-        [X509Certificates.X509Certificate2]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]
         $X509Certificate,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertRaw')]
@@ -587,7 +587,7 @@ function ConvertTo-PodeJwt {
         $Secret = $null,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
-        [X509Certificates.X509Certificate2]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]
         $X509Certificate,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
@@ -607,12 +607,12 @@ function ConvertTo-PodeJwt {
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [X509Certificates.StoreName]
+        [System.Security.Cryptography.X509Certificates.StoreName]
         $CertificateStoreName = 'My',
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [X509Certificates.StoreLocation]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
         $CertificateStoreLocation = 'CurrentUser',
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertRaw')]
@@ -845,7 +845,7 @@ function Update-PodeJwt {
         $Secret = $null,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
-        [X509Certificates.X509Certificate2]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]
         $X509Certificate,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
@@ -865,12 +865,12 @@ function Update-PodeJwt {
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [X509Certificates.StoreName]
+        [System.Security.Cryptography.X509Certificates.StoreName]
         $CertificateStoreName = 'My',
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [X509Certificates.StoreLocation]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
         $CertificateStoreLocation = 'CurrentUser',
 
         [Parameter(Mandatory = $true, ParameterSetName = 'AuthenticationMethod')]
@@ -1220,11 +1220,14 @@ function New-PodeCertificateRequest {
   This is useful for temporary certificates that should only exist in memory for the duration
   of the current session. Once the process exits, the private key will be lost.
 
+.PARAMETER Password
+ Specifies an optional password for protecting the exported PFX. If not provided, the PFX will be unprotected.
+
 .PARAMETER Exportable
  If specified the certificate will be created with `Exportable`, meaning the certificate can be exported
 
 .OUTPUTS
-  [X509Certificates.X509Certificate2]
+  [System.Security.Cryptography.X509Certificates.X509Certificate2]
   Returns the generated self-signed certificate as an X509Certificate2 object.
 
 .EXAMPLE
@@ -1265,6 +1268,10 @@ function New-PodeSelfSignedCertificate {
         [Parameter(Mandatory = $false, ParameterSetName = 'CommonName')]
         [string]
         $CommonName = 'SelfSigned',
+
+        [Parameter()]
+        [securestring]
+        $Password = $null,
 
         [Parameter()]
         [string]$Organization,
@@ -1387,24 +1394,24 @@ function New-PodeSelfSignedCertificate {
         }
 
         # Export the certificate as a PFX (with a default password; adjust as needed).
-        $pfxBytes = $cert.Export([X509Certificates.X509ContentType]::Pfx, 'self-signed')
+        $pfxBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx ,$Password)
 
         if ($Ephemeral -and $Exportable) {
-            $storageFlags = [X509Certificates.X509KeyStorageFlags]::Exportable -bor [X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+            $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
         }
         elseif ($Exportable) {
-            $storageFlags = [X509Certificates.X509KeyStorageFlags]::Exportable
+            $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
         }
         elseif ($Ephemeral -and !$IsMacOS) {
-            $storageFlags = [X509Certificates.X509KeyStorageFlags]::Ephemeral
+            $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
         }
         else {
-            $storageFlags = [X509Certificates.X509KeyStorageFlags]::DefaultKeySet
+            $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
         }
 
-        $finalCert = [X509Certificates.X509Certificate2]::new(
+        $finalCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
             $pfxBytes,
-            'self-signed',
+            $Password,
             $storageFlags
         )
         return $finalCert
@@ -1461,7 +1468,7 @@ function New-PodeSelfSignedCertificate {
   The location of the Windows certificate store. Defaults to "CurrentUser".
 
 .OUTPUTS
-  [X509Certificates.X509Certificate2]
+  [System.Security.Cryptography.X509Certificates.X509Certificate2]
   Returns the imported certificate as an X509Certificate2 object.
 
 .EXAMPLE
@@ -1520,12 +1527,12 @@ function Import-PodeCertificate {
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [X509Certificates.StoreName]
+        [System.Security.Cryptography.X509Certificates.StoreName]
         $CertificateStoreName = 'My',
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [X509Certificates.StoreLocation]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
         $CertificateStoreLocation = 'CurrentUser'
     )
 
@@ -1626,7 +1633,7 @@ function Export-PodeCertificate {
     param (
         # The X509 Certificate object to export
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [X509Certificates.X509Certificate2]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]
         $Certificate,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'File')]
@@ -1646,11 +1653,11 @@ function Export-PodeCertificate {
         [switch]$IncludePrivateKey,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'WindowsStore')]
-        [X509Certificates.StoreName]
+        [System.Security.Cryptography.X509Certificates.StoreName]
         $CertificateStoreName,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'WindowsStore')]
-        [X509Certificates.StoreLocation]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
         $CertificateStoreLocation = 'CurrentUser'
     )
 
@@ -1660,16 +1667,16 @@ function Export-PodeCertificate {
                 switch ($Format) {
                     'PFX' {
                         $pfxBytes = if ($CertificatePassword) {
-                            $Certificate.Export([X509Certificates.X509ContentType]::Pfx, $CertificatePassword)
+                            $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $CertificatePassword)
                         }
                         else {
-                            $Certificate.Export([X509Certificates.X509ContentType]::Pfx)
+                            $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
                         }
                         $filePathWithExt = "$FilePath.pfx"
                         [System.IO.File]::WriteAllBytes($filePathWithExt, $pfxBytes)
                     }
                     'CER' {
-                        $cerBytes = $Certificate.Export([X509Certificates.X509ContentType]::Cert)
+                        $cerBytes = $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
                         $filePathWithExt = "$FilePath.cer"
                         [System.IO.File]::WriteAllBytes($filePathWithExt, $cerBytes)
                     }
@@ -1717,7 +1724,7 @@ function Export-PodeCertificate {
 
             'WindowsStore' {
                 if (Test-PodeIsWindows) {
-                    $store = [X509Certificates.X509Store]::new($CertificateStoreName, $CertificateStoreLocation)
+                    $store = [System.Security.Cryptography.X509Certificates.X509Store]::new($CertificateStoreName, $CertificateStoreLocation)
                     $store.Open('ReadWrite')
                     $store.Add($Certificate)
                     $store.Close()
@@ -1766,7 +1773,7 @@ function Get-PodeCertificatePurpose {
     [OutputType([object[]])]
     param (
         [Parameter(Mandatory = $true)]
-        [X509Certificates.X509Certificate2]$Certificate
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate
     )
 
     # Define known EKU OIDs and their purposes
@@ -1780,7 +1787,7 @@ function Get-PodeCertificatePurpose {
     # Retrieve the EKU extension (OID: 2.5.29.37)
     $ekuExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.37' }
 
-    if ($ekuExtension -and $ekuExtension -is [X509Certificates.X509EnhancedKeyUsageExtension]) {
+    if ($ekuExtension -and $ekuExtension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
         # Use the EnhancedKeyUsages property which returns an OidCollection
         $purposes = @()
         foreach ($oid in $ekuExtension.EnhancedKeyUsages) {

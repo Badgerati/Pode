@@ -198,7 +198,7 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
         Get-Job -Name 'Pode' | Remove-Job -Force
         if ( (Test-Path -Path $CertsPath -PathType Container)) {
             Remove-Item -Path $CertsPath  -Recurse -Force
-            Write-PodeHost "$CertsPath  removed."
+            Write-Output "$CertsPath removed."
         }
     }
 
@@ -239,7 +239,7 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
                 $payload = @{ sub = '123'; username = 'morty' }
                 $params = @{
                     Payload             = $payload
-                    Certificate         = $privateKeyPath 
+                    Certificate         = $privateKeyPath
                     RsaPaddingScheme    = $rsaPaddingScheme
                     Issuer              = 'Pode'
                     Audience            = $applicationName

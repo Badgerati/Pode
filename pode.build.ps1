@@ -58,8 +58,6 @@
     - CleanLibs: Removes the `Libs` folder under `src`.
     - CleanListener: Removes the Listener folder.
     - CleanDocs: Cleans up generated documentation files.
-    - CleanCerts: Cleans up generated Certificate files.
-    - CreateCerts: Create PEM certificates for testing
     - Install-Module: Installs the Pode module locally.
     - Remove-Module: Removes the Pode module from the local registry.
     - SetupPowerShell: Sets up the PowerShell environment for the build.
@@ -112,7 +110,6 @@ param(
     [string]
     [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
     $SdkVersion = 'net9.0'
-
 )
 
 # Dependency Versions
@@ -886,182 +883,11 @@ function Split-PodeBuildPwshPath {
 
 
 
-### Helper Functions for Key Export ###
-
-
-function New-SelfSignedCert {
-    param (
-        [string]$Subject = 'CN=SelfSigned',
-        [ValidateSet('RSA', 'ECDSA')]
-        [string]$KeyType = 'RSA',
-        [int]$KeySize = 2048, # RSA: 2048, 3072, 4096 | ECDSA: 256, 384, 521
-        [int]$ValidityDays = 365, # Certificate duration
-        [SecureString]$PfxPassword, # Optional password for PFX
-        [string]$PfxPath # Path to save PFX file
-    )
-
-    # Initialize variables
-    $key = $null
-    $req = $null
-
-    try {
-        # Generate key pair
-        if ($KeyType -eq 'RSA') {
-            $key = [System.Security.Cryptography.RSA]::Create($KeySize)
-            if ($null -eq $key) { throw 'Failed to create RSA key.' }
-
-            $hashAlgorithm = [System.Security.Cryptography.HashAlgorithmName]::SHA256
-            $rsaPadding = [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
-
-            # Create Certificate Request (RSA requires padding)
-            $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
-                $Subject,
-                $key,
-                $hashAlgorithm,
-                $rsaPadding
-            )
-        }
-        elseif ($KeyType -eq 'ECDSA') {
-            # Use OID-based curves for .NET 8+
-            $curveOid = switch ($KeySize) {
-                256 { '1.2.840.10045.3.1.7' }  # nistP256
-                384 { '1.3.132.0.34' }         # nistP384
-                521 { '1.3.132.0.35' }         # nistP521
-                default { throw "Unsupported ECDSA key size: $KeySize" }
-            }
-
-            $curve = [System.Security.Cryptography.ECCurve]::CreateFromOid(
-                [System.Security.Cryptography.Oid]::new($curveOid)
-            )
-
-            $key = [System.Security.Cryptography.ECDsa]::Create($curve)
-            if ($null -eq $key) { throw 'Failed to create ECDSA key.' }
-
-            # Choose correct hash algorithm for ECDSA
-            $hashAlgorithm = switch ($KeySize) {
-                256 { [System.Security.Cryptography.HashAlgorithmName]::SHA256 }
-                384 { [System.Security.Cryptography.HashAlgorithmName]::SHA384 }
-                521 { [System.Security.Cryptography.HashAlgorithmName]::SHA512 }
-            }
-
-            # Create Certificate Request (ECDSA does not require padding)
-            $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
-                $Subject,
-                $key,
-                $hashAlgorithm
-            )
-        }
-        else {
-            throw 'Invalid key type specified.'
-        }
-
-        if ($null -eq $req) { throw 'Failed to create Certificate Request.' }
-
-        # Add Key Usage & Basic Constraints Extensions
-        $req.CertificateExtensions.Add(
-            [System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]::new($true, $false, 0, $true)
-        )
-        $req.CertificateExtensions.Add(
-            [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension]::new('KeyEncipherment, DigitalSignature', $true)
-        )
-
-        # Generate self-signed certificate
-        $cert = $req.CreateSelfSigned(
-            [System.DateTimeOffset]::Now,
-            [System.DateTimeOffset]::Now.AddDays($ValidityDays)
-        )
-
-        # If PFX path is specified, export the certificate
-        if ($PfxPath) {
-            if (-not $PfxPassword) {
-                throw 'PFX Password is required for export.'
-            }
-
-            $pfxBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $PfxPassword)
-            [System.IO.File]::WriteAllBytes($PfxPath, $pfxBytes)
-        }
-
-        return $cert
-    }
-    catch {
-        throw "Error creating self-signed certificate: $_"
-    }
+# Check if the script is running under Invoke-Build
+if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
+    Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
+    return
 }
-
-
-function Export-PodePrivateKeyPem {
-    param (
-        [System.Security.Cryptography.AsymmetricAlgorithm]$Key,
-        [string]$Password
-    )
-    $builder = [System.Text.StringBuilder]::new()
-
-    if ($Password) {
-        if ($PSVersionTable.PSVersion.Major -ge 7) {
-            # Export unencrypted private key
-            return $Key.ExportEncryptedPkcs8PrivateKeyPem(
-                [System.Text.Encoding]::UTF8.GetBytes($Password),
-                [System.Security.Cryptography.PbeParameters]::new(
-                    [System.Security.Cryptography.PbeEncryptionAlgorithm]::Aes256Cbc,
-                    [System.Security.Cryptography.HashAlgorithmName]::SHA256,
-                    100000
-                )
-            )
-        }
-        # Export encrypted key using PKCS#8 format
-        $encryptedBytes = $Key.ExportEncryptedPkcs8PrivateKey(
-            [System.Text.Encoding]::UTF8.GetBytes($Password),
-            [System.Security.Cryptography.PbeParameters]::new(
-                [System.Security.Cryptography.PbeEncryptionAlgorithm]::Aes256Cbc,
-                [System.Security.Cryptography.HashAlgorithmName]::SHA256,
-                100000
-            )
-        )
-        $base64Key = [Convert]::ToBase64String($encryptedBytes)
-        $null = $builder.AppendLine('-----BEGIN ENCRYPTED PRIVATE KEY-----')
-    }
-    else {
-        if ($PSVersionTable.PSVersion.Major -ge 7) {
-            # Export unencrypted private key
-            return $Key.ExportPkcs8PrivateKeyPem()
-        }
-
-        # Export unencrypted private key
-        $unencryptedBytes = $Key.ExportPkcs8PrivateKey()
-        $base64Key = [Convert]::ToBase64String($unencryptedBytes)
-        $null = $builder.AppendLine('-----BEGIN PRIVATE KEY-----')
-    }
-
-    for ($i = 0; $i -lt $base64Key.Length; $i += 64) {
-        $null = $builder.AppendLine($base64Key.Substring($i, [System.Math]::Min(64, $base64Key.Length - $i)))
-    }
-
-    $null = $builder.AppendLine('-----END PRIVATE KEY-----')
-    return $builder.ToString()
-}
-
-
-
-function Export-TestCertificate {
-    param (
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
-        [System.Security.Cryptography.X509Certificates.X509ContentType]$X509ContentType = [System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx,
-        [string]$Path,
-        [SecureString]$Password = $null  # Allow null password
-    )
-    # Export with or without password
-    $bytes = if ($Password) {
-        $Certificate.Export($X509ContentType, $Password)
-    }
-    else {
-        $Certificate.Export($X509ContentType)
-    }
-
-    [System.IO.File]::WriteAllBytes($Path, $bytes)
-}
-
-
-
 
 
 Add-BuildTask Default {
@@ -1102,8 +928,6 @@ Add-BuildTask Default {
     Write-Host "- CleanLibs: Removes the `Libs` folder under `src`."
     Write-Host '- CleanListener: Removes the Listener folder.'
     Write-Host '- CleanDocs: Cleans up generated documentation files.'
-    Write-Host '- CleanCerts: Cleans up generated Certificate files.'
-    Write-Host '- CreateCerts: Create PEM certificates for testing'
     Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
     Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
 }
@@ -1385,151 +1209,8 @@ Add-BuildTask PackageFolder Build, {
 # Testing
 #>
 
-Add-BuildTask CreateCerts  CleanCerts, {
-
-    $BaseOutputExamplesPath = "$PWD/examples/certs"
-    if (! (Test-Path -Path $BaseOutputExamplesPath)) {
-        New-Item -Path $BaseOutputExamplesPath -ItemType Directory | Out-Null
-    }
-
-    $BaseOutputTestsPath = "$PWD/tests/certs"
-    if (!(Test-Path -Path $BaseOutputTestsPath)) {
-        New-Item -Path $BaseOutputTestsPath -ItemType Directory | Out-Null
-    }
-
-    # Key settings mapping
-    $keySettings = @{
-        'RS256' = 2048
-        'RS384' = 3072
-        'RS512' = 4096
-        'ES256' = [System.Security.Cryptography.ECCurve]::CreateFromOid([System.Security.Cryptography.Oid]::new('1.2.840.10045.3.1.7'))  # nistP256
-        'ES384' = [System.Security.Cryptography.ECCurve]::CreateFromOid([System.Security.Cryptography.Oid]::new('1.3.132.0.34'))       # nistP384
-        'ES512' = [System.Security.Cryptography.ECCurve]::CreateFromOid([System.Security.Cryptography.Oid]::new('1.3.132.0.35'))       # nistP521
-    }
-
-    # Define a secure password for encrypting private keys (USE SECURE HANDLING IN PRODUCTION)
-    $SecurePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
-    $NoPassword = $null  # Used for exporting PFX without a password
-
-    foreach ($alg in $keySettings.Keys) {
-        if (-Not $keySettings.ContainsKey($alg)) {
-            Write-Output "Unsupported algorithm: $alg. Skipping..."
-            Continue
-        }
-
-        # Keys File paths
-        $privateKeyTestsPath = "$BaseOutputTestsPath/$alg.key"
-        $publicKeyTestsPath = "$BaseOutputTestsPath/$alg-public.pem"
-        $privateKeyExamplesPath = "$BaseOutputExamplesPath/$alg.key"
-        $publicKeyExamplesPath = "$BaseOutputExamplesPath/$alg-public.pem"
-
-        # Paths for encrypted keys
-        $privateKeyTestsEncPath = "$BaseOutputTestsPath/$alg-encrypted.key"
-        $privateKeyExamplesEncPath = "$BaseOutputExamplesPath/$alg-encrypted.key"
-
-        # Paths for PFX files
-        $pfxTestsPath = "$BaseOutputTestsPath/$alg.pfx"
-        $pfxExamplesPath = "$BaseOutputExamplesPath/$alg.pfx"
-
-        # Paths for PFX files without password
-        $pfxTestsNoPassPath = "$BaseOutputTestsPath/$alg-no-pass.pfx"
-        $pfxExamplesNoPassPath = "$BaseOutputExamplesPath/$alg-no-pass.pfx"
-
-
-        # Paths for PEM Certificates
-        $pemTestsPath = "$BaseOutputTestsPath/$alg.pem"
-        $pemExamplesPath = "$BaseOutputExamplesPath/$alg.pem"
-
-        # Paths for PEM Certificates without password
-        $pemTestsNoPassPath = "$BaseOutputTestsPath/$alg-no-pass.pem"
-        $pemExamplesNoPassPath = "$BaseOutputExamplesPath/$alg-no-pass.pem"
-
-        Write-Output "Generating keys for: $alg..."
-
-        if ($alg -match '^RS') {
-            $rsa = [System.Security.Cryptography.RSA]::Create($keySettings[$alg])
-
-            $cert = New-SelfSignedCert -Subject 'CN=Test RSA' -KeyType RSA -KeySize $rsa.KeySize
-
-            if ($PSVersionTable.PSVersion.Major -ge 7) {
-                # Export the private key as PEM (for ECDSA or RSA)
-                $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
-
-                # Generate unencrypted private key
-                $privatePem = Export-PodePrivateKeyPem $privateKey
-                Set-Content -Path $privateKeyTestsPath -Value $privatePem
-                Set-Content -Path $privateKeyExamplesPath -Value $privatePem
-
-                # Generate encrypted private key
-                $privatePemEnc = Export-PodePrivateKeyPem $privateKey -Password $SecurePassword
-                Set-Content -Path $privateKeyTestsEncPath -Value $privatePemEnc
-                Set-Content -Path $privateKeyExamplesEncPath -Value $privatePemEnc
-
-
-
-                $certPem = "-----BEGIN CERTIFICATE-----`n" +
-                [Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks') +
-                "`n-----END CERTIFICATE-----"
-                $certPem | Out-File -FilePath $pemTestsPath
-                $certPem | Out-File -FilePath $pemExamplesPath
-            }
-
-            # Generate PFX (Includes private key & public certificate)
-            Export-TestCertificate -Certificate $cert -Path $pfxTestsPath -Password $SecurePassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
-            Export-TestCertificate -Certificate $cert -Path $pfxExamplesPath -Password $SecurePassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
-
-            # Generate PFX without password
-            Export-TestCertificate -Certificate $cert -Path $pfxTestsNoPassPath -Password $NoPassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
-            Export-TestCertificate -Certificate $cert -Path $pfxExamplesNoPassPath -Password $NoPassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
-
-        }
-        elseif ($alg -match '^ES') {
-            $ec = [System.Security.Cryptography.ECDsa]::Create($keySettings[$alg])
-            if ($null -eq $ec) {
-                throw "Failed to create ECDSA key for $alg. Ensure your system supports ECC."
-            }
-            # Create a self-signed ECDSA certificate
-            $cert = New-SelfSignedCert -Subject 'CN=Test ECDSA' -KeyType ECDSA -KeySize $ec.KeySize
-
-            if ($PSVersionTable.PSVersion.Major -ge 7) {
-                $privateKey = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::GetECDsaPrivateKey($cert)
-                # Generate unencrypted private key
-                $privatePem = Export-PodePrivateKeyPem $privateKey
-                Set-Content -Path $privateKeyTestsPath -Value $privatePem
-                Set-Content -Path $privateKeyExamplesPath -Value $privatePem
-
-                # Generate encrypted private key
-                $privatePemEnc = Export-PodePrivateKeyPem $privateKey -Password $SecurePassword
-                Set-Content -Path $privateKeyTestsEncPath -Value $privatePemEnc
-                Set-Content -Path $privateKeyExamplesEncPath -Value $privatePemEnc
-
-                $certPem = "-----BEGIN CERTIFICATE-----`n" +
-                [Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks') +
-                "`n-----END CERTIFICATE-----"
-                $certPem | Out-File -FilePath $pemTestsPath
-                $certPem | Out-File -FilePath $pemExamplesPath
-            }
-
-            # Generate PFX (Includes private key & public certificate)
-            Export-TestCertificate -Certificate $cert -Path $pfxTestsPath -Password $SecurePassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
-            Export-TestCertificate -Certificate $cert -Path $pfxExamplesPath -Password $SecurePassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
-
-            # Generate PFX without password
-            Export-TestCertificate -Certificate $cert -Path $pfxTestsNoPassPath -Password $NoPassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
-            Export-TestCertificate -Certificate $cert -Path $pfxExamplesNoPassPath -Password $NoPassword -X509ContentType  ([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
-
-        }
-        Write-Output 'Pem Private Keys generated'
-        Write-Output 'Pem Encrypted Private Keys generated'
-        Write-Output 'Pem Public Keys generated'
-        Write-Output 'PFX Certificates (with password) generated'
-        Write-Output 'PFX Certificates (without password) generated'
-    }
-}
-
-
 # Synopsis: Run the tests
-Add-BuildTask TestNoBuild TestDeps, CreateCerts, {
+Add-BuildTask TestNoBuild TestDeps, {
     $p = (Get-Command Invoke-Pester)
     if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
         Remove-Module Pester -Force -ErrorAction Ignore
@@ -1556,9 +1237,6 @@ Add-BuildTask TestNoBuild TestDeps, CreateCerts, {
     $configuration.TestResult.OutputFormat = 'NUnitXml'
     $configuration.Output.Verbosity = $PesterVerbosity
     $configuration.TestResult.OutputPath = $Script:TestResultFile
-    if ( $PSEdition -ne 'Core') {
-        $configuration.Filter.ExcludeTag = 'No_DesktopEdition'
-    }
 
     # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {
@@ -1667,7 +1345,7 @@ Add-BuildTask DocsBuild DocsDeps, DocsHelpBuild, {
 #>
 
 # Synopsis: Clean the build enviroment
-Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs, CleanCerts
+Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
 
 # Synopsis: Clean the Deliverable folder
 Add-BuildTask CleanDeliverable {
@@ -1728,23 +1406,6 @@ Add-BuildTask CleanDocs {
         Write-Host "Removing $path"
         Remove-Item -Path $path -Force | Out-Null
     }
-}
-
-Add-BuildTask CleanCerts {
-    $path = './tests/certs'
-    if (Test-Path -Path $path -PathType Container) {
-        Write-Host "Removing $path contents"
-        Remove-Item -Path $path -Recurse -Force | Out-Null
-    }
-    Write-Host "Cleanup $path done"
-
-    $path = './examples/certs'
-    if (Test-Path -Path $path -PathType Container) {
-        Write-Host "Removing $path contents"
-        Remove-Item -Path $path -Recurse -Force | Out-Null
-    }
-
-    Write-Host "Cleanup $path done"
 }
 <#
 # Local module management

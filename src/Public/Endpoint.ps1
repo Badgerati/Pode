@@ -126,7 +126,7 @@ function Add-PodeEndpoint {
         $Certificate = $null,
 
         [Parameter(ParameterSetName = 'CertFile')]
-        [string]
+        [object]
         $CertificatePassword = $null,
 
         [Parameter(ParameterSetName = 'CertFile')]
@@ -385,7 +385,15 @@ function Add-PodeEndpoint {
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'certfile' {
-                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword -PrivateKeyPath $CertificateKey
+                if ($CertificatePassword -is [string]) {
+                    $securePassword = ConvertTo-SecureString -String $CertificatePassword -AsPlainText -Force
+                }
+                elseif ($CertificatePassword -is [securestring]) { $securePassword = $CertificatePassword }else {
+                    #  'Error: Invalid type for {0}. Expected {1}, but received [{2}].
+                    throw  ($PodeLocale.invalidTypeExceptionMessage -f '-CertificatePassword', '[string] or [SecureString]', $CertificatePassword.GetType().Name)
+                }
+
+                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate  -SecurePassword $securePassword  -PrivateKeyPath $CertificateKey
             }
 
             'certthumb' {
@@ -397,7 +405,7 @@ function Add-PodeEndpoint {
             }
 
             'certself' {
-                $obj.Certificate.Raw = New-PodeSelfSignedCertificate -Loopback -CertificatePurpose ServerAuth -DnsName $obj.address.ToString()
+                $obj.Certificate.Raw = New-PodeSelfSignedCertificate -Loopback -CertificatePurpose ServerAuth -DnsName $obj.address.ToString() -Ephemeral
             }
         }
 

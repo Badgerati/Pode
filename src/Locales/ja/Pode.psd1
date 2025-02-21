@@ -346,4 +346,5 @@
     certificateUnknownEkusStrictModeExceptionMessage                  = '証明書に不明な EKU が含まれています。厳格モードでは拒否されます。検出された値: {0}'
     failedToCreateCertificateRequestExceptionMessage                  = '証明書リクエストの生成に失敗しました。'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'サポートされていない証明書キー長: {0} ビット。サポートされているキー長を使用してください。'
+    invalidTypeExceptionMessage                                       = 'エラー: {0} の型が無効です。期待された型 {1} ですが、受け取った型は [{2}] です。'
 }

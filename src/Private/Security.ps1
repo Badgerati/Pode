@@ -152,9 +152,6 @@ function Test-PodeCsrfConfigured {
 .PARAMETER Certificate
   The file path to the certificate (.pfx, .pem, or .cer) to load.
 
-.PARAMETER Password
-  A plaintext password for decrypting the certificate (only applicable for PFX files).
-
 .PARAMETER SecurePassword
   A secure string containing the password for decrypting the certificate (only applicable for PFX files).
 
@@ -197,10 +194,6 @@ function Get-PodeCertificateByFile {
         $Certificate,
 
         [Parameter()]
-        [string]
-        $Password = $null,
-
-        [Parameter()]
         [securestring]
         $SecurePassword = $null,
 
@@ -233,14 +226,10 @@ function Get-PodeCertificateByFile {
     else {
         [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
     }
- 
+
     if ( [System.IO.Path]::GetExtension($path).ToLower() -eq '.pfx') {
         if ($null -ne $SecurePassword) {
-            return [X509Certificates.X509Certificate2]::new($certBytes, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $flags)
-        }
-        # cert + password
-        if (![string]::IsNullOrWhiteSpace($Password)) {
-            return [X509Certificates.X509Certificate2]::new($certBytes, $Password, $flags)
+            return [X509Certificates.X509Certificate2]::new($certBytes, $SecurePassword, $flags)
         }
     }
     # plain cert
@@ -252,10 +241,6 @@ function Get-PodeCertificateByPemFile {
         [Parameter(Mandatory = $true)]
         [string]
         $Certificate,
-
-        [Parameter()]
-        [string]
-        $Password = $null,
 
         [Parameter()]
         [securestring]
@@ -280,16 +265,11 @@ function Get-PodeCertificateByPemFile {
 
             # .NET5
             if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
-                if ([string]::IsNullOrWhiteSpace($Password) -and ($null -eq $SecurePassword )) {
+                if ($null -eq $SecurePassword ) {
                     $rsa.ImportFromPem($keyText)
                 }
                 else {
-                    if ($null -ne $SecurePassword) {
-                        $rsa.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword))
-                    }
-                    else {
-                        $rsa.ImportFromEncryptedPem($keyText, $Password)
-                    }
+                    $rsa.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword))
                 }
             } # .NET3
             else {
@@ -304,59 +284,50 @@ function Get-PodeCertificateByPemFile {
                 }
                 elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
                     if ($null -ne $SecurePassword) {
-                        $rsa.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $keyBytes, [ref]$null)
-                    }
-                    else {
-                        $rsa.ImportEncryptedPkcs8PrivateKey($Password, $keyBytes, [ref]$null)
+                        [int32]$bytesRead = 0
+                        $rsa.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
                     }
                 }
+                $cert = [X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
             }
-            $cert = [X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
         }
         catch {
             $ecsd = [ECDSA]::Create()
             if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
-                if ([string]::IsNullOrWhiteSpace($Password) -and ($null -eq $SecurePassword )) {
+                if ( $null -eq $SecurePassword ) {
                     $ecsd.ImportFromPem($keyText)
                 }
                 else {
-                    if ($null -ne $SecurePassword) {
-                        $ecsd.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword))
+                    $ecsd.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword))
+
+                }
+
+
+                # .NET3
+                else {
+                    $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
+                    $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
+
+                    if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
+                        $ecsd.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
                     }
-                    else {
-                        $ecsd.ImportFromEncryptedPem($keyText, $Password)
+                    elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
+                        $ecsd.ImportRSAPrivateKey($keyBytes, [ref]$null)
+                    }
+                    elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
+                        if ($null -ne $SecurePassword) {
+                            [int32]$bytesRead = 0
+                            $ecsd.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
+                        }
                     }
                 }
+
+
+                $cert = [X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
             }
-
-
-            # .NET3
-            else {
-                $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
-                $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
-
-                if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
-                    $ecsd.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
-                }
-                elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
-                    $ecsd.ImportRSAPrivateKey($keyBytes, [ref]$null)
-                }
-                elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
-                    if ($null -ne $SecurePassword) {
-                        $ecsd.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $keyBytes, [ref]$null)
-                    }
-                    else {
-                        $ecsd.ImportEncryptedPkcs8PrivateKey($Password, $keyBytes, [ref]$null)
-                    }
-                }
-            }
-
-
-            $cert = [X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
+            $cert = [X509Certificates.X509Certificate2]::new($cert.Export([X509Certificates.X509ContentType]::Pkcs12))
         }
-        $cert = [X509Certificates.X509Certificate2]::new($cert.Export([X509Certificates.X509ContentType]::Pkcs12))
     }
-
     # for everything else, there's the openssl way
     else {
         $tempFile = Join-Path (Split-Path -Parent -Path $certPath) 'temp.pfx'

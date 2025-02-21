@@ -346,4 +346,5 @@
     certificateUnknownEkusStrictModeExceptionMessage                  = 'Certificate contains unknown EKUs. Strict mode rejects it. Found: {0}'
     failedToCreateCertificateRequestExceptionMessage                  = 'Failed to generate a certificate request.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'Unsupported certificate key length: {0} bits. Please use a supported key length.'
+    invalidTypeExceptionMessage                                       = 'Error: Invalid type for {0}. Expected {1}, but received [{2}].'
 }

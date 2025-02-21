@@ -2718,7 +2718,7 @@ function New-PodeAuthBearerScheme {
 
         'CertSelf' {
             $X509Certificate = New-PodeSelfSignedCertificate -CommonName 'JWT Signing Certificate' `
-                -KeyType ECDSA -KeyLength 384 -CertificatePurpose CodeSigning
+                -KeyType ECDSA -KeyLength 384 -CertificatePurpose CodeSigning -Ephemeral
             break
         }
 
