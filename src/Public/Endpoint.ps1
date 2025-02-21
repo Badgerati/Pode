@@ -405,7 +405,7 @@ function Add-PodeEndpoint {
             }
 
             'certself' {
-                $obj.Certificate.Raw = New-PodeSelfSignedCertificate -Loopback -CertificatePurpose ServerAuth -DnsName $obj.address.ToString() -Ephemeral
+                $obj.Certificate.Raw = New-PodeSelfSignedCertificate -Loopback -CertificatePurpose ServerAuth -DnsName $obj.address.ToString() 
             }
         }
 

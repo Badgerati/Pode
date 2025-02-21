@@ -1487,7 +1487,7 @@ function New-PodeCertificateRequestInternal {
     # Initialize the SAN (Subject Alternative Name) builder.
     $sanBuilder = $null
     if ($DnsName) {
-        $sanBuilder = [X509Certificates.SubjectAlternativeNameBuilder]::new()
+        $sanBuilder = [System.Security.Cryptography.X509Certificates.SubjectAlternativeNameBuilder]::new()
         foreach ($name in $DnsName) {
             $parsedIp = $null
             if ([System.Net.IPAddress]::TryParse($name, [ref]$parsedIp)) {

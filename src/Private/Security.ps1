@@ -159,12 +159,15 @@ function Test-PodeCsrfConfigured {
   The path to a separate private key file (only applicable for PEM certificates).
   Required if the PEM certificate does not contain the private key.
 
-.PARAMETER Persistent
-  If specified, the certificate will be imported with an **exportable** private key,
-  allowing it to be saved and reused across sessions.
+.PARAMETER Ephemeral
+  If specified, the certificate will be created with `EphemeralKeySet`, meaning the private key
+  will **not be persisted** on disk or in the certificate store.
 
-  If not specified, the certificate will be imported **ephemerally**, meaning the
-  private key will exist **only in memory** and will be lost when the process exits.
+  This is useful for temporary certificates that should only exist in memory for the duration
+  of the current session. Once the process exits, the private key will be lost.
+
+.PARAMETER Exportable
+ If specified the certificate will be created with `Exportable`, meaning the certificate can be exported
 
 .OUTPUTS
   [System.Security.Cryptography.X509Certificates.X509Certificate2]
@@ -203,7 +206,11 @@ function Get-PodeCertificateByFile {
 
         [Parameter()]
         [switch]
-        $Persistent
+        $Ephemeral,
+
+        [Parameter()]
+        [switch]
+        $Exportable
     )
 
     # cert + key
@@ -217,23 +224,24 @@ function Get-PodeCertificateByFile {
     # read the cert bytes from the file to avoid the use of obsolete constructors
     $certBytes = [System.IO.File]::ReadAllBytes($path)
 
-    $flags = if ($Persistent) {
-        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
-    }
-    elseif ($IsMacOS) {
-        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
+    if ($Ephemeral) {
+        $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
     }
     else {
-        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+        $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
+    }
+
+    if ($Exportable) {
+        $storageFlags = $storageFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
     }
 
     if ( [System.IO.Path]::GetExtension($path).ToLower() -eq '.pfx') {
         if ($null -ne $SecurePassword) {
-            return [X509Certificates.X509Certificate2]::new($certBytes, $SecurePassword, $flags)
+            return [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certBytes, $SecurePassword, $storageFlags)
         }
     }
     # plain cert
-    return [X509Certificates.X509Certificate2]::new($certBytes, $null, $flags)
+    return [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certBytes, $null, $storageFlags)
 }
 
 function Get-PodeCertificateByPemFile {
@@ -258,7 +266,7 @@ function Get-PodeCertificateByPemFile {
 
     # pem's kinda work in .NET3/.NET5
     if ([version]$PSVersionTable.PSVersion -ge [version]'7.0.0') {
-        $cert = [X509Certificates.X509Certificate2]::new($certPath)
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath)
         $keyText = [System.IO.File]::ReadAllText($keyPath)
         try {
             $rsa = [RSA]::Create()
@@ -288,7 +296,7 @@ function Get-PodeCertificateByPemFile {
                         $rsa.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
                     }
                 }
-                $cert = [X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
+                $cert = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
             }
         }
         catch {
@@ -323,9 +331,9 @@ function Get-PodeCertificateByPemFile {
                 }
 
 
-                $cert = [X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
+                $cert = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
             }
-            $cert = [X509Certificates.X509Certificate2]::new($cert.Export([X509Certificates.X509ContentType]::Pkcs12))
+            $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12))
         }
     }
     # for everything else, there's the openssl way
@@ -345,7 +353,7 @@ function Get-PodeCertificateByPemFile {
                 throw ($PodeLocale.failedToCreateOpenSslCertExceptionMessage -f $result) #"Failed to create openssl cert: $($result)"
             }
 
-            $cert = [X509Certificates.X509Certificate2]::new($tempFile, $Password)
+            $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($tempFile, $Password)
         }
         finally {
             $null = Remove-Item $tempFile -Force
@@ -358,7 +366,7 @@ function Get-PodeCertificateByPemFile {
 function Find-PodeCertificateInCertStore {
     param(
         [Parameter(Mandatory = $true)]
-        [X509Certificates.X509FindType]
+        [System.Security.Cryptography.X509Certificates.X509FindType]
         $FindType,
 
         [Parameter(Mandatory = $true)]
@@ -366,11 +374,11 @@ function Find-PodeCertificateInCertStore {
         $Query,
 
         [Parameter(Mandatory = $true)]
-        [X509Certificates.StoreName]
+        [System.Security.Cryptography.X509Certificates.StoreName]
         $StoreName,
 
         [Parameter(Mandatory = $true)]
-        [X509Certificates.StoreLocation]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
         $StoreLocation
     )
 
@@ -381,11 +389,11 @@ function Find-PodeCertificateInCertStore {
     }
 
     # open the currentuser\my store
-    $x509store = [X509Certificates.X509Store]::new($StoreName, $StoreLocation)
+    $x509store = [System.Security.Cryptography.X509Certificates.X509Store]::new($StoreName, $StoreLocation)
 
     try {
         # attempt to find the cert
-        $x509store.Open([X509Certificates.OpenFlags]::ReadOnly)
+        $x509store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
         $x509certs = $x509store.Certificates.Find($FindType, $Query, $false)
     }
     finally {
@@ -400,7 +408,7 @@ function Find-PodeCertificateInCertStore {
         throw ($PodeLocale.noCertificateFoundExceptionMessage -f $StoreLocation, $StoreName, $Query) # "No certificate could be found in $($StoreLocation)\$($StoreName) for '$($Query)'"
     }
 
-    return ([X509Certificates.X509Certificate2]($x509certs[0]))
+    return ([System.Security.Cryptography.X509Certificates.X509Certificate2]($x509certs[0]))
 }
 
 function Get-PodeCertificateByThumbprint {
@@ -410,16 +418,16 @@ function Get-PodeCertificateByThumbprint {
         $Thumbprint,
 
         [Parameter(Mandatory = $true)]
-        [X509Certificates.StoreName]
+        [System.Security.Cryptography.X509Certificates.StoreName]
         $StoreName,
 
         [Parameter(Mandatory = $true)]
-        [X509Certificates.StoreLocation]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
         $StoreLocation
     )
 
     return Find-PodeCertificateInCertStore `
-        -FindType ([X509Certificates.X509FindType]::FindByThumbprint) `
+        -FindType ([System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint) `
         -Query $Thumbprint `
         -StoreName $StoreName `
         -StoreLocation $StoreLocation
@@ -432,23 +440,23 @@ function Get-PodeCertificateByName {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [X509Certificates.StoreName]
+        [System.Security.Cryptography.X509Certificates.StoreName]
         $StoreName,
 
         [Parameter(Mandatory = $true)]
-        [X509Certificates.StoreLocation]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
         $StoreLocation
     )
 
     return Find-PodeCertificateInCertStore `
-        -FindType ([X509Certificates.X509FindType]::FindBySubjectName) `
+        -FindType ([System.Security.Cryptography.X509Certificates.X509FindType]::FindBySubjectName) `
         -Query $Name `
         -StoreName $StoreName `
         -StoreLocation $StoreLocation
 }
 
 function New-PodeSelfSignedCertificate2 {
-    $sanBuilder = [X509Certificates.SubjectAlternativeNameBuilder]::new()
+    $sanBuilder = [System.Security.Cryptography.X509Certificates.SubjectAlternativeNameBuilder]::new()
     $null = $sanBuilder.AddIpAddress([ipaddress]::Loopback)
     $null = $sanBuilder.AddIpAddress([ipaddress]::IPv6Loopback)
     $null = $sanBuilder.AddDnsName('localhost')
@@ -460,7 +468,7 @@ function New-PodeSelfSignedCertificate2 {
     $rsa = [RSA]::Create(2048)
     $distinguishedName = [X500DistinguishedName]::new('CN=localhost')
 
-    $req = [X509Certificates.CertificateRequest]::new(
+    $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
         $distinguishedName,
         $rsa,
         [HashAlgorithmName]::SHA256,
@@ -468,13 +476,13 @@ function New-PodeSelfSignedCertificate2 {
     )
 
     $flags = (
-        [X509Certificates.X509KeyUsageFlags]::DataEncipherment -bor
-        [X509Certificates.X509KeyUsageFlags]::KeyEncipherment -bor
-        [X509Certificates.X509KeyUsageFlags]::DigitalSignature
+        [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DataEncipherment -bor
+        [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::KeyEncipherment -bor
+        [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature
     )
 
     $null = $req.CertificateExtensions.Add(
-        [X509Certificates.X509KeyUsageExtension]::new(
+        [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension]::new(
             $flags,
             $false
         )
@@ -484,7 +492,7 @@ function New-PodeSelfSignedCertificate2 {
     $null = $oid.Add([Oid]::new('1.3.6.1.5.5.7.3.1'))
 
     $req.CertificateExtensions.Add(
-        [X509Certificates.X509EnhancedKeyUsageExtension]::new(
+        [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]::new(
             $oid,
             $false
         )
@@ -501,8 +509,8 @@ function New-PodeSelfSignedCertificate2 {
         $cert.FriendlyName = 'localhost'
     }
 
-    $cert = [X509Certificates.X509Certificate2]::new(
-        $cert.Export([X509Certificates.X509ContentType]::Pfx, 'self-signed'),
+    $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+        $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, 'self-signed'),
         'self-signed'
     )
 

@@ -1371,7 +1371,6 @@ function New-PodeSelfSignedCertificate {
         CertificatePurpose = $CertificatePurpose
         EnhancedKeyUsages  = $EnhancedKeyUsages
         CustomExtensions   = $CustomExtensions
-
     }
 
     $csrObject = New-PodeCertificateRequestInternal @csrParams
@@ -1394,21 +1393,18 @@ function New-PodeSelfSignedCertificate {
         }
 
         # Export the certificate as a PFX (with a default password; adjust as needed).
-        $pfxBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx ,$Password)
+        $pfxBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx , $Password)
 
-        if ($Ephemeral -and $Exportable) {
-            $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
-        }
-        elseif ($Exportable) {
-            $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
-        }
-        elseif ($Ephemeral -and !$IsMacOS) {
+        if ($Ephemeral) {
             $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
         }
         else {
             $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
         }
 
+        if ($Exportable) {
+            $storageFlags = $storageFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
+        }
         $finalCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
             $pfxBytes,
             $Password,
