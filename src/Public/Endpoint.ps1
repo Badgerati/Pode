@@ -67,7 +67,7 @@ If supplied, TCP endpoints will expect incoming data to end with CRLF.
 Ignore Adminstrator checks for non-localhost endpoints.
 
 .PARAMETER SelfSigned
-Create and bind a self-signed certifcate for HTTPS endpoints.
+Create and bind a self-signed certificate for HTTPS endpoints.
 
 .PARAMETER AllowClientCertificate
 Allow for client certificates to be sent on requests.
@@ -385,7 +385,7 @@ function Add-PodeEndpoint {
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'certfile' {
-                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword -Key $CertificateKey
+                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword -PrivateKeyPath $CertificateKey
             }
 
             'certthumb' {
@@ -397,15 +397,15 @@ function Add-PodeEndpoint {
             }
 
             'certself' {
-                $obj.Certificate.Raw = New-PodeSelfSignedCertificate
+                $obj.Certificate.Raw = New-PodeSelfSignedCertificate -Loopback -CertificatePurpose ServerAuth -DnsName $obj.address.ToString()
             }
         }
 
-        # fail if the cert is expired
-        if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
-            # The certificate has expired
-            throw ($PodeLocale.certificateExpiredExceptionMessage -f $obj.Certificate.Raw.Subject, $obj.Certificate.Raw.NotAfter)
-        }
+        # Validate the certificate's validity period before proceeding
+        Test-PodeCertificateValidity -Certificate $obj.Certificate.Raw
+
+        # Ensure the certificate is authorized for the expected purpose
+        Test-PodeCertificateRestriction -Certificate $obj.Certificate.Raw -ExpectedPurpose ServerAuth
     }
 
     if (!$exists) {

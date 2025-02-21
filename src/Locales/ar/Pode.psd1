@@ -341,4 +341,9 @@
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'مصادقة شهادة JWT مدعومة فقط في PowerShell 7.0 أو أحدث.'
     jwtNoExpirationExceptionMessage                                   = "JWT يفتقد إلى الادعاء المطلوب 'exp' (انتهاء الصلاحية)."
     bearerTokenAuthMethodNotSupportedExceptionMessage                 = 'مصادقة رمز Bearer باستخدام نص الطلب مدعومة فقط مع طرق HTTP PUT أو POST أو PATCH.'
+    certificateNotValidYetExceptionMessage                            = 'الشهادة {0} غير صالحة بعد. صالحة من: {1} (UTC)'
+    certificateNotValidForPurposeExceptionMessage                     = "الشهادة غير صالحة لغرض '{0}'. الأغراض المكتشفة: {1}"
+    certificateUnknownEkusStrictModeExceptionMessage                  = 'تحتوي الشهادة على EKUs غير معروفة. وضع التحقق الصارم يرفضها. المكتشف: {0}'
+    failedToCreateCertificateRequestExceptionMessage                  = 'فشل في إنشاء طلب الشهادة.'
+    unsupportedCertificateKeyLengthExceptionMessage                   = 'طول مفتاح الشهادة غير مدعوم: {0} بت. يُرجى استخدام طول مفتاح مدعوم.'
 }

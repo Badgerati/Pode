@@ -70,34 +70,73 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
                         Write-PodeJsonResponse -Value @{ Result = 'OK' }
                     }
                 }
+                if (!(Test-Path -Path $using:CertsPath -PathType Container)) {
+                    New-Item -Path $using:CertsPath -ItemType Directory
+                }
 
+                #     $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
 
-                $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
-                $algorithms = 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512'
-                foreach ($alg in $algorithms) {
-                    if ($alg.StartsWith('PS')) {
-                        $privateKeyPath = Join-Path -Path $using:CertsPath -ChildPath "$($alg.Replace('PS','RS')).pfx"
-
+                $certificateTypes = @{
+                    'RS256' = @{
+                        KeyType          = 'RSA'
+                        KeyLength        = 2048
+                        RsaPaddingScheme = 'Pkcs1V15'
                     }
-                    else {
-                        $privateKeyPath = Join-Path -Path $using:CertsPath -ChildPath "$alg.pfx"
+                    'RS384' = @{
+                        KeyType          = 'RSA'
+                        KeyLength        = 3072
+                        RsaPaddingScheme = 'Pkcs1V15'
                     }
+                    'RS512' = @{
+                        KeyType          = 'RSA'
+                        KeyLength        = 4096
+                        RsaPaddingScheme = 'Pkcs1V15'
+                    }
+                    'PS256' = @{
+                        KeyType          = 'RSA'
+                        KeyLength        = 2048
+                        RsaPaddingScheme = 'Pss'
+                    }
+                    'PS384' = @{
+                        KeyType          = 'RSA'
+                        KeyLength        = 3072
+                        RsaPaddingScheme = 'Pss'
+                    }
+                    'PS512' = @{
+                        KeyType          = 'RSA'
+                        KeyLength        = 4096
+                        RsaPaddingScheme = 'Pss'
+                    }
+                    'ES256' = @{
+                        KeyType   = 'ECDSA'
+                        KeyLength = 256
+                    }
+                    'ES384' = @{
+                        KeyType   = 'ECDSA'
+                        KeyLength = 384
+                    }
+                    'ES512' = @{
+                        KeyType   = 'ECDSA'
+                        KeyLength = 521
+                    }
+                }
+                foreach ($alg in $certificateTypes.Keys) {
+                    $x509Certificate = New-PodeSelfSignedCertificate -Loopback -KeyType $certificateTypes[$alg].KeyType -KeyLength $certificateTypes[$alg].KeyLength -CertificatePurpose CodeSigning -Ephemeral -Exportable
 
-                    if (! (Test-Path $privateKeyPath)) {
-                        Write-Warning "Skipping $($alg): Private key file not found ($privateKeyPath)"
-                        Continue
-                    }
+                    Export-PodeCertificate -Certificate $x509Certificate -Format PFX -FilePath "$using:CertsPath/$alg"
+                    $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
+
+
 
                     # Define the authentication location dynamically (e.g., `/auth/bearer/jwt/{algorithm}`)
                     $pathRoute = "/auth/bearer/jwt/key/lenient/$alg"
-                    $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
                     # Register Pode Bearer Authentication
                     $param = @{
                         AsJWT               = $true
                         RsaPaddingScheme    = $rsaPaddingScheme
                         JwtVerificationMode = 'Lenient'
-                        Certificate         = $privateKeyPath
-                        CertificatePassword = $securePassword
+                        X509Certificate     = $x509Certificate
+                        #    CertificatePassword = $securePassword
                     }
 
                     New-PodeAuthBearerScheme  @param |
@@ -157,32 +196,29 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
         Receive-Job -Name 'Pode' | Out-Default
         Invoke-RestMethod -Uri "$($Endpoint)/close" -Method Get | Out-Null
         Get-Job -Name 'Pode' | Remove-Job -Force
+        if ( (Test-Path -Path $CertsPath -PathType Container)) {
+            Remove-Item -Path $CertsPath  -Recurse -Force
+            Write-PodeHost "$CertsPath  removed."
+        }
     }
 
 
 
     Describe 'Bearer Authentication - JWT Algorithms' {
-        BeforeAll {
-            $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
-        }
+
         Context 'Bearer - Algorithm <_> - Lenient - Path /auth/bearer/jwt/key/<_>' -ForEach (('RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512')) {
             It "Bearer - Algorithm $_ - returns OK for valid key" {
-                # Define corresponding private key path
-                $privateKeyPath = if ($_.StartsWith('PS')) {
-                    Join-Path -Path $CertsPath -ChildPath "$($_.Replace('PS','RS')).pfx"
-                    $rsaPaddingScheme = 'Pss'
-                }
-                else {
-                    Join-Path -Path $CertsPath -ChildPath "$_.pfx"
-                    $rsaPaddingScheme = 'Pkcs1V15'
-                }
 
+                # Define corresponding private key path
+                $privateKeyPath = "$CertsPath/$_.pfx"
                 # Ensure the matching private key exists
                 (Test-Path $privateKeyPath) | Should -BeTrue
 
+                $rsaPaddingScheme = if ($_.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
+
                 # Read key contents
                 $payload = @{ sub = '123'; username = 'morty' }
-                $jwt = ConvertTo-PodeJwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -CertificatePassword $securePassword -Payload $payload
+                $jwt = ConvertTo-PodeJwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme   -Payload $payload
                 $headers = @{ 'Authorization' = "Bearer $jwt"; 'Accept' = 'application/json' }
 
                 # Make request to correct algorithm path
@@ -194,23 +230,16 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
         Context 'Bearer - Algorithm <_> - Strict - Path /auth/bearer/jwt/key/strict<_>' -ForEach (('RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512')) {
             It "Bearer - Algorithm $_ - returns OK for valid key" {
                 # Define corresponding private key path
-                $privateKeyPath = if ($_.StartsWith('PS')) {
-                    Join-Path -Path $CertsPath -ChildPath "$($_.Replace('PS','RS')).pfx"
-                    $rsaPaddingScheme = 'Pss'
-                }
-                else {
-                    Join-Path -Path $CertsPath -ChildPath "$_.pfx"
-                    $rsaPaddingScheme = 'Pkcs1V15'
-                }
-
+                $privateKeyPath = "$CertsPath/$_.pfx"
                 # Ensure the matching private key exists
                 (Test-Path $privateKeyPath) | Should -BeTrue
+
+                $rsaPaddingScheme = if ($_.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
 
                 $payload = @{ sub = '123'; username = 'morty' }
                 $params = @{
                     Payload             = $payload
-                    Certificate         = $privateKeyPath
-                    CertificatePassword = $securePassword
+                    Certificate         = $privateKeyPath 
                     RsaPaddingScheme    = $rsaPaddingScheme
                     Issuer              = 'Pode'
                     Audience            = $applicationName

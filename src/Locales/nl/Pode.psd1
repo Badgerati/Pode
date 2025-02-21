@@ -341,4 +341,9 @@
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT-certificaatverificatie wordt alleen ondersteund in PowerShell 7.0 of hoger.'
     jwtNoExpirationExceptionMessage                                   = "De JWT mist de vereiste 'exp' (Expiration) claim. Een geldige vervaldatum is vereist."
     bearerTokenAuthMethodNotSupportedExceptionMessage                 = 'Bearer-tokenverificatie met de aanvraagtekst wordt alleen ondersteund met HTTP PUT-, POST- of PATCH-methoden.'
+    certificateNotValidYetExceptionMessage                            = 'Certificaat {0} is NOG niet geldig. Geldig vanaf: {1} (UTC)'
+    certificateNotValidForPurposeExceptionMessage                     = "Certificaat is NIET geldig voor '{0}'. Gevonden doeleinden: {1}"
+    certificateUnknownEkusStrictModeExceptionMessage                  = "Certificaat bevat onbekende EKU's. Strikte modus wijst het af. Gevonden: {0}"
+    failedToCreateCertificateRequestExceptionMessage                  = 'Kan geen certificaataanvraag genereren.'
+    unsupportedCertificateKeyLengthExceptionMessage                   = 'Niet-ondersteunde certificaatsleutellengte: {0} bits. Gebruik een ondersteunde sleutellengte.'
 }

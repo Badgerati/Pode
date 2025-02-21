@@ -1,4 +1,4 @@
-
+using namespace System.Security.Cryptography
 <#
 .SYNOPSIS
     Validates a JWT payload by checking its registered claims as defined in RFC 7519.
@@ -176,7 +176,7 @@ function Test-PodeJwt {
 .PARAMETER Certificate
     The path to a file containing an X.509 certificate for RSA/ECDSA signature verification.
 
-.PARAMETER CertificateKey
+.PARAMETER PrivateKeyPath
     The path to a PEM key file that pairs with the certificate
     for RSA/ECDSA signature verification.
 
@@ -262,7 +262,7 @@ function ConvertFrom-PodeJwt {
 
         [Parameter(ParameterSetName = 'CertFile')]
         [string]
-        $CertificateKey = $null,
+        $PrivateKeyPath = $null,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [SecureString]
@@ -278,16 +278,16 @@ function ConvertFrom-PodeJwt {
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [System.Security.Cryptography.X509Certificates.StoreName]
+        [X509Certificates.StoreName]
         $CertificateStoreName = 'My',
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        [X509Certificates.StoreLocation]
         $CertificateStoreLocation = 'CurrentUser',
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]
+        [X509Certificates.X509Certificate2]
         $X509Certificate,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertRaw')]
@@ -324,7 +324,7 @@ function ConvertFrom-PodeJwt {
             if (!(Test-Path -Path $Certificate -PathType Leaf)) {
                 throw ($PodeLocale.pathNotExistExceptionMessage -f $Certificate)
             }
-            $X509Certificate = Get-PodeCertificateByFile -Certificate $Certificate -SecurePassword $CertificatePassword -Key $CertificateKey
+            $X509Certificate = Get-PodeCertificateByFile -Certificate $Certificate -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath
         }
         'CertThumb' {
             $X509Certificate = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
@@ -375,6 +375,12 @@ function ConvertFrom-PodeJwt {
     }
 
     if ($X509Certificate) {
+        # Validate the certificate's validity period before proceeding
+        Test-PodeCertificateValidity -Certificate $X509Certificate
+
+        # Ensure the certificate is authorized for the expected purpose
+        Test-PodeCertificateRestriction -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict
+
         $params['X509Certificate'] = $X509Certificate
     }
 
@@ -500,7 +506,7 @@ function ConvertFrom-PodeJwt {
 .PARAMETER Certificate
     The path to a certificate file used for signing. Required if you select the 'CertFile' parameter set.
 
-.PARAMETER CertificateKey
+.PARAMETER PrivateKeyPath
     Optional path to an associated certificate key file.
 
 .PARAMETER CertificatePassword
@@ -581,14 +587,14 @@ function ConvertTo-PodeJwt {
         $Secret = $null,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]
+        [X509Certificates.X509Certificate2]
         $X509Certificate,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
         [string]$Certificate,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
-        [string]$CertificateKey = $null,
+        [string]$PrivateKeyPath = $null,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [SecureString]$CertificatePassword,
@@ -601,12 +607,12 @@ function ConvertTo-PodeJwt {
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [System.Security.Cryptography.X509Certificates.StoreName]
+        [X509Certificates.StoreName]
         $CertificateStoreName = 'My',
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        [X509Certificates.StoreLocation]
         $CertificateStoreLocation = 'CurrentUser',
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertRaw')]
@@ -690,8 +696,8 @@ function ConvertTo-PodeJwt {
 
         if (! $psPayload.PSObject.Properties['aud']) {
             if ([string]::IsNullOrEmpty($Audience)) {
-                if (($null -ne $PodeContext) -and ($null -ne $PodeContext.Server.Application)) {
-                    $psPayload | Add-Member -MemberType NoteProperty -Name 'aud' -Value $PodeContext.Server.Application
+                if (($null -ne $PodeContext) -and ($null -ne $PodeContext.Server.ApplicationName)) {
+                    $psPayload | Add-Member -MemberType NoteProperty -Name 'aud' -Value $PodeContext.Server.ApplicationName
                 }
             }
             else {
@@ -712,7 +718,7 @@ function ConvertTo-PodeJwt {
     switch ($PSCmdlet.ParameterSetName) {
         'CertFile' {
             return New-PodeJwt -Certificate $Certificate -CertificatePassword $CertificatePassword `
-                -CertificateKey $CertificateKey -RsaPaddingScheme $RsaPaddingScheme `
+                -PrivateKeyPath $PrivateKeyPath -RsaPaddingScheme $RsaPaddingScheme `
                 -Payload $psPayload -Header $psHeader
         }
 
@@ -794,7 +800,7 @@ function ConvertTo-PodeJwt {
 .PARAMETER CertificatePassword
     The password for the certificate file referenced in Certificate.
 
-.PARAMETER CertificateKey
+.PARAMETER PrivateKeyPath
     A key file to be paired with a PEM certificate file referenced in Certificate.
 
 .PARAMETER CertificateThumbprint
@@ -839,14 +845,14 @@ function Update-PodeJwt {
         $Secret = $null,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]
+        [X509Certificates.X509Certificate2]
         $X509Certificate,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
         [string]$Certificate,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
-        [string]$CertificateKey = $null,
+        [string]$PrivateKeyPath = $null,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [SecureString]$CertificatePassword,
@@ -859,12 +865,12 @@ function Update-PodeJwt {
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [System.Security.Cryptography.X509Certificates.StoreName]
+        [X509Certificates.StoreName]
         $CertificateStoreName = 'My',
 
         [Parameter(ParameterSetName = 'CertName')]
         [Parameter(ParameterSetName = 'CertThumb')]
-        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        [X509Certificates.StoreLocation]
         $CertificateStoreLocation = 'CurrentUser',
 
         [Parameter(Mandatory = $true, ParameterSetName = 'AuthenticationMethod')]
@@ -912,7 +918,7 @@ function Update-PodeJwt {
                 Payload             = $jwt.Payload
                 Header              = $jwt.Header
                 Certificate         = $Certificate
-                CertificateKey      = $CertificateKey
+                PrivateKeyPath      = $PrivateKeyPath
                 CertificatePassword = $CertificatePassword
                 RsaPaddingScheme    = $rsaPaddingScheme
             }
@@ -967,3 +973,828 @@ function Update-PodeJwt {
     # Update the JWT with the new expiration time
     return New-PodeJwt @params
 }
+
+
+
+
+<#
+.SYNOPSIS
+  Generates a certificate signing request (CSR) and private key.
+
+.DESCRIPTION
+  This function creates a certificate signing request (CSR) using RSA or ECDSA key pairs.
+  It allows specifying subject details, key usage, enhanced key usage (EKU), and custom extensions.
+  The CSR and private key are automatically saved to files in the specified output directory.
+
+.PARAMETER DnsName
+  One or more DNS names (or IP addresses) to be included in the Subject Alternative Name (SAN).
+
+.PARAMETER CommonName
+  The Common Name (CN) for the certificate subject. Defaults to the first DNS name if not provided.
+
+.PARAMETER Organization
+  The organization (O) name to be included in the certificate subject.
+
+.PARAMETER Locality
+  The locality (L) name to be included in the certificate subject.
+
+.PARAMETER State
+  The state (S) name to be included in the certificate subject.
+
+.PARAMETER Country
+  The country (C) code (ISO 3166-1 alpha-2). Defaults to 'XX'.
+
+.PARAMETER KeyType
+  The cryptographic key type for the certificate request. Supported values: 'RSA', 'ECDSA'. Defaults to 'RSA'.
+
+.PARAMETER KeyLength
+  The key length for RSA (2048, 3072, 4096) or ECDSA (256, 384, 521). Defaults to 2048.
+
+.PARAMETER CertificatePurpose
+  The intended purpose of the certificate, which automatically sets the EKU.
+  Supported values: 'ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity', 'Custom'.
+
+.PARAMETER EnhancedKeyUsages
+  A list of OID strings for Enhanced Key Usage (EKU) if 'Custom' is selected as CertificatePurpose.
+
+.PARAMETER NotBefore
+  The NotBefore date for the certificate request. Defaults to the current UTC time.
+
+.PARAMETER CustomExtensions
+  An array of additional custom certificate extensions.
+
+.PARAMETER FriendlyName
+  An optional friendly name for the certificate request.
+
+.PARAMETER OutputPath
+  The directory where the CSR and private key files will be saved. Defaults to the current working directory.
+
+.OUTPUTS
+  [PSCustomObject]
+  Returns an object containing:
+    - CsrPath: The file path of the CSR.
+    - PrivateKeyPath: The file path of the private key.
+
+.EXAMPLE
+  $csr = New-PodeCertificateRequest -DnsName "example.com" -CommonName "example.com" -KeyType "RSA" -KeyLength 2048
+  Generates an RSA CSR for "example.com" and saves it to the current working directory.
+
+.EXAMPLE
+  $csr = New-PodeCertificateRequest -DnsName "example.com" -KeyType "ECDSA" -KeyLength 384 -CertificatePurpose "ServerAuth" -OutputPath "C:\Certs"
+  Generates an ECDSA CSR with an automatically assigned EKU for server authentication and saves it to "C:\Certs".
+
+.NOTES
+  - This function integrates with Pode’s certificate handling utilities.
+  - The private key is exported in PKCS#8 format.
+  - Ensure the private key is stored securely.
+#>
+function New-PodeCertificateRequest {
+    [CmdletBinding(DefaultParameterSetName = 'CommonName')]
+    [OutputType([PSCustomObject])]
+    param (
+        # Required: one or more DNS names (or IP addresses)
+        [Parameter()]
+        [string[]]
+        $DnsName,
+
+        # Subject parts
+        [Parameter()]
+        [string]
+        $CommonName,
+
+        [Parameter()]
+        [string]
+        $Organization,
+
+        [Parameter()]
+        [string]
+        $Locality,
+
+        [Parameter()]
+        [string]
+        $State,
+
+        [Parameter()]
+        [string]
+        $Country = 'XX',
+
+        # Key type and size
+        [Parameter()]
+        [ValidateSet('RSA', 'ECDSA')]
+        [string]$KeyType = 'RSA',
+
+        [Parameter()]
+        [ValidateSet(2048, 3072, 4096, 256, 384, 521)]
+        [int]$KeyLength = 2048,
+
+        #Automatically set EKUs based on intended purpose
+        [Parameter()]
+        [ValidateSet('ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity', 'Custom')]
+        [string]
+        $CertificatePurpose,
+
+        # Enhanced Key Usages (EKU) - supply one or more OID strings if desired.
+        [Parameter()]
+        [string[]]$EnhancedKeyUsages,
+
+        # Optional NotBefore date for the certificate request.
+        [Parameter()]
+        [DateTime]$NotBefore = ([datetime]::UtcNow),
+
+        # Additional custom extensions (as an array of certificate extension objects).
+        [Parameter()]
+        [object[]]$CustomExtensions,
+
+        # Optional friendly name for display in certificate stores.
+        [Parameter()]
+        [string]$FriendlyName,
+
+        [Parameter()]
+        [string]$OutputPath = $PWD
+    )
+    # Call the certificate request function to generate the CSR and key pair.
+    $csrParams = @{
+        DnsName           = $DnsName
+        CommonName        = $CommonName
+        Organization      = $Organization
+        Locality          = $Locality
+        State             = $State
+        Country           = $Country
+        KeyType           = $KeyType
+        KeyLength         = $KeyLength
+        EnhancedKeyUsages = $EnhancedKeyUsages
+        NotBefore         = $NotBefore
+        CustomExtensions  = $CustomExtensions
+        FriendlyName      = $FriendlyName
+    }
+
+    $csrObject = New-PodeCertificateRequestInternal @csrParams
+
+
+    $csrPath = "$OutputPath\$CommonName.csr"
+    $keyPath = "$OutputPath\$CommonName.key"
+
+    $csrObject.Request | Out-File -FilePath $csrPath -Encoding utf8NoBOM
+    $privateKeyBytes = $csrObject.PrivateKey.ExportPkcs8PrivateKey()
+    $privateKeyBase64 = [Convert]::ToBase64String($privateKeyBytes)
+    "-----BEGIN PRIVATE KEY-----`n$privateKeyBase64`n-----END PRIVATE KEY-----" | Out-File -FilePath $keyPath -Encoding utf8NoBOM
+
+    Write-PodeHost "CSR saved to: $csrPath"
+    Write-PodeHost "Private Key saved to: $keyPath"
+
+    return [PSCustomObject]@{
+        PsTypeName     = 'PodeCertificateRequestResult'
+        CsrPath        = $csrPath
+        PrivateKeyPath = $keyPath
+    }
+
+}
+
+<#
+.SYNOPSIS
+  Generates a self-signed X.509 certificate.
+
+.DESCRIPTION
+  This function creates a self-signed X.509 certificate using RSA or ECDSA key pairs.
+  It supports specifying subject details, key usage, enhanced key usage (EKU),
+  and custom extensions. The generated certificate is returned as an X509Certificate2 object.
+
+  By default, the private key is exportable so the certificate can be saved and reused.
+  If the `-Ephemeral` parameter is specified, the certificate's private key **will not be persisted**
+  and will only exist in memory for the current session.
+
+.PARAMETER DnsName
+  One or more DNS names (or IP addresses) to be included in the Subject Alternative Name (SAN).
+
+.PARAMETER Loopback
+  If specified, automatically sets `DnsName` to include:
+    - `127.0.0.1`, `::1`, `localhost`
+    - The current machine's IP (if not local)
+    - The Pode server's hostname and FQDN (if available)
+
+.PARAMETER CommonName
+  The Common Name (CN) for the certificate subject. Defaults to "SelfSigned".
+
+.PARAMETER Organization
+  The organization (O) name to be included in the certificate subject.
+
+.PARAMETER Locality
+  The locality (L) name to be included in the certificate subject.
+
+.PARAMETER State
+  The state (S) name to be included in the certificate subject.
+
+.PARAMETER Country
+  The country (C) code (ISO 3166-1 alpha-2). Defaults to 'XX'.
+
+.PARAMETER KeyType
+  The cryptographic key type for the certificate request. Supported values: 'RSA', 'ECDSA'. Defaults to 'RSA'.
+
+.PARAMETER KeyLength
+  The key length for RSA (2048, 3072, 4096) or ECDSA (256, 384, 521). Defaults to 2048.
+
+.PARAMETER EnhancedKeyUsages
+  A list of OID strings for Enhanced Key Usage (EKU), e.g., '1.3.6.1.5.5.7.3.1' for server authentication.
+
+.PARAMETER CertificatePurpose
+  The intended purpose of the certificate, which automatically sets the EKU.
+  Supported values: 'ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity', 'Custom'.
+  Defaults to 'ServerAuth'.
+
+.PARAMETER NotBefore
+  The NotBefore date for the certificate validity start. Defaults to the current UTC time.
+
+.PARAMETER CustomExtensions
+  An array of additional custom certificate extensions.
+
+.PARAMETER FriendlyName
+  A friendly name for the certificate, used when storing it in a certificate store. Defaults to 'MyCertificate'.
+
+.PARAMETER ValidityDays
+  The number of days the certificate will remain valid. Defaults to 365 days.
+
+.PARAMETER Ephemeral
+  If specified, the certificate will be created with `EphemeralKeySet`, meaning the private key
+  will **not be persisted** on disk or in the certificate store.
+
+  This is useful for temporary certificates that should only exist in memory for the duration
+  of the current session. Once the process exits, the private key will be lost.
+
+.PARAMETER Exportable
+ If specified the certificate will be created with `Exportable`, meaning the certificate can be exported
+
+.OUTPUTS
+  [X509Certificates.X509Certificate2]
+  Returns the generated self-signed certificate as an X509Certificate2 object.
+
+.EXAMPLE
+  $cert = New-PodeSelfSignedCertificate -Loopback
+  Creates a self-signed certificate for local addresses (`127.0.0.1`, `::1`, `localhost`, machine hostname).
+
+.EXAMPLE
+  $cert = New-PodeSelfSignedCertificate -DnsName "example.com" -KeyType "RSA" -KeyLength 2048
+  Creates a self-signed RSA certificate for "example.com" with a 2048-bit key, valid for 365 days.
+
+.EXAMPLE
+  $cert = New-PodeSelfSignedCertificate -DnsName "internal.local" -Ephemeral
+  Creates a self-signed certificate with a private key that exists **only in memory** for the current session.
+
+.EXAMPLE
+  $cert = New-PodeSelfSignedCertificate -DnsName "testserver.local" -KeyType "ECDSA" -KeyLength 384 -CertificatePurpose "ClientAuth" -ValidityDays 730
+  Generates a self-signed ECDSA certificate for "testserver.local" with client authentication EKU, valid for 730 days.
+
+.NOTES
+  - The private key is embedded in the generated certificate.
+  - By default, the certificate is **exportable** so it can be saved and reused.
+  - If `-Ephemeral` is used, the private key will **only exist in memory** and cannot be exported or stored.
+  - The `-Loopback` parameter is useful for local development, ensuring the certificate includes local identifiers.
+#>
+function New-PodeSelfSignedCertificate {
+    [CmdletBinding(DefaultParameterSetName = 'CommonName')]
+    param (
+        # Required: one or more DNS names (or IP addresses)
+        [Parameter(Mandatory = $false, ParameterSetName = 'DnsName')]
+        [string[]]
+        $DnsName,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'DnsName')]
+        [switch]
+        $Loopback,
+
+        # Subject parts
+        [Parameter(Mandatory = $false, ParameterSetName = 'CommonName')]
+        [string]
+        $CommonName = 'SelfSigned',
+
+        [Parameter()]
+        [string]$Organization,
+        [Parameter()]
+        [string]$Locality,
+        [Parameter()]
+        [string]$State,
+        [Parameter()]
+        [string]$Country = 'XX',
+
+        # Key type and size
+        [Parameter()]
+        [ValidateSet('RSA', 'ECDSA')]
+        [string]
+        $KeyType = 'RSA',
+
+        [Parameter()]
+        [ValidateSet(2048, 3072, 4096, 256, 384, 521)]
+        [int]
+        $KeyLength = 2048,
+
+        # Enhanced Key Usages (EKU) - e.g., '1.3.6.1.5.5.7.3.1' for server auth
+        [Parameter()]
+        [string[]]$EnhancedKeyUsages,
+
+        [Parameter()]
+        [ValidateSet('ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity', 'Custom')]
+        [string]
+        $CertificatePurpose = 'ServerAuth',
+
+        # Optional NotBefore date for certificate validity start
+        [Parameter()]
+        [DateTime]
+        $NotBefore,
+
+        # Additional custom extensions (as an array of extension objects)
+        [Parameter()]
+        [object[]]
+        $CustomExtensions,
+
+        # Friendly name for display in certificate stores
+        [Parameter()]
+        [string]
+        $FriendlyName = 'MyCertificate',
+
+        # Validity period (in days)
+        [Parameter()]
+        [int]
+        $ValidityDays = 365,
+
+        [Parameter()]
+        [switch]
+        $Ephemeral,
+
+        [Parameter()]
+        [switch]
+        $Exportable
+
+    )
+
+    # Handle Loopback Parameter
+    if ($Loopback) {
+        if ($null -eq $DnsName) {
+            $DnsName = @()
+        }
+        if ($DnsName -notcontains '127.0.0.1') {
+            $DnsName += '127.0.0.1'
+        }
+        if ($DnsName -notcontains '::1') {
+            $DnsName += '::1'
+        }
+        if ($DnsName -notcontains 'localhost') {
+            $DnsName += 'localhost'
+        }
+
+        # Add machine-specific names if available
+        if ((![string]::IsNullOrWhiteSpace($PodeContext.Server.ComputerName) ) -and ($DnsName -notcontains $PodeContext.Server.ComputerName)) {
+            $DnsName += $PodeContext.Server.ComputerName
+        }
+        # Add machine-specific fqdn if available
+        if ((![string]::IsNullOrWhiteSpace($PodeContext.Server.Fqdn)) -and
+            ($PodeContext.Server.Fqdn -ne $PodeContext.Server.ComputerName) -and ($DnsName -notcontains $PodeContext.Server.Fqdn)) {
+            $DnsName += $PodeContext.Server.Fqdn
+        }
+    }
+
+    # Call the certificate request function to generate the CSR and key pair.
+    $csrParams = @{
+        DnsName            = $DnsName
+        CommonName         = $CommonName
+        Organization       = $Organization
+        Locality           = $Locality
+        State              = $State
+        Country            = $Country
+        KeyType            = $KeyType
+        KeyLength          = $KeyLength
+        CertificatePurpose = $CertificatePurpose
+        EnhancedKeyUsages  = $EnhancedKeyUsages
+        CustomExtensions   = $CustomExtensions
+
+    }
+
+    $csrObject = New-PodeCertificateRequestInternal @csrParams
+
+    # Determine certificate validity dates.
+    if ($null -eq $NotBefore) { $NotBefore = ([datetime]::UtcNow) }
+    $startDate = $NotBefore
+    $endDate = $NotBefore.AddDays($ValidityDays)
+
+    try {
+        # Create the self-signed certificate from the CSR.
+        $cert = $csrObject.CertificateRequest.CreateSelfSigned(
+            [System.DateTimeOffset]::new($startDate),
+            [System.DateTimeOffset]::new($endDate)
+        )
+
+        # Set the friendly name if provided.
+        if ($FriendlyName) {
+            $cert.FriendlyName = $FriendlyName
+        }
+
+        # Export the certificate as a PFX (with a default password; adjust as needed).
+        $pfxBytes = $cert.Export([X509Certificates.X509ContentType]::Pfx, 'self-signed')
+
+        if ($Ephemeral -and $Exportable) {
+            $storageFlags = [X509Certificates.X509KeyStorageFlags]::Exportable -bor [X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+        }
+        elseif ($Exportable) {
+            $storageFlags = [X509Certificates.X509KeyStorageFlags]::Exportable
+        }
+        elseif ($Ephemeral -and !$IsMacOS) {
+            $storageFlags = [X509Certificates.X509KeyStorageFlags]::Ephemeral
+        }
+        else {
+            $storageFlags = [X509Certificates.X509KeyStorageFlags]::DefaultKeySet
+        }
+
+        $finalCert = [X509Certificates.X509Certificate2]::new(
+            $pfxBytes,
+            'self-signed',
+            $storageFlags
+        )
+        return $finalCert
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+        throw
+    }
+}
+
+<#
+.SYNOPSIS
+  Imports an X.509 certificate from a file (PFX, PEM, CER) or retrieves it from the Windows certificate store.
+
+.DESCRIPTION
+  This function imports an X.509 certificate using one of three methods:
+    - From a certificate file (PFX, PEM, or CER).
+    - From the Windows certificate store by thumbprint.
+    - From the Windows certificate store by subject name.
+
+  By default, the certificate is imported with an **ephemeral key**, meaning the private key
+  exists **only for the current session** and is not persisted. If the `-Persistent` flag is
+  specified, the private key will be stored in an exportable format.
+
+.PARAMETER FilePath
+  The path to the certificate file (.pfx, .pem, or .cer) to import.
+
+.PARAMETER PrivateKeyPath
+  The path to a separate private key file (for PEM format).
+  Required if the certificate file does not contain the private key.
+
+.PARAMETER CertificatePassword
+  A secure string containing the password for decrypting a PFX certificate
+  or an encrypted private key in PEM format.
+
+.PARAMETER Persistent
+  If specified, the certificate will be imported with an **exportable** private key,
+  allowing it to be saved and reused across sessions.
+
+  If not specified, the certificate will be imported **ephemerally**, meaning the
+  private key will exist **only in memory** and will be lost when the process exits.
+
+.PARAMETER CertificateThumbprint
+  The thumbprint of a certificate stored in the Windows certificate store.
+
+.PARAMETER CertificateName
+  The subject name of a certificate stored in the Windows certificate store.
+
+.PARAMETER CertificateStoreName
+  The name of the Windows certificate store to search in when retrieving a certificate
+  by thumbprint or subject name. Defaults to "My".
+
+.PARAMETER CertificateStoreLocation
+  The location of the Windows certificate store. Defaults to "CurrentUser".
+
+.OUTPUTS
+  [X509Certificates.X509Certificate2]
+  Returns the imported certificate as an X509Certificate2 object.
+
+.EXAMPLE
+  $cert = Import-PodeCertificate -FilePath "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force)
+  Imports a PFX certificate file with an ephemeral private key.
+
+.EXAMPLE
+  $cert = Import-PodeCertificate -FilePath "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force) -Persistent
+  Imports a PFX certificate file **with a persistent private key**, allowing it to be saved.
+
+.EXAMPLE
+  $cert = Import-PodeCertificate -FilePath "C:\Certs\mycert.cer"
+  Imports a CER certificate file (public key only).
+
+.EXAMPLE
+  $cert = Import-PodeCertificate -CertificateThumbprint "D2C2F4F7A456B69D4F9E9F8C3D3D6E5A9C3EBA6F"
+  Retrieves a certificate from the Windows certificate store using its thumbprint.
+
+.EXAMPLE
+  $cert = Import-PodeCertificate -CertificateName "MyAppCert" -CertificateStoreName "Root" -CertificateStoreLocation "LocalMachine"
+  Retrieves a certificate by subject name from the LocalMachine\Root store.
+
+.NOTES
+  - The `-Persistent` flag should be used when you need to store the certificate for future use.
+  - The default behavior (`EphemeralKeySet`) ensures the private key does not persist in the system.
+  - When using a PEM certificate, ensure the private key is available if required.
+  - Windows certificate store retrieval is only supported on Windows systems.
+  - CER files contain only the public key and do not support private key decryption.
+#>
+function Import-PodeCertificate {
+    param (
+        # Certificate-based parameters for RSA/ECDSA
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
+        [string]
+        $FilePath,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [string]
+        $PrivateKeyPath = $null,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [SecureString]
+        $CertificatePassword,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [Parameter()]
+        [switch]$Persistent,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
+        [string]
+        $CertificateThumbprint,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
+        [string]
+        $CertificateName,
+
+        [Parameter(ParameterSetName = 'CertName')]
+        [Parameter(ParameterSetName = 'CertThumb')]
+        [X509Certificates.StoreName]
+        $CertificateStoreName = 'My',
+
+        [Parameter(ParameterSetName = 'CertName')]
+        [Parameter(ParameterSetName = 'CertThumb')]
+        [X509Certificates.StoreLocation]
+        $CertificateStoreLocation = 'CurrentUser'
+    )
+
+    switch ($PSCmdlet.ParameterSetName) {
+        'CertFile' {
+            # If using a file-based certificate, ensure it exists, then load it
+            if (!(Test-Path -Path $FilePath -PathType Leaf)) {
+                throw ($PodeLocale.pathNotExistExceptionMessage -f $FilePath)
+            }
+            if (![string]::IsNullOrEmpty($PrivateKeyPath) -and !(Test-Path -Path $PrivateKeyPath -PathType Leaf)) {
+                throw ($PodeLocale.pathNotExistExceptionMessage -f $PrivateKeyPath)
+            }
+            $X509Certificate = Get-PodeCertificateByFile -Certificate $FilePath -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath -Persistent:$Persistent
+            break
+        }
+
+        'certthumb' {
+            # Retrieve a certificate from the local store by thumbprint
+            $X509Certificate = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+        }
+
+        'certname' {
+            # Retrieve a certificate from the local store by name
+            $X509Certificate = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+        }
+    }
+
+    # Validate the certificate's validity period before proceeding
+    Test-PodeCertificateValidity -Certificate $X509Certificate
+
+    return $X509Certificate
+}
+
+
+<#
+.SYNOPSIS
+  Exports an X.509 certificate to a file (PFX, PEM, or CER) or installs it into the Windows certificate store.
+
+.DESCRIPTION
+  This function exports an X.509 certificate in various formats:
+    - PFX (PKCS#12) with optional password protection.
+    - PEM (Base64-encoded format), optionally including the private key.
+    - CER (DER-encoded format).
+  It also allows storing the certificate in the Windows certificate store.
+
+  The function supports exporting private keys (if available) for PEM format, encrypting them if a password is provided.
+
+.PARAMETER Certificate
+  The X509Certificate2 object to export. This must be a valid certificate.
+
+.PARAMETER FilePath
+  The output file path (without an extension) where the certificate will be saved.
+  Defaults to the current working directory with the certificate subject name.
+
+.PARAMETER Format
+  The format in which to export the certificate. Supported values: 'PFX', 'PEM', 'CER'.
+  Defaults to 'PFX'.
+
+.PARAMETER CertificatePassword
+  A secure string containing the password for exporting the PFX format
+  or encrypting the private key in PEM format.
+
+.PARAMETER IncludePrivateKey
+  When exporting in PEM format, this flag includes the private key in a separate `.key` file.
+
+.PARAMETER CertificateStoreName
+  The Windows certificate store name where the certificate should be installed.
+  This parameter is required when using the 'WindowsStore' parameter set.
+
+.PARAMETER CertificateStoreLocation
+  The location of the Windows certificate store. Defaults to 'CurrentUser'.
+  This parameter is required when using the 'WindowsStore' parameter set.
+
+.OUTPUTS
+  [string] or [hashtable]
+  - If exporting to a file, returns the full file path(s) of the exported certificate.
+  - If storing in Windows, returns `$true` if successful, `$false` otherwise.
+
+.EXAMPLE
+  $cert = Get-PodeCertificate -Path "mycert.pfx" -Password (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force)
+  Export-PodeCertificate -Certificate $cert -FilePath "C:\Certs\mycert" -Format "PEM" -IncludePrivateKey
+
+  Exports the certificate as a PEM file with a separate private key file.
+
+.EXAMPLE
+  $cert = Get-PodeCertificate -Path "mycert.pfx" -Password (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force)
+  Export-PodeCertificate -Certificate $cert -CertificateStoreName "My" -CertificateStoreLocation "LocalMachine"
+
+  Stores the certificate in the LocalMachine certificate store under "My".
+
+.NOTES
+  - This function integrates with Pode’s certificate handling utilities.
+  - Windows store installation is only available on Windows.
+  - PEM format supports exporting the private key separately, which can be encrypted with a password.
+#>
+function Export-PodeCertificate {
+    [CmdletBinding(DefaultParameterSetName = 'File')]
+    param (
+        # The X509 Certificate object to export
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [X509Certificates.X509Certificate2]
+        $Certificate,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'File')]
+        [string]
+        $FilePath = "$($PodeContext.Server.Root)\$($Certificate.Subject.Replace('CN=', '').Replace(' ', '_'))",
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'File')]
+        [ValidateSet('PFX', 'PEM', 'CER')]
+        [string]
+        $Format = 'PFX',
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'File')]
+        [SecureString]
+        $CertificatePassword,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'File')]
+        [switch]$IncludePrivateKey,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'WindowsStore')]
+        [X509Certificates.StoreName]
+        $CertificateStoreName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'WindowsStore')]
+        [X509Certificates.StoreLocation]
+        $CertificateStoreLocation = 'CurrentUser'
+    )
+
+    process {
+        switch ($PSCmdlet.ParameterSetName) {
+            'File' {
+                switch ($Format) {
+                    'PFX' {
+                        $pfxBytes = if ($CertificatePassword) {
+                            $Certificate.Export([X509Certificates.X509ContentType]::Pfx, $CertificatePassword)
+                        }
+                        else {
+                            $Certificate.Export([X509Certificates.X509ContentType]::Pfx)
+                        }
+                        $filePathWithExt = "$FilePath.pfx"
+                        [System.IO.File]::WriteAllBytes($filePathWithExt, $pfxBytes)
+                    }
+                    'CER' {
+                        $cerBytes = $Certificate.Export([X509Certificates.X509ContentType]::Cert)
+                        $filePathWithExt = "$FilePath.cer"
+                        [System.IO.File]::WriteAllBytes($filePathWithExt, $cerBytes)
+                    }
+                    'PEM' {
+                        # Export the certificate in PEM format
+                        $pemCert = "-----BEGIN CERTIFICATE-----`n"
+                        $pemCert += [Convert]::ToBase64String($Certificate.RawData, 'InsertLineBreaks')
+                        $pemCert += "`n-----END CERTIFICATE-----"
+                        $certFilePath = "$FilePath.pem"
+                        $pemCert | Out-File -FilePath $certFilePath -Encoding utf8NoBOM
+
+                        Write-Output "Certificate exported successfully: $certFilePath"
+
+                        # If requested, export the private key to a separate file
+                        if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
+                            # Convert SecureString to plain text for the helper function if a password was provided.
+                            $plainPassword = $null
+                            if ($CertificatePassword) {
+                                $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
+                                    [Runtime.InteropServices.Marshal]::SecureStringToBSTR($CertificatePassword)
+                                )
+                            }
+                            $pemKey = Export-PodePrivateKeyPem -Key $Certificate.PrivateKey -Password $plainPassword
+                            $keyFilePath = "$FilePath.key"
+                            $pemKey | Out-File -FilePath $keyFilePath -Encoding utf8NoBOM
+
+                            Write-PodeHost "Private key exported successfully: $keyFilePath"
+                        }
+
+                        # Return the certificate file path (and key file path if applicable)
+                        $filePathWithExt = if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
+                            @{ CertificateFile = $certFilePath; PrivateKeyFile = $keyFilePath }
+                        }
+                        else {
+                            $certFilePath
+                        }
+                    }
+                }
+
+                if ($Format -ne 'PEM') {
+                    Write-Output "Certificate exported successfully: $filePathWithExt"
+                }
+                return $filePathWithExt
+            }
+
+            'WindowsStore' {
+                if (Test-PodeIsWindows) {
+                    $store = [X509Certificates.X509Store]::new($CertificateStoreName, $CertificateStoreLocation)
+                    $store.Open('ReadWrite')
+                    $store.Add($Certificate)
+                    $store.Close()
+
+                    Write-Output "Certificate successfully stored in: $CertificateStoreLocation\$CertificateStoreName"
+                    return $true
+                }
+                return $false
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+  Retrieves the Enhanced Key Usage (EKU) purposes of an X.509 certificate.
+
+.DESCRIPTION
+  This internal function extracts the Enhanced Key Usage (EKU) extension (OID: 2.5.29.37)
+  from an X.509 certificate and returns the recognized purposes.
+
+  If the certificate has no EKU extension, an empty array is returned, indicating
+  that the certificate has no usage restrictions.
+
+.PARAMETER Certificate
+  The X509Certificate2 object from which to retrieve the EKU purposes.
+
+.OUTPUTS
+  [object[]]
+  Returns an array of recognized EKU purposes. Supported values:
+    - 'ServerAuth'      (1.3.6.1.5.5.7.3.1)
+    - 'ClientAuth'      (1.3.6.1.5.5.7.3.2)
+    - 'CodeSigning'     (1.3.6.1.5.5.7.3.3)
+    - 'EmailSecurity'   (1.3.6.1.5.5.7.3.4)
+
+  If an unrecognized EKU OID is found, it is returned as `"Unknown (<OID>)"`.
+  If no EKU extension is present, an empty array is returned.
+
+.EXAMPLE
+  $purposes = Get-PodeCertificatePurpose -Certificate $cert
+  Retrieves the list of EKU purposes assigned to the given certificate.
+
+#>
+function Get-PodeCertificatePurpose {
+    [CmdletBinding()]
+    [OutputType([object[]])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [X509Certificates.X509Certificate2]$Certificate
+    )
+
+    # Define known EKU OIDs and their purposes
+    $purposeOids = @{
+        '1.3.6.1.5.5.7.3.1' = 'ServerAuth'
+        '1.3.6.1.5.5.7.3.2' = 'ClientAuth'
+        '1.3.6.1.5.5.7.3.3' = 'CodeSigning'
+        '1.3.6.1.5.5.7.3.4' = 'EmailSecurity'
+    }
+
+    # Retrieve the EKU extension (OID: 2.5.29.37)
+    $ekuExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.37' }
+
+    if ($ekuExtension -and $ekuExtension -is [X509Certificates.X509EnhancedKeyUsageExtension]) {
+        # Use the EnhancedKeyUsages property which returns an OidCollection
+        $purposes = @()
+        foreach ($oid in $ekuExtension.EnhancedKeyUsages) {
+            if ($purposeOids.ContainsKey($oid.Value)) {
+                $purposes += $purposeOids[$oid.Value]
+            }
+            else {
+                $purposes += "Unknown ($($oid.Value))"
+            }
+        }
+        return $purposes
+    }
+
+    # If no EKU is present, return an empty array (no restrictions)
+    return @()
+}
+

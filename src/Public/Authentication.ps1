@@ -2555,7 +2555,7 @@ function New-PodeAuthKeyTab {
 .PARAMETER CertificatePassword
     The password for the certificate file referenced in Certificate
 
-.PARAMETER CertificateKey
+.PARAMETER PrivateKeyPath
     A key file to be paired with a PEM certificate file referenced in Certificate
 
 .PARAMETER CertificateThumbprint
@@ -2569,6 +2569,9 @@ function New-PodeAuthKeyTab {
 
 .PARAMETER CertificateStoreLocation
     The location of a certifcate store where a certificate can be found (Default: CurrentUser) (Windows).
+
+.PARAMETER SelfSigned
+    Create and bind a self-signed CodeSigning ECSDA 384 Certificate.
 
 .PARAMETER X509Certificate
     The raw X509 certificate used for RSA or ECDSA verification.
@@ -2595,7 +2598,7 @@ function New-PodeAuthBearerScheme {
         [string]
         $BearerTag,
 
-        [ValidateSet('Header', 'Query','Body')]
+        [ValidateSet('Header', 'Query', 'Body')]
         [string]
         $Location = 'Header',
 
@@ -2621,7 +2624,7 @@ function New-PodeAuthBearerScheme {
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [string]
-        $CertificateKey = $null,
+        $PrivateKeyPath = $null,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [SecureString]
@@ -2649,20 +2652,26 @@ function New-PodeAuthBearerScheme {
         [X509Certificate]
         $X509Certificate = $null,
 
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertSelf')]
+        [switch]
+        $SelfSigned,
+
         [Parameter(Mandatory = $false, ParameterSetName = 'CertRaw')]
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [Parameter(Mandatory = $false, ParameterSetName = 'CertName')]
         [Parameter(Mandatory = $false, ParameterSetName = 'CertThumb')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertSelf')]
         [ValidateSet('Pkcs1V15', 'Pss')]
         [string]
         $RsaPaddingScheme = 'Pkcs1V15',
 
         # Mode for verifying the JWT claims if AsJWT is used
-        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_HS')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertName')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertThumb')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertRaw')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertSelf')]
         [ValidateSet('Strict', 'Moderate', 'Lenient')]
         [string]
         $JwtVerificationMode = 'Lenient'
@@ -2682,7 +2691,7 @@ function New-PodeAuthBearerScheme {
             if (!(Test-Path -Path $Certificate -PathType Leaf)) {
                 throw ($PodeLocale.pathNotExistExceptionMessage -f $Certificate)
             }
-            $X509Certificate = Get-PodeCertificateByFile -Certificate $Certificate -SecurePassword $CertificatePassword -Key $CertificateKey
+            $X509Certificate = Get-PodeCertificateByFile -Certificate $Certificate -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath
             break
         }
 
@@ -2707,6 +2716,12 @@ function New-PodeAuthBearerScheme {
             break
         }
 
+        'CertSelf' {
+            $X509Certificate = New-PodeSelfSignedCertificate -CommonName 'JWT Signing Certificate' `
+                -KeyType ECDSA -KeyLength 384 -CertificatePurpose CodeSigning
+            break
+        }
+
         'Bearer_NONE' {
             # Use the 'NONE' algorithm, meaning no signature check
             $alg = @('NONE')
@@ -2716,8 +2731,15 @@ function New-PodeAuthBearerScheme {
 
     # If an X509 certificate is being used, detect the signing algorithm
     if ($null -ne $X509Certificate) {
+        # Validate the certificate's validity period before proceeding
+        Test-PodeCertificateValidity -Certificate $X509Certificate
+
+        # Ensure the certificate is authorized for the expected purpose
+        Test-PodeCertificateRestriction -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict
+
         # Retrieve appropriate JWT algorithms (e.g., RS256, ES256) from the provided certificate
         $alg = @( Get-PodeJwtSigningAlgorithm -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme )
+
     }
 
     # Return the Bearer authentication scheme configuration as a hashtable

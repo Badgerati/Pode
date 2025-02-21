@@ -99,7 +99,7 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-     # Define the key storage path
+    # Define the key storage path
     $certsPath = Join-Path -Path $ScriptPath -ChildPath 'certs'
 
     $JwtVerificationMode = 'Lenient'  # Set your desired verification mode (Lenient or Strict)
@@ -110,80 +110,99 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
         Exit
     }
 
-    $privateKeys = Get-ChildItem -Path $CertsPath -Filter '*.pfx'
-
-    # $privateKeys += Get-ChildItem -Path $CertsPath -Filter  '*-private-encrypted.pem'
-
-    foreach ($privateKeyFile in $privateKeys) {
-        if ($privateKeyFile.Name.Contains('-no-pass.pfx')) {
-            # Extract algorithm name from file name
-            $alg = $privateKeyFile.Name -replace '-no-pass.pfx', ''
-
-            $securePassword = $null
+    $certificateTypes = @{
+        'RS256' = @{
+            KeyType   = 'RSA'
+            KeyLength = 2048
         }
-        else {
-            # Extract algorithm name from file name
-            $alg = $privateKeyFile.Name -replace '.pfx', '-pwd'
+        'RS384' = @{
+            KeyType   = 'RSA'
+            KeyLength = 3072
+        }
+        'RS512' = @{
+            KeyType   = 'RSA'
+            KeyLength = 4096
+        }
+        'PS256' = @{
+            KeyType   = 'RSA'
+            KeyLength = 2048
+        }
+        'PS384' = @{
+            KeyType   = 'RSA'
+            KeyLength = 3072
+        }
+        'PS512' = @{
+            KeyType   = 'RSA'
+            KeyLength = 4096
+        }
+        'ES256' = @{
+            KeyType   = 'ECDSA'
+            KeyLength = 256
+        }
+        'ES384' = @{
+            KeyType   = 'ECDSA'
+            KeyLength = 384
+        }
+        'ES512' = @{
+            KeyType   = 'ECDSA'
+            KeyLength = 521
+        }
+    }
 
-            $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText
+    if (!(Test-Path -Path "$(Get-PodeServerPath)/cert" -PathType Container)) {
+        New-Item -Path "$(Get-PodeServerPath)/cert" -ItemType Directory
+    }
+    foreach ($alg in $certificateTypes.Keys) {
+        $x509Certificate = New-PodeSelfSignedCertificate -Loopback -KeyType $certificateTypes[$alg].KeyType -KeyLength $certificateTypes[$alg].KeyLength -CertificatePurpose CodeSigning -Ephemeral -Exportable
+
+        Export-PodeCertificate -Certificate $x509Certificate -Format PFX -FilePath "$(Get-PodeServerPath)/cert/$alg"
+        # Define the authentication location dynamically (e.g., `/auth/bearer/jwt/{algorithm}`)
+        $pathRoute = "/auth/bearer/jwt/$alg"
+        # Register Pode Bearer Authentication
+        Write-PodeHost "🔹 Registering JWT Authentication for: $alg ($Location)"
+
+        $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
+
+        $param = @{
+            Location            = $Location
+            AsJWT               = $true
+            RsaPaddingScheme    = $rsaPaddingScheme
+            JwtVerificationMode = $JwtVerificationMode
+            X509Certificate     = $x509Certificate
         }
 
-        while ($true) {
-            # Define the authentication location dynamically (e.g., `/auth/bearer/jwt/{algorithm}`)
-            $pathRoute = "/auth/bearer/jwt/$alg"
-            # Register Pode Bearer Authentication
-            Write-PodeHost "🔹 Registering JWT Authentication for: $alg ($Location)"
+        New-PodeAuthBearerScheme  @param |
+            Add-PodeAuth -Name "Bearer_JWT_$alg" -Sessionless -ScriptBlock {
+                param($jwt)
 
-            $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
-
-            $param = @{
-                Location            = $Location
-                AsJWT               = $true
-                RsaPaddingScheme    = $rsaPaddingScheme
-                JwtVerificationMode = $JwtVerificationMode
-                Certificate         = $privateKeyFile.FullName
-                CertificatePassword = $securePassword
-            }
-
-            New-PodeAuthBearerScheme @param |
-                Add-PodeAuth -Name "Bearer_JWT_$alg" -Sessionless -ScriptBlock {
-                    param($jwt)
-
-                    # here you'd check a real user storage, this is just for example
-                    if ($jwt.username -ieq 'morty') {
-                        return @{
-                            User = @{
-                                ID   = $jWt.id
-                                Name = $jst.name
-                                Type = $jst.type
-                            }
+                # here you'd check a real user storage, this is just for example
+                if ($jwt.username -ieq 'morty') {
+                    return @{
+                        User = @{
+                            ID   = $jWt.id
+                            Name = $jst.name
+                            Type = $jst.type
                         }
                     }
-
-                    return $null
                 }
 
-            # GET request to get list of users (since there's no session, authentication will always happen)
-            Add-PodeRoute -Method Get -Path $pathRoute -Authentication "Bearer_JWT_$alg" -ScriptBlock {
+                return $null
+            }
 
-                Write-PodeJsonResponse -Value @{
-                    Users = @(
-                        @{
-                            Name = 'Deep Thought'
-                            Age  = 42
-                        },
-                        @{
-                            Name = 'Leeroy Jenkins'
-                            Age  = 1337
-                        }
-                    )
-                }
-            }
-            if ($alg.StartsWith('RS')) {
-                $alg = $alg.Replace('RS', 'PS')
-            }
-            else {
-                break
+        # GET request to get list of users (since there's no session, authentication will always happen)
+        Add-PodeRoute -Method Get -Path $pathRoute -Authentication "Bearer_JWT_$alg" -ScriptBlock {
+
+            Write-PodeJsonResponse -Value @{
+                Users = @(
+                    @{
+                        Name = 'Deep Thought'
+                        Age  = 42
+                    },
+                    @{
+                        Name = 'Leeroy Jenkins'
+                        Age  = 1337
+                    }
+                )
             }
         }
     }
@@ -225,4 +244,11 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
         }
     }
 
+
+    Register-PodeEvent -Type Stop -Name 'CleanCerts' -ScriptBlock {
+        if ( (Test-Path -Path "$(Get-PodeServerPath)/cert" -PathType Container)) {
+            Remove-Item -Path "$(Get-PodeServerPath)/cert" -Recurse -Force
+            Write-PodeHost "$(Get-PodeServerPath)/cert removed."
+        }
+    }
 }

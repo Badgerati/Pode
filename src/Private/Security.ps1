@@ -134,6 +134,62 @@ function Test-PodeCsrfConfigured {
     return (!(Test-PodeIsEmpty $PodeContext.Server.Cookies.Csrf))
 }
 
+
+<#
+.SYNOPSIS
+  Loads an X.509 certificate from a file (PFX, PEM, or CER), optionally decrypting it with a password.
+
+.DESCRIPTION
+  This function reads an X.509 certificate from a file and loads it as an X509Certificate2 object.
+  It supports:
+    - PFX (PKCS#12) certificates with optional password decryption.
+    - PEM certificates with a separate private key file.
+    - CER (DER or Base64-encoded) certificates (public key only).
+
+  It applies the appropriate key storage flags depending on the operating system and
+  ensures compatibility with Pode’s certificate handling utilities.
+
+.PARAMETER Certificate
+  The file path to the certificate (.pfx, .pem, or .cer) to load.
+
+.PARAMETER Password
+  A plaintext password for decrypting the certificate (only applicable for PFX files).
+
+.PARAMETER SecurePassword
+  A secure string containing the password for decrypting the certificate (only applicable for PFX files).
+
+.PARAMETER PrivateKeyPath
+  The path to a separate private key file (only applicable for PEM certificates).
+  Required if the PEM certificate does not contain the private key.
+
+.PARAMETER Persistent
+  If specified, the certificate will be imported with an **exportable** private key,
+  allowing it to be saved and reused across sessions.
+
+  If not specified, the certificate will be imported **ephemerally**, meaning the
+  private key will exist **only in memory** and will be lost when the process exits.
+
+.OUTPUTS
+  [System.Security.Cryptography.X509Certificates.X509Certificate2]
+  Returns an X.509 certificate object.
+
+.EXAMPLE
+  $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.pfx" -SecurePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force)
+  Loads a PFX certificate with a password.
+
+.EXAMPLE
+  $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.pem" -PrivateKeyPath "C:\Certs\mykey.pem"
+  Loads a PEM certificate with a separate private key.
+
+.EXAMPLE
+  $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.cer"
+  Loads a CER certificate (public key only).
+
+.NOTES
+  - CER files do not contain private keys and cannot be decrypted with a password.
+  - PEM certificates may require a separate private key file.
+  - Uses EphemeralKeySet storage on non-macOS platforms for security.
+#>
 function Get-PodeCertificateByFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -150,32 +206,43 @@ function Get-PodeCertificateByFile {
 
         [Parameter()]
         [string]
-        $Key = $null
+        $PrivateKeyPath = $null,
+
+        [Parameter()]
+        [switch]
+        $Persistent
     )
 
     # cert + key
-    if (![string]::IsNullOrWhiteSpace($Key)) {
-        return (Get-PodeCertificateByPemFile -Certificate $Certificate -Password $Password -SecurePassword $SecurePassword -Key $Key)
+    if (![string]::IsNullOrWhiteSpace($PrivateKeyPath)) {
+        return (Get-PodeCertificateByPemFile -Certificate $Certificate -Password $Password -SecurePassword $SecurePassword -PrivateKeyPath $PrivateKeyPath)
     }
+
 
     $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
 
     # read the cert bytes from the file to avoid the use of obsolete constructors
     $certBytes = [System.IO.File]::ReadAllBytes($path)
-    $flags = if ($IsMacOS) {
+
+    $flags = if ($Persistent) {
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
+    }
+    elseif ($IsMacOS) {
         [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
     }
     else {
         [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
     }
-    if ($null -ne $SecurePassword) {
-        return [X509Certificates.X509Certificate2]::new($certBytes, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $flags)
+ 
+    if ( [System.IO.Path]::GetExtension($path).ToLower() -eq '.pfx') {
+        if ($null -ne $SecurePassword) {
+            return [X509Certificates.X509Certificate2]::new($certBytes, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $flags)
+        }
+        # cert + password
+        if (![string]::IsNullOrWhiteSpace($Password)) {
+            return [X509Certificates.X509Certificate2]::new($certBytes, $Password, $flags)
+        }
     }
-    # cert + password
-    if (![string]::IsNullOrWhiteSpace($Password)) {
-        return [X509Certificates.X509Certificate2]::new($certBytes, $Password, $flags)
-    }
-
     # plain cert
     return [X509Certificates.X509Certificate2]::new($certBytes, $null, $flags)
 }
@@ -196,13 +263,13 @@ function Get-PodeCertificateByPemFile {
 
         [Parameter()]
         [string]
-        $Key = $null
+        $PrivateKeyPath = $null
     )
 
     $cert = $null
 
     $certPath = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
-    $keyPath = Get-PodeRelativePath -Path $Key -JoinRoot -Resolve
+    $keyPath = Get-PodeRelativePath -Path $PrivateKeyPath -JoinRoot -Resolve
 
     # pem's kinda work in .NET3/.NET5
     if ([version]$PSVersionTable.PSVersion -ge [version]'7.0.0') {
@@ -409,7 +476,7 @@ function Get-PodeCertificateByName {
         -StoreLocation $StoreLocation
 }
 
-function New-PodeSelfSignedCertificate {
+function New-PodeSelfSignedCertificate2 {
     $sanBuilder = [X509Certificates.SubjectAlternativeNameBuilder]::new()
     $null = $sanBuilder.AddIpAddress([ipaddress]::Loopback)
     $null = $sanBuilder.AddIpAddress([ipaddress]::IPv6Loopback)

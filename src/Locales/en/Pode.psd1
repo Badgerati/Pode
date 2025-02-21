@@ -341,4 +341,9 @@
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT certificate authentication is supported only in PowerShell 7.0 or greater.'
     jwtNoExpirationExceptionMessage                                   = 'The JWT is missing the required expiration time (exp) claim. A valid expiration time is required.'
     bearerTokenAuthMethodNotSupportedExceptionMessage                 = 'Bearer token authentication using the request body is only supported with HTTP PUT, POST, or PATCH methods.'
+    certificateNotValidYetExceptionMessage                            = 'Certificate {0} is NOT valid yet. Valid from: {1} (UTC)'
+    certificateNotValidForPurposeExceptionMessage                     = "Certificate is NOT valid for '{0}'. Found purposes: {1}"
+    certificateUnknownEkusStrictModeExceptionMessage                  = 'Certificate contains unknown EKUs. Strict mode rejects it. Found: {0}'
+    failedToCreateCertificateRequestExceptionMessage                  = 'Failed to generate a certificate request.'
+    unsupportedCertificateKeyLengthExceptionMessage                   = 'Unsupported certificate key length: {0} bits. Please use a supported key length.'
 }

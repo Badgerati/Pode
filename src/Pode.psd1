@@ -256,9 +256,6 @@
         'Add-PodeAuthMiddleware',
         'Add-PodeAuthIIS',
         'Add-PodeAuthUserFile',
-        'ConvertTo-PodeJwt',
-        'ConvertFrom-PodeJwt',
-        'Test-PodeJwt',
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
         'Test-PodeAuthUser',
@@ -270,7 +267,19 @@
         'New-PodeAuthKeyTab',
         'New-PodeAuthBearerScheme',
         'New-PodeAuthDigestScheme',
+
+        #JWT
+        'ConvertTo-PodeJwt',
+        'ConvertFrom-PodeJwt',
+        'Test-PodeJwt',
         'Update-PodeJwt',
+
+        #Certificate
+        'Export-PodeCertificate',
+        'Get-PodeCertificatePurpose',
+        'Import-PodeCertificate',
+        'New-PodeCertificateRequest',
+        'New-PodeSelfSignedCertificate',
 
         # access
         'New-PodeAccessScheme',

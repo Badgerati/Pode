@@ -341,4 +341,9 @@
     jwtCertificateAuthNotSupportedExceptionMessage                    = "L'authentification par certificat JWT est prise en charge uniquement à partir de PowerShell 7.0."
     jwtNoExpirationExceptionMessage                                   = "Le JWT ne contient pas la revendication obligatoire 'exp' (Expiration). Une expiration valide est requise."
     bearerTokenAuthMethodNotSupportedExceptionMessage                 = "L'authentification par jeton Bearer via le corps de la requête est prise en charge uniquement avec les méthodes HTTP PUT, POST ou PATCH."
+    certificateNotValidYetExceptionMessage                            = "Le certificat {0} n'est PAS encore valide. Valide à partir du : {1} (UTC)"
+    certificateNotValidForPurposeExceptionMessage                     = "Le certificat n'est PAS valide pour '{0}'. Objectifs trouvés : {1}"
+    certificateUnknownEkusStrictModeExceptionMessage                  = 'Le certificat contient des EKUs inconnus. Le mode strict le rejette. Trouvé : {0}'
+    failedToCreateCertificateRequestExceptionMessage                  = 'Échec de la génération de la demande de certificat.'
+    unsupportedCertificateKeyLengthExceptionMessage                   = 'Longueur de clé de certificat non prise en charge : {0} bits. Veuillez utiliser une longueur de clé prise en charge.'
 }

@@ -105,7 +105,7 @@ function Test-User {
 Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
 
     # listen on localhost:8081
-    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8043 -Protocol Https -SelfSigned
 
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -130,53 +130,16 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
     Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor'
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
 
-    # Define the key storage path
-    $certsPath = Join-Path -Path $ScriptPath -ChildPath 'certs'
 
-    $JwtVerificationMode = 'Lenient'  # Set your desired verification mode (Lenient or Strict)
+    $JwtVerificationMode =  'Strict'  # Set your desired verification mode (Lenient or Strict)
+     # $SecurePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
 
-    # Ensure the directory exists
-    if (! (Test-Path $CertsPath)) {
-        throw "Certificate folder '$CertsPath' does not exist."
+    $param = @{
+        Location            = $Location
+        AsJWT               = $true
+        JwtVerificationMode = $JwtVerificationMode
+        SelfSigned          = $true
     }
-
-    # $SecurePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
-
-    if (Test-PodeIsPSCore) {
-        $certificate = join-path -path $CertsPath -ChildPath "$Algorithm.pem"
-        if (! (Test-Path $certificate)) {
-            throw "Key file '$certificate' does not exist."
-
-        }
-        #$certificateKey = join-path -path $CertsPath -ChildPath "$Algorithm-private-encrypted.pem"
-        $certificateKey = join-path -path $CertsPath -ChildPath "$Algorithm-private.pem"
-        if (! (Test-Path $certificateKey)) {
-            throw "Key file '$certificateKey' does not exist."
-
-        }
-        $param = @{
-            Location            = $Location
-            AsJWT               = $true
-            JwtVerificationMode = $JwtVerificationMode
-            Certificate         = $certificate
-            CertificateKey      = $certificateKey
-            #  CertificatePassword = $securePassword
-        }
-    }
-    else {
-        $certificate = join-path -path $CertsPath -ChildPath "$Algorithm.pfx"
-        if (! (Test-Path $certificate)) {
-            throw "Key file '$certificate' does not exist."
-        }
-        $param = @{
-            Location            = $Location
-            AsJWT               = $true
-            JwtVerificationMode = $JwtVerificationMode
-            Certificate         = $certificate
-            #  CertificatePassword = $securePassword
-        }
-    }
-
     # Register Pode Bearer Authentication
     New-PodeAuthBearerScheme @param |
         Add-PodeAuth -Name "Bearer_JWT_$Algorithm" -Sessionless -ScriptBlock {

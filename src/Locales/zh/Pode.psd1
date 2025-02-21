@@ -341,4 +341,9 @@
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT 证书身份验证仅支持 PowerShell 7.0 或更高版本。'
     jwtNoExpirationExceptionMessage                                   = "JWT 缺少必要的 'exp' (到期时间) 声明。必须提供有效的到期时间。"
     bearerTokenAuthMethodNotSupportedExceptionMessage                 = '使用请求正文进行Bearer令牌认证仅支持HTTP PUT、POST或PATCH方法。'
+    certificateNotValidYetExceptionMessage                            = '证书 {0} 仍然无效。有效期开始: {1} (UTC)'
+    certificateNotValidForPurposeExceptionMessage                     = "证书对 '{0}' 无效。发现的用途: {1}"
+    certificateUnknownEkusStrictModeExceptionMessage                  = '证书包含未知的 EKU。严格模式拒绝它。发现: {0}'
+    failedToCreateCertificateRequestExceptionMessage                  = '生成证书请求失败。'
+    unsupportedCertificateKeyLengthExceptionMessage                   = '不支持的证书密钥长度: {0} 位。请使用受支持的密钥长度。'
 }

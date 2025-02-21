@@ -340,5 +340,10 @@
     unknownAlgorithmWithKeySizeExceptionMessage                       = '未知の {0} アルゴリズム（キーサイズ: {1} ビット）。'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT 証明書認証は PowerShell 7.0 以上でのみサポートされています。'
     jwtNoExpirationExceptionMessage                                   = "JWTに有効期限がありません。'exp'（有効期限）クレームが必要です。"
-    bearerTokenAuthMethodNotSupportedExceptionMessage = "リクエスト本文を使用したBearerトークン認証は、HTTP PUT、POST、PATCHメソッドでのみサポートされています。"
+    bearerTokenAuthMethodNotSupportedExceptionMessage                 = 'リクエスト本文を使用したBearerトークン認証は、HTTP PUT、POST、PATCHメソッドでのみサポートされています。'
+    certificateNotValidYetExceptionMessage                            = '証明書 {0} はまだ有効ではありません。有効開始日: {1} (UTC)'
+    certificateNotValidForPurposeExceptionMessage                     = "証明書は '{0}' に対して有効ではありません。検出された目的: {1}"
+    certificateUnknownEkusStrictModeExceptionMessage                  = '証明書に不明な EKU が含まれています。厳格モードでは拒否されます。検出された値: {0}'
+    failedToCreateCertificateRequestExceptionMessage                  = '証明書リクエストの生成に失敗しました。'
+    unsupportedCertificateKeyLengthExceptionMessage                   = 'サポートされていない証明書キー長: {0} ビット。サポートされているキー長を使用してください。'
 }

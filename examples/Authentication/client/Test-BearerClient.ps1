@@ -66,7 +66,7 @@ try {
     }
 
     # Define the key storage path
-    $certsPath = Join-Path -Path $podePath -ChildPath '/examples/certs'
+    $certsPath = Join-Path -Path $podePath -ChildPath 'examples/Authentication/cert'
 }
 catch { throw }
 
@@ -80,89 +80,67 @@ if (-Not (Test-Path $certsPath)) {
     Exit
 }
  
-'Password', 'noPassword' | ForEach-Object {
-    $algorithms = 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512'
-    #  $algorithms = 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512'
-    foreach ($alg in $algorithms) {
-        Write-Output '-----------------------------------------------'
-        Write-Output "Testing Algorithm: $alg"
-        if ($_ -eq 'noPassword') {          
-            $privateKeyPath = if ($alg.StartsWith('PS')) {
-                "$certsPath/$($alg.Replace('PS','RS'))-no-pass.pfx"
-                $rsaPaddingScheme = 'Pss'
-            }
-            else {
-                "$certsPath/$alg-no-pass.pfx"
-                $rsaPaddingScheme = 'Pkcs1V15'
-            } 
-        }
-        else {
-            $securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
-            $privateKeyPath = if ($alg.StartsWith('PS')) {
-                "$certsPath/$($alg.Replace('PS','RS')).pfx"
-                $rsaPaddingScheme = 'Pss'
-            }
-            else {
-                "$certsPath/$alg.pfx"
-                $rsaPaddingScheme = 'Pkcs1V15'
-            }
-        }
+ 
+$algorithms = 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512'
+#  $algorithms = 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512'
+foreach ($alg in $algorithms) {
+    Write-Output '-----------------------------------------------'
+    Write-Output "Testing Algorithm: $alg"
+                
+   
+    #$securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
+    $privateKeyPath = "$certsPath/$alg.pfx"
+    $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 
+        'Pss'
+    }
+    else {
+        'Pkcs1V15'
+    }
+    
    
 
-        if (-Not (Test-Path $privateKeyPath)) {
-            Write-Warning "Skipping $($alg): Private key file not found ($privateKeyPath)"
-            Continue
-        }
-
-        Write-Output "Loading Private Key: $privateKeyPath"
-
-        Write-Output "Generating JWT for $alg..."
-
-        try {
-            if ($_ -eq 'Password') {
-                $jwt = ConvertTo-PodeJwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -CertificatePassword $securePassword -Payload @{
-                    id       = 'id'
-                    name     = 'Morty'
-                    Type     = 'Human'
-                    username = 'morty'
-                }                 
-                ConvertFrom-PodeJwt -Token $jwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -CertificatePassword $securePassword
-                $apiUrl = "$ApiBaseUrl/$alg-pwd"
-            }
-            else {
-                $jwt = ConvertTo-PodeJwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -Payload @{
-                    id       = 'id'
-                    name     = 'Morty'
-                    Type     = 'Human'
-                    username = 'morty'
-                } 
-                ConvertFrom-PodeJwt -Token $jwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme  
-                $apiUrl = "$ApiBaseUrl/$alg"
-            }
-        }
-        catch {
-            Write-Error "JWT generation failed for $($alg): $_"
-            Continue
-        }
-        Write-Output "JWT successfully generated for $alg"
-
-        $headers = @{
-            'Authorization' = "Bearer $jwt"
-            'Accept'        = 'application/json'
-        }
- 
-        Write-Output "Sending request to: $apiUrl"
-
-        try {
-            $response = Invoke-RestMethod -Uri $apiUrl -Method Get -Headers $headers
-            Write-Output "Response for $($alg): $($response | ConvertTo-Json -Depth 2)"
-        }
-        catch {
-            Write-Error "API request failed for $($alg): $_"
-        }
-
-        Write-Output 'Waiting 3 seconds before next test...'
-        Start-Sleep 3
+    if (-Not (Test-Path $privateKeyPath)) {
+        Write-Warning "Skipping $($alg): Private key file not found ($privateKeyPath)"
+        Continue
     }
+
+
+    Write-Output "Generating JWT for $alg..."
+
+    try { 
+        $jwt = ConvertTo-PodeJwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -Payload @{
+            id       = 'id'
+            name     = 'Morty'
+            Type     = 'Human'
+            username = 'morty'
+        } 
+        ConvertFrom-PodeJwt -Token $jwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme  
+        $apiUrl = "$ApiBaseUrl/$alg"
+         
+    }
+    catch {
+        Write-Error "JWT generation failed for $($alg): $_"
+        Continue
+    }
+    Write-Output "JWT successfully generated for $alg"
+
+    $headers = @{
+        'Authorization' = "Bearer $jwt"
+        'Accept'        = 'application/json'
+    }
+ 
+    Write-Output "Sending request to: $apiUrl"
+
+    try {
+        $response = Invoke-RestMethod -Uri $apiUrl -Method Get -Headers $headers
+        Write-Output "Response for $($alg): $($response | ConvertTo-Json -Depth 2)"
+    }
+    catch {
+        Write-Error "API request failed for $($alg): $_"
+    }
+
+    Write-Output 'Waiting 3 seconds before next test...'
+    Start-Sleep 3
 }
+ 
 Write-Output 'All JWT authentication tests completed!'

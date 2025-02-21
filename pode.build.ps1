@@ -989,29 +989,7 @@ function New-SelfSignedCert {
 }
 
 
-function Export-EcdsaPublicKeyPem {
-    param ([System.Security.Cryptography.ECDsa]$EcdsaKey)
-    if ($PSVersionTable.PSVersion.Major -ge 7) {
-        return $EcdsaKey.ExportSubjectPublicKeyInfoPem()
-    }
-    $pemHeader = '-----BEGIN PUBLIC KEY-----'
-    $pemFooter = '-----END PUBLIC KEY-----'
-    $base64 = [Convert]::ToBase64String($EcdsaKey.ExportSubjectPublicKeyInfo(), 'InsertLineBreaks')
-    return "$pemHeader`n$base64`n$pemFooter"
-}
-
-
-function Export-RsaPublicKeyPem {
-    param ([System.Security.Cryptography.RSA]$RsaKey)
-    if ($PSVersionTable.PSVersion.Major -ge 7) {
-        return $RsaKey.ExportRSAPublicKeyPem()
-    }
-    $pemHeader = '-----BEGIN PUBLIC KEY-----'
-    $pemFooter = '-----END PUBLIC KEY-----'
-    $base64 = [Convert]::ToBase64String($RsaKey.ExportRSAPublicKey(), 'InsertLineBreaks')
-    return "$pemHeader`n$base64`n$pemFooter"
-}
-function Export-PrivateKeyPem {
+function Export-PodePrivateKeyPem {
     param (
         [System.Security.Cryptography.AsymmetricAlgorithm]$Key,
         [string]$Password
@@ -1440,14 +1418,14 @@ Add-BuildTask CreateCerts  CleanCerts, {
         }
 
         # Keys File paths
-        $privateKeyTestsPath = "$BaseOutputTestsPath/$alg-private.pem"
+        $privateKeyTestsPath = "$BaseOutputTestsPath/$alg.key"
         $publicKeyTestsPath = "$BaseOutputTestsPath/$alg-public.pem"
-        $privateKeyExamplesPath = "$BaseOutputExamplesPath/$alg-private.pem"
+        $privateKeyExamplesPath = "$BaseOutputExamplesPath/$alg.key"
         $publicKeyExamplesPath = "$BaseOutputExamplesPath/$alg-public.pem"
 
         # Paths for encrypted keys
-        $privateKeyTestsEncPath = "$BaseOutputTestsPath/$alg-private-encrypted.pem"
-        $privateKeyExamplesEncPath = "$BaseOutputExamplesPath/$alg-private-encrypted.pem"
+        $privateKeyTestsEncPath = "$BaseOutputTestsPath/$alg-encrypted.key"
+        $privateKeyExamplesEncPath = "$BaseOutputExamplesPath/$alg-encrypted.key"
 
         # Paths for PFX files
         $pfxTestsPath = "$BaseOutputTestsPath/$alg.pfx"
@@ -1478,19 +1456,16 @@ Add-BuildTask CreateCerts  CleanCerts, {
                 $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
 
                 # Generate unencrypted private key
-                $privatePem = Export-PrivateKeyPem $privateKey
+                $privatePem = Export-PodePrivateKeyPem $privateKey
                 Set-Content -Path $privateKeyTestsPath -Value $privatePem
                 Set-Content -Path $privateKeyExamplesPath -Value $privatePem
 
                 # Generate encrypted private key
-                $privatePemEnc = Export-PrivateKeyPem $privateKey -Password $SecurePassword
+                $privatePemEnc = Export-PodePrivateKeyPem $privateKey -Password $SecurePassword
                 Set-Content -Path $privateKeyTestsEncPath -Value $privatePemEnc
                 Set-Content -Path $privateKeyExamplesEncPath -Value $privatePemEnc
 
-                # Generate public key
-                $publicPem = Export-RsaPublicKeyPem $rsa
-                Set-Content -Path $publicKeyTestsPath -Value $publicPem
-                Set-Content -Path $publicKeyExamplesPath -Value $publicPem
+
 
                 $certPem = "-----BEGIN CERTIFICATE-----`n" +
                 [Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks') +
@@ -1519,19 +1494,14 @@ Add-BuildTask CreateCerts  CleanCerts, {
             if ($PSVersionTable.PSVersion.Major -ge 7) {
                 $privateKey = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::GetECDsaPrivateKey($cert)
                 # Generate unencrypted private key
-                $privatePem = Export-PrivateKeyPem $privateKey
+                $privatePem = Export-PodePrivateKeyPem $privateKey
                 Set-Content -Path $privateKeyTestsPath -Value $privatePem
                 Set-Content -Path $privateKeyExamplesPath -Value $privatePem
 
                 # Generate encrypted private key
-                $privatePemEnc = Export-PrivateKeyPem $privateKey -Password $SecurePassword
+                $privatePemEnc = Export-PodePrivateKeyPem $privateKey -Password $SecurePassword
                 Set-Content -Path $privateKeyTestsEncPath -Value $privatePemEnc
                 Set-Content -Path $privateKeyExamplesEncPath -Value $privatePemEnc
-
-                # Generate public key
-                $publicPem = Export-EcdsaPublicKeyPem $privateKey
-                Set-Content -Path $publicKeyTestsPath -Value $publicPem
-                Set-Content -Path $publicKeyExamplesPath -Value $publicPem
 
                 $certPem = "-----BEGIN CERTIFICATE-----`n" +
                 [Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks') +

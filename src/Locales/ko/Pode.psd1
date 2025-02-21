@@ -341,4 +341,9 @@
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'JWT 인증서 인증은 PowerShell 7.0 이상에서만 지원됩니다.'
     jwtNoExpirationExceptionMessage                                   = "JWT에 'exp' (만료 시간) 클레임이 없습니다. 유효한 만료 시간이 필요합니다."
     bearerTokenAuthMethodNotSupportedExceptionMessage                 = '요청 본문을 사용한 Bearer 토큰 인증은 HTTP PUT, POST, PATCH 메서드에서만 지원됩니다.'
+    certificateNotValidYetExceptionMessage                            = '인증서 {0}는 아직 유효하지 않습니다. 유효 기간 시작: {1} (UTC)'
+    certificateNotValidForPurposeExceptionMessage                     = "인증서는 '{0}'에 대해 유효하지 않습니다. 발견된 용도: {1}"
+    certificateUnknownEkusStrictModeExceptionMessage                  = '인증서에 알 수 없는 EKU가 포함되어 있습니다. 엄격한 모드에서 거부되었습니다. 발견된 값: {0}'
+    failedToCreateCertificateRequestExceptionMessage                  = '인증서 요청 생성에 실패했습니다.'
+    unsupportedCertificateKeyLengthExceptionMessage                   = '지원되지 않는 인증서 키 길이: {0}비트. 지원되는 키 길이를 사용하세요.'
 }

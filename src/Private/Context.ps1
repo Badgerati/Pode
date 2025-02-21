@@ -99,7 +99,8 @@ function New-PodeContext {
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
     $ctx.Server.Console = $Console
-    $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName() 
+    $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+    $ctx.Server.Fqdn = [System.Net.Dns]::GetHostEntry($ctx.Server.ComputerName).HostName
     $ctx.Server.ApplicationName = $ApplicationName
 
 
