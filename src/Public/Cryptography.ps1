@@ -1388,7 +1388,7 @@ function New-PodeSelfSignedCertificate {
         )
 
         # Set the friendly name if provided.
-        if ($FriendlyName) {
+        if (![string]::IsNullOrEmpty($FriendlyName) -and (Test-PodeIsWindows)) {
             $cert.FriendlyName = $FriendlyName
         }
 

@@ -99,16 +99,8 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    # Define the key storage path
-    $certsPath = Join-Path -Path $ScriptPath -ChildPath 'certs'
 
     $JwtVerificationMode = 'Lenient'  # Set your desired verification mode (Lenient or Strict)
-
-    # Ensure the directory exists
-    if (-Not (Test-Path $CertsPath)) {
-        Write-Warning "Certificate folder '$CertsPath' does not exist."
-        Exit
-    }
 
     $certificateTypes = @{
         'RS256' = @{
