@@ -138,7 +138,7 @@ namespace Pode
             if (disposing)
             {
                 // Send close frame
-                PodeLogger.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
+                PodeLogger.LogMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
 
                 // Wait for the close frame to be sent
                 Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close).Wait();
