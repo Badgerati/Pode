@@ -50,7 +50,7 @@ namespace Pode
             Type = PodeProtocolType.Smtp;
         }
 
-        private bool IsCommand(string content, string command)
+        private static bool IsCommand(string content, string command)
         {
             if (string.IsNullOrWhiteSpace(content))
             {
@@ -291,7 +291,7 @@ namespace Pode
             Attachments = new List<PodeSmtpAttachment>();
         }
 
-        private string ParseEmail(string value)
+        private static string ParseEmail(string value)
         {
             var parts = value.Split(':');
             if (parts.Length > 1)
@@ -364,7 +364,7 @@ namespace Pode
             return headers;
         }
 
-        private bool IsBodyValid(string value)
+        private static bool IsBodyValid(string value)
         {
             var lines = value.Split(new string[] { PodeHelpers.NEW_LINE }, StringSplitOptions.None);
             return Array.LastIndexOf(lines, ".") > -1;
@@ -423,7 +423,7 @@ namespace Pode
             }
         }
 
-        private string ParseBody(string value, string boundary = null)
+        private static string ParseBody(string value, string boundary = null)
         {
             // split the message up
             var lines = value.Split(new string[] { PodeHelpers.NEW_LINE }, StringSplitOptions.None);
@@ -455,7 +455,7 @@ namespace Pode
             return body;
         }
 
-        private byte[] ConvertBodyEncoding(string body, string contentEncoding)
+        private static byte[] ConvertBodyEncoding(string body, string contentEncoding)
         {
             switch (contentEncoding.ToLowerInvariant())
             {
@@ -476,7 +476,7 @@ namespace Pode
             }
         }
 
-        private string ConvertBodyType(byte[] bytes, string contentType)
+        private static string ConvertBodyType(byte[] bytes, string contentType)
         {
             if (bytes == default(byte[]) || bytes.Length == 0)
             {
@@ -516,20 +516,33 @@ namespace Pode
             }
         }
 
-        public override void Dispose()
+        /// <summary>
+        /// Dispose managed and unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">Indicates if the method is called explicitly or by garbage collection.</param>
+        protected override void Dispose(bool disposing)
         {
-            RawBody = default;
-            Body = string.Empty;
-
-            if (Attachments != default(List<PodeSmtpAttachment>))
+            if (IsDisposed) return;
+            
+            if (disposing)
             {
-                foreach (var attachment in Attachments)
+                // Custom cleanup logic for PodeSmtpRequest
+                RawBody = default;
+                Body = string.Empty;
+
+                if (Attachments != null)
                 {
-                    attachment.Dispose();
+                    foreach (var attachment in Attachments)
+                    {
+                        attachment.Dispose();
+                    }
+
+                    Attachments = null;
                 }
             }
 
-            base.Dispose();
+            // Call the base Dispose to clean up other resources
+            base.Dispose(disposing);
         }
     }
 }
