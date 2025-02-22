@@ -46,7 +46,7 @@ Start-PodeServer {
 `New-PodeAuthBearerScheme` supports **JWT authentication** with various security levels and algorithms. Set **`-AsJWT`** to enable JWT validation. Depending on the chosen algorithm, you can specify:
 
 - **HMAC**-based secret keys (`-Secret`)
-- **Certificate**-based parameters (`-Certificate`, `-CertificateThumbprint`, `-CertificateName`, `-X509Certificate`)
+- **Certificate**-based parameters (`-Certificate`, `-CertificateThumbprint`, `-CertificateName`, `-X509Certificate`, `-SelfSigned`)
 - The **RSA padding scheme** (`-RsaPaddingScheme`)
 - The **JWT verification mode** (`-JwtVerificationMode`)
 
@@ -108,17 +108,17 @@ Start-PodeServer {
 }
 ```
 
-Alternatively, you could load an **X509Certificate** object ahead of time (for example, by calling a custom function like `Get-PodeCertificateByFile`), then pass it directly via **`-X509Certificate`**.
+### Self-Signed Certificate Example
+
+For testing purposes or internal deployments, you can use the **`-SelfSigned`** parameter, which automatically generates an **ephemeral self-signed ECDSA certificate** (ES384) for JWT signing. This avoids the need to manually create and manage certificate files.
+
+#### Example:
 
 ```powershell
 Start-PodeServer {
-    $cert = Get-PodeCertificateByFile -Certificate "C:\path\to\cert.pfx" -SecurePassword (ConvertTo-SecureString "CertPass" -AsPlainText -Force)
-
     New-PodeAuthBearerScheme `
         -AsJWT `
-        -X509Certificate $cert `
-        -RsaPaddingScheme 'Pss' `
-        -JwtVerificationMode 'Strict' |
+        -SelfSigned |
     Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
@@ -128,6 +128,32 @@ Start-PodeServer {
     }
 }
 ```
+
+This is equivalent to manually generating a self-signed ECDSA certificate and passing it via `-X509Certificate`:
+
+```powershell
+Start-PodeServer {
+    $x509Certificate = New-PodeSelfSignedCertificate `
+        -CommonName 'JWT Signing Certificate' `
+        -KeyType ECDSA `
+        -KeyLength 384 `
+        -CertificatePurpose CodeSigning `
+        -Ephemeral
+
+    New-PodeAuthBearerScheme `
+        -AsJWT `
+        -X509Certificate $x509Certificate |
+    Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+        param($token)
+
+        # validate JWT and extract user
+
+        return @{ User = $user }
+    }
+}
+```
+
+Using `-SelfSigned` simplifies setup by automatically handling certificate creation and disposal, making it a convenient choice for local development and testing scenarios.
 
 ## Scope Validation
 
@@ -144,6 +170,8 @@ Start-PodeServer {
     }
 }
 ```
+
+
 
 ## Middleware
 
