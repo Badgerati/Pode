@@ -478,6 +478,7 @@ namespace Pode
             {
                 if (InputStream != default(Stream))
                 {
+                    State = PodeStreamState.Closed;
                     InputStream.Dispose();
                     InputStream = default;
                 }
