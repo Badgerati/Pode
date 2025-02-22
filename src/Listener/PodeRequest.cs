@@ -37,8 +37,8 @@ namespace Pode
         public X509Certificate Certificate { get; private set; }
         public bool AllowClientCertificate { get; private set; }
         public PodeTlsMode TlsMode { get; private set; }
-        public X509Certificate2 ClientCertificate { get; private set; }
-        public SslPolicyErrors ClientCertificateErrors { get; private set; }
+        public X509Certificate2 ClientCertificate { get; set; }
+        public SslPolicyErrors ClientCertificateErrors { get; set; }
         public SslProtocols Protocols { get; private set; }
         public PodeRequestException Error { get; set; }
         public bool IsAborted => Error != default(PodeRequestException);
@@ -168,9 +168,9 @@ namespace Pode
             {
                 using (cancellationToken.Register(() =>
                 {
-                    if (ssl != null && !IsDisposed)
+                    if (!IsDisposed)
                     {
-                        ssl.Dispose();
+                        ssl?.Dispose();
                     }
                 }))
                 {
