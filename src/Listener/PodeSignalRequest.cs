@@ -127,19 +127,28 @@ namespace Pode
             return true;
         }
 
-        public override void Dispose()
+        /// <summary>
+        /// Dispose managed and unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">Indicates if the method is called explicitly or by garbage collection.</param>
+        protected override void Dispose(bool disposing)
         {
-            // Check if already disposed to avoid repeated cleanup
-            if (!IsDisposed)
+            if (IsDisposed) return;
+
+            if (disposing)
             {
-                // Log and send the close frame
-                PodeLogger.LogMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
-                _ = Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close);
+                // Send close frame
+                PodeLogger.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
+
+                // Wait for the close frame to be sent
+                Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close).Wait();
+
+                // Remove the client signal
+                Context.Listener.Signals.Remove(Signal.ClientId);
             }
 
-            // remove client, and dispose
-            Context.Listener.Signals.Remove(Signal.ClientId);
-            base.Dispose();
+            // Call the base Dispose to clean up other resources
+            base.Dispose(disposing);
         }
 
     }

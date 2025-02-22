@@ -76,11 +76,23 @@ namespace Pode
             Context.Dispose(true);
         }
 
-        public override void Dispose()
+        /// <summary>
+        /// Dispose managed and unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">Indicates if the method is called explicitly or by garbage collection.</param>
+        protected override void Dispose(bool disposing)
         {
-            RawBody = default;
-            _body = string.Empty;
-            base.Dispose();
+            if (IsDisposed) return;
+            if (disposing)
+            {
+                // Custom cleanup logic for PodeTcpRequest
+                RawBody = default;
+                _body = string.Empty;
+            }
+
+            // Call the base Dispose to clean up other resources
+            base.Dispose(disposing);
         }
+
     }
 }
