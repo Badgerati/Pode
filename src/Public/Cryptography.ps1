@@ -1395,7 +1395,7 @@ function New-PodeSelfSignedCertificate {
         # Export the certificate as a PFX (with a default password; adjust as needed).
         $pfxBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx , $Password)
 
-        if ($Ephemeral) {
+        if ($Ephemeral -and !$IsMacOS) {
             $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
         }
         else {

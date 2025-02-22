@@ -224,7 +224,7 @@ function Get-PodeCertificateByFile {
     # read the cert bytes from the file to avoid the use of obsolete constructors
     $certBytes = [System.IO.File]::ReadAllBytes($path)
 
-    if ($Ephemeral) {
+    if ($Ephemeral -and !$IsMacOS) {
         $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
     }
     else {
