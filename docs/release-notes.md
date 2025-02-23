@@ -1,5 +1,47 @@
 # Release Notes
 
+## v2.12.0
+
+Date: 23rd February 2025
+
+```plain
+### Features
+* #1445: Adds support for Kerberos/NTLM authentication
+* #1461: Adds Disable/Enable functionality, so you can block the server from accepting new requests (thanks @mdaneri!)
+* #1461: Adds Suspend/Resume functionality, so you can pause all runspaces/operations (thanks @mdaneri!)
+
+### Enhancements
+* #1461: Improves console output, and adds more key bindings for more control (thanks @mdaneri!)
+* #1469: Improved Access and Rate Limiting Middleware
+* #1487: Adds support for retrying failed Task processes
+* #1488: Adds support for retrieving the IP address from the X-Forwarded-For header, for Access/Rate Limit rules
+
+### Bugs
+* #1454: Fix OpenAPI Route Parameter Handling in Pode (thanks @mdaneri!)
+* #1460: Fixes ObjectDisposedException in during SSL/TLS operations (thanks @mdaneri!)
+* #1482: Fix for how the content-transfer-encoding SMTP header is extracted
+* #1483: Set initial runspace location to be the Server Root path
+
+### Documentation
+* #1447: Documentation Spelling Fixes (thanks @ArieHein!)
+* #1484: Add documentation for the various Route response type functions
+
+### Packaging
+* #1448: Update PowerShell to 7.2.24 for CI environment due to unavailability of 7.2.19 (thanks @mdaneri!)
+* #1452: Adds PS7.5 workflow (thanks @mdaneri!)
+* #1452: Bumps .NET version to .NET9 (thanks @mdaneri!)
+* #1452: Bumps InvokeBuild to v5.12.0 (thanks @mdaneri!)
+* #1452: Bumps MkDocs to v1.6.1 (thanks @mdaneri!)
+* #1457: Bump Alpine version in Docker image to v3.20
+* #1457: Remove PS7.2 and .NET6 support, as they're EOL now
+* #1486: Bumps PowerShell in Dockerfiles to v7.5
+* #1489: Bumps Pester to v5.7.1 (thanks @mdaneri!)
+* #1490: Bump MkDocs-Material theme to v9.6.4
+
+### Security
+* #1444: Adds VirusTotal package scanning Action
+```
+
 ## v2.11.1
 
 Date: 3rd November 2024
@@ -299,7 +341,7 @@ Date: 22nd June 2022
 * #982: Add * level for errors to enable everything
 
 ### Bugs
-* #956: Fix for importing functionss with inline parameters
+* #956: Fix for importing functions with inline parameters
 * #957: Fix for some OpenAPI properties being dropped
 * #958: Some SMTP attachment boundaries can include double quotes
 * #965: Fix for importing ps1 files
@@ -581,7 +623,7 @@ Date: 19th February 2021
 ```plain
 ### Enhancements
 * #693: Add OperationId OpenAPI support on routes (thanks @glatzert)
-* #698: Add support for Certificate Store Name and Location on `Add-PodeEndoint`
+* #698: Add support for Certificate Store Name and Location on `Add-PodeEndpoint`
 
 ### Bugs
 * #686: Add EndpointName support on `Set-PodeResponseAttachment`
@@ -603,7 +645,7 @@ Date: 3rd February 2021
 * #667: Set the WinIdentity from IIS auth, and add documentation for Kerberos Constrained Delegation (thanks @RobinBeismann!)
 
 ### Bugs
-* #648: Fixes for using global authentcation in OpenAPI and Swagger
+* #648: Fixes for using global authentication in OpenAPI and Swagger
 * #650: Fix for redirecting HTTP to HTTPS on default 80/443 ports
 * #652: Fix for sessions not extending from AJAX requests, or when session data wasn't updated
 * #654: Fix for `-Title` and `-Version` in `Get-PodeOpenApiDefinition` being mandatory
@@ -732,7 +774,7 @@ Date: 24th May 2020
 ### Enhancements
 * #533: Support on states for inclusion/exlcusions when saving, and scopes on states
 * #538: Support to batch log items together before sending them off to be recorded
-* #540: Adds a Ctrl+B shortcutto open the server in the default browser
+* #540: Adds a Ctrl+B shortcut to open the server in the default browser
 * #542: Add new switch to help toggling of Status Page exception message
 * #548: Adds new `Get-PodeSchedule` and `Get-PodeTimer` functions
 * #549: Support for calculating a schedule's next trigger datetime
@@ -1015,7 +1057,7 @@ Date: 28th June 2019
 * #271: Fix in `Convert-PodePathPatternsToRegex` when converting file names - thanks @Fraham!
 
 ### Documentation
-* #284: Notes in documention about referencing JSON payload data in PowerShell 4/5
+* #284: Notes in documentation about referencing JSON payload data in PowerShell 4/5
 ```
 
 ## v0.31.0

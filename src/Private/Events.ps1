@@ -1,18 +1,17 @@
 function Invoke-PodeEvent {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
-        [string]
+        [Pode.PodeServerEventType]
         $Type
     )
 
     # do nothing if no events
-    if (($null -eq $PodeContext.Server.Events) -or ($PodeContext.Server.Events[$Type].Count -eq 0)) {
+    if (($null -eq $PodeContext.Server.Events) -or ($PodeContext.Server.Events[$Type.ToString()].Count -eq 0)) {
         return
     }
 
     # invoke each event's scriptblock
-    foreach ($evt in $PodeContext.Server.Events[$Type].Values) {
+    foreach ($evt in $PodeContext.Server.Events[$Type.ToString()].Values) {
         if (($null -eq $evt) -or ($null -eq $evt.ScriptBlock)) {
             continue
         }

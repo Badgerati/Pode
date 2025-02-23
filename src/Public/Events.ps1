@@ -24,8 +24,7 @@ function Register-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
-        [string]
+        [Pode.PodeServerEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -50,7 +49,7 @@ function Register-PodeEvent {
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add event
-    $PodeContext.Server.Events[$Type][$Name] = @{
+    $PodeContext.Server.Events[$Type.ToString()][$Name] = @{
         Name           = $Name
         ScriptBlock    = $ScriptBlock
         UsingVariables = $usingVars
@@ -78,8 +77,7 @@ function Unregister-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
-        [string]
+        [Pode.PodeServerEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -93,7 +91,7 @@ function Unregister-PodeEvent {
     }
 
     # remove event
-    $null = $PodeContext.Server.Events[$Type].Remove($Name)
+    $null = $PodeContext.Server.Events[$Type.ToString()].Remove($Name)
 }
 
 <#
@@ -116,8 +114,7 @@ function Test-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
-        [string]
+        [Pode.PodeServerEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -125,7 +122,7 @@ function Test-PodeEvent {
         $Name
     )
 
-    return $PodeContext.Server.Events[$Type].Contains($Name)
+    return $PodeContext.Server.Events[$Type.ToString()].Contains($Name)
 }
 
 <#
@@ -148,8 +145,7 @@ function Get-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
-        [string]
+        [Pode.PodeServerEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -157,7 +153,7 @@ function Get-PodeEvent {
         $Name
     )
 
-    return $PodeContext.Server.Events[$Type][$Name]
+    return $PodeContext.Server.Events[$Type.ToString()][$Name]
 }
 
 <#
@@ -177,12 +173,11 @@ function Clear-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
-        [string]
+        [Pode.PodeServerEventType]
         $Type
     )
 
-    $null = $PodeContext.Server.Events[$Type].Clear()
+    $null = $PodeContext.Server.Events[$Type.ToString()].Clear()
 }
 
 <#

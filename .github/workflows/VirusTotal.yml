@@ -1,0 +1,69 @@
+name: VirusTotal Scan
+
+on:
+  push:
+    branches:
+    - 'develop'
+    paths:
+    - 'src/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/VirusTotal.yml'
+  pull_request:
+    branches:
+    - 'master'
+    paths:
+    - 'src/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/VirusTotal.yml'
+  schedule:
+    - cron: '0 12 * * *'
+
+env:
+  INVOKE_BUILD_VERSION: '5.12.0'
+  POWERSHELL_VERSION: 'lts'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check VIRUSTOTAL_API_KEY
+      env:
+        VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+      run: |
+        if [ -z "$VIRUSTOTAL_API_KEY" ]; then
+          echo "VIRUSTOTAL_API_KEY is not set. Exiting workflow."
+          exit 1
+        fi
+        echo "VIRUSTOTAL_API_KEY is set. Proceeding with the workflow."
+
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.x
+
+    - name: Setup Powershell
+      shell: pwsh
+      run: |
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
+
+    - name: Install Invoke-Build
+      shell: pwsh
+      run: |
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+
+    - name: Build Zip Package
+      shell: pwsh
+      run: |
+        Invoke-Build Compress
+
+    - name: Run VirusTotal Scan
+      uses: crazy-max/ghaction-virustotal@v4
+      with:
+        vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+        request_rate: 4
+        files: |
+          ./deliverable/*.zip

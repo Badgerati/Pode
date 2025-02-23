@@ -1,132 +1,5 @@
 <#
 .SYNOPSIS
-Adds an access rule to allow or deny IP addresses.
-
-.DESCRIPTION
-Adds an access rule to allow or deny IP addresses.
-
-.PARAMETER Access
-The type of access to enable.
-
-.PARAMETER Type
-What type of request are we configuring?
-
-.PARAMETER Values
-A single, or an array of values.
-
-.EXAMPLE
-Add-PodeAccessRule -Access Allow -Type IP -Values '127.0.0.1'
-
-.EXAMPLE
-Add-PodeAccessRule -Access Deny -Type IP -Values @('192.168.1.1', '10.10.1.0/24')
-#>
-function Add-PodeAccessRule {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Allow', 'Deny')]
-        [string]
-        $Access,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('IP')]
-        [string]
-        $Type,
-
-        [Parameter(Mandatory = $true)]
-        [string[]]
-        $Values
-    )
-
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'Add-PodeAccessRule' -ThrowError
-
-    # call the appropriate access method
-    switch ($Type.ToLowerInvariant()) {
-        'ip' {
-            foreach ($ip in $Values) {
-                Add-PodeIPAccess -Access $Access -IP $ip
-            }
-        }
-    }
-}
-
-<#
-.SYNOPSIS
-Adds rate limiting rules for an IP addresses, Routes, or Endpoints.
-
-.DESCRIPTION
-Adds rate limiting rules for an IP addresses, Routes, or Endpoints.
-
-.PARAMETER Type
-What type of request is being rate limited: IP, Route, or Endpoint?
-
-.PARAMETER Values
-A single, or an array of values.
-
-.PARAMETER Limit
-The maximum number of requests to allow.
-
-.PARAMETER Seconds
-The number of seconds to count requests before restarting the count.
-
-.PARAMETER Group
-If supplied, groups of IPs in a subnet will be considered as one IP.
-
-.EXAMPLE
-Add-PodeLimitRule -Type IP -Values '127.0.0.1' -Limit 10 -Seconds 1
-
-.EXAMPLE
-Add-PodeLimitRule -Type IP -Values @('192.168.1.1', '10.10.1.0/24') -Limit 50 -Seconds 1 -Group
-
-.EXAMPLE
-Add-PodeLimitRule -Type Route -Values '/downloads' -Limit 5 -Seconds 1
-#>
-function Add-PodeLimitRule {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('IP', 'Route', 'Endpoint')]
-        [string]
-        $Type,
-
-        [Parameter(Mandatory = $true)]
-        [string[]]
-        $Values,
-
-        [Parameter(Mandatory = $true)]
-        [int]
-        $Limit,
-
-        [Parameter(Mandatory = $true)]
-        [int]
-        $Seconds,
-
-        [switch]
-        $Group
-    )
-
-    # call the appropriate limit method
-    foreach ($value in $Values) {
-        switch ($Type.ToLowerInvariant()) {
-            'ip' {
-                Test-PodeIsServerless -FunctionName 'Add-PodeLimitRule' -ThrowError
-                Add-PodeIPLimit -IP $value -Limit $Limit -Seconds $Seconds -Group:$Group
-            }
-
-            'route' {
-                Add-PodeRouteLimit -Path $value -Limit $Limit -Seconds $Seconds -Group:$Group
-            }
-
-            'endpoint' {
-                Add-PodeEndpointLimit -EndpointName $value -Limit $Limit -Seconds $Seconds -Group:$Group
-            }
-        }
-    }
-}
-
-<#
-.SYNOPSIS
 Creates and returns a new secure token for use with CSRF.
 
 .DESCRIPTION
@@ -644,4 +517,43 @@ function Use-PodeMiddleware {
     )
 
     Use-PodeFolder -Path $Path -DefaultPath 'middleware'
+}
+
+
+
+<#
+.SYNOPSIS
+    Checks if a specific middleware is registered in the Pode server.
+
+.DESCRIPTION
+    This function verifies whether a middleware with the specified name is registered in the Pode server by checking the `PodeContext.Server.Middleware` collection.
+    It returns `$true` if the middleware exists, otherwise it returns `$false`.
+
+.PARAMETER Name
+    The name of the middleware to check for.
+
+.OUTPUTS
+    [boolean]
+        Returns $true if the middleware with the specified name is found, otherwise returns $false.
+
+.EXAMPLE
+    Test-PodeMiddleware -Name 'BlockEverything'
+
+    This command checks if a middleware named 'BlockEverything' is registered in the Pode server.
+#>
+function Test-PodeMiddleware {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    # Check if the middleware exists
+    foreach ($middleware in $PodeContext.Server.Middleware) {
+        if ($middleware.Name -ieq $Name) {
+            return $true
+        }
+    }
+
+    return $false
 }

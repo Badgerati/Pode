@@ -174,7 +174,7 @@ function Get-PodeHostIPRegex {
         $Type
     )
 
-    $ip_rgx = '\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|((\d+\.){3}\d+)|\*|all'
+    $ip_rgx = '\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|(((\d{1,2}|1\d{1,2}|2[0-5][0-5])\.){3}(\d{1,2}|1\d{1,2}|2[0-5][0-5]))(\/(\d|[1-2][0-9]|3[0-2]))?|\*|all'
     $host_rgx = '([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
 
     switch ($Type.ToLowerInvariant()) {
@@ -215,7 +215,11 @@ function Get-PodeEndpointInfo {
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
     # validate that we have a valid ip/host:port address
-    if (!(($Address -imatch "^$($cmbdRgx)$") -or ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or ($Address -imatch "[\:]{0,1}$($portRgx)$"))) {
+    if (!(
+        ($Address -imatch "^$($cmbdRgx)$") -or
+        ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or
+        (!$Address.Contains('.') -and $Address -imatch "[\:]{0,1}$($portRgx)$")
+        )) {
         throw ($PodeLocale.failedToParseAddressExceptionMessage -f $Address)#"Failed to parse '$($Address)' as a valid IP/Host:Port address"
     }
 
@@ -255,17 +259,33 @@ function Test-PodeIPAddress {
         $IP,
 
         [switch]
-        $IPOnly
+        $IPOnly,
+
+        [switch]
+        $FailOnEmpty
     )
 
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
+    # fail on empty
+    if ([string]::IsNullOrWhiteSpace($IP)) {
+        return !$FailOnEmpty.IsPresent
+    }
+
+    # all empty, or */all
+    if ($IP -iin @('*', 'all')) {
         return $true
     }
 
+    # are we allowing hostnames?
     if ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$") {
-        return (!$IPOnly)
+        return !$IPOnly.IsPresent
     }
 
+    # check if the IP matches regex
+    if ($IP -imatch "^$(Get-PodeHostIPRegex -Type IP)$") {
+        return $true
+    }
+
+    # if we get here, try parsing with [IPAddress] as a last resort
     try {
         $null = [System.Net.IPAddress]::Parse($IP)
         return $true
@@ -413,11 +433,28 @@ function Get-PodeIPAddress {
         $IP,
 
         [switch]
-        $DualMode
+        $DualMode,
+
+        [switch]
+        $ContainsPort
     )
 
+    # if we have a port, remove it
+    if ($ContainsPort) {
+        $ipRegex = Get-PodeHostIPRegex -Type IP
+        $portRegex = Get-PodePortRegex
+        $regex = "^$($ipRegex)(\:$($portRegex))?$"
+
+        if ($IP -imatch $regex) {
+            $IP = $Matches['host']
+        }
+        else {
+            $IP = ($IP -split ':')[0]
+        }
+    }
+
     # any address for IPv4 (or IPv6 for DualMode)
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
+    if ([string]::IsNullOrEmpty($IP) -or ($IP -iin @('*', 'all'))) {
         if ($DualMode) {
             return [System.Net.IPAddress]::IPv6Any
         }
@@ -449,26 +486,25 @@ function Get-PodeIPAddress {
     return [System.Net.IPAddress]::Parse($IP)
 }
 
-function Test-PodeIPAddressInRange {
+function Test-PodeIPAddressInSubnet {
     param(
         [Parameter(Mandatory = $true)]
+        [byte[]]
         $IP,
 
         [Parameter(Mandatory = $true)]
-        $LowerIP,
+        [byte[]]
+        $Lower,
 
         [Parameter(Mandatory = $true)]
-        $UpperIP
+        [byte[]]
+        $Upper
     )
-
-    if ($IP.Family -ine $LowerIP.Family) {
-        return $false
-    }
 
     $valid = $true
 
     foreach ($i in 0..3) {
-        if (($IP.Bytes[$i] -lt $LowerIP.Bytes[$i]) -or ($IP.Bytes[$i] -gt $UpperIP.Bytes[$i])) {
+        if (($IP[$i] -lt $Lower[$i]) -or ($IP[$i] -gt $Upper[$i])) {
             $valid = $false
             break
         }
@@ -543,114 +579,55 @@ function Get-PodeSubnetRange {
         })
 
     return @{
-        'Lower'   = ($bottom -join '.')
-        'Upper'   = ($top -join '.')
-        'Range'   = ($range -join '.')
-        'Netmask' = ($network -join '.')
-        'IP'      = ($ip_parts -join '.')
+        Lower   = ($bottom -join '.')
+        Upper   = ($top -join '.')
+        Range   = ($range -join '.')
+        Netmask = ($network -join '.')
+        IP      = ($ip_parts -join '.')
     }
-}
-
-
-function Get-PodeConsoleKey {
-    if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
-        return $null
-    }
-
-    return [Console]::ReadKey($true)
-}
-
-function Test-PodeTerminationPressed {
-    param(
-        [Parameter()]
-        $Key = $null
-    )
-
-    if ($PodeContext.Server.DisableTermination) {
-        return $false
-    }
-
-    return (Test-PodeKeyPressed -Key $Key -Character 'c')
-}
-
-function Test-PodeRestartPressed {
-    param(
-        [Parameter()]
-        $Key = $null
-    )
-
-    return (Test-PodeKeyPressed -Key $Key -Character 'r')
-}
-
-function Test-PodeOpenBrowserPressed {
-    param(
-        [Parameter()]
-        $Key = $null
-    )
-
-    return (Test-PodeKeyPressed -Key $Key -Character 'b')
-}
-
-function Test-PodeKeyPressed {
-    param(
-        [Parameter()]
-        $Key = $null,
-
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Character
-    )
-
-    if ($null -eq $Key) {
-        $Key = Get-PodeConsoleKey
-    }
-
-    return (($null -ne $Key) -and ($Key.Key -ieq $Character) -and
-        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-PodeIsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
 function Close-PodeServerInternal {
-    param(
-        [switch]
-        $ShowDoneMessage
-    )
-
-    # ensure the token is cancelled
-    if ($null -ne $PodeContext.Tokens.Cancellation) {
-        Write-Verbose 'Cancelling main cancellation token'
-        $PodeContext.Tokens.Cancellation.Cancel()
-    }
-
-    # stop all current runspaces
-    Write-Verbose 'Closing runspaces'
-    Close-PodeRunspace -ClosePool
-
-    # stop the file monitor if it's running
-    Write-Verbose 'Stopping file monitor'
-    Stop-PodeFileMonitor
-
+    # PodeContext doesn't exist return
+    if ($null -eq $PodeContext) { return }
     try {
-        # remove all the cancellation tokens
-        Write-Verbose 'Disposing cancellation tokens'
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
+        # ensure the token is cancelled
+        Write-Verbose 'Cancelling main cancellation token'
+        Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
 
-        # dispose mutex/semaphores
-        Write-Verbose 'Diposing mutex and semaphores'
-        Clear-PodeMutexes
-        Clear-PodeSemaphores
+        # stop all current runspaces
+        Write-Verbose 'Closing runspaces'
+        Close-PodeRunspace -ClosePool
+
+        # stop the file monitor if it's running
+        Write-Verbose 'Stopping file monitor'
+        Stop-PodeFileMonitor
+
+        try {
+            # remove all the cancellation tokens
+            Write-Verbose 'Disposing cancellation tokens'
+            Close-PodeCancellationToken #-Type Cancellation, Terminate, Restart, Suspend, Resume, Start
+
+            # dispose mutex/semaphores
+            Write-Verbose 'Diposing mutex and semaphores'
+            Clear-PodeMutexes
+            Clear-PodeSemaphores
+        }
+        catch {
+            $_ | Out-Default
+        }
+
+        # remove all of the pode temp drives
+        Write-Verbose 'Removing internal PSDrives'
+        Remove-PodePSDrive
     }
-    catch {
-        $_ | Out-Default
+    finally {
+        if ($null -ne $PodeContext) {
+            # Remove any tokens
+            $PodeContext.Tokens = $null
+        }
     }
 
-    # remove all of the pode temp drives
-    Write-Verbose 'Removing internal PSDrives'
-    Remove-PodePSDrive
-
-    if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
-        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
-    }
 }
 
 function New-PodePSDrive {
@@ -2465,6 +2442,43 @@ function Find-PodeFileForContentType {
     return $null
 }
 
+<#
+.SYNOPSIS
+	Resolves and processes a relative or absolute file system path based on the specified parameters.
+
+.DESCRIPTION
+	This function processes a given path and applies various transformations and checks based on the provided parameters. It supports resolving relative paths, joining them with a root path, normalizing relative paths, and verifying path existence.
+
+.PARAMETER Path
+	The file system path to be processed. This can be relative or absolute.
+
+.PARAMETER RootPath
+	(Optional) The root path to join with if the provided path is relative and the -JoinRoot switch is enabled.
+
+.PARAMETER JoinRoot
+	Indicates that the relative path should be joined to the specified root path. If no RootPath is provided, the Pode context server root will be used.
+
+.PARAMETER Resolve
+	Resolves the path to its absolute, full path.
+
+.PARAMETER TestPath
+	Verifies if the resolved path exists. Throws an exception if the path does not exist.
+
+.OUTPUTS
+	System.String
+	Returns the resolved and processed path as a string.
+
+.EXAMPLE
+	# Example 1: Resolve a relative path and join it with a root path
+	Get-PodeRelativePath -Path './example' -RootPath 'C:\Root' -JoinRoot
+
+.EXAMPLE
+	# Example 3: Test if a path exists
+	Get-PodeRelativePath -Path 'C:\Root\example.txt' -TestPath
+
+.NOTES
+	This is an internal function and may change in future releases of Pode
+#>
 function Get-PodeRelativePath {
     param(
         [Parameter(Mandatory = $true)]
@@ -2483,6 +2497,7 @@ function Get-PodeRelativePath {
 
         [switch]
         $TestPath
+
     )
 
     # if the path is relative, join to root if flagged
@@ -2598,6 +2613,10 @@ function Get-PodeEndpointUrl {
         if ($null -eq $Endpoint) {
             $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') })[0]
         }
+    }
+
+    if ($null -eq $Endpoint) {
+        return $null
     }
 
     $url = $Endpoint.Url
@@ -3766,4 +3785,184 @@ function Copy-PodeObjectDeepClone {
         # Deserialize the XML back into a new PSObject, creating a deep clone of the original
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
+}
+
+<#
+.SYNOPSIS
+    Converts a duration in milliseconds into a human-readable time format.
+
+.DESCRIPTION
+    The `Convert-PodeMillisecondsToReadable` function converts a specified duration in milliseconds into
+    a readable time format. The output can be formatted in three styles:
+    - `Concise`: A short and simple format (e.g., "1d 2h 3m").
+    - `Compact`: A compact representation (e.g., "01:02:03:04").
+    - `Verbose`: A detailed, descriptive format (e.g., "1 day, 2 hours, 3 minutes").
+    The function also provides an option to exclude milliseconds from the output for all formats.
+
+.PARAMETER Milliseconds
+    Specifies the duration in milliseconds to be converted into a human-readable format.
+
+.PARAMETER Format
+    Specifies the desired format for the output. Valid options are:
+    - `Concise` (default): Short and simple (e.g., "1d 2h 3m").
+    - `Compact`: Condensed form (e.g., "01:02:03:04").
+    - `Verbose`: Detailed description (e.g., "1 day, 2 hours, 3 minutes, 4 seconds").
+
+.PARAMETER ExcludeMilliseconds
+    If specified, milliseconds will be excluded from the output for all formats.
+
+.EXAMPLE
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789
+
+    Output:
+    1d 10h 17m 36s
+
+.EXAMPLE
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -Format Verbose
+
+    Output:
+    1 day, 10 hours, 17 minutes, 36 seconds, 789 milliseconds
+
+.EXAMPLE
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -Format Compact -ExcludeMilliseconds
+
+    Output:
+    01:10:17:36
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Convert-PodeMillisecondsToReadable {
+    param(
+        # The duration in milliseconds to convert
+        [Parameter(Mandatory = $true)]
+        [long]
+        $Milliseconds,
+
+        # Specifies the desired output format
+        [Parameter()]
+        [ValidateSet('Concise', 'Compact', 'Verbose')]
+        [string]
+        $Format = 'Concise',
+
+        # Omits milliseconds from the output
+        [switch]
+        $ExcludeMilliseconds
+    )
+
+    # Convert the milliseconds input into a TimeSpan object
+    $timeSpan = [timespan]::FromMilliseconds($Milliseconds)
+
+    # Generate the formatted output based on the selected format
+    switch ($Format.ToLower()) {
+        'concise' {
+            # Concise format: "1d 2h 3m 4s"
+            $output = @()
+            if ($timeSpan.Days -gt 0) { $output += "$($timeSpan.Days)d" }
+            if ($timeSpan.Hours -gt 0) { $output += "$($timeSpan.Hours)h" }
+            if ($timeSpan.Minutes -gt 0) { $output += "$($timeSpan.Minutes)m" }
+            if ($timeSpan.Seconds -gt 0) { $output += "$($timeSpan.Seconds)s" }
+
+            # Include milliseconds if they exist and are not excluded
+            if ((($timeSpan.Milliseconds -gt 0) -and !$ExcludeMilliseconds) -or ($output.Count -eq 0)) {
+                $output += "$($timeSpan.Milliseconds)ms"
+            }
+
+            return $output -join ' '
+        }
+
+        'compact' {
+            # Compact format: "dd:hh:mm:ss"
+            $output = '{0:D2}:{1:D2}:{2:D2}:{3:D2}' -f $timeSpan.Days, $timeSpan.Hours, $timeSpan.Minutes, $timeSpan.Seconds
+
+            # Append milliseconds if not excluded
+            if (!$ExcludeMilliseconds) {
+                $output += '.{0:D3}' -f $timeSpan.Milliseconds
+            }
+
+            return $output
+        }
+
+        'verbose' {
+            # Verbose format: "1 day, 2 hours, 3 minutes, 4 seconds"
+            $output = @()
+            if ($timeSpan.Days -gt 0) { $output += "$($timeSpan.Days) day$(if ($timeSpan.Days -ne 1) { 's' })" }
+            if ($timeSpan.Hours -gt 0) { $output += "$($timeSpan.Hours) hour$(if ($timeSpan.Hours -ne 1) { 's' })" }
+            if ($timeSpan.Minutes -gt 0) { $output += "$($timeSpan.Minutes) minute$(if ($timeSpan.Minutes -ne 1) { 's' })" }
+            if ($timeSpan.Seconds -gt 0) { $output += "$($timeSpan.Seconds) second$(if ($timeSpan.Seconds -ne 1) { 's' })" }
+
+            # Include milliseconds if they exist and are not excluded
+            if ((($timeSpan.Milliseconds -gt 0) -and !$ExcludeMilliseconds) -or ($output.Count -eq 0)) {
+                $output += "$($timeSpan.Milliseconds) millisecond$(if ($timeSpan.Milliseconds -ne 1) { 's' })"
+            }
+
+            return $output -join ', '
+        }
+    }
+}
+
+
+
+<#
+.SYNOPSIS
+    Converts all instances of 'Start-Sleep' to 'Start-PodeSleep' within a scriptblock.
+
+.DESCRIPTION
+    The `ConvertTo-PodeSleep` function processes a given scriptblock and replaces every occurrence
+    of 'Start-Sleep' with 'Start-PodeSleep'. This is useful for adapting scripts that need to use
+    Pode-specific sleep functionality.
+
+.PARAMETER ScriptBlock
+    The scriptblock to be processed. The function will replace 'Start-Sleep' with 'Start-PodeSleep'
+    in the provided scriptblock.
+
+.EXAMPLE
+  # Example 1: Replace Start-Sleep in a ScriptBlock
+    $Original = { Write-Host "Starting"; Start-Sleep -Seconds 5; Write-Host "Done" }
+    $Modified = $Original | ConvertTo-PodeSleep
+    & $Modified
+
+.EXAMPLE
+    # Example 2: Process a ScriptBlock inline
+    ConvertTo-PodeSleep -ScriptBlock { Start-Sleep -Seconds 2 } | Invoke-Command
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertTo-PodeSleep {
+    param(
+        [Parameter(ValueFromPipeline = $true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+    process {
+        # Modify the ScriptBlock to replace 'Start-Sleep' with 'Start-PodeSleep'
+        return [scriptblock]::Create(("$($ScriptBlock)" -replace 'Start-Sleep ', 'Start-PodeSleep '))
+    }
+}
+
+<#
+.SYNOPSIS
+    Tests whether the current PowerShell host is the Integrated Scripting Environment (ISE).
+
+.DESCRIPTION
+    This function checks if the current host is running in the Windows PowerShell ISE
+    by comparing the `$Host.Name` property with the string 'Windows PowerShell ISE Host'.
+
+.PARAMETER None
+    This function does not accept any parameters.
+
+.OUTPUTS
+    [Boolean]
+    Returns `True` if the host is the Windows PowerShell ISE, otherwise `False`.
+
+.EXAMPLE
+    Test-PodeIsISEHost
+    Checks if the current PowerShell session is running in the ISE and returns the result.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeIsISEHost {
+    return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }

@@ -190,11 +190,11 @@ Describe 'Get-PodeHostIPRegex' {
     }
 
     It 'Returns valid IP regex' {
-        Get-PodeHostIPRegex -Type IP | Should -Be '(?<host>(\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|((\d+\.){3}\d+)|\*|all))'
+        Get-PodeHostIPRegex -Type IP | Should -Be '(?<host>(\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|(((\d{1,2}|1\d{1,2}|2[0-5][0-5])\.){3}(\d{1,2}|1\d{1,2}|2[0-5][0-5]))(\/(\d|[1-2][0-9]|3[0-2]))?|\*|all))'
     }
 
     It 'Returns valid IP and Hostname regex' {
-        Get-PodeHostIPRegex -Type Both | Should -Be '(?<host>(\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|((\d+\.){3}\d+)|\*|all|([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
+        Get-PodeHostIPRegex -Type Both | Should -Be '(?<host>(\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|(((\d{1,2}|1\d{1,2}|2[0-5][0-5])\.){3}(\d{1,2}|1\d{1,2}|2[0-5][0-5]))(\/(\d|[1-2][0-9]|3[0-2]))?|\*|all|([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
     }
 }
 
@@ -429,73 +429,6 @@ Describe 'Get-PodeIPAddress' {
 
         It 'Throws error for invalid IP' {
             { Get-PodeIPAddress -IP '[]' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
-        }
-    }
-}
-
-Describe 'Test-PodeIPAddressInRange' {
-    Context 'No parameters supplied' {
-        It 'Throws error for no ip' {
-            { Test-PodeIPAddressInRange -IP $null -LowerIP @{} -UpperIP @{} } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Test-PodeIPAddressInRange'
-        }
-
-        It 'Throws error for no lower ip' {
-            { Test-PodeIPAddressInRange -IP @{} -LowerIP $null -UpperIP @{} } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Test-PodeIPAddressInRange'
-        }
-
-        It 'Throws error for no upper ip' {
-            { Test-PodeIPAddressInRange -IP @{} -LowerIP @{} -UpperIP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Test-PodeIPAddressInRange'
-        }
-    }
-
-    Context 'Valid parameters supplied' {
-        It 'Returns false because families are different' {
-            $ip = @{ 'Bytes' = @(127, 0, 0, 4); 'Family' = 'different' }
-            $lower = @{ 'Bytes' = @(127, 0, 0, 2); 'Family' = 'test' }
-            $upper = @{ 'Bytes' = @(127, 0, 0, 10); 'Family' = 'test' }
-            Test-PodeIPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should -Be $false
-        }
-
-        It 'Returns false because ip is above range' {
-            $ip = @{ 'Bytes' = @(127, 0, 0, 11); 'Family' = 'test' }
-            $lower = @{ 'Bytes' = @(127, 0, 0, 2); 'Family' = 'test' }
-            $upper = @{ 'Bytes' = @(127, 0, 0, 10); 'Family' = 'test' }
-            Test-PodeIPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should -Be $false
-        }
-
-        It 'Returns false because ip is under range' {
-            $ip = @{ 'Bytes' = @(127, 0, 0, 1); 'Family' = 'test' }
-            $lower = @{ 'Bytes' = @(127, 0, 0, 2); 'Family' = 'test' }
-            $upper = @{ 'Bytes' = @(127, 0, 0, 10); 'Family' = 'test' }
-            Test-PodeIPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should -Be $false
-        }
-
-        It 'Returns true because ip is in range' {
-            $ip = @{ 'Bytes' = @(127, 0, 0, 4); 'Family' = 'test' }
-            $lower = @{ 'Bytes' = @(127, 0, 0, 2); 'Family' = 'test' }
-            $upper = @{ 'Bytes' = @(127, 0, 0, 10); 'Family' = 'test' }
-            Test-PodeIPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should -Be $true
-        }
-
-        It 'Returns false because ip is above range, bounds are same' {
-            $ip = @{ 'Bytes' = @(127, 0, 0, 11); 'Family' = 'test' }
-            $lower = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
-            $upper = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
-            Test-PodeIPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should -Be $false
-        }
-
-        It 'Returns false because ip is under range, bounds are same' {
-            $ip = @{ 'Bytes' = @(127, 0, 0, 1); 'Family' = 'test' }
-            $lower = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
-            $upper = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
-            Test-PodeIPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should -Be $false
-        }
-
-        It 'Returns true because ip is in range, bounds are same' {
-            $ip = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
-            $lower = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
-            $upper = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
-            Test-PodeIPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should -Be $true
         }
     }
 }
@@ -774,7 +707,7 @@ Describe 'Get-PodeEndpointInfo' {
     }
 
     It 'Throws an error for an out-of-range IP endpoint' {
-        { Get-PodeEndpointInfo -Address '700.0.0.0' } | Should -Throw -ExpectedMessage ($PodeLocale.invalidIpAddressExceptionMessage -f '700.0.0.0' ) # '*The IP address supplied is invalid*'
+        { Get-PodeEndpointInfo -Address '700.0.0.0' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f '700.0.0.0' ) # '*Failed to parse*'
     }
 
     It 'Throws an error for an invalid Hostname endpoint' {
@@ -1061,6 +994,7 @@ Describe 'Get-PodeRelativePath' {
         Get-PodeRelativePath -Path './path' -JoinRoot | Should -Be 'c:/./path'
     }
 
+
     It 'Returns resolved path for a relative path joined to default root when resolving' {
         $PodeContext = @{
             Server = @{
@@ -1068,12 +1002,13 @@ Describe 'Get-PodeRelativePath' {
             }
         }
 
-        Get-PodeRelativePath -Path './src' -JoinRoot -Resolve | Should -Be (Join-Path $pwd.Path 'src')
+        Get-PodeRelativePath -Path './src' -JoinRoot -Resolve | Should -Be (Join-Path -Path $PWD  -ChildPath 'src')
     }
 
     It 'Returns path for a relative path joined to passed root' {
-        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' | Should -Be 'e:/./path'
+        Get-PodeRelativePath -Path (Join-Path -Path '.' -ChildPath 'path')-JoinRoot -RootPath $PWD | Should -Be (Join-Path -Path $PWD  -ChildPath (Join-Path -Path '.' -ChildPath 'path'))
     }
+
 
     It 'Throws error for path ot existing' {
         Mock Test-PodePath { return $false }
@@ -1138,29 +1073,21 @@ Describe 'Close-PodeRunspace' {
 
 Describe 'Close-PodeServerInternal' {
     BeforeAll {
-        Mock Close-PodeRunspace { }
-        Mock Stop-PodeFileMonitor { }
-        Mock Close-PodeDisposable { }
-        Mock Remove-PodePSDrive { }
-        Mock Write-Host { } }
+        Mock Close-PodeRunspace {}
+        Mock Stop-PodeFileMonitor {}
+        Mock Close-PodeDisposable {}
+        Mock Remove-PodePSDrive {}
+        Mock Write-PodeHost {}
+        Mock Close-PodeCancellationTokenRequest {}
+    }
+
 
     It 'Closes out pode, but with no done flag' {
         $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }
         Close-PodeServerInternal
-        Assert-MockCalled Write-Host -Times 0 -Scope It
+        Assert-MockCalled Write-PodeHost -Times 0 -Scope It
     }
 
-    It 'Closes out pode, but with the done flag' {
-        $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }
-        Close-PodeServerInternal -ShowDoneMessage
-        Assert-MockCalled Write-Host -Times 1 -Scope It
-    }
-
-    It 'Closes out pode, but with no done flag if serverless' {
-        $PodeContext = @{ 'Server' = @{ 'Types' = 'Server'; 'IsServerless' = $true } }
-        Close-PodeServerInternal -ShowDoneMessage
-        Assert-MockCalled Write-Host -Times 0 -Scope It
-    }
 }
 
 Describe 'Get-PodeEndpointUrl' {
