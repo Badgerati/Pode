@@ -141,6 +141,8 @@
         'ConvertFrom-PodeXml',
         'Set-PodeDefaultFolder',
         'Get-PodeDefaultFolder',
+        'ConvertTo-PodeYaml',
+        'ConvertFrom-PodeYaml',
         'Get-PodeCurrentRunspaceName',
         'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',

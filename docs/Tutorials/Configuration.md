@@ -101,3 +101,6 @@ A "path" like `Server.Ssl.Protocols` looks like the below in the file:
 | Web.ContentType                  | Define expected Content Types for certain Routes                            | [link](../Routes/Utilities/ContentTypes)                                |
 | Web.ErrorPages                   | Defines configuration for custom error pages                                | [link](../Routes/Utilities/ErrorPages)                                  |
 | Web.Static                       | Defines configuration for static content, such as caching                   | [link](../Routes/Utilities/StaticContent)                               |
+| Web.Conversion.JsonToHashTable                     | Set the default Json conversion to HashTable if true otherwise PSCustomObject (Default: True for PSCore and False for Windows Powershell )|       |
+| Web.Conversion.YamlToHashTable                     | Set the default Yaml conversion to HashTable if true otherwise PSCustomObject (Default: True)|       |
+
