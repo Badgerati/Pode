@@ -149,7 +149,7 @@ Describe 'OpenAPI integration tests' {
             return $true
         }
 
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 20
     }
 
     AfterAll {
@@ -160,8 +160,7 @@ Describe 'OpenAPI integration tests' {
 
     Describe 'OpenAPI' {
         it 'Open API v3.0.3' {
-
-            Start-Sleep -Seconds 10
+ 
             $fileContent = Get-Content -Path "$PSScriptRoot/specs/OpenApi-TuttiFrutti_3.0.3.json"
 
             $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3)/docs/openapi/v3.0" -Method Get

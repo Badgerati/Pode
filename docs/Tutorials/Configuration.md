@@ -92,6 +92,8 @@ A "path" like `Server.Ssl.Protocols` looks like the below in the file:
 | Server.FileMonitor               | Defines configuration for restarting the server based on file updates       | [link](../Restarting/Types/FileMonitoring)                              |
 | Server.ReceiveTimeout            | Define the amount of time a Receive method call will block waiting for data | [link](../Endpoints/Basic/StaticContent/#server-timeout)                |
 | Server.DefaultFolders            | Set the Default Folders paths                                               | [link](../Routes/Utilities/StaticContent/#changing-the-default-folders) |
+| Server.Logging.QueueLimit        | Set the maximum number of logs allowed in the queue                         | [link](../Logging/Overview)                                             |
+| Server.Logging.Masking.Patterns  | Regular expressions congiguration to mask sensitive logs information        | [link](../Logging/Overview)                                             |
 | Server.Console                   | Set the Console settings                                                    | [link](../Getting-Started/Console)                                      |
 | Web.OpenApi.DefaultDefinitionTag | Define the primary tag name for OpenAPI ( `default` is the default)         | [link](../OpenAPI/Overview)                                             |
 | Web.OpenApi.UsePodeYamlInternal  | Force the use of the internal YAML converter (`False` is the default)       |                                                                         |
