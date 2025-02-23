@@ -23,7 +23,78 @@ Pode provides multiple ways to configure HTTPS on [`Add-PodeEndpoint`](../../Fun
 - **Custom Certificate Management:**
   - Pode’s built-in functions allow better control over certificate creation, import, and export.
 
-## Usage
+## **Generating a Self-Signed Certificate**
+
+Pode provides the `New-PodeSelfSignedCertificate` function for creating self-signed X.509 certificates for development and testing purposes.
+
+### **Features of `New-PodeSelfSignedCertificate`**
+
+- ✅ Creates a **self-signed certificate** for HTTPS, JWT, or other use cases.
+- ✅ Supports **RSA** and **ECDSA** keys with configurable key sizes.
+- ✅ Can include **multiple Subject Alternative Names (SANs)** (e.g., `localhost`, IP addresses).
+- ✅ Allows setting **certificate purposes (ServerAuth, ClientAuth, etc.).**
+- ✅ Provides **ephemeral certificates** (in-memory only, not stored on disk).
+- ✅ Supports **exportable certificates** that can be saved for later use.
+
+### **Usage Examples**
+
+#### **1️⃣ Generate a Self-Signed Certificate for HTTPS**
+
+```powershell
+$cert = New-PodeSelfSignedCertificate -DnsName "example.com" -CertificatePurpose ServerAuth
+```
+
+- Creates a **self-signed RSA certificate** for `example.com`.
+- The certificate is valid for HTTPS (`ServerAuth`).
+
+#### **2️⃣ Generate a Self-Signed Certificate for Local Development**
+
+```powershell
+$cert = New-PodeSelfSignedCertificate -Loopback
+```
+
+- Automatically includes common loopback addresses:
+  ✅ `127.0.0.1`
+  ✅ `::1`
+  ✅ `localhost`
+  ✅ The machine’s hostname
+
+#### **3️⃣ Generate an ECDSA Certificate**
+
+```powershell
+$cert = New-PodeSelfSignedCertificate -DnsName "test.local" -KeyType "ECDSA" -KeyLength 384
+```
+
+- Creates a **self-signed ECDSA certificate** with a **384-bit** key.
+
+#### **4️⃣ Generate a Certificate That Exists Only in Memory (Ephemeral)**
+
+```powershell
+$cert = New-PodeSelfSignedCertificate -DnsName "temp.local" -Ephemeral
+```
+
+- The private key is **not stored on disk**, and the certificate only exists **in-memory**.
+
+#### **5️⃣ Generate an Exportable Certificate**
+
+```powershell
+$cert = New-PodeSelfSignedCertificate -DnsName "secureapp.local" -Exportable
+```
+
+- The certificate is **exportable** and can be saved as a `.pfx` or `.pem` file later.
+
+#### **6️⃣ Bind a Self-Signed Certificate to an HTTPS Endpoint**
+
+```powershell
+Start-PodeServer {
+    $cert = New-PodeSelfSignedCertificate -DnsName "example.com" -CertificatePurpose ServerAuth
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -X509Certificate $cert
+}
+```
+
+- Creates an HTTPS endpoint using a self-signed certificate.
+
+---
 
 ### Generating a Certificate Signing Request (CSR)
 
@@ -109,6 +180,64 @@ or, to retrieve a certificate by thumbprint:
 ```powershell
 $cert = Import-PodeCertificate -CertificateThumbprint "D2C2F4F7A456B69D4F9E9F8C3D3D6E5A9C3EBA6F"
 ```
+
+
+## **Testing a Certificate’s Validity**
+
+Pode provides the `Test-PodeCertificate` function to validate an **X.509 certificate** and ensure it meets security and usage requirements.
+
+### **Features of `Test-PodeCertificate`**
+
+- ✅ Checks if the certificate is **within its validity period** (`NotBefore` and `NotAfter`).
+- ✅ **Builds the certificate chain** to verify its trust.
+- ✅ Supports **online and offline revocation checking** (OCSP/CRL).
+- ✅ Allows **optional enforcement of strong cryptographic algorithms**.
+- ✅ Provides an option to **reject self-signed certificates**.
+
+### **Usage Examples**
+
+#### **Basic Certificate Validation**
+
+```powershell
+Test-PodeCertificate -Certificate $cert
+```
+
+- Checks if the certificate is currently valid.
+- Does **not** check revocation status.
+
+#### **Validate Certificate with Online Revocation Checking**
+
+```powershell
+Test-PodeCertificate -Certificate $cert -CheckRevocation
+```
+
+- Uses **OCSP/CRL lookup** to check if the certificate is revoked.
+
+#### **Validate Certificate with Offline (Cached CRL) Revocation Check**
+
+```powershell
+Test-PodeCertificate -Certificate $cert -CheckRevocation -OfflineRevocation
+```
+
+- Uses **only locally cached CRLs**, making it suitable for air-gapped environments.
+
+#### **Allow Certificates with Weak Algorithms**
+
+```powershell
+Test-PodeCertificate -Certificate $cert -AllowWeakAlgorithms
+```
+
+- Allows the use of certificates with **SHA1, MD5, or RSA-1024**.
+
+#### **Reject Self-Signed Certificates**
+
+```powershell
+Test-PodeCertificate -Certificate $cert -DenySelfSigned
+```
+
+- Fails validation if the certificate **is self-signed**.
+
+---
 
 ## SSL Protocols
 

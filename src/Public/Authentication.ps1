@@ -2732,7 +2732,7 @@ function New-PodeAuthBearerScheme {
     # If an X509 certificate is being used, detect the signing algorithm
     if ($null -ne $X509Certificate) {
         # Validate the certificate's validity period before proceeding
-        Test-PodeCertificateValidity -Certificate $X509Certificate
+        Test-PodeCertificate -Certificate $X509Certificate
 
         # Ensure the certificate is authorized for the expected purpose
         Test-PodeCertificateRestriction -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict

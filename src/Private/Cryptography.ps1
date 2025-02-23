@@ -1128,7 +1128,7 @@ function New-PodeJwt {
     if ($null -ne $X509Certificate) {
 
         # Validate the certificate's validity period before proceeding
-        Test-PodeCertificateValidity -Certificate $X509Certificate
+        Test-PodeCertificate -Certificate $X509Certificate
 
         # Ensure the certificate is authorized for the expected purpose
         Test-PodeCertificateRestriction -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict
@@ -1669,55 +1669,4 @@ function Test-PodeCertificateRestriction {
     # Certificate is valid for the expected purpose
     Write-Verbose "Certificate is valid for '$ExpectedPurpose'. Found purposes: $($purposes -join ', ')"
 
-}
-
-
-<#
-.SYNOPSIS
-  Validates whether an X.509 certificate is currently valid.
-
-.DESCRIPTION
-  This internal function checks if an X.509 certificate is valid based on its
-  `NotBefore` and `NotAfter` properties. If the certificate is not yet valid or
-  has expired, an exception is thrown.
-
-  The function operates in **UTC time** to ensure consistency across environments.
-
-.PARAMETER Certificate
-  The X509Certificate2 object to validate.
-
-.OUTPUTS
-  [boolean]
-  Returns `$true` if the certificate is currently valid.
-  Throws an exception if the certificate is not yet valid or has expired.
-
-.EXAMPLE
-  Test-PodeCertificateValidity -Certificate $cert
-  Validates whether the given certificate is currently valid.
-
-.NOTES
-  This is an internal Pode function and may be subject to change.
-#>
-
-function Test-PodeCertificateValidity {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]
-        $Certificate
-    )
-
-    $currentDate = [System.DateTime]::UtcNow
-    $notBefore = $Certificate.NotBefore.ToUniversalTime()
-    $notAfter = $Certificate.NotAfter.ToUniversalTime()
-
-    if ($currentDate -lt $notBefore) {
-        throw ($PodeLocale.certificateNotValidYetExceptionMessage -f $Certificate.Subject, $notBefore)
-    }
-
-    if ($currentDate -gt $notAfter) {
-        throw ($PodeLocale.certificateExpiredExceptionMessage -f $Certificate.Subject, $notAfter)
-    }
-
-    Write-Verbose "Certificate $($Certificate.Subject) is valid. Current date: $currentDate (UTC). Valid range: $notBefore - $notAfter (UTC)"
 }
