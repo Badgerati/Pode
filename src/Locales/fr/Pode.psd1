@@ -292,6 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = "La compression de flux {0} n'est pas prise en charge."
     localEndpointConflictExceptionMessage                             = "Les deux '{0}' et '{1}' sont définis comme des points de terminaison locaux pour OpenAPI, mais un seul point de terminaison local est autorisé par définition d'API."
+    serviceAlreadyRegisteredException                                 = "Le service '{0}' est déjà enregistré."
+    serviceIsNotRegisteredException                                   = "Le service '{0}' n'est pas enregistré."
+    serviceCommandFailedException                                     = "La commande de service '{0}' a échoué sur le service '{1}'."
+    serviceRegistrationException                                      = "Échec de l'enregistrement du service '{0}'."
+    serviceIsRunningException                                         = "Le service '{0}' est en cours d'exécution. Utilisez le paramètre -Force pour forcer l'arrêt."
+    serviceUnRegistrationException                                    = "La désinscription du service '{0}' a échoué."
+    passwordRequiredForServiceUserException                           = "Un mot de passe est requis lors de la spécification d'un utilisateur de service sous Windows. Veuillez fournir un mot de passe valide pour l'utilisateur '{0}'."
+    featureNotSupportedException                                      = '{0} est pris en charge uniquement sous Windows.'
     suspendingMessage                                                 = 'Suspension'
     resumingMessage                                                   = 'Reprise'
     serverControlCommandsTitle                                        = 'Commandes de contrôle du serveur :'

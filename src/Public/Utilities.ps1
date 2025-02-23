@@ -873,32 +873,32 @@ function Out-PodeHost {
 
 <#
 .SYNOPSIS
-Writes an object to the Host.
+    Writes an object to the Host.
 
 .DESCRIPTION
-Writes an object to the Host.
-It's advised to use this function, so that any output respects the -Quiet flag of the server.
+    Writes an object to the Host.
+    It's advised to use this function, so that any output respects the -Quiet flag of the server.
 
 .PARAMETER Object
-The object to write.
+    The object to write.
 
 .PARAMETER ForegroundColor
-An optional foreground colour.
+    An optional foreground colour.
 
 .PARAMETER NoNewLine
-Whether or not to write a new line.
+    Whether or not to write a new line.
 
 .PARAMETER Explode
-Show the object content
+    Show the object content
 
 .PARAMETER ShowType
-Show the Object Type
+    Show the Object Type
 
 .PARAMETER Label
-Show a label for the object
+    Show a label for the object
 
 .PARAMETER Force
-Overrides the -Quiet flag of the server.
+    Overrides the -Quiet flag of the server.
 
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
@@ -908,6 +908,7 @@ function Write-PodeHost {
     [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     param(
         [Parameter(Position = 0, ValueFromPipeline = $true)]
+        [Alias('Message')]
         [object]
         $Object,
 

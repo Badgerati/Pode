@@ -1,0 +1,11 @@
+{
+  "PodeMonitorWorker ": {
+    "ScriptPath": "C:\\Users\\m_dan\\Documents\\GitHub\\Pode\\examples\\HelloWorld\\HelloWorld.ps1",
+    "PwshPath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    "ParameterString": "",
+    "LogFilePath": "C:\\Users\\m_dan\\Documents\\GitHub\\Pode\\examples\\HelloWorld\\logs\\PodeMonitorService.Prod.log",
+    "Quiet": true,
+    "DisableTermination": true,
+    "ShutdownWaitTimeMs": 30000
+  }
+}

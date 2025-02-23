@@ -292,6 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "함수 '{0}'은(는) 배열을 파이프라인 입력으로 받지 않습니다."
     unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
     localEndpointConflictExceptionMessage                             = "'{0}' 와 '{1}' 는 OpenAPI 로컬 엔드포인트로 정의되었지만, API 정의당 하나의 로컬 엔드포인트만 허용됩니다."
+    serviceAlreadyRegisteredException                                 = "서비스 '{0}'가 이미 등록되었습니다."
+    serviceIsNotRegisteredException                                   = "서비스 '{0}'가 등록되지 않았습니다."
+    serviceCommandFailedException                                     = "서비스 명령 '{0}' 이(가) 서비스 '{1}' 에서 실패했습니다."
+    serviceRegistrationException                                      = "서비스 '{0}' 등록에 실패했습니다."
+    serviceIsRunningException                                         = "서비스 '{0}'가 실행 중입니다. 강제로 중지하려면 -Force 매개변수를 사용하세요."
+    serviceUnRegistrationException                                    = "서비스 '{0}' 등록 취소에 실패했습니다."
+    passwordRequiredForServiceUserException                           = "Windows에서 서비스 사용자를 지정할 때는 비밀번호가 필요합니다. 사용자 '{0}'에 대해 유효한 비밀번호를 입력하세요."
+    featureNotSupportedException                                      = '{0}는 Windows에서만 지원됩니다.'
     suspendingMessage                                                 = '중단'
     resumingMessage                                                   = '재개'
     serverControlCommandsTitle                                        = '서버 제어 명령:'

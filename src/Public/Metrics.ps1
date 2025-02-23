@@ -25,6 +25,18 @@
 .PARAMETER ExcludeMilliseconds
     Omits milliseconds from the human-readable output when `-Format` is not `Milliseconds`.
 
+.PARAMETER Readable
+    If supplied, the uptime will be returned in a human-readable format instead of milliseconds.
+
+.PARAMETER OutputType
+    Specifies the format for the human-readable output. Valid options are:
+    - 'Verbose' for detailed descriptions (e.g., "1 day, 2 hours, 3 minutes").
+    - 'Compact' for a compact format (e.g., "dd:hh:mm:ss").
+    - Default is concise format (e.g., "1d 2h 3m").
+
+.PARAMETER ExcludeMilliseconds
+    If supplied, milliseconds will be excluded from the human-readable output.
+
 .EXAMPLE
     $currentUptime = Get-PodeServerUptime
     # Output: 123456789 (milliseconds)
@@ -56,6 +68,7 @@ function Get-PodeServerUptime {
     [CmdletBinding()]
     [OutputType([long], [string])]
     param(
+        # Common to all parameter sets
         [switch]
         $Total,
 
@@ -63,7 +76,7 @@ function Get-PodeServerUptime {
         [ValidateSet('Milliseconds', 'Concise', 'Compact', 'Verbose')]
         [string]
         $Format = 'Milliseconds',
- 
+
         [switch]
         $ExcludeMilliseconds
     )
