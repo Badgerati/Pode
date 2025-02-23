@@ -280,6 +280,7 @@
         'Import-PodeCertificate',
         'New-PodeCertificateRequest',
         'New-PodeSelfSignedCertificate',
+        'Test-PodeCertificate',
 
         # access
         'New-PodeAccessScheme',

@@ -347,4 +347,11 @@
     failedToCreateCertificateRequestExceptionMessage                  = 'Nie udało się wygenerować żądania certyfikatu.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'Nieobsługiwana długość klucza certyfikatu: {0} bitów. Proszę użyć obsługiwanej długości klucza.'
     invalidTypeExceptionMessage                                       = 'Błąd: Nieprawidłowy typ dla {0}. Oczekiwano {1}, ale otrzymano [{2}].'
+    certificateSignatureInvalidExceptionMessage                       = 'Certyfikat {0} ma nieprawidłowy podpis. Może zostać sfałszowany lub nie został podpisany przez zaufany urząd certyfikacji.'
+    certificateUntrustedRootExceptionMessage                          = 'Certyfikat {0} został wydany przez niezaufanego dostawcę. Zainstaluj certyfikat główny CA lub użyj certyfikatu od zaufanego dostawcy.'
+    certificateRevokedExceptionMessage                                = 'Certyfikat {0} został unieważniony. Powód: {1}. Proszę uzyskać nowy ważny certyfikat.'
+    certificateExpiredIntermediateExceptionMessage                    = 'Certyfikat {0} został podpisany przez certyfikat pośredni, który wygasł {1}. Łańcuch certyfikatów nie jest już ważny.'
+    certificateValidationFailedExceptionMessage                       = 'Weryfikacja certyfikatu dla {0} nie powiodła się. Sprawdź łańcuch certyfikatów i okres ważności.'
+    certificateWeakAlgorithmExceptionMessage                          = 'Certyfikat {0} używa słabego algorytmu kryptograficznego: {1}. Zaleca się użycie SHA-256 lub silniejszego.'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = 'Certyfikaty samopodpisane nie są dozwolone ze względu na ograniczenia bezpieczeństwa.'
 }

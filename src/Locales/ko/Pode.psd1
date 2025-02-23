@@ -347,4 +347,11 @@
     failedToCreateCertificateRequestExceptionMessage                  = '인증서 요청 생성에 실패했습니다.'
     unsupportedCertificateKeyLengthExceptionMessage                   = '지원되지 않는 인증서 키 길이: {0}비트. 지원되는 키 길이를 사용하세요.'
     invalidTypeExceptionMessage                                       = '오류: {0}의 타입이 잘못되었습니다. 예상된 타입: {1}, 받은 타입: [{2}].'
+    certificateSignatureInvalidExceptionMessage                       = '인증서 {0}의 서명이 잘못되었습니다. 인증서가 변조되었거나 신뢰할 수 있는 기관에서 서명되지 않았을 수 있습니다.'
+    certificateUntrustedRootExceptionMessage                          = '인증서 {0}는 신뢰할 수 없는 루트에서 발급되었습니다. 루트 CA 인증서를 설치하거나 신뢰할 수 있는 기관의 인증서를 사용하세요.'
+    certificateRevokedExceptionMessage                                = '인증서 {0}가 폐기되었습니다. 사유: {1}. 새로운 유효한 인증서를 얻으세요.'
+    certificateExpiredIntermediateExceptionMessage                    = '인증서 {0}는 {1}에 만료된 중간 인증서에 의해 서명되었습니다. 인증서 체인이 더 이상 유효하지 않습니다.'
+    certificateValidationFailedExceptionMessage                       = '인증서 {0}의 검증이 실패했습니다. 인증서 체인과 유효 기간을 확인하세요.'
+    certificateWeakAlgorithmExceptionMessage                          = '인증서 {0}는 약한 암호화 알고리즘 ({1})을 사용합니다. SHA-256 이상의 강력한 알고리즘을 사용하는 것이 권장됩니다.'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = '보안 제한으로 인해 자체 서명된 인증서는 허용되지 않습니다.'
 }

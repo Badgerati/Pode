@@ -2731,15 +2731,19 @@ function New-PodeAuthBearerScheme {
 
     # If an X509 certificate is being used, detect the signing algorithm
     if ($null -ne $X509Certificate) {
-        # Validate the certificate's validity period before proceeding
-        Test-PodeCertificate -Certificate $X509Certificate
-
-        # Ensure the certificate is authorized for the expected purpose
-        Test-PodeCertificateRestriction -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict
+        
+        # Skip certificate validation if it has been explicitly provided as a variable.
+        if ($PSCmdlet.ParameterSetName -ne 'CertRaw') {
+            # Validate that the certificate:
+            # 1. Is within its validity period.
+            # 2. Has a valid certificate chain.
+            # 3. Is explicitly authorized for the expected purpose (Code Signing).
+            # 4. Meets strict Enhanced Key Usage (EKU) enforcement.
+            $null = Test-PodeCertificate -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict -ErrorAction Stop
+        }
 
         # Retrieve appropriate JWT algorithms (e.g., RS256, ES256) from the provided certificate
         $alg = @( Get-PodeJwtSigningAlgorithm -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme )
-
     }
 
     # Return the Bearer authentication scheme configuration as a hashtable

@@ -375,12 +375,16 @@ function ConvertFrom-PodeJwt {
     }
 
     if ($X509Certificate) {
-        # Validate the certificate's validity period before proceeding
-        Test-PodeCertificate -Certificate $X509Certificate
-
-        # Ensure the certificate is authorized for the expected purpose
-        Test-PodeCertificateRestriction -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict
-
+        # Skip certificate validation if it has been explicitly provided as a variable.
+        if ($PSCmdlet.ParameterSetName -ne 'CertRaw') {
+            # Validate that the certificate:
+            # 1. Is within its validity period.
+            # 2. Has a valid certificate chain.
+            # 3. Is explicitly authorized for the expected purpose (Code Signing).
+            # 4. Meets strict Enhanced Key Usage (EKU) enforcement.
+            $null = Test-PodeCertificate -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict -ErrorAction Stop
+        }
+        
         $params['X509Certificate'] = $X509Certificate
     }
 
@@ -1493,6 +1497,7 @@ function New-PodeSelfSignedCertificate {
   - When using a PEM certificate, ensure the private key is available if required.
   - Windows certificate store retrieval is only supported on Windows systems.
   - CER files contain only the public key and do not support private key decryption.
+  - The improrted Certificate is not validated and returned as is.
 #>
 function Import-PodeCertificate {
     param (
@@ -1555,9 +1560,6 @@ function Import-PodeCertificate {
             $X509Certificate = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
         }
     }
-
-    # Validate the certificate's validity period before proceeding
-    Test-PodeCertificate -Certificate $X509Certificate
 
     return $X509Certificate
 }
@@ -1768,123 +1770,105 @@ function Get-PodeCertificatePurpose {
     [CmdletBinding()]
     [OutputType([object[]])]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate
     )
-
-    # Define known EKU OIDs and their purposes
-    $purposeOids = @{
-        '1.3.6.1.5.5.7.3.1' = 'ServerAuth'
-        '1.3.6.1.5.5.7.3.2' = 'ClientAuth'
-        '1.3.6.1.5.5.7.3.3' = 'CodeSigning'
-        '1.3.6.1.5.5.7.3.4' = 'EmailSecurity'
-    }
-
-    # Retrieve the EKU extension (OID: 2.5.29.37)
-    $ekuExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.37' }
-
-    if ($ekuExtension -and $ekuExtension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
-        # Use the EnhancedKeyUsages property which returns an OidCollection
-        $purposes = @()
-        foreach ($oid in $ekuExtension.EnhancedKeyUsages) {
-            if ($purposeOids.ContainsKey($oid.Value)) {
-                $purposes += $purposeOids[$oid.Value]
-            }
-            else {
-                $purposes += "Unknown ($($oid.Value))"
-            }
+    process {
+        # Define known EKU OIDs and their purposes
+        $purposeOids = @{
+            '1.3.6.1.5.5.7.3.1' = 'ServerAuth'
+            '1.3.6.1.5.5.7.3.2' = 'ClientAuth'
+            '1.3.6.1.5.5.7.3.3' = 'CodeSigning'
+            '1.3.6.1.5.5.7.3.4' = 'EmailSecurity'
         }
-        return $purposes
-    }
 
-    # If no EKU is present, return an empty array (no restrictions)
-    return @()
+        # Retrieve the EKU extension (OID: 2.5.29.37)
+        $ekuExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.37' }
+
+        if ($ekuExtension -and $ekuExtension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
+            # Use the EnhancedKeyUsages property which returns an OidCollection
+            $purposes = @()
+            foreach ($oid in $ekuExtension.EnhancedKeyUsages) {
+                if ($purposeOids.ContainsKey($oid.Value)) {
+                    $purposes += $purposeOids[$oid.Value]
+                }
+                else {
+                    $purposes += "Unknown ($($oid.Value))"
+                }
+            }
+            return $purposes
+        }
+
+        # If no EKU is present, return an empty array (no restrictions)
+        return @()
+    }
 }
 
 <#
 .SYNOPSIS
-  Validates whether an X.509 certificate is currently valid.
+  Validates an X.509 certificate for both general validity and intended usage.
 
 .DESCRIPTION
-  This function checks if an X.509 certificate is valid based on its
-  `NotBefore` and `NotAfter` properties. If the certificate is not yet valid or has expired,
-  an exception is thrown. In addition, the function builds the certificate chain and
-  (optionally) performs revocation checking using either online (OCSP/CRL) or offline (cached CRLs) mode.
+  This function performs comprehensive validation on an X.509 certificate. It checks:
+    - That the certificate’s validity period (NotBefore and NotAfter) is current.
+    - That the certificate chain is valid (including optional revocation checking).
+    - That the certificate meets security criteria (e.g. not using weak algorithms).
+    - Optionally, that the certificate’s Enhanced Key Usage (EKU) includes the expected purpose.
 
-  The function operates in **UTC time** to ensure consistency across environments.
+  New parameters:
+    - **ExpectedPurpose**: When provided, the function checks if the certificate’s EKU includes this purpose.
+      Valid values: ServerAuth, ClientAuth, CodeSigning, EmailSecurity.
+    - **Strict**: When used with ExpectedPurpose, if any unknown EKU is present, validation fails.
+    - **AllowWeakAlgorithms**: When specified, certificates using weak algorithms are allowed.
+    - **DenySelfSigned**: When specified, self-signed certificates are rejected.
 
-  Additionally, revocation checking can be performed in either **online** (OCSP/CRL)
-  or **offline** (cached CRL) mode.
-
-  The function works for both CA-issued and self-signed certificates.
-  For self-signed certificates, signature verification is skipped and the chain policy is adjusted to allow unknown certificate authorities.
+  If any validation step fails, the function writes an error and returns `$false`. Otherwise, it returns `$true`.
 
 .PARAMETER Certificate
   The X509Certificate2 object to validate.
 
 .PARAMETER CheckRevocation
-  A switch that, when provided, enables certificate revocation checking (online or offline).
+  A switch that enables revocation checking (online or offline).
 
 .PARAMETER OfflineRevocation
-  A switch that forces revocation checking to use only cached CRLs (offline mode).
+  A switch that forces revocation checking to use only cached CRLs.
 
 .PARAMETER AllowWeakAlgorithms
-  A switch that, when provided, allows certificates that use weak signature algorithms (e.g. md5RSA, sha1RSA, sha1ECDSA, RSA-1024).
+  A switch that, when provided, allows certificates with weak signature algorithms.
 
 .PARAMETER DenySelfSigned
   A switch that, when provided, rejects self-signed certificates.
 
+.PARAMETER ExpectedPurpose
+  An optional string specifying the expected Enhanced Key Usage (EKU) for the certificate.
+  Valid values: ServerAuth, ClientAuth, CodeSigning, EmailSecurity.
+    - 'ServerAuth'      (1.3.6.1.5.5.7.3.1)
+    - 'ClientAuth'      (1.3.6.1.5.5.7.3.2)
+    - 'CodeSigning'     (1.3.6.1.5.5.7.3.3)
+    - 'EmailSecurity'   (1.3.6.1.5.5.7.3.4)
+
+.PARAMETER Strict
+  A switch that, when used with ExpectedPurpose, enforces that no unknown EKUs are present.
+
 .OUTPUTS
-  [boolean] Returns $true if the certificate is valid. Otherwise, an exception is thrown.
+  [boolean] Returns `$true` if the certificate passes all validation and restriction checks, otherwise `$false`.
 
 .EXAMPLE
   Test-PodeCertificate -Certificate $cert
-  Validates the certificate without performing revocation checks.
+  Performs basic validity and chain checks on the certificate.
 
 .EXAMPLE
   Test-PodeCertificate -Certificate $cert -CheckRevocation
-  Validates the certificate and performs online revocation checking.
+  Also performs online revocation checking.
 
 .EXAMPLE
-  Test-PodeCertificate -Certificate $cert -CheckRevocation -OfflineRevocation
-  Validates the certificate using only cached CRLs for revocation checking.
-
-.EXAMPLE
-  Test-PodeCertificate -Certificate $cert -DenySelfSigned
-  Validates the certificate and rejects it if it is self-signed.
-
-.NOTES
-  - When using revocation checking on CA-issued certificates, ensure that the system can access the relevant OCSP/CRL endpoints.
-  - For self-signed certificates, revocation checking is automatically disabled and the chain policy is modified to allow unknown certificate authorities.
-  - If AllowWeakAlgorithms is not specified, the function will throw an exception for certificates using weak algorithms.
-  - **Online vs Offline Revocation Checking**:
-    - If `-CheckRevocation` is provided without `-OfflineRevocation`, the function checks revocation **online**
-      using OCSP/CRL (requires an internet connection).
-    - If `-CheckRevocation -OfflineRevocation` is specified, the function **only uses cached CRLs**, ensuring
-      offline validation without contacting external servers.
-
-  - **Using Cached CRLs for Offline Validation**:
-    - The system must have previously downloaded CRLs stored locally.
-    - To check installed CRLs:
-      ```powershell
-      Get-ChildItem -Path "C:\Windows\System32\CertSrv\CertEnroll" -Filter "*.crl"
-      ```
-    - To manually download a CRL:
-      ```powershell
-      Invoke-WebRequest -Uri "http://example.com/crl.pem" -OutFile "C:\Path\To\Store\crl.pem"
-      ```
-    - Ensure CRLs are **up-to-date** to prevent validation failures due to expired revocation lists.
-
-  - **Error Handling**:
-    - If the certificate is revoked, the function will throw an exception.
-    - If `-OfflineRevocation` is used and no cached CRLs are available, revocation checking might fail.
-
-  This is an internal Pode function and may be subject to change.
+  Test-PodeCertificate -Certificate $cert -ExpectedPurpose CodeSigning -Strict
+  Validates the certificate and ensures it is explicitly intended for CodeSigning.
 #>
 function Test-PodeCertificate {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]
         $Certificate,
 
@@ -1898,88 +1882,123 @@ function Test-PodeCertificate {
         [switch]$AllowWeakAlgorithms,
 
         [Parameter()]
-        [switch]$DenySelfSigned
+        [switch]$DenySelfSigned,
+
+        [Parameter()]
+        [ValidateSet('ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity')]
+        [string]$ExpectedPurpose,
+
+        [Parameter()]
+        [switch]$Strict
     )
+    process {
+        # Validate certificate validity period
+        $currentDate = [System.DateTime]::UtcNow
+        $notBefore = $Certificate.NotBefore.ToUniversalTime()
+        $notAfter = $Certificate.NotAfter.ToUniversalTime()
 
-    $currentDate = [System.DateTime]::UtcNow
-    $notBefore = $Certificate.NotBefore.ToUniversalTime()
-    $notAfter = $Certificate.NotAfter.ToUniversalTime()
-
-    if ($currentDate -lt $notBefore) {
-        throw ($PodeLocale.certificateNotValidYetExceptionMessage -f $Certificate.Subject, $notBefore)
-    }
-    if ($currentDate -gt $notAfter) {
-        throw ($PodeLocale.certificateExpiredExceptionMessage -f $Certificate.Subject, $notAfter)
-    }
-    Write-Verbose "Certificate $($Certificate.Subject) is valid based on NotBefore/NotAfter properties."
-
-    # Option: Deny self-signed certificates.
-    if ($DenySelfSigned -and ($Certificate.Subject -eq $Certificate.Issuer)) {
-        throw 'Self-signed certificates are not allowed.'
-    }
-
-    # For CA-issued certificates, check signature validity.
-    # For self-signed certificates, skip this check.
-    if ($Certificate.Subject -ne $Certificate.Issuer) {
-        if (! $Certificate.Verify()) {
-            throw ($PodeLocale.certificateSignatureInvalidExceptionMessage -f $Certificate.Subject)
+        if ($currentDate -lt $notBefore) {
+            Write-Error ($PodeLocale.certificateNotValidYetExceptionMessage -f $Certificate.Subject, $notBefore)
+            return $false
         }
-    }
-    else {
-        Write-Verbose 'Self-signed certificate detected: skipping signature verification.'
-    }
+        if ($currentDate -gt $notAfter) {
+            Write-Error ($PodeLocale.certificateExpiredExceptionMessage -f $Certificate.Subject, $notAfter)
+            return $false
+        }
+        Write-Verbose "Certificate $($Certificate.Subject) is within its valid period."
 
-    # Initialize the certificate chain.
-    $chain = [System.Security.Cryptography.X509Certificates.X509Chain]::new()
+        # Option: Deny self-signed certificates if requested.
+        if ($DenySelfSigned -and ($Certificate.Subject -eq $Certificate.Issuer)) {
+            Write-Error $PodeLocale.selfSignedCertificatesNotAllowedExceptionMessage
+            return $false
+        }
 
-    # For self-signed certificates, allow unknown certificate authority.
-    if ($Certificate.Subject -eq $Certificate.Issuer) {
-        $chain.ChainPolicy.VerificationFlags = [System.Security.Cryptography.X509Certificates.X509VerificationFlags]::AllowUnknownCertificateAuthority
-        # Also disable revocation checking for self-signed certificates.
-        $CheckRevocation = $false
-        Write-Verbose 'Self-signed certificate detected: revocation check disabled.'
-    }
-
-    # Apply Revocation Policy.
-    if ($CheckRevocation) {
-        $chain.ChainPolicy.RevocationMode = if ($OfflineRevocation) {
-            [System.Security.Cryptography.X509Certificates.X509RevocationMode]::Offline
+        # For CA-issued certificates, check signature validity.
+        # Self-signed certificates: skip signature verification but log a message.
+        if ($Certificate.Subject -ne $Certificate.Issuer) {
+            if (! $Certificate.Verify()) {
+                Write-Error ($PodeLocale.certificateSignatureInvalidExceptionMessage -f $Certificate.Subject)
+                return $false
+            }
         }
         else {
-            [System.Security.Cryptography.X509Certificates.X509RevocationMode]::Online
+            Write-Verbose 'Self-signed certificate detected: skipping signature verification.'
         }
-        Write-Verbose "Revocation check set to: $($chain.ChainPolicy.RevocationMode)"
-    }
-    else {
-        $chain.ChainPolicy.RevocationMode = [System.Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
-    }
 
-    # Build the certificate chain.
-    $isValidChain = $chain.Build($Certificate)
-    if (! $isValidChain) {
-        foreach ($status in $chain.ChainStatus) {
-            if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::UntrustedRoot) {
-                throw ($PodeLocale.certificateUntrustedRootExceptionMessage -f $Certificate.Subject)
+        # Initialize the certificate chain.
+        $chain = [System.Security.Cryptography.X509Certificates.X509Chain]::new()
+
+        # For self-signed certificates, allow an unknown certificate authority and disable revocation checks.
+        if ($Certificate.Subject -eq $Certificate.Issuer) {
+            $chain.ChainPolicy.VerificationFlags = [System.Security.Cryptography.X509Certificates.X509VerificationFlags]::AllowUnknownCertificateAuthority
+            $CheckRevocation = $false
+            Write-Verbose 'Self-signed certificate detected: revocation check disabled.'
+        }
+
+        # Apply revocation policy.
+        if ($CheckRevocation) {
+            $chain.ChainPolicy.RevocationMode = if ($OfflineRevocation) {
+                [System.Security.Cryptography.X509Certificates.X509RevocationMode]::Offline
             }
-            if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::Revoked) {
-                throw ($PodeLocale.certificateRevokedExceptionMessage -f $Certificate.Subject, $status.StatusInformation)
+            else {
+                [System.Security.Cryptography.X509Certificates.X509RevocationMode]::Online
             }
-            if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::NotTimeValid) {
-                throw ($PodeLocale.certificateExpiredIntermediateExceptionMessage -f $Certificate.Subject)
+            Write-Verbose "Revocation checking set to: $($chain.ChainPolicy.RevocationMode)"
+        }
+        else {
+            $chain.ChainPolicy.RevocationMode = [System.Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
+        }
+
+        # Build the certificate chain.
+        $isValidChain = $chain.Build($Certificate)
+        if (-not $isValidChain) {
+            foreach ($status in $chain.ChainStatus) {
+                if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::UntrustedRoot) {
+                    Write-Error ($PodeLocale.certificateUntrustedRootExceptionMessage -f $Certificate.Subject)
+                    return $false
+                }
+                if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::Revoked) {
+                    Write-Error ($PodeLocale.certificateRevokedExceptionMessage -f $Certificate.Subject, $status.StatusInformation)
+                    return $false
+                }
+                if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::NotTimeValid) {
+                    Write-Error ($PodeLocale.certificateExpiredIntermediateExceptionMessage -f $Certificate.Subject)
+                    return $false
+                }
+            }
+            Write-Error ($PodeLocale.certificateValidationFailedExceptionMessage -f $Certificate.Subject)
+            return $false
+        }
+        Write-Verbose 'Certificate chain validation successful.'
+
+        # Check for weak algorithms unless weak ones are allowed.
+        if (-not $AllowWeakAlgorithms) {
+            $weakAlgorithms = @('md5RSA', 'sha1RSA', 'sha1ECDSA', 'RSA-1024')
+            if ($Certificate.SignatureAlgorithm.FriendlyName -in $weakAlgorithms) {
+                Write-Error ($PodeLocale.certificateWeakAlgorithmExceptionMessage -f $Certificate.Subject, $Certificate.SignatureAlgorithm.FriendlyName)
+                return $false
             }
         }
-        throw ($PodeLocale.certificateValidationFailedExceptionMessage -f $Certificate.Subject)
-    }
-    Write-Verbose 'Certificate chain validation successful.'
 
-    # Check for weak algorithms unless allowed.
-    if (! $AllowWeakAlgorithms) {
-        $weakAlgorithms = @('md5RSA', 'sha1RSA', 'sha1ECDSA', 'RSA-1024')
-        if ($Certificate.SignatureAlgorithm.FriendlyName -in $weakAlgorithms) {
-            throw ($PodeLocale.certificateWeakAlgorithmExceptionMessage -f $Certificate.Subject, $Certificate.SignatureAlgorithm.FriendlyName)
+        # If an ExpectedPurpose is provided, check the certificate's EKU restrictions.
+        if ($ExpectedPurpose) {
+            # Retrieve the EKU values via a helper function.
+            $purposes = Get-PodeCertificatePurpose -Certificate $Certificate
+            if ($purposes.Count -eq 0 -and ! $Strict) {
+                Write-Verbose 'Certificate has no EKU restrictions; it can be used for any purpose.'
+            }
+            elseif ($ExpectedPurpose -notin $purposes) {
+                Write-Error ($PodeLocale.certificateNotValidForPurposeExceptionMessage -f $ExpectedPurpose, ($purposes -join ', '))
+                return $false
+            }
+            if ($Strict -and ($purposes -match '^Unknown')) {
+                Write-Error ($PodeLocale.certificateUnknownEkusStrictModeExceptionMessage -f ($purposes -join ', '))
+                return $false
+            }
+            Write-Verbose "Certificate is valid for the expected purpose '$ExpectedPurpose'. Found purposes: $($purposes -join ', ')"
         }
-    }
 
-    return $true
+        return $true
+    }
 }
 

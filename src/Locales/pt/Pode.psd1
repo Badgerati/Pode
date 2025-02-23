@@ -347,4 +347,11 @@
     failedToCreateCertificateRequestExceptionMessage                  = 'Falha ao gerar a solicitação de certificado.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'Comprimento da chave do certificado não suportado: {0} bits. Use um comprimento de chave suportado.'
     invalidTypeExceptionMessage                                       = 'Erro: Tipo inválido para {0}. Esperado {1}, mas recebido [{2}].'
+    certificateSignatureInvalidExceptionMessage                       = 'O certificado {0} possui uma assinatura inválida. O certificado pode ter sido adulterado ou não foi assinado por uma autoridade confiável.'
+    certificateUntrustedRootExceptionMessage                          = 'O certificado {0} foi emitido por uma raiz não confiável. Instale o certificado da CA raiz ou use um certificado de uma autoridade confiável.'
+    certificateRevokedExceptionMessage                                = 'O certificado {0} foi revogado. Motivo: {1}. Por favor, obtenha um novo certificado válido.'
+    certificateExpiredIntermediateExceptionMessage                    = 'O certificado {0} foi assinado por um certificado intermediário que expirou em {1}. A cadeia de certificação não é mais válida.'
+    certificateValidationFailedExceptionMessage                       = 'Falha na validação do certificado para {0}. Verifique a cadeia de certificação e o período de validade.'
+    certificateWeakAlgorithmExceptionMessage                          = 'O certificado {0} usa um algoritmo criptográfico fraco: {1}. É recomendado o uso de SHA-256 ou superior.'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = 'Certificados autoassinados não são permitidos devido a restrições de segurança.'
 }

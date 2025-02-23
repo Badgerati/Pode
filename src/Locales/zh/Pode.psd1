@@ -347,4 +347,11 @@
     failedToCreateCertificateRequestExceptionMessage                  = '生成证书请求失败。'
     unsupportedCertificateKeyLengthExceptionMessage                   = '不支持的证书密钥长度: {0} 位。请使用受支持的密钥长度。'
     invalidTypeExceptionMessage                                       = '错误: {0} 的类型无效。期望 {1}，但收到 [{2}]。'
+    certificateSignatureInvalidExceptionMessage                       = '证书 {0} 的签名无效。证书可能已被篡改，或未由受信任的机构签署。'
+    certificateUntrustedRootExceptionMessage                          = '证书 {0} 由不受信任的根证书颁发。请安装根 CA 证书或使用受信任机构的证书。'
+    certificateRevokedExceptionMessage                                = '证书 {0} 已被吊销。原因: {1}。请获取新的有效证书。'
+    certificateExpiredIntermediateExceptionMessage                    = '证书 {0} 由 {1} 过期的中间证书签署。证书链已失效。'
+    certificateValidationFailedExceptionMessage                       = '证书 {0} 的验证失败。请检查证书链和有效期。'
+    certificateWeakAlgorithmExceptionMessage                          = '证书 {0} 使用了弱加密算法: {1}。建议使用 SHA-256 或更强的算法。'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = '由于安全限制，不允许使用自签名证书。'
 }

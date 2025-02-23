@@ -347,4 +347,11 @@
     failedToCreateCertificateRequestExceptionMessage                  = 'Fehler beim Erstellen einer Zertifikatsanforderung.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'Nicht unterstützte Zertifikatschlüssellänge: {0} Bit. Bitte verwenden Sie eine unterstützte Schlüssellänge.'
     invalidTypeExceptionMessage                                       = 'Fehler: Ungültiger Typ für {0}. Erwartet {1}, aber erhalten [{2}].'
+    certificateSignatureInvalidExceptionMessage                       = 'Das Zertifikat {0} hat eine ungültige Signatur. Das Zertifikat wurde möglicherweise manipuliert oder nicht von einer vertrauenswürdigen Stelle signiert.'
+    certificateUntrustedRootExceptionMessage                          = 'Das Zertifikat {0} wurde von einer nicht vertrauenswürdigen Stammzertifizierungsstelle ausgestellt. Bitte installieren Sie das Stamm-CA-Zertifikat oder verwenden Sie ein Zertifikat einer vertrauenswürdigen Behörde.'
+    certificateRevokedExceptionMessage                                = 'Das Zertifikat {0} wurde widerrufen. Grund: {1}. Bitte fordern Sie ein neues gültiges Zertifikat an.'
+    certificateExpiredIntermediateExceptionMessage                    = 'Das Zertifikat {0} wurde von einem Zwischenzertifikat signiert, das am {1} abgelaufen ist. Die Zertifikatskette ist nicht mehr gültig.'
+    certificateValidationFailedExceptionMessage                       = 'Die Zertifikatsvalidierung für {0} ist fehlgeschlagen. Bitte überprüfen Sie die Zertifikatskette und die Gültigkeitsdauer.'
+    certificateWeakAlgorithmExceptionMessage                          = 'Das Zertifikat {0} verwendet eine schwache kryptografische Algorithmus: {1}. Es wird empfohlen, SHA-256 oder stärker zu verwenden.'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = 'Selbstsignierte Zertifikate sind aufgrund von Sicherheitsbeschränkungen nicht erlaubt.'
 }

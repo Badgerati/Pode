@@ -347,4 +347,11 @@
     failedToCreateCertificateRequestExceptionMessage                  = 'Kan geen certificaataanvraag genereren.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'Niet-ondersteunde certificaatsleutellengte: {0} bits. Gebruik een ondersteunde sleutellengte.'
     invalidTypeExceptionMessage                                       = 'Fout: Ongeldig type voor {0}. Verwacht {1}, maar ontvangen [{2}].'
+    certificateSignatureInvalidExceptionMessage                       = 'Het certificaat {0} heeft een ongeldige handtekening. Het certificaat kan zijn gewijzigd of is niet ondertekend door een vertrouwde autoriteit.'
+    certificateUntrustedRootExceptionMessage                          = 'Het certificaat {0} is uitgegeven door een niet-vertrouwde root. Installeer het root-CA-certificaat of gebruik een certificaat van een vertrouwde autoriteit.'
+    certificateRevokedExceptionMessage                                = 'Het certificaat {0} is ingetrokken. Reden: {1}. Verkrijg een nieuw geldig certificaat.'
+    certificateExpiredIntermediateExceptionMessage                    = 'Het certificaat {0} is ondertekend door een tussenliggend certificaat dat op {1} is verlopen. De certificaatketen is niet langer geldig.'
+    certificateValidationFailedExceptionMessage                       = 'Certificaatvalidatie mislukt voor {0}. Controleer de certificaatketen en de geldigheidsperiode.'
+    certificateWeakAlgorithmExceptionMessage                          = 'Het certificaat {0} gebruikt een zwak cryptografisch algoritme: {1}. Het wordt aanbevolen om SHA-256 of sterker te gebruiken.'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = 'Zelfondertekende certificaten zijn niet toegestaan vanwege beveiligingsbeperkingen.'
 }

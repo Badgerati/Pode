@@ -347,5 +347,12 @@
     failedToCreateCertificateRequestExceptionMessage                  = 'فشل في إنشاء طلب الشهادة.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'طول مفتاح الشهادة غير مدعوم: {0} بت. يُرجى استخدام طول مفتاح مدعوم.'
     invalidTypeExceptionMessage                                       = 'خطأ: نوع غير صالح لـ {0}. المتوقع {1}، لكن تم استلام [{2}].'
+    certificateSignatureInvalidExceptionMessage                       = 'الشهادة {0} تحتوي على توقيع غير صالح. قد تم العبث بالشهادة أو لم يتم توقيعها من قبل جهة موثوقة.'
+    certificateUntrustedRootExceptionMessage                          = 'الشهادة {0} صادرة عن جهة جذر غير موثوقة. يرجى تثبيت شهادة الجذر CA أو استخدام شهادة من جهة موثوقة.'
+    certificateRevokedExceptionMessage                                = 'تم إبطال الشهادة {0}. السبب: {1}. يرجى الحصول على شهادة صالحة جديدة.'
+    certificateExpiredIntermediateExceptionMessage                    = 'الشهادة {0} موقعة من قبل شهادة وسيطة انتهت صلاحيتها في {1}. سلسلة الشهادات لم تعد صالحة.'
+    certificateValidationFailedExceptionMessage                       = 'فشلت عملية التحقق من الشهادة {0}. يرجى التحقق من سلسلة الشهادات وفترة الصلاحية.'
+    certificateWeakAlgorithmExceptionMessage                          = 'الشهادة {0} تستخدم خوارزمية تشفير ضعيفة: {1}. يُوصى باستخدام SHA-256 أو أقوى.'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = 'لا يُسمح باستخدام الشهادات الموقعة ذاتيًا بسبب قيود الأمان.'
 }
 

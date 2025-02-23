@@ -347,4 +347,11 @@
     failedToCreateCertificateRequestExceptionMessage                  = 'Errore nella generazione della richiesta di certificato.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'Lunghezza della chiave del certificato non supportata: {0} bit. Utilizzare una lunghezza di chiave supportata.'
     invalidTypeExceptionMessage                                       = 'Errore: Tipo non valido per {0}. Atteso {1}, ma ricevuto [{2}].'
+    certificateSignatureInvalidExceptionMessage                       = "Il certificato {0} ha una firma non valida. Potrebbe essere stato manomesso o non firmato da un'autorità attendibile."
+    certificateUntrustedRootExceptionMessage                          = "Il certificato {0} è stato emesso da un'autorità radice non affidabile. Si prega di installare il certificato CA radice o utilizzare un certificato di un'autorità affidabile."
+    certificateRevokedExceptionMessage                                = 'Il certificato {0} è stato revocato. Motivo: {1}. Si prega di ottenere un nuovo certificato valido.'
+    certificateExpiredIntermediateExceptionMessage                    = 'Il certificato {0} è firmato da un certificato intermedio che è scaduto il {1}. La catena di certificati non è più valida.'
+    certificateValidationFailedExceptionMessage                       = 'La validazione del certificato per {0} è fallita. Si prega di verificare la catena di certificati e il periodo di validità.'
+    certificateWeakAlgorithmExceptionMessage                          = 'Il certificato {0} utilizza un algoritmo crittografico debole: {1}. Si consiglia di utilizzare SHA-256 o superiore.'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = 'I certificati auto-firmati non sono consentiti a causa di restrizioni di sicurezza.'
 }

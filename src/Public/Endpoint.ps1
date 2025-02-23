@@ -58,7 +58,7 @@ A quick description of the Endpoint - normally used in OpenAPI.
 An optional Acknowledge message to send to clients when they first connect, for TCP and SMTP endpoints only.
 
 .PARAMETER SslProtocol
-One or more optional SSL Protocols this endpoints supports. (Default: SSL3/TLS12 - Just TLS12 on MacOS).
+One or more optional SSL Protocols this endpoints supports. (Default: what the OS support by default).
 
 .PARAMETER CRLFMessageEnd
 If supplied, TCP endpoints will expect incoming data to end with CRLF.
@@ -405,15 +405,18 @@ function Add-PodeEndpoint {
             }
 
             'certself' {
-                $obj.Certificate.Raw = New-PodeSelfSignedCertificate -Loopback -CertificatePurpose ServerAuth -DnsName $obj.address.ToString() 
+                $obj.Certificate.Raw = New-PodeSelfSignedCertificate -Loopback -CertificatePurpose ServerAuth -DnsName $obj.address.ToString()
             }
         }
 
-        # Validate the certificate's validity period before proceeding
-        Test-PodeCertificateValidity -Certificate $obj.Certificate.Raw
-
-        # Ensure the certificate is authorized for the expected purpose
-        Test-PodeCertificateRestriction -Certificate $obj.Certificate.Raw -ExpectedPurpose ServerAuth
+        # Skip certificate validation if it has been explicitly provided as a variable.
+        if ($PSCmdlet.ParameterSetName -ne 'CertRaw') {
+            # Validate that the certificate:
+            # 1. Is within its validity period.
+            # 2. Has a valid certificate chain.
+            # 3. Is explicitly authorized for the expected purpose (ServerAuth).
+            $null = Test-PodeCertificate -Certificate $obj.Certificate.Raw -ExpectedPurpose ServerAuth -ErrorAction Stop
+        }
     }
 
     if (!$exists) {

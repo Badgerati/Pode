@@ -1127,11 +1127,15 @@ function New-PodeJwt {
     # Configure the JWT header and parameters if using a certificate
     if ($null -ne $X509Certificate) {
 
-        # Validate the certificate's validity period before proceeding
-        Test-PodeCertificate -Certificate $X509Certificate
-
-        # Ensure the certificate is authorized for the expected purpose
-        Test-PodeCertificateRestriction -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict
+         # Skip certificate validation if it has been explicitly provided as a variable.
+         if ($PSCmdlet.ParameterSetName -ne 'CertRaw') {
+            # Validate that the certificate:
+            # 1. Is within its validity period.
+            # 2. Has a valid certificate chain.
+            # 3. Is explicitly authorized for the expected purpose (Code Signing).
+            # 4. Meets strict Enhanced Key Usage (EKU) enforcement.
+            $null = Test-PodeCertificate -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict -ErrorAction Stop
+        }
 
         $Header.alg = Get-PodeJwtSigningAlgorithm -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme
         $params = @{

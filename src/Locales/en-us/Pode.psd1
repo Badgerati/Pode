@@ -347,4 +347,11 @@
     failedToCreateCertificateRequestExceptionMessage                  = 'Failed to generate a certificate request.'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'Unsupported certificate key length: {0} bits. Please use a supported key length.'
     invalidTypeExceptionMessage                                       = 'Error: Invalid type for {0}. Expected {1}, but received [{2}].'
+    certificateSignatureInvalidExceptionMessage                       = 'The certificate {0} has an invalid signature. The certificate may have been tampered with or was not signed by a trusted authority.'
+    certificateUntrustedRootExceptionMessage                          = 'The certificate {0} is issued by an untrusted root. Please install the root CA certificate or use a certificate from a trusted authority.'
+    certificateRevokedExceptionMessage                                = 'The certificate {0} has been revoked. Reason: {1}. Please obtain a new valid certificate.'
+    certificateExpiredIntermediateExceptionMessage                    = 'The certificate {0} is signed by an intermediate certificate that has expired on {1}. The certificate chain is no longer valid.'
+    certificateValidationFailedExceptionMessage                       = 'Certificate validation failed for {0}. Please check the certificate chain and validity period.'
+    certificateWeakAlgorithmExceptionMessage                          = 'The certificate {0} uses a weak cryptographic algorithm: {1}. It is recommended to use SHA-256 or stronger.'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = 'Self-signed certificates are not permitted due to security restrictions.'
 }

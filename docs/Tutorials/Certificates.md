@@ -23,11 +23,11 @@ Pode provides multiple ways to configure HTTPS on [`Add-PodeEndpoint`](../../Fun
 - **Custom Certificate Management:**
   - Pode’s built-in functions allow better control over certificate creation, import, and export.
 
-## **Generating a Self-Signed Certificate**
+## Generating a Self-Signed Certificate
 
-Pode provides the `New-PodeSelfSignedCertificate` function for creating self-signed X.509 certificates for development and testing purposes.
+Pode provides the **`New-PodeSelfSignedCertificate`** function for creating self-signed X.509 certificates for development and testing purposes.
 
-### **Features of `New-PodeSelfSignedCertificate`**
+### Features of `New-PodeSelfSignedCertificate`
 
 - ✅ Creates a **self-signed certificate** for HTTPS, JWT, or other use cases.
 - ✅ Supports **RSA** and **ECDSA** keys with configurable key sizes.
@@ -36,9 +36,9 @@ Pode provides the `New-PodeSelfSignedCertificate` function for creating self-sig
 - ✅ Provides **ephemeral certificates** (in-memory only, not stored on disk).
 - ✅ Supports **exportable certificates** that can be saved for later use.
 
-### **Usage Examples**
+### Usage Examples
 
-#### **1️⃣ Generate a Self-Signed Certificate for HTTPS**
+#### 1️⃣ Generate a Self-Signed Certificate for HTTPS
 
 ```powershell
 $cert = New-PodeSelfSignedCertificate -DnsName "example.com" -CertificatePurpose ServerAuth
@@ -47,19 +47,19 @@ $cert = New-PodeSelfSignedCertificate -DnsName "example.com" -CertificatePurpose
 - Creates a **self-signed RSA certificate** for `example.com`.
 - The certificate is valid for HTTPS (`ServerAuth`).
 
-#### **2️⃣ Generate a Self-Signed Certificate for Local Development**
+#### 2️⃣ Generate a Self-Signed Certificate for Local Development
 
 ```powershell
 $cert = New-PodeSelfSignedCertificate -Loopback
 ```
 
 - Automatically includes common loopback addresses:
-  ✅ `127.0.0.1`
-  ✅ `::1`
-  ✅ `localhost`
-  ✅ The machine’s hostname
+  - `127.0.0.1`
+  - `::1`
+  - `localhost`
+  - The machine’s hostname
 
-#### **3️⃣ Generate an ECDSA Certificate**
+#### 3️⃣ Generate an ECDSA Certificate
 
 ```powershell
 $cert = New-PodeSelfSignedCertificate -DnsName "test.local" -KeyType "ECDSA" -KeyLength 384
@@ -67,7 +67,7 @@ $cert = New-PodeSelfSignedCertificate -DnsName "test.local" -KeyType "ECDSA" -Ke
 
 - Creates a **self-signed ECDSA certificate** with a **384-bit** key.
 
-#### **4️⃣ Generate a Certificate That Exists Only in Memory (Ephemeral)**
+#### 4️⃣ Generate a Certificate That Exists Only in Memory (Ephemeral)
 
 ```powershell
 $cert = New-PodeSelfSignedCertificate -DnsName "temp.local" -Ephemeral
@@ -75,7 +75,7 @@ $cert = New-PodeSelfSignedCertificate -DnsName "temp.local" -Ephemeral
 
 - The private key is **not stored on disk**, and the certificate only exists **in-memory**.
 
-#### **5️⃣ Generate an Exportable Certificate**
+#### 5️⃣ Generate an Exportable Certificate
 
 ```powershell
 $cert = New-PodeSelfSignedCertificate -DnsName "secureapp.local" -Exportable
@@ -83,7 +83,7 @@ $cert = New-PodeSelfSignedCertificate -DnsName "secureapp.local" -Exportable
 
 - The certificate is **exportable** and can be saved as a `.pfx` or `.pem` file later.
 
-#### **6️⃣ Bind a Self-Signed Certificate to an HTTPS Endpoint**
+#### 6️⃣ Bind a Self-Signed Certificate to an HTTPS Endpoint
 
 ```powershell
 Start-PodeServer {
@@ -96,9 +96,9 @@ Start-PodeServer {
 
 ---
 
-### Generating a Certificate Signing Request (CSR)
+## Generating a Certificate Signing Request (CSR)
 
-To generate a Certificate Signing Request (CSR) along with a private key, use the `New-PodeCertificateRequest` function:
+To generate a Certificate Signing Request (CSR) along with a private key, use the **`New-PodeCertificateRequest`** function:
 
 ```powershell
 $csr = New-PodeCertificateRequest -DnsName "example.com" -CommonName "example.com" -KeyType "RSA" -KeyLength 2048
@@ -106,7 +106,7 @@ $csr = New-PodeCertificateRequest -DnsName "example.com" -CommonName "example.co
 
 This will create a CSR file and a private key file in the current directory. You can specify additional parameters such as organization details and certificate purposes.
 
-#### Using a CSR to Obtain a Certificate
+### Using a CSR to Obtain a Certificate
 
 Once you have generated a CSR, you need to submit it to a **Certificate Authority (CA)** (such as Let's Encrypt, DigiCert, or a private CA) to receive a signed certificate. The process typically involves:
 
@@ -119,9 +119,23 @@ Example: Importing the signed certificate after receiving it from the CA:
 
 ```powershell
 $cert = Import-PodeCertificate -FilePath "C:\Certs\signed-cert.pfx" -CertificatePassword (ConvertTo-SecureString "MyPass" -AsPlainText -Force)
+if (-not (Test-PodeCertificate -Certificate $cert -ErrorAction Stop)) {
+    throw 'Certificate not valid'
+}
 ```
 
-### Exporting a Certificate
+Alternatively, you can use:
+
+```powershell
+Test-PodeCertificate -Certificate $cert -ErrorAction Stop | Out-Null
+```
+
+to force an exception if the certificate fails validation.
+**Refer to the `Test-PodeCertificate` documentation for any parameter details.**
+
+---
+
+## Exporting a Certificate
 
 Pode allows exporting certificates in various formats such as PFX and PEM. To export a certificate:
 
@@ -135,7 +149,7 @@ or as a PEM file with a separate private key:
 Export-PodeCertificate -Certificate $cert -FilePath "C:\Certs\mycert" -Format "PEM" -IncludePrivateKey
 ```
 
-### Checking a Certificate’s Purpose
+## Checking a Certificate’s Purpose
 
 A certificate's **purpose** is defined by its **Enhanced Key Usage (EKU)** attributes, which specify what the certificate is allowed to be used for. Common EKU values include:
 
@@ -151,7 +165,7 @@ $purposes = Get-PodeCertificatePurpose -Certificate $cert
 $purposes
 ```
 
-#### Enforcing Certificate Purpose
+### Enforcing Certificate Purpose
 
 When Pode validates a certificate, it ensures that the certificate’s EKU matches the expected usage. If a certificate is used for an endpoint but lacks the required EKU (e.g., using a `CodeSigning` certificate for `ServerAuth`), Pode will reject the certificate and fail to bind it to the endpoint.
 
@@ -167,7 +181,7 @@ Start-PodeServer {
 
 If the certificate lacks the correct EKU, Pode will return an error when attempting to bind it.
 
-### Importing an Existing Certificate
+## Importing an Existing Certificate
 
 To import a certificate from a file or the Windows certificate store:
 
@@ -175,28 +189,40 @@ To import a certificate from a file or the Windows certificate store:
 $cert = Import-PodeCertificate -FilePath "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString "MyPass" -AsPlainText -Force)
 ```
 
-or, to retrieve a certificate by thumbprint:
+If you import a certificate without validating it, you should then call **`Test-PodeCertificate`** to verify that the certificate is valid:
 
 ```powershell
-$cert = Import-PodeCertificate -CertificateThumbprint "D2C2F4F7A456B69D4F9E9F8C3D3D6E5A9C3EBA6F"
+if (-not (Test-PodeCertificate -Certificate $cert -ErrorAction Stop)) {
+    throw 'Certificate not valid'
+}
 ```
 
+Alternatively, you can force an exception by piping the output:
 
-## **Testing a Certificate’s Validity**
+```powershell
+Test-PodeCertificate -Certificate $cert -ErrorAction Stop | Out-Null
+```
 
-Pode provides the `Test-PodeCertificate` function to validate an **X.509 certificate** and ensure it meets security and usage requirements.
+Refer to the **Test-PodeCertificate** section below for more details on all available parameters.
 
-### **Features of `Test-PodeCertificate`**
+---
+
+## Testing a Certificate’s Validity
+
+Pode provides the **`Test-PodeCertificate`** function to validate an **X.509 certificate** and ensure it meets security and usage requirements.
+
+### Features of `Test-PodeCertificate`
 
 - ✅ Checks if the certificate is **within its validity period** (`NotBefore` and `NotAfter`).
 - ✅ **Builds the certificate chain** to verify its trust.
 - ✅ Supports **online and offline revocation checking** (OCSP/CRL).
 - ✅ Allows **optional enforcement of strong cryptographic algorithms**.
 - ✅ Provides an option to **reject self-signed certificates**.
+- ✅ Optionally checks that the certificate’s Enhanced Key Usage (EKU) matches an **ExpectedPurpose** (with an optional **Strict** mode).
 
-### **Usage Examples**
+### Usage Examples
 
-#### **Basic Certificate Validation**
+#### Basic Certificate Validation
 
 ```powershell
 Test-PodeCertificate -Certificate $cert
@@ -205,7 +231,7 @@ Test-PodeCertificate -Certificate $cert
 - Checks if the certificate is currently valid.
 - Does **not** check revocation status.
 
-#### **Validate Certificate with Online Revocation Checking**
+#### Validate Certificate with Online Revocation Checking
 
 ```powershell
 Test-PodeCertificate -Certificate $cert -CheckRevocation
@@ -213,7 +239,7 @@ Test-PodeCertificate -Certificate $cert -CheckRevocation
 
 - Uses **OCSP/CRL lookup** to check if the certificate is revoked.
 
-#### **Validate Certificate with Offline (Cached CRL) Revocation Check**
+#### Validate Certificate with Offline (Cached CRL) Revocation Check
 
 ```powershell
 Test-PodeCertificate -Certificate $cert -CheckRevocation -OfflineRevocation
@@ -221,7 +247,7 @@ Test-PodeCertificate -Certificate $cert -CheckRevocation -OfflineRevocation
 
 - Uses **only locally cached CRLs**, making it suitable for air-gapped environments.
 
-#### **Allow Certificates with Weak Algorithms**
+#### Allow Certificates with Weak Algorithms
 
 ```powershell
 Test-PodeCertificate -Certificate $cert -AllowWeakAlgorithms
@@ -229,7 +255,7 @@ Test-PodeCertificate -Certificate $cert -AllowWeakAlgorithms
 
 - Allows the use of certificates with **SHA1, MD5, or RSA-1024**.
 
-#### **Reject Self-Signed Certificates**
+#### Reject Self-Signed Certificates
 
 ```powershell
 Test-PodeCertificate -Certificate $cert -DenySelfSigned
@@ -237,21 +263,16 @@ Test-PodeCertificate -Certificate $cert -DenySelfSigned
 
 - Fails validation if the certificate **is self-signed**.
 
----
-
-## SSL Protocols
-
-The default allowed SSL protocols are SSL3 and TLS1.2 (or just TLS1.2 on MacOS), but you can change these to any of: SSL2, SSL3, TLS, TLS11, TLS12, TLS13. This is specified in your `server.psd1` configuration file:
+#### Enforce Expected Certificate Purpose
 
 ```powershell
-@{
-    Server = @{
-        Ssl= @{
-            Protocols = @('TLS', 'TLS11', 'TLS12')
-        }
-    }
-}
+Test-PodeCertificate -Certificate $cert -ExpectedPurpose CodeSigning -Strict
 ```
+
+- Validates that the certificate is explicitly authorized for **CodeSigning**.
+- In strict mode, if any unknown EKUs are present, the validation fails.
+
+---
 
 ## Using Certificates for JWT Authentication
 

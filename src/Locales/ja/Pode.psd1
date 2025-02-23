@@ -347,4 +347,11 @@
     failedToCreateCertificateRequestExceptionMessage                  = '証明書リクエストの生成に失敗しました。'
     unsupportedCertificateKeyLengthExceptionMessage                   = 'サポートされていない証明書キー長: {0} ビット。サポートされているキー長を使用してください。'
     invalidTypeExceptionMessage                                       = 'エラー: {0} の型が無効です。期待された型 {1} ですが、受け取った型は [{2}] です。'
+    certificateSignatureInvalidExceptionMessage                       = '証明書 {0} の署名が無効です。証明書が改ざんされた可能性があるか、信頼できる機関によって署名されていません。'
+    certificateUntrustedRootExceptionMessage                          = '証明書 {0} は信頼されていないルート証明機関によって発行されました。ルートCA証明書をインストールするか、信頼できる機関の証明書を使用してください。'
+    certificateRevokedExceptionMessage                                = '証明書 {0} は失効しました。理由: {1}。新しい有効な証明書を取得してください。'
+    certificateExpiredIntermediateExceptionMessage                    = '証明書 {0} は {1} に有効期限が切れた中間証明書によって署名されています。証明書チェーンは無効です。'
+    certificateValidationFailedExceptionMessage                       = '証明書 {0} の検証に失敗しました。証明書チェーンと有効期限を確認してください。'
+    certificateWeakAlgorithmExceptionMessage                          = '証明書 {0} は脆弱な暗号アルゴリズム ({1}) を使用しています。SHA-256 以上を使用することを推奨します。'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = 'セキュリティ上の制限により、自己署名証明書は許可されていません。'
 }
