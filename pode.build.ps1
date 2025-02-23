@@ -1775,15 +1775,15 @@ Add-BuildTask ReleaseNotes {
     $dependabot = @{}
 
     foreach ($pr in $prs) {
-        if ($pr.labels.name -icontains 'superseded') {
+        $labels = @($pr.labels.name)
+        if ($labels -icontains 'superseded' -or
+            $labels -icontains 'new-release' -or
+            $labels -icontains 'internal-code :hammer:' -or
+            $labels -icontains 'exclude-from-release-notes') {
             continue
         }
 
         $label = ($pr.labels[0].name -split ' ')[0]
-        if ($label -iin @('new-release', 'internal-code')) {
-            continue
-        }
-
         if ([string]::IsNullOrWhiteSpace($label)) {
             $label = 'misc'
         }
