@@ -7,14 +7,13 @@ function Start-PodeTaskHousekeeper {
         return
     }
 
-    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval 20 -ScriptBlock {
+    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval $PodeContext.Tasks.HouseKeeping.TimerInterval -ScriptBlock {
         try {
             # return if no task processes
             if ($PodeContext.Tasks.Processes.Count -eq 0) {
                 return
             }
-
-            # get the current time
+        $RetentionMinutes = $PodeContext.Tasks.HouseKeeping.RetentionMinutes
             $now = [datetime]::UtcNow
 
             # loop through each process

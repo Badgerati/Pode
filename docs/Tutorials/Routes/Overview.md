@@ -281,6 +281,9 @@ The following is the structure of the Route object internally, as well as the ob
 | OpenApi | hashtable[] | The OpenAPI definition/settings for the route |
 | Path | string | The path of the route - this path will have regex in place of route parameters |
 | TransferEncoding | string | The transfer encoding to use when parsing the payload in the request |
+| IsAsync | bool | The route is Async |
+| Async | hashtable | Contains the information for the route when is Async mode |
+
 
 Static routes have a slightly different format:
 

@@ -866,7 +866,7 @@ function Set-PodeOARequest {
             }
         }
 
-        if ($PassThru) {
+        if ($PassThru) { 
             return $Route
         }
 
@@ -1734,6 +1734,15 @@ function Set-PodeOARouteInfo {
 
             if ($Deprecated.IsPresent) {
                 $r.OpenApi.Deprecated = $Deprecated.IsPresent
+            }
+
+            if ($r.OpenApi.Postponed) {
+                if ($r.OpenApi.PostponedArgumentList) {
+                    Invoke-Command -ScriptBlock $r.OpenApi.Postponed -ArgumentList $r.OpenApi.PostponedArgumentList
+                }
+                else {
+                    Invoke-Command -ScriptBlock $r.OpenApi.Postponed
+                }
             }
         }
 
