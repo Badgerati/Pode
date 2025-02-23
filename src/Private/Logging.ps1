@@ -299,12 +299,13 @@ function Write-PodeRequestLog {
         RfcUserIdentity = '-'
         User            = '-'
         Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
-        UtcDate         = [DateTime]::Now.ToUniversalTime()
+        UtcDate         = [DateTime]::UtcNow
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
-            Hostname = "$($Request.Scheme.ToLowerInvariant())://$($Request.Host.ToLowerInvariant())"
+            Hostname = $Request.Host.ToLowerInvariant()
+            Scheme   = $Request.Scheme.ToLowerInvariant()
             Resource = $Path
-            Query = '-'
+            Query = (Protect-PodeValue -Value $Request.Url.Query -Default '-').TrimStart('?')
             Protocol = "HTTP/$($Request.ProtocolVersion)"
             Referrer = $Request.UrlReferrer
             Agent    = $Request.UserAgent
@@ -313,14 +314,6 @@ function Write-PodeRequestLog {
             StatusCode        = $Response.StatusCode
             StatusDescription = $Response.StatusDescription
             Size              = '-'
-        }
-    }
-
-    # set query if exists
-    if ($Request.Url.OriginalString.IndexOf('?') -gt 0) {
-        $query = $Request.Url.OriginalString.SubString($Request.Url.OriginalString.IndexOf('?') + 1 )
-        if (![string]::IsNUllOrWhiteSpace($query) {
-            $item.Request.Query = $query
         }
     }
     
