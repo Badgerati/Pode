@@ -2,7 +2,7 @@
 
 ## v2.12.0
 
-Date: 22nd February 2025
+Date: 23rd February 2025
 
 ```plain
 ### Features
