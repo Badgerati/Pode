@@ -1,5 +1,47 @@
 # Release Notes
 
+## v2.12.0
+
+Date: 23rd February 2025
+
+```plain
+### Features
+* #1445: Adds support for Kerberos/NTLM authentication
+* #1461: Adds Disable/Enable functionality, so you can block the server from accepting new requests (thanks @mdaneri!)
+* #1461: Adds Suspend/Resume functionality, so you can pause all runspaces/operations (thanks @mdaneri!)
+
+### Enhancements
+* #1461: Improves console output, and adds more key bindings for more control (thanks @mdaneri!)
+* #1469: Improved Access and Rate Limiting Middleware
+* #1487: Adds support for retrying failed Task processes
+* #1488: Adds support for retrieving the IP address from the X-Forwarded-For header, for Access/Rate Limit rules
+
+### Bugs
+* #1454: Fix OpenAPI Route Parameter Handling in Pode (thanks @mdaneri!)
+* #1460: Fixes ObjectDisposedException in during SSL/TLS operations (thanks @mdaneri!)
+* #1482: Fix for how the content-transfer-encoding SMTP header is extracted
+* #1483: Set initial runspace location to be the Server Root path
+
+### Documentation
+* #1447: Documentation Spelling Fixes (thanks @ArieHein!)
+* #1484: Add documentation for the various Route response type functions
+
+### Packaging
+* #1448: Update PowerShell to 7.2.24 for CI environment due to unavailability of 7.2.19 (thanks @mdaneri!)
+* #1452: Adds PS7.5 workflow (thanks @mdaneri!)
+* #1452: Bumps .NET version to .NET9 (thanks @mdaneri!)
+* #1452: Bumps InvokeBuild to v5.12.0 (thanks @mdaneri!)
+* #1452: Bumps MkDocs to v1.6.1 (thanks @mdaneri!)
+* #1457: Bump Alpine version in Docker image to v3.20
+* #1457: Remove PS7.2 and .NET6 support, as they're EOL now
+* #1486: Bumps PowerShell in Dockerfiles to v7.5
+* #1489: Bumps Pester to v5.7.1 (thanks @mdaneri!)
+* #1490: Bump MkDocs-Material theme to v9.6.4
+
+### Security
+* #1444: Adds VirusTotal package scanning Action
+```
+
 ## v2.11.1
 
 Date: 3rd November 2024
