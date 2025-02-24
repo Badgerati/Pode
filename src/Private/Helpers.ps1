@@ -2020,7 +2020,7 @@ function Get-PodeDefaultSslProtocol {
         $swVers = sw_vers | ConvertFrom-StringData
         $osName = $swVers.ProductName
         $productVersion = $swVers.ProductVersion.Trim()
-        Write-Output "Detected OS: $osName, Version: $productVersion"
+        Write-Verbose "Detected OS: $osName, Version: $productVersion"
         $versionObj = [version]$productVersion
 
         # Determine allowed protocols for macOS
@@ -2055,7 +2055,7 @@ function Get-PodeDefaultSslProtocol {
             $opensslOutput = openssl version 2>&1
             if ($opensslOutput -match 'OpenSSL\s+([\d\.]+)') {
                 $opensslVersion = [version]$matches[1]
-                Write-Output "Detected OpenSSL version: $opensslVersion"
+                Write-Verbose "Detected OpenSSL version: $opensslVersion"
                 if ($opensslVersion -ge [version]'1.1.1') {
                     # OpenSSL 1.1.1 and later support TLS 1.3
                     $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
