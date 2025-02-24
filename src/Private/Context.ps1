@@ -53,7 +53,10 @@ function New-PodeContext {
         $IgnoreServerConfig,
 
         [string]
-        $ConfigFile
+        $ConfigFile,
+
+        [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]
+        $Watchdog
     )
 
     # set a random server name if one not supplied
@@ -97,6 +100,13 @@ function New-PodeContext {
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
     $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+
+
+    if ($Watchdog) {
+        $ctx.Server.Watchdog = @{
+            Client = $Watchdog
+        }
+    }
 
     # list of created listeners/receivers
     $ctx.Listeners = @()
@@ -146,6 +156,7 @@ function New-PodeContext {
         Tasks      = 2
         WebSockets = 2
         Timers     = 1
+        Watchers   = 0
     }
 
     # set socket details for pode server
@@ -500,6 +511,7 @@ function New-PodeContext {
         Tasks     = $null
         Files     = $null
         Timers    = $null
+        Watchdog  = $null
     }
 
     # threading locks, etc.
@@ -705,6 +717,14 @@ function New-PodeRunspacePool {
         }
 
         $PodeContext.RunspacePools.Gui.Pool.ApartmentState = 'STA'
+    }
+
+    if (Test-PodeWatchdogEnabled ) {
+        $PodeContext.Threads['Watchdog'] = Get-PodeWatchdogRunspaceCount
+        $PodeContext.RunspacePools.Watchdog = @{
+            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads['Watchdog'], $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
     }
 }
 
