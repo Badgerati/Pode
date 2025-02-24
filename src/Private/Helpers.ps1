@@ -2019,7 +2019,7 @@ function Get-PodeDefaultSslProtocol {
          # Use sw_vers to get macOS version info
          $osName = $(sw_vers -productName)
          $productVersion = $(sw_vers -productVersion).Trim()
-         Write-Output "Detected OS: $osName, Version: $productVersion"
+         Write-Verbose "Detected OS: $osName, Version: $productVersion"
          $versionObj = [version]$productVersion
 
          # Determine allowed protocols for macOS

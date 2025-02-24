@@ -100,7 +100,12 @@ function New-PodeContext {
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
     $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
-    $ctx.Server.Fqdn = [System.Net.Dns]::GetHostEntry($ctx.Server.ComputerName).HostName
+    try {
+        $ctx.Server.Fqdn = [System.Net.Dns]::GetHostEntry($ctx.Server.ComputerName).HostName
+    }
+    catch {
+        $ctx.Server.Fqdn = $ctx.Server.ComputerName
+    }
     $ctx.Server.ApplicationName = $ApplicationName
 
 
