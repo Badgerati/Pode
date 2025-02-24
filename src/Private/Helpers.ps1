@@ -2016,26 +2016,25 @@ function Get-PodeDefaultSslProtocol {
         }
     }
     elseif ($IsMacOS) {
-        # Use sw_vers to get macOS version info
-        $swVers = sw_vers | ConvertFrom-StringData
-        $osName = $swVers.ProductName
-        $productVersion = $swVers.ProductVersion.Trim()
-        Write-Verbose "Detected OS: $osName, Version: $productVersion"
-        $versionObj = [version]$productVersion
+         # Use sw_vers to get macOS version info
+         $osName = $(sw_vers -productName)
+         $productVersion = $(sw_vers -productVersion).Trim()
+         Write-Output "Detected OS: $osName, Version: $productVersion"
+         $versionObj = [version]$productVersion
 
-        # Determine allowed protocols for macOS
-        if ($versionObj -lt [version]'10.11') {
-            # macOS 10.8 - 10.10: SSL3 allowed, TLS 1.0/1.1/1.2 allowed, TLS1.3 not supported
-            $AllowedProtocols = @('Ssl3', 'Tls', 'Tls11', 'Tls12')
-        }
-        elseif ($versionObj -ge [version]'10.11' -and $versionObj -lt [version]'10.13') {
-            # macOS 10.11 (and likely 10.12): SSL3 disabled, TLS 1.0/1.1/1.2 allowed
-            $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
-        }
-        else {
-            # macOS 10.13 and later: TLS 1.3 is supported in addition to TLS 1.0, 1.1, 1.2
-            $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
-        }
+         # Determine allowed protocols for macOS
+         if ($versionObj -lt [version]'10.11') {
+             # macOS 10.8 - 10.10: SSL3 allowed, TLS 1.0/1.1/1.2 allowed, TLS1.3 not supported
+             $AllowedProtocols = @('Ssl3', 'Tls', 'Tls11', 'Tls12')
+         }
+         elseif ($versionObj -ge [version]'10.11' -and $versionObj -lt [version]'10.13') {
+             # macOS 10.11 (and likely 10.12): SSL3 disabled, TLS 1.0/1.1/1.2 allowed
+             $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
+         }
+         else {
+             # macOS 10.13 and later: TLS 1.3 is supported in addition to TLS 1.0, 1.1, 1.2
+             $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
+         }
     }
     elseif ($IsLinux) {
         # Read /etc/os-release for OS info if available
