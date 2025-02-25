@@ -284,7 +284,7 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
             }
         }
 
-        Start-Sleep -Seconds 10
+        Start-Sleep -Seconds 20
     }
 
     AfterAll {

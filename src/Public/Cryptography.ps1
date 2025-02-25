@@ -1135,8 +1135,8 @@ function New-PodeCertificateRequest {
     $csrObject = New-PodeCertificateRequestInternal @csrParams
 
 
-    $csrPath = "$OutputPath\$CommonName.csr"
-    $keyPath = "$OutputPath\$CommonName.key"
+    $csrPath = Join-Path -Path $OutputPath -ChildPath "$CommonName.csr"
+    $keyPath = Join-Path -Path $OutputPath -ChildPath "$CommonName.key"
 
     $csrObject.Request | Out-File -FilePath $csrPath -Encoding utf8NoBOM
     $privateKeyBytes = $csrObject.PrivateKey.ExportPkcs8PrivateKey()

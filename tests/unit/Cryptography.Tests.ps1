@@ -397,7 +397,7 @@ Describe 'Export-PodeCertificate Function' {
     }
 
     Context 'File Export - PEM format with private key' {
-        
+
         It 'Exports certificate to a PEM file and exports the private key separately' {
             $filePathBase = Join-Path $tempDir 'dummycertPEM_WithKey'
             $password = ConvertTo-SecureString 'dummyPass' -AsPlainText -Force
