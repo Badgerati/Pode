@@ -230,32 +230,17 @@ function Get-PrecedingHeader {
     return $headerLines
 }
 
-# This helper function strips header content from a merged function file.
-# It assumes that if a header exists, it ends at the line that starts with "#>".
-# Improved Remove-Header function
-# Improved Remove-Header function
-function Remove-Header {
+function Remove-Comment {
     param (
         [string]$Content
     )
-    $lines = $Content -split [Environment]::NewLine
-    $headerEndIndex = $null
-    for ($i = 0; $i -lt $lines.Count; $i++) {
-        if ($lines[$i] -match '^\s*#>') {
-            $headerEndIndex = $i
-            break
-        }
-    }
-    if ($null -ne $headerEndIndex ) {
-        if ($headerEndIndex + 1 -lt $lines.Count) {
-            return ($lines[($headerEndIndex + 1)..($lines.Count - 1)] -join [Environment]::NewLine).Trim()
-        }
-        else {
-            return ""
-        }
-    }
-    return $Content.Trim()
+    # Remove block comments (<# ... #>) across multiple lines.
+    $content = [regex]::Replace($Content, '(?s)<#.*?#>', '')
+    # Remove single-line comments (lines starting with #).
+    $content = [regex]::Replace($content, '(?m)^\s*#.*$', '')
+    return $content.Trim()
 }
+
 
 # MERGE ALL MODE (with improved header stripping and using namespace handling)
 if ($Merge -and $MergeAll) {
@@ -288,7 +273,7 @@ if ($Merge -and $MergeAll) {
             }
             # If the StripHeaders switch is set, remove the header from the content.
             if ($StripHeaders) {
-                $newContent = Remove-Header $newContent
+                $newContent = Remove-Comment $newContent
             }
             $processedContents += $newContent
         }
