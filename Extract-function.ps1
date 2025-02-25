@@ -1,3 +1,60 @@
+<#
+.SYNOPSIS
+    Extracts functions from PowerShell scripts, supports merging them back, and provides backup/restore functionality.
+
+.DESCRIPTION
+    This script processes .ps1 files within the Private and Public subdirectories of the specified
+    source directory. It extracts functions into separate files (optionally preserving any "using namespace"
+    directives from the top of the file) and supports merging them back. Merge mode can operate per-extraction folder
+    (the default) or, if -MergeAll is specified, all extracted files within each target subdirectory are merged into a
+    single file (Private.ps1 or Public.ps1). Optionally, -StripHeaders removes the header portion from each function
+    file during merge.
+
+    The script also automatically creates a backup of the Private and Public folders (unless running in restore mode)
+    and supports restoring from a specified backup (or the latest backup if none is specified).
+
+.PARAMETER SourceDirectory
+    The root directory containing the Private and Public subdirectories. Defaults to './src'.
+
+.PARAMETER Merge
+    Performs merge operations. In default mode, each extraction folder is merged into a file in its parent folder.
+
+.PARAMETER MergeAll
+    When used with -Merge, all extracted function files under each target subdirectory are merged into a single file
+    (Private.ps1 for the Private folder, and Public.ps1 for the Public folder).
+
+.PARAMETER StripHeaders
+    When used with -Merge or -MergeAll, removes header sections (as returned by Get-PrecedingHeader) from each function
+    file so that only the function body remains.
+
+.PARAMETER Restore
+    Restores a backup of the Private and Public subdirectories. Optionally, a backup folder name can be provided via
+    -BackupName; if omitted, the most recent backup is used.
+
+.PARAMETER BackupOnly
+    Creates a backup of the Private and Public subdirectories without performing any extraction or merge operations.
+
+.EXAMPLE
+    # Extract functions (with automatic backup) from scripts in ./src
+    .\YourScript.ps1 -SourceDirectory "./src"
+
+.EXAMPLE
+    # Merge extracted function files per extraction folder (default merge behavior)
+    .\YourScript.ps1 -SourceDirectory "./src" -Merge
+
+.EXAMPLE
+    # Merge all extracted function files in Private and Public into Private.ps1 and Public.ps1,
+    # and remove header sections from each function.
+    .\YourScript.ps1 -SourceDirectory "./src" -Merge -MergeAll -StripHeaders
+
+.EXAMPLE
+    # Restore the latest backup
+    .\YourScript.ps1 -SourceDirectory "./src" -Restore
+
+.EXAMPLE
+    # Restore from a specific backup folder
+    .\YourScript.ps1 -SourceDirectory "./src" -Restore -BackupName "20230425123045"
+#>
 [CmdletBinding(DefaultParameterSetName = 'Default')]
 param (
     [Parameter(Mandatory = $false)]
@@ -5,6 +62,12 @@ param (
 
     [Parameter(Mandatory = $true, ParameterSetName = 'Merge')]
     [switch]$Merge,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'Merge')]
+    [switch]$MergeAll,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'Merge')]
+    [switch]$StripHeaders,
 
     [Parameter(Mandatory = $true, ParameterSetName = 'Restore')]
     [switch]$Restore,
@@ -19,7 +82,8 @@ param (
 # Define the backup folder under the source.
 $BackupFolder = Join-Path $SourceDirectory 'Backup'
 
-# === RESTORE MODE ===
+###############################################################################
+# RESTORE MODE
 if ($Restore) {
     if (-not (Test-Path $BackupFolder)) {
         Write-Error "No backup folder found under $SourceDirectory\Backup."
@@ -58,7 +122,8 @@ if ($Restore) {
     exit
 }
 
-# === BACKUP MODE ===
+###############################################################################
+# AUTOMATIC BACKUP (unless in Restore mode)
 # (Automatically performed unless in restore mode.)
 if (-not (Test-Path $BackupFolder)) {
     New-Item -Path $BackupFolder -ItemType Directory | Out-Null
@@ -81,7 +146,10 @@ Write-Output "Backup created at $BackupSubFolder"
 if ($BackupOnly) {
     exit
 }
-# === Define the helper function for header processing ===
+
+###############################################################################
+# HELPER FUNCTIONS
+
 function Get-PrecedingHeader {
     param (
         [string[]]$Lines,
@@ -130,7 +198,7 @@ function Get-PrecedingHeader {
         }
         else {
             if ($trimmed -eq '') {
-                # Remove empty lines **only if we've already found `#>`**
+                # Remove empty lines **only if we've already found #>**
                 if ($foundClosingComment) {
                     $headerLines.Insert(0, $line)
                 }
@@ -162,86 +230,162 @@ function Get-PrecedingHeader {
     return $headerLines
 }
 
+# This helper function strips header content from a merged function file.
+# It assumes that if a header exists, it ends at the line that starts with "#>".
+function Remove-Header {
+    param (
+        [string]$Content
+    )
+    $lines = $Content -split [Environment]::NewLine
+    $startIndex = 0
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match '^\s*#>') {
+            $startIndex = $i + 1
+            break
+        }
+    }
+    if ($startIndex -gt 0 -and $startIndex -lt $lines.Count) {
+        return ($lines[$startIndex..($lines.Count - 1)] -join [Environment]::NewLine).Trim()
+    }
+    return $Content.Trim()
+}
 
-
+###############################################################################
 # Determine the target subdirectories ("Private" and "Public") within the source.
 $targetSubDirs = @('Private', 'Public') | ForEach-Object {
     $fullPath = Join-Path $SourceDirectory $_
     if (Test-Path $fullPath -PathType Container) { $fullPath }
 }
-
 if (-not $targetSubDirs) {
     Write-Error "No 'Private' or 'Public' subdirectories found under $SourceDirectory"
     exit 1
 }
 
-# MERGE MODE: Merge extracted function files back into a single file per original file.
-# For each extraction folder (created during extraction) found under Private and Public,
-# merge its .ps1 files (sorted by name) into a file named after the folder in its parent,
-# then remove the extraction folder.
+###############################################################################
+# MAIN OPERATION
 if ($Merge) {
-    # MERGE MODE: Merge extracted function files back into a single file per original file.
-    foreach ($subDir in $targetSubDirs) {
-        Get-ChildItem -Path $subDir -Recurse -Directory | ForEach-Object {
-            $currentDir = $_.FullName
-            # Process only directories that contain one or more .ps1 files.
-            $ps1Files = Get-ChildItem -Path $currentDir -Filter '*.ps1' -File
-            if ($ps1Files.Count -gt 0) {
-                # Initialize a hash table for unique using namespace lines.
-                $usingNamespaces = @{}
+    if ($MergeAll) {
+        foreach ($subDir in $targetSubDirs) {
+            $targetName = Split-Path $subDir -Leaf
+            # Gather all extracted function files (recursively) in this subdirectory.
+            $allFunctionFiles = Get-ChildItem -Path $subDir -Recurse -File -Filter '*.ps1'
 
-                # Array to store the processed content of each function file.
-                $processedContents = @()
+            # Initialize a hash table for unique using namespace lines and an array for processed contents.
+            $usingNamespaces = @{}
+            $processedContents = @()
 
-                foreach ($file in ($ps1Files | Sort-Object Name)) {
-                    $content = Get-Content -Path $file.FullName -Raw
-                    $lines = $content -split [Environment]::NewLine
+            foreach ($file in ($allFunctionFiles | Sort-Object FullName)) {
+                $content = Get-Content -Path $file.FullName -Raw
+                $lines = $content -split [Environment]::NewLine
 
-                    # Remove leading lines that start with 'using namespace'
-                    $index = 0
-                    while ($index -lt $lines.Count -and $lines[$index].Trim() -match '^using\s+namespace') {
-                        $usingLine = $lines[$index].Trim()
-                        $usingNamespaces[$usingLine] = $true
-                        $index++
-                    }
-                    # Rebuild the file content without the using namespace lines.
-                    if ($index -lt $lines.Count) {
-                        $newContent = $lines[$index..($lines.Count - 1)] -join [Environment]::NewLine
-                    }
-                    else {
-                        $newContent = ''
-                    }
-                    $processedContents += $newContent
+                # Remove leading lines that start with 'using namespace'
+                $index = 0
+                while ($index -lt $lines.Count -and $lines[$index].Trim() -match '^using\s+namespace') {
+                    $usingLine = $lines[$index].Trim()
+                    $usingNamespaces[$usingLine] = $true
+                    $index++
                 }
-
-                # Build the unique using namespace block (preserving the original order).
-                $usingBlock = ($usingNamespaces.Keys) -join [Environment]::NewLine
-
-                # Merge the processed contents with a blank line between them.
-                $mergedBody = $processedContents -join ([Environment]::NewLine + [Environment]::NewLine)
-
-                # Prepend the using block if any were found.
-                if ($usingBlock.Trim().Length -gt 0) {
-                    $mergedContent = "$usingBlock$([Environment]::NewLine)$([Environment]::NewLine)$mergedBody"
+                # Rebuild the file content without the using namespace lines.
+                if ($index -lt $lines.Count) {
+                    $newContent = $lines[$index..($lines.Count - 1)] -join [Environment]::NewLine
                 }
                 else {
-                    $mergedContent = $mergedBody
+                    $newContent = ''
                 }
+                # If the StripHeaders switch is set, remove the header from the content.
+                if ($StripHeaders) {
+                    $newContent = Remove-Header $newContent
+                }
+                $processedContents += $newContent
+            }
 
-                $mergedFileName = "$($_.Name).ps1"
-                $mergedFilePath = Join-Path $_.Parent.FullName $mergedFileName
-                Write-Output "Merging folder '$currentDir' into '$mergedFilePath'"
+            # Build the unique using namespace block.
+            $usingBlock = ($usingNamespaces.Keys) -join [Environment]::NewLine
 
-                Set-Content -Path $mergedFilePath -Value $mergedContent.TrimEnd() -Encoding UTF8
+            # Merge all processed contents with a blank line between them.
+            $mergedBody = $processedContents -join ([Environment]::NewLine + [Environment]::NewLine)
+            if ($usingBlock.Trim().Length -gt 0) {
+                $mergedContent = "$usingBlock$([Environment]::NewLine)$([Environment]::NewLine)$mergedBody"
+            }
+            else {
+                $mergedContent = $mergedBody
+            }
 
-                Remove-Item -Path $currentDir -Recurse -Force
-                Write-Output "Removed extraction folder: $currentDir"
+            $mergedFilePath = Join-Path $subDir "$targetName.ps1"
+            Set-Content -Path $mergedFilePath -Value $mergedContent.TrimEnd() -Encoding UTF8
+            Write-Output "Merged all function files in '$subDir' into '$mergedFilePath'"
+
+            # Remove all extraction folders (child directories) under this target subdirectory.
+            Get-ChildItem -Path $subDir -Directory | ForEach-Object {
+                Remove-Item -Path $_.FullName -Recurse -Force
+                Write-Output "Removed extraction folder: $($_.FullName)"
+            }
+        }
+    }
+    else {
+        # EXISTING MERGE MODE: Merge extracted function files per extraction folder.
+        foreach ($subDir in $targetSubDirs) {
+            Get-ChildItem -Path $subDir -Recurse -Directory | ForEach-Object {
+                $currentDir = $_.FullName
+                # Process only directories that contain one or more .ps1 files.
+                $ps1Files = Get-ChildItem -Path $currentDir -Filter '*.ps1' -File
+                if ($ps1Files.Count -gt 0) {
+                    # Initialize a hash table for unique using namespace lines.
+                    $usingNamespaces = @{}
+
+                    # Array to store the processed content of each function file.
+                    $processedContents = @()
+
+                    foreach ($file in ($ps1Files | Sort-Object Name)) {
+                        $content = Get-Content -Path $file.FullName -Raw
+                        $lines = $content -split [Environment]::NewLine
+
+                        # Remove leading lines that start with 'using namespace'
+                        $index = 0
+                        while ($index -lt $lines.Count -and $lines[$index].Trim() -match '^using\s+namespace') {
+                            $usingLine = $lines[$index].Trim()
+                            $usingNamespaces[$usingLine] = $true
+                            $index++
+                        }
+                        # Rebuild the file content without the using namespace lines.
+                        if ($index -lt $lines.Count) {
+                            $newContent = $lines[$index..($lines.Count - 1)] -join [Environment]::NewLine
+                        }
+                        else {
+                            $newContent = ''
+                        }
+                        $processedContents += $newContent
+                    }
+
+                    # Build the unique using namespace block (preserving the original order).
+                    $usingBlock = ($usingNamespaces.Keys) -join [Environment]::NewLine
+
+                    # Merge the processed contents with a blank line between them.
+                    $mergedBody = $processedContents -join ([Environment]::NewLine + [Environment]::NewLine)
+
+                    # Prepend the using block if any were found.
+                    if ($usingBlock.Trim().Length -gt 0) {
+                        $mergedContent = "$usingBlock$([Environment]::NewLine)$([Environment]::NewLine)$mergedBody"
+                    }
+                    else {
+                        $mergedContent = $mergedBody
+                    }
+
+                    $mergedFileName = "$($_.Name).ps1"
+                    $mergedFilePath = Join-Path $_.Parent.FullName $mergedFileName
+                    Write-Output "Merging folder '$currentDir' into '$mergedFilePath'"
+
+                    Set-Content -Path $mergedFilePath -Value $mergedContent.TrimEnd() -Encoding UTF8
+
+                    Remove-Item -Path $currentDir -Recurse -Force
+                    Write-Output "Removed extraction folder: $currentDir"
+                }
             }
         }
     }
 }
 else {
-    # EXTRACTION MODE:
+    # EXTRACTION MODE: Process .ps1 files in the Private and Public subdirectories.
     foreach ($subDir in $targetSubDirs) {
         Get-ChildItem -Path $subDir -File -Filter '*.ps1' |
             # Exclude any file that is already in an extraction folder (its parent folder matches its BaseName)
