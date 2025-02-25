@@ -232,23 +232,91 @@ function Get-PrecedingHeader {
 
 # This helper function strips header content from a merged function file.
 # It assumes that if a header exists, it ends at the line that starts with "#>".
+# Improved Remove-Header function
+# Improved Remove-Header function
 function Remove-Header {
     param (
         [string]$Content
     )
     $lines = $Content -split [Environment]::NewLine
-    $startIndex = 0
+    $headerEndIndex = $null
     for ($i = 0; $i -lt $lines.Count; $i++) {
         if ($lines[$i] -match '^\s*#>') {
-            $startIndex = $i + 1
+            $headerEndIndex = $i
             break
         }
     }
-    if ($startIndex -gt 0 -and $startIndex -lt $lines.Count) {
-        return ($lines[$startIndex..($lines.Count - 1)] -join [Environment]::NewLine).Trim()
+    if ($null -ne $headerEndIndex ) {
+        if ($headerEndIndex + 1 -lt $lines.Count) {
+            return ($lines[($headerEndIndex + 1)..($lines.Count - 1)] -join [Environment]::NewLine).Trim()
+        }
+        else {
+            return ""
+        }
     }
     return $Content.Trim()
 }
+
+# MERGE ALL MODE (with improved header stripping and using namespace handling)
+if ($Merge -and $MergeAll) {
+    foreach ($subDir in $targetSubDirs) {
+        $targetName = Split-Path $subDir -Leaf
+        # Gather all extracted function files (recursively) in this subdirectory.
+        $allFunctionFiles = Get-ChildItem -Path $subDir -Recurse -File -Filter '*.ps1'
+
+        # Initialize a hash table for unique using namespace lines and an array for processed contents.
+        $usingNamespaces = @{}
+        $processedContents = @()
+
+        foreach ($file in ($allFunctionFiles | Sort-Object FullName)) {
+            $content = Get-Content -Path $file.FullName -Raw
+            $lines = $content -split [Environment]::NewLine
+
+            # Remove leading lines that start with 'using namespace'
+            $index = 0
+            while ($index -lt $lines.Count -and $lines[$index].Trim() -match '^using\s+namespace') {
+                $usingLine = $lines[$index].Trim()
+                $usingNamespaces[$usingLine] = $true
+                $index++
+            }
+            # Rebuild the file content without the using namespace lines.
+            if ($index -lt $lines.Count) {
+                $newContent = $lines[$index..($lines.Count - 1)] -join [Environment]::NewLine
+            }
+            else {
+                $newContent = ''
+            }
+            # If the StripHeaders switch is set, remove the header from the content.
+            if ($StripHeaders) {
+                $newContent = Remove-Header $newContent
+            }
+            $processedContents += $newContent
+        }
+
+        # Build the unique using namespace block (preserving the original order).
+        $usingBlock = ($usingNamespaces.Keys) -join [Environment]::NewLine
+
+        # Merge all processed contents with a blank line between them.
+        $mergedBody = $processedContents -join ([Environment]::NewLine + [Environment]::NewLine)
+        if ($usingBlock.Trim().Length -gt 0) {
+            $mergedContent = "$usingBlock$([Environment]::NewLine)$([Environment]::NewLine)$mergedBody"
+        }
+        else {
+            $mergedContent = $mergedBody
+        }
+
+        $mergedFilePath = Join-Path $subDir "$targetName.ps1"
+        Set-Content -Path $mergedFilePath -Value $mergedContent.TrimEnd() -Encoding UTF8
+        Write-Output "Merged all function files in '$subDir' into '$mergedFilePath'"
+
+        # Remove all extraction folders (child directories) under this target subdirectory.
+        Get-ChildItem -Path $subDir -Directory | ForEach-Object {
+            Remove-Item -Path $_.FullName -Recurse -Force
+            Write-Output "Removed extraction folder: $($_.FullName)"
+        }
+    }
+}
+
 
 ###############################################################################
 # Determine the target subdirectories ("Private" and "Public") within the source.
