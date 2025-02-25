@@ -186,13 +186,109 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
                         Write-PodeJsonResponse -Value @{ Result = 'OK' }
                     }
                 }
+
+
+                #lifecycle
+
+                # Register Pode Bearer Authentication
+                New-PodeAuthBearerScheme -AsJWT -JwtVerificationMode Strict -SelfSigned |
+                    Add-PodeAuth -Name 'Bearer_JWT_SelfSigned' -Sessionless -ScriptBlock {
+                        param($jwt)
+
+                        # here you'd check a real user storage, this is just for example
+                        if ($jwt.id -ieq 'M0R7Y302') {
+                            return @{
+                                User = @{
+                                    ID       = $jWt.id
+                                    Name     = $jWt.name
+                                    Type     = $jWt.type
+                                    sub      = $jWt.Id
+                                    username = $jWt.Username
+                                    groups   = $jWt.Groups
+                                }
+                            }
+                        }
+                        else {
+                            write-podehost $jwt -Explode
+                        }
+
+                        return $null
+                    }
+
+
+                Add-PodeRoute -Method Post -Path '/auth/bearer/jwt/login' -ScriptBlock {
+                    try {
+                        # In a real scenario, you'd validate the incoming credentials from $WebEvent.data
+                        $username = $WebEvent.Data.username
+                        $password = $WebEvent.Data.password
+                        $user = if ($username -eq 'morty' -and $password -eq 'pickle') {
+                            @{
+                                Id       = 'M0R7Y302'
+                                Username = 'morty.smith'
+                                Name     = 'Morty Smith'
+                                Groups   = 'Domain Users'
+                            }
+                        }
+                        if (!$user) {
+                            throw 'Invalid credentials'
+                        }
+                        $payload = @{
+                            sub      = $user.Id
+                            name     = $user.Name
+                            username = $user.Username
+                            id       = $user.Id
+                            groups   = $user.Groups
+                            type     = 'human'
+                        }
+
+                        # If valid, generate a JWT that matches the 'ExampleApiKeyCert' scheme
+                        $jwt = ConvertTo-PodeJwt  -Payload $payload -Authentication 'Bearer_JWT_SelfSigned' -Expiration 600
+                        Write-PodeJsonResponse -StatusCode 200 -Value @{
+                            'success' = $true
+                            'user'    = $user
+                            'jwt'     = $jwt
+                        }
+
+                    }
+                    catch {
+                        write-podehost $_.Exception.Message
+                        Write-PodeJsonResponse -StatusCode 401 -Value @{ error = 'Invalid credentials' }
+                    }
+                }
+
+                Add-PodeRoute  -Method Post -Path '/auth/bearer/jwt/renew' -Authentication 'Bearer_JWT_SelfSigned' -ScriptBlock {
+                    try {
+
+                        $jwt = Update-PodeJwt -ExpirationExtension 6000
+
+                        Write-PodeJsonResponse -StatusCode 200 -Value @{
+                            'success' = $true
+                            'jwt'     = $jwt
+                        }
+                    }
+                    catch {
+                        Write-PodeJsonResponse -StatusCode 401 -Value @{ error = 'Invalid JWT token supplied' }
+                    }
+                }
+
+                Add-PodeRoute  -Method Post -Path '/auth/bearer/jwt/info' -Authentication 'Bearer_JWT_SelfSigned' -ScriptBlock {
+                    try {
+                        $jwtInfo = ConvertFrom-PodeJwt -Outputs  'Header,Payload,Signature' -HumanReadable
+                        Write-PodeJsonResponse -StatusCode 200 -Value $jwtInfo
+                    }
+                    catch {
+                        Write-PodeJsonResponse -StatusCode 401 -Value @{ error = 'Invalid JWT token supplied' }
+                    }
+                }
+
             }
         }
 
-        Start-Sleep -Seconds 20
+        Start-Sleep -Seconds 10
     }
 
     AfterAll {
+
         Receive-Job -Name 'Pode' | Out-Default
         Invoke-RestMethod -Uri "$($Endpoint)/close" -Method Get | Out-Null
         Get-Job -Name 'Pode' | Remove-Job -Force
@@ -238,11 +334,11 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
 
                 $payload = @{ sub = '123'; username = 'morty' }
                 $params = @{
-                    Payload             = $payload
-                    Certificate         = $privateKeyPath
-                    RsaPaddingScheme    = $rsaPaddingScheme
-                    Issuer              = 'Pode'
-                    Audience            = $applicationName
+                    Payload          = $payload
+                    Certificate      = $privateKeyPath
+                    RsaPaddingScheme = $rsaPaddingScheme
+                    Issuer           = 'Pode'
+                    Audience         = $applicationName
                 }
                 $jwt = ConvertTo-PodeJwt  @params
                 $headers = @{ 'Authorization' = "Bearer $jwt"; 'Accept' = 'application/json' }
@@ -346,4 +442,158 @@ Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
             { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer/jwt/secret/strict/$_" -Method Get -Headers $headers -ErrorAction Stop } | Should -Throw -ExpectedMessage '*401*'
         }
     }
+
+    Describe 'JWT Authentication Workflow' {
+        BeforeAll {
+            $Headers = @{
+                'accept'       = 'application/json'
+                'Content-Type' = 'application/json'
+            }
+        }
+
+        It 'Logs in and retrieves a JWT token' {
+            $Body = @{
+                username = 'morty'
+                password = 'pickle'
+            } | ConvertTo-Json -Depth 10
+
+            $Response = Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer/jwt/login" `
+                -Method Post `
+                -Headers $Headers `
+                -Body $Body
+
+            # Validate response
+            $Response | Should -Not -BeNullOrEmpty
+            $Response | Should -BeOfType 'PSCustomObject'
+            $Response.success | Should -Be $true
+
+            # Validate JWT token format
+            $Response.jwt | Should -Not -BeNullOrEmpty
+            $Response.jwt | Should -Match '^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$'
+
+            # Validate user details
+            $Response.User | Should -Not -BeNullOrEmpty
+            $Response.User.Username | Should -Be 'morty.smith'
+            $Response.User.Groups | Should -Be 'Domain Users'
+            $Response.User.Name | Should -Be 'Morty Smith'
+            $Response.User.Id | Should -Be 'M0R7Y302'
+
+            # Store JWT for subsequent tests
+            $script:JwtToken = $Response.Jwt
+        }
+
+        It 'Validates JWT Token Structure and Claims' {
+            $Response = Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer/jwt/info" `
+                -Method Post `
+                -Headers @{
+                'accept'        = 'application/json'
+                'Authorization' = "Bearer $($script:JwtToken)"
+            } `
+                -Body ''
+
+            # Validate response structure
+            $Response | Should -Not -BeNullOrEmpty
+            $Response | Should -BeOfType 'PSCustomObject'
+
+            # Validate JWT Header
+            $Response.Header | Should -Not -BeNullOrEmpty
+            $Response.Header.typ | Should -Be 'JWT'
+            $Response.Header.alg | Should -Be 'ES384'
+
+            # Validate JWT Payload
+            $Response.Payload | Should -Not -BeNullOrEmpty
+            $Response.Payload.type | Should -Be 'human'
+            $Response.Payload.username | Should -Be 'morty.smith'
+            $Response.Payload.sub | Should -Be 'M0R7Y302'
+            $Response.Payload.groups | Should -Be 'Domain Users'
+            $Response.Payload.name | Should -Be 'Morty Smith'
+            $Response.Payload.id | Should -Be 'M0R7Y302'
+
+            # Validate JWT Timestamps
+            $Response.Payload.iat | Should -BeOfType 'datetime'
+            $Response.Payload.nbf | Should -BeOfType 'datetime'
+            $Response.Payload.exp | Should -BeOfType 'datetime'
+            $Response.Payload.iss | Should -Be 'Pode'
+            $Response.Payload.aud | Should -Be 'JWTAuthentication'
+            $Response.Payload.jti | Should -Match '^[0-9a-f\-]+$'
+
+            # Validate JWT Signature
+            $Response.Signature | Should -Not -BeNullOrEmpty
+            $Response.Signature | Should -Match '^[A-Za-z0-9_\-]+$'
+
+            # Store expiration for comparison
+            $script:JwtExpiration = $Response.Payload.exp
+        }
+
+        It 'Renews JWT Token Successfully' {
+            $Response = Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer/jwt/renew" `
+                -Method Post `
+                -Headers @{
+                'accept'        = 'application/json'
+                'Authorization' = "Bearer $($script:JwtToken)"
+            } `
+                -Body ''
+
+            # Validate response structure
+            $Response | Should -Not -BeNullOrEmpty
+            $Response | Should -BeOfType 'PSCustomObject'
+            $Response.success | Should -Be $true
+
+            # Validate JWT token format
+            $Response.jwt | Should -Not -BeNullOrEmpty
+            $Response.jwt | Should -Match '^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$'
+
+            # Store previous token for comparison
+            $script:PreviousJwtToken = $script:JwtToken
+            $script:JwtToken = $Response.Jwt
+        }
+
+        It 'Validates Renewed JWT Token and Claims' {
+            $Response = Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer/jwt/info" `
+                -Method Post `
+                -Headers @{
+                'accept'        = 'application/json'
+                'Authorization' = "Bearer $($script:JwtToken)"
+            } `
+                -Body ''
+
+            # Validate response structure
+            $Response | Should -Not -BeNullOrEmpty
+            $Response | Should -BeOfType 'PSCustomObject'
+
+            # Validate JWT Header
+            $Response.Header | Should -Not -BeNullOrEmpty
+            $Response.Header.typ | Should -Be 'JWT'
+            $Response.Header.alg | Should -Be 'ES384'
+
+            # Validate JWT Payload
+            $Response.Payload | Should -Not -BeNullOrEmpty
+            $Response.Payload.type | Should -Be 'human'
+            $Response.Payload.username | Should -Be 'morty.smith'
+            $Response.Payload.sub | Should -Be 'M0R7Y302'
+            $Response.Payload.groups | Should -Be 'Domain Users'
+            $Response.Payload.name | Should -Be 'Morty Smith'
+            $Response.Payload.id | Should -Be 'M0R7Y302'
+
+            # Validate JWT Timestamps
+            $Response.Payload.iat | Should -BeOfType 'datetime'
+            $Response.Payload.nbf | Should -BeOfType 'datetime'
+            $Response.Payload.exp | Should -BeOfType 'datetime'
+            $Response.Payload.iss | Should -Be 'Pode'
+            $Response.Payload.aud | Should -Be 'JWTAuthentication'
+            $Response.Payload.jti | Should -Match '^[0-9a-f\-]+$'
+
+            # Validate JWT Signature
+            $Response.Signature | Should -Not -BeNullOrEmpty
+            $Response.Signature | Should -Match '^[A-Za-z0-9_\-]+$'
+
+            # Ensure the new token is different from the previous one
+            $script:JwtToken | Should -Not -BeExactly $script:PreviousJwtToken
+
+            # Validate expiration time increased
+            $Response.Payload.exp | Should -BeGreaterThan $script:JwtExpiration
+        }
+    }
+
+
 }
