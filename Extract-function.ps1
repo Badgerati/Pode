@@ -135,7 +135,7 @@ function Get-PrecedingHeader {
                     $headerLines.Insert(0, $line)
                 }
             }
-                elseif ($trimmed -match '^<#') {
+            elseif ($trimmed -match '^<#') {
                 $headerLines.Insert(0, $line)
                 break
             }
@@ -175,26 +175,64 @@ if (-not $targetSubDirs) {
     exit 1
 }
 
+# MERGE MODE: Merge extracted function files back into a single file per original file.
+# For each extraction folder (created during extraction) found under Private and Public,
+# merge its .ps1 files (sorted by name) into a file named after the folder in its parent,
+# then remove the extraction folder.
 if ($Merge) {
     # MERGE MODE: Merge extracted function files back into a single file per original file.
-    # For each extraction folder (created during extraction) found under Private and Public,
-    # merge its .ps1 files (sorted by name) into a file named after the folder in its parent,
-    # then remove the extraction folder.
     foreach ($subDir in $targetSubDirs) {
         Get-ChildItem -Path $subDir -Recurse -Directory | ForEach-Object {
             $currentDir = $_.FullName
             # Process only directories that contain one or more .ps1 files.
             $ps1Files = Get-ChildItem -Path $currentDir -Filter '*.ps1' -File
             if ($ps1Files.Count -gt 0) {
+                # Initialize a hash table for unique using namespace lines.
+                $usingNamespaces = @{}
+
+                # Array to store the processed content of each function file.
+                $processedContents = @()
+
+                foreach ($file in ($ps1Files | Sort-Object Name)) {
+                    $content = Get-Content -Path $file.FullName -Raw
+                    $lines = $content -split [Environment]::NewLine
+
+                    # Remove leading lines that start with 'using namespace'
+                    $index = 0
+                    while ($index -lt $lines.Count -and $lines[$index].Trim() -match '^using\s+namespace') {
+                        $usingLine = $lines[$index].Trim()
+                        $usingNamespaces[$usingLine] = $true
+                        $index++
+                    }
+                    # Rebuild the file content without the using namespace lines.
+                    if ($index -lt $lines.Count) {
+                        $newContent = $lines[$index..($lines.Count - 1)] -join [Environment]::NewLine
+                    }
+                    else {
+                        $newContent = ''
+                    }
+                    $processedContents += $newContent
+                }
+
+                # Build the unique using namespace block (preserving the original order).
+                $usingBlock = ($usingNamespaces.Keys) -join [Environment]::NewLine
+
+                # Merge the processed contents with a blank line between them.
+                $mergedBody = $processedContents -join ([Environment]::NewLine + [Environment]::NewLine)
+
+                # Prepend the using block if any were found.
+                if ($usingBlock.Trim().Length -gt 0) {
+                    $mergedContent = "$usingBlock$([Environment]::NewLine)$([Environment]::NewLine)$mergedBody"
+                }
+                else {
+                    $mergedContent = $mergedBody
+                }
+
                 $mergedFileName = "$($_.Name).ps1"
                 $mergedFilePath = Join-Path $_.Parent.FullName $mergedFileName
                 Write-Output "Merging folder '$currentDir' into '$mergedFilePath'"
 
-                $mergedContent = (($ps1Files | Sort-Object Name | ForEach-Object {
-                            Get-Content -Path $_.FullName
-                            [Environment]::NewLine  # Adds a newline after each file's content
-                        }) -join [Environment]::NewLine).TrimEnd()
-                Set-Content -Path $mergedFilePath -Value $mergedContent -Encoding UTF8
+                Set-Content -Path $mergedFilePath -Value $mergedContent.TrimEnd() -Encoding UTF8
 
                 Remove-Item -Path $currentDir -Recurse -Force
                 Write-Output "Removed extraction folder: $currentDir"
@@ -214,17 +252,23 @@ else {
                 $BaseName = $_.BaseName
                 $FileDirectory = $_.DirectoryName
 
-                # Create a destination folder with the same name as the file
+                # Create a destination folder with the same name as the file.
                 $DestinationFolder = Join-Path $FileDirectory $BaseName
                 if (!(Test-Path $DestinationFolder -PathType Container)) {
                     New-Item -Path $DestinationFolder -ItemType Directory | Out-Null
                 }
 
-                # Read the file's content
+                # Read the file's content.
                 $Content = Get-Content -Path $FilePath -Raw
                 $Lines = Get-Content -Path $FilePath
 
-                # Parse the file for functions using AST
+                # Check if the first line starts with 'using namespace'
+                $usingNamespace = $null
+                if ($Lines.Count -gt 0 -and $Lines[0].Trim() -match '^using\s+namespace') {
+                    $usingNamespace = $Lines[0].Trim()
+                }
+
+                # Parse the file for functions using AST.
                 $null = $Error.Clear()
                 $Tokens = $null
                 $Ast = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$Tokens, [ref]$null)
@@ -236,10 +280,8 @@ else {
                 else {
                     foreach ($funcAst in $FunctionAsts) {
                         $startLine = $funcAst.Extent.StartLineNumber
-
                         $headerLines = Get-PrecedingHeader -Lines $Lines -FunctionStartLine $startLine
                         $headerText = $headerLines -join [Environment]::NewLine
-
                         $functionText = $funcAst.Extent.Text.Trim()
 
                         if ($headerText.Trim().Length -gt 0) {
@@ -249,21 +291,26 @@ else {
                             $fullText = $functionText
                         }
 
+                        # If the original file had a "using namespace" line, prepend it to the extracted function.
+                        if ($usingNamespace) {
+                            $fullText = "$usingNamespace$([Environment]::NewLine)$fullText"
+                        }
+
                         $functionName = $funcAst.Name
                         if ([string]::IsNullOrWhiteSpace($functionName)) {
                             $functionName = 'UnknownFunction'
                         }
-                        # Directly create the function file (no duplicate indexing)
+                        # Create the function file.
                         $functionFile = Join-Path $DestinationFolder "$functionName.ps1"
-
                         Set-Content -Path $functionFile -Value $fullText -Encoding UTF8
                         Write-Output "Extracted: $functionName -> $functionFile"
                     }
                 }
 
-                # Remove the original file after extraction
+                # Remove the original file after extraction.
                 Remove-Item -Path $FilePath -Force
                 Write-Output "Removed original file: $FilePath"
             }
+
     }
 }

@@ -3941,3 +3941,50 @@ function ConvertTo-PodeSleep {
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }
+
+
+
+<#
+.SYNOPSIS
+    Creates aliases for Pode OpenAPI functions to support legacy naming conventions.
+
+.DESCRIPTION
+    This function sets up the following aliases in the current script scope:
+    - New-PodeOASchemaProperty as an alias for New-PodeOAComponentSchemaProperty.
+    - Enable-PodeOpenApiViewer as an alias for Enable-PodeOAViewer.
+    - Enable-PodeOA as an alias for Enable-PodeOpenApi.
+    - Get-PodeOpenApiDefinition as an alias for Get-PodeOADefinition.
+    The function helps maintain backward compatibility and simplifies calling Pode OpenAPI functions.
+
+.PARAMETER None
+    This function does not accept any parameters.
+
+.OUTPUTS
+    None. The function creates aliases and does not output any objects.
+
+.EXAMPLE
+    PS C:\> New-PodeFunctionAlias
+    The function creates the necessary aliases for Pode OpenAPI functions in the current session.
+
+.NOTES
+    This function is part of the Pode project and adheres to the coding standards defined in the Pode GitHub Repository.
+    Internal function subject to change.
+#>
+function New-PodeFunctionAlias {
+    # Alias
+    if (!(Test-Path Alias:New-PodeOASchemaProperty)) {
+        New-Alias New-PodeOASchemaProperty -Value New-PodeOAComponentSchemaProperty -Scope Script
+    }
+
+    if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
+        New-Alias Enable-PodeOpenApiViewer -Value Enable-PodeOAViewer -Scope Script
+    }
+
+    if (!(Test-Path Alias:Enable-PodeOA)) {
+        New-Alias Enable-PodeOA -Value Enable-PodeOpenApi -Scope Script
+    }
+
+    if (!(Test-Path Alias:Get-PodeOpenApiDefinition)) {
+        New-Alias Get-PodeOpenApiDefinition -Value Get-PodeOADefinition -Scope Script
+    }
+}

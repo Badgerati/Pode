@@ -1,6 +1,6 @@
 # root path
 $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
-write-podehost $root
+
 # import everything
 $sysfuncs = Get-ChildItem Function:
 
@@ -17,19 +17,5 @@ $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
 # export the module's public functions
 Export-ModuleMember -Function ($funcs.Name)
 
-# Alias
-if (!(Test-Path Alias:New-PodeOASchemaProperty)) {
-    New-Alias New-PodeOASchemaProperty -Value New-PodeOAComponentSchemaProperty
-}
-
-if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
-    New-Alias Enable-PodeOpenApiViewer -Value Enable-PodeOAViewer
-}
-
-if (!(Test-Path Alias:Enable-PodeOA)) {
-    New-Alias Enable-PodeOA -Value Enable-PodeOpenApi
-}
-
-if (!(Test-Path Alias:Get-PodeOpenApiDefinition)) {
-    New-Alias Get-PodeOpenApiDefinition -Value Get-PodeOADefinition
-}
+# Ensure backward compatibility by creating aliases for legacy Pode OpenAPI function names.
+New-PodeFunctionAlias
