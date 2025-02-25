@@ -112,7 +112,7 @@ try {
     }
 
     # load private functions
-    Get-ChildItem "$($root)/Private/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
+    Get-ChildItem "$($root)/Private/*.ps1" -Recurse| ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
 
     # only import public functions
     $sysfuncs = Get-ChildItem Function:
@@ -121,7 +121,7 @@ try {
     $sysaliases = Get-ChildItem Alias:
 
     # load public functions
-    Get-ChildItem "$($root)/Public/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
+    Get-ChildItem "$($root)/Public/*.ps1" -Recurse| ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
 
     # Alias
     if (!(Test-Path Alias:New-PodeOASchemaProperty)) {
