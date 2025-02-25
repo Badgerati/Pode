@@ -242,7 +242,6 @@ if ($Merge) {
 }
 else {
     # EXTRACTION MODE:
-    # Process only .ps1 files located in the Private and Public subdirectories.
     foreach ($subDir in $targetSubDirs) {
         Get-ChildItem -Path $subDir -File -Filter '*.ps1' |
             # Exclude any file that is already in an extraction folder (its parent folder matches its BaseName)
@@ -262,10 +261,19 @@ else {
                 $Content = Get-Content -Path $FilePath -Raw
                 $Lines = Get-Content -Path $FilePath
 
-                # Check if the first line starts with 'using namespace'
-                $usingNamespace = $null
-                if ($Lines.Count -gt 0 -and $Lines[0].Trim() -match '^using\s+namespace') {
-                    $usingNamespace = $Lines[0].Trim()
+                # Check for multiple "using namespace" lines at the top.
+                $usingNamespaces = @()
+                $idx = 0
+                while ($idx -lt $Lines.Count -and $Lines[$idx].Trim() -match '^using\s+namespace') {
+                    $lineUsing = $Lines[$idx].Trim()
+                    if ($usingNamespaces -notcontains $lineUsing) {
+                        $usingNamespaces += $lineUsing
+                    }
+                    $idx++
+                }
+                $usingBlock = $null
+                if ($usingNamespaces.Count -gt 0) {
+                    $usingBlock = $usingNamespaces -join [Environment]::NewLine
                 }
 
                 # Parse the file for functions using AST.
@@ -291,9 +299,9 @@ else {
                             $fullText = $functionText
                         }
 
-                        # If the original file had a "using namespace" line, prepend it to the extracted function.
-                        if ($usingNamespace) {
-                            $fullText = "$usingNamespace$([Environment]::NewLine)$fullText"
+                        # Prepend the using namespace block if present.
+                        if ($usingBlock) {
+                            $fullText = "$usingBlock$([Environment]::NewLine)$fullText"
                         }
 
                         $functionName = $funcAst.Name
@@ -311,6 +319,5 @@ else {
                 Remove-Item -Path $FilePath -Force
                 Write-Output "Removed original file: $FilePath"
             }
-
     }
 }
