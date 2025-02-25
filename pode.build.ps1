@@ -1237,6 +1237,20 @@ Add-BuildTask TestNoBuild TestDeps, {
     $configuration.TestResult.OutputFormat = 'NUnitXml'
     $configuration.Output.Verbosity = $PesterVerbosity
     $configuration.TestResult.OutputPath = $Script:TestResultFile
+    $configuration.Filter.ExcludeTag = @()
+    if ( $PSEdition -ne 'Core') {
+        $configuration.Filter.ExcludeTag += 'Exclude_DesktopEdition'
+    }
+    if ($IsLinux) {
+        $configuration.Filter.ExcludeTag += 'Exclude_Linux'
+    }
+    if ($IsMacOS) {
+        $configuration.Filter.ExcludeTag += 'Exclude_MacOs'
+    }
+    if ($IsWindows) {
+        $configuration.Filter.ExcludeTag += 'Exclude_Windows'
+    }
+
 
     # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {

@@ -1303,7 +1303,7 @@ function Export-PodePrivateKeyPem {
         if ($PSVersionTable.PSVersion.Major -ge 7) {
             # Export encrypted private key in PEM using the native method
             return $Key.ExportEncryptedPkcs8PrivateKeyPem(
-                (Convert-PodeSecureStringToByteArray($Password)),
+                (Convert-PodeSecureStringToPlainText($Password)),
                 [System.Security.Cryptography.PbeParameters]::new(
                     [System.Security.Cryptography.PbeEncryptionAlgorithm]::Aes256Cbc,
                     [System.Security.Cryptography.HashAlgorithmName]::SHA256,
@@ -1313,7 +1313,7 @@ function Export-PodePrivateKeyPem {
         }
         # For older versions, export encrypted key using PKCS#8 format
         $encryptedBytes = $Key.ExportEncryptedPkcs8PrivateKey(
-            (Convert-PodeSecureStringToByteArray($Password)),
+            (Convert-PodeSecureStringToPlainText($Password)),
             [System.Security.Cryptography.PbeParameters]::new(
                 [System.Security.Cryptography.PbeEncryptionAlgorithm]::Aes256Cbc,
                 [System.Security.Cryptography.HashAlgorithmName]::SHA256,

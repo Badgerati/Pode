@@ -384,7 +384,7 @@ function ConvertFrom-PodeJwt {
             # 4. Meets strict Enhanced Key Usage (EKU) enforcement.
             $null = Test-PodeCertificate -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict -ErrorAction Stop
         }
-        
+
         $params['X509Certificate'] = $X509Certificate
     }
 
@@ -1447,7 +1447,7 @@ function New-PodeSelfSignedCertificate {
   A secure string containing the password for decrypting a PFX certificate
   or an encrypted private key in PEM format.
 
-.PARAMETER Persistent
+.PARAMETER Exportable
   If specified, the certificate will be imported with an **exportable** private key,
   allowing it to be saved and reused across sessions.
 
@@ -1516,7 +1516,7 @@ function Import-PodeCertificate {
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [Parameter()]
-        [switch]$Persistent,
+        [switch]$Exportable,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
         [string]
@@ -1546,7 +1546,7 @@ function Import-PodeCertificate {
             if (![string]::IsNullOrEmpty($PrivateKeyPath) -and !(Test-Path -Path $PrivateKeyPath -PathType Leaf)) {
                 throw ($PodeLocale.pathNotExistExceptionMessage -f $PrivateKeyPath)
             }
-            $X509Certificate = Get-PodeCertificateByFile -Certificate $FilePath -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath -Persistent:$Persistent
+            $X509Certificate = Get-PodeCertificateByFile -Certificate $FilePath -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath -Exportable:$Exportable
             break
         }
 
@@ -1670,13 +1670,17 @@ function Export-PodeCertificate {
                         else {
                             $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
                         }
-                        $filePathWithExt = "$FilePath.pfx"
-                        [System.IO.File]::WriteAllBytes($filePathWithExt, $pfxBytes)
+
+                        $filePathWithExt = [PSCustomObject]@{ CertificateFile = "$FilePath.pfx" }
+                        [System.IO.File]::WriteAllBytes($filePathWithExt.CertificateFile, $pfxBytes)
+                        break
                     }
                     'CER' {
                         $cerBytes = $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
-                        $filePathWithExt = "$FilePath.cer"
-                        [System.IO.File]::WriteAllBytes($filePathWithExt, $cerBytes)
+
+                        $filePathWithExt = [PSCustomObject]@{ CertificateFile = "$FilePath.cer" }
+                        [System.IO.File]::WriteAllBytes($filePathWithExt.CertificateFile, $cerBytes)
+                        break
                     }
                     'PEM' {
                         # Export the certificate in PEM format
@@ -1686,18 +1690,11 @@ function Export-PodeCertificate {
                         $certFilePath = "$FilePath.pem"
                         $pemCert | Out-File -FilePath $certFilePath -Encoding utf8NoBOM
 
-                        Write-Output "Certificate exported successfully: $certFilePath"
+                        Write-PodeHost "Certificate exported successfully: $certFilePath"
 
                         # If requested, export the private key to a separate file
                         if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
-                            # Convert SecureString to plain text for the helper function if a password was provided.
-                            $plainPassword = $null
-                            if ($CertificatePassword) {
-                                $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-                                    [Runtime.InteropServices.Marshal]::SecureStringToBSTR($CertificatePassword)
-                                )
-                            }
-                            $pemKey = Export-PodePrivateKeyPem -Key $Certificate.PrivateKey -Password $plainPassword
+                            $pemKey = Export-PodePrivateKeyPem -Key $Certificate.PrivateKey -Password $CertificatePassword
                             $keyFilePath = "$FilePath.key"
                             $pemKey | Out-File -FilePath $keyFilePath -Encoding utf8NoBOM
 
@@ -1706,18 +1703,19 @@ function Export-PodeCertificate {
 
                         # Return the certificate file path (and key file path if applicable)
                         $filePathWithExt = if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
-                            @{ CertificateFile = $certFilePath; PrivateKeyFile = $keyFilePath }
+                            [PSCustomObject]@{ CertificateFile = $certFilePath; PrivateKeyFile = $keyFilePath }
                         }
                         else {
-                            $certFilePath
+                            [PSCustomObject]@{ CertificateFile = $certFilePath }
                         }
+                        break
                     }
                 }
 
                 if ($Format -ne 'PEM') {
-                    Write-Output "Certificate exported successfully: $filePathWithExt"
+                    Write-PodeHost "Certificate exported successfully: $($filePathWithExt.CertificateFile)"
                 }
-                return $filePathWithExt
+                return  $filePathWithExt
             }
 
             'WindowsStore' {
@@ -1727,10 +1725,10 @@ function Export-PodeCertificate {
                     $store.Add($Certificate)
                     $store.Close()
 
-                    Write-Output "Certificate successfully stored in: $CertificateStoreLocation\$CertificateStoreName"
-                    return $true
+                    Write-PodeHost "Certificate successfully stored in: $CertificateStoreLocation\$CertificateStoreName"
+                    return  [PSCustomObject]@{CertificateStore = "$CertificateStoreLocation\$CertificateStoreName" }
                 }
-                return $false
+                return $null
             }
         }
     }
