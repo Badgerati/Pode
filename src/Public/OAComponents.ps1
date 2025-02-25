@@ -951,15 +951,3 @@ function Remove-PodeOAComponent {
         }
     }
 }
-
-if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
-    New-Alias Enable-PodeOpenApiViewer -Value Enable-PodeOAViewer
-}
-
-if (!(Test-Path Alias:Enable-PodeOA)) {
-    New-Alias Enable-PodeOA -Value Enable-PodeOpenApi
-}
-
-if (!(Test-Path Alias:Get-PodeOpenApiDefinition)) {
-    New-Alias Get-PodeOpenApiDefinition -Value Get-PodeOADefinition
-}

@@ -3280,30 +3280,6 @@ function Test-PodePlaceholder {
 
 <#
 .SYNOPSIS
-Retrieves the PowerShell module manifest object for the specified module.
-
-.DESCRIPTION
-This function constructs the path to a PowerShell module manifest file (.psd1) located in the parent directory of the script root. It then imports the module manifest file to access its properties and returns the manifest object. This can be useful for scripts that need to dynamically discover and utilize module metadata, such as version, dependencies, and exported functions.
-
-.PARAMETERS
-This function does not accept any parameters.
-
-.EXAMPLE
-$manifest = Get-PodeModuleManifest
-This example calls the `Get-PodeModuleManifest` function to retrieve the module manifest object and stores it in the variable `$manifest`.
-
-#>
-function Get-PodeModuleManifest {
-    # Construct the path to the module manifest (.psd1 file)
-    $moduleManifestPath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -ChildPath 'Pode.psd1'
-
-    # Import the module manifest to access its properties
-    $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath
-    return  $moduleManifest
-}
-
-<#
-.SYNOPSIS
     Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.
 
 .DESCRIPTION
@@ -3335,8 +3311,7 @@ function Test-PodeVersionPwshEOL {
     param(
         [switch] $ReportUntested
     )
-    $moduleManifest = Get-PodeModuleManifest
-    if ($moduleManifest.ModuleVersion -eq '$version$') {
+    if ($PodeManifest.ModuleVersion -eq '$version$') {
         return @{
             eol       = $false
             supported = $true
@@ -3344,7 +3319,7 @@ function Test-PodeVersionPwshEOL {
     }
 
     $psVersion = $PSVersionTable.PSVersion
-    $eolVersions = $moduleManifest.PrivateData.PwshVersions.Untested -split ','
+    $eolVersions = $PodeManifest.PrivateData.PwshVersions.Untested -split ','
     $isEol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
 
     if ($isEol) {
@@ -3352,7 +3327,7 @@ function Test-PodeVersionPwshEOL {
         Write-PodeHost ($PodeLocale.eolPowerShellWarningMessage -f $PodeVersion, $PSVersion) -ForegroundColor Yellow
     }
 
-    $SupportedVersions = $moduleManifest.PrivateData.PwshVersions.Supported -split ','
+    $SupportedVersions = $PodeManifest.PrivateData.PwshVersions.Supported -split ','
     $isSupported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
 
     if ((! $isSupported) -and (! $isEol) -and $ReportUntested) {
@@ -3965,4 +3940,45 @@ function ConvertTo-PodeSleep {
 #>
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
+}
+
+<#
+.SYNOPSIS
+    Creates aliases for Pode OpenAPI functions to support legacy naming conventions.
+.DESCRIPTION
+    This function sets up the following aliases in the current script scope:
+    - New-PodeOASchemaProperty as an alias for New-PodeOAComponentSchemaProperty.
+    - Enable-PodeOpenApiViewer as an alias for Enable-PodeOAViewer.
+    - Enable-PodeOA as an alias for Enable-PodeOpenApi.
+    - Get-PodeOpenApiDefinition as an alias for Get-PodeOADefinition.
+    The function helps maintain backward compatibility and simplifies calling Pode OpenAPI functions.
+    
+.PARAMETER None
+    This function does not accept any parameters.
+.OUTPUTS
+    None. The function creates aliases and does not output any objects.
+.EXAMPLE
+    PS C:\> New-PodeFunctionAlias
+    The function creates the necessary aliases for Pode OpenAPI functions in the current session.
+.NOTES
+    This function is part of the Pode project and adheres to the coding standards defined in the Pode GitHub Repository.
+    Internal function subject to change.
+#>
+function New-PodeFunctionAlias {
+    # Alias
+    if (!(Test-Path Alias:New-PodeOASchemaProperty)) {
+        New-Alias New-PodeOASchemaProperty -Value New-PodeOAComponentSchemaProperty -Scope Script
+    }
+
+    if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
+        New-Alias Enable-PodeOpenApiViewer -Value Enable-PodeOAViewer -Scope Script
+    }
+
+    if (!(Test-Path Alias:Enable-PodeOA)) {
+        New-Alias Enable-PodeOA -Value Enable-PodeOpenApi -Scope Script
+    }
+
+    if (!(Test-Path Alias:Get-PodeOpenApiDefinition)) {
+        New-Alias Get-PodeOpenApiDefinition -Value Get-PodeOADefinition -Scope Script
+    }
 }
