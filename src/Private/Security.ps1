@@ -213,13 +213,11 @@ function Get-PodeCertificateByFile {
         $Exportable
     )
 
-    # cert + key
-    if (![string]::IsNullOrWhiteSpace($PrivateKeyPath)) {
-        return (Get-PodeCertificateByPemFile -Certificate $Certificate -Password $Password -SecurePassword $SecurePassword -PrivateKeyPath $PrivateKeyPath)
-    }
-
-
     $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
+    # cert + key
+    if (![string]::IsNullOrWhiteSpace($PrivateKeyPath) -or ( [System.IO.Path]::GetExtension($path).ToLower() -eq '.pem') ) {
+        return (Get-PodeCertificateByPemFile -Certificate $Certificate -SecurePassword $SecurePassword -PrivateKeyPath $PrivateKeyPath)
+    }
 
     # read the cert bytes from the file to avoid the use of obsolete constructors
     $certBytes = [System.IO.File]::ReadAllBytes($path)
@@ -254,9 +252,9 @@ function Get-PodeCertificateByPemFile {
         [securestring]
         $SecurePassword = $null,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [string]
-        $PrivateKeyPath = $null
+        $PrivateKeyPath
     )
 
     $cert = $null
@@ -277,7 +275,7 @@ function Get-PodeCertificateByPemFile {
                     $rsa.ImportFromPem($keyText)
                 }
                 else {
-                    $rsa.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword))
+                    $rsa.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword))
                 }
             } # .NET3
             else {
@@ -293,7 +291,7 @@ function Get-PodeCertificateByPemFile {
                 elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
                     if ($null -ne $SecurePassword) {
                         [int32]$bytesRead = 0
-                        $rsa.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
+                        $rsa.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
                     }
                 }
                 $cert = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)

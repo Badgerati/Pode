@@ -281,34 +281,35 @@ Describe 'New-PodeSelfSignedCertificate Function (Cross‑Platform)' {
         $keyLength = 2048
         $purpose = 'ServerAuth'
         $notBefore = (Get-Date).ToUniversalTime()
-        $friendlyName = 'MyTestCertificate'
+        $script:friendlyName = 'MyTestCertificate'
         $validityDays = 365
 
         # Optionally, supply a secure string password for PFX protection.
-        $password = ConvertTo-SecureString 'TestPassword' -AsPlainText -Force
+        $script:dummyPassword = ConvertTo-SecureString 'TestPassword' -AsPlainText -Force
 
         # Call the certificate function.
-        $cert = New-PodeSelfSignedCertificate -DnsName $dnsName  `
+        $script:dummyCert = New-PodeSelfSignedCertificate -DnsName $dnsName  `
             -Organization $org -Locality $locality -State $state -Country $country `
             -KeyType $keyType -KeyLength $keyLength  -CertificatePurpose $purpose `
-            -NotBefore $notBefore -FriendlyName $friendlyName -ValidityDays $validityDays -Password $password
+            -NotBefore $notBefore -FriendlyName $script:friendlyName -ValidityDays $validityDays `
+            -Password $script:dummyPassword  -Exportable
 
         # Validate that a certificate is returned.
-        $cert | Should -BeOfType 'System.Security.Cryptography.X509Certificates.X509Certificate2'
+        $script:dummyCert | Should -BeOfType 'System.Security.Cryptography.X509Certificates.X509Certificate2'
 
         # Validate the certificate's subject contains the common name.
-        $cert.Subject | Should -MatchExactly 'CN=SelfSigned, O=TestOrg, L=TestCity, S=TestState, C=US'
+        $script:dummyCert.Subject | Should -MatchExactly 'CN=SelfSigned, O=TestOrg, L=TestCity, S=TestState, C=US'
 
         # Check certificate validity period.
         $expectedNotBefore = $notBefore.Date
         $expectedNotAfter = $notBefore.AddDays($validityDays).Date
 
-        $cert.NotBefore.ToUniversalTime().Date | Should -Be $expectedNotBefore
-        $cert.NotAfter.ToUniversalTime().Date | Should -Be $expectedNotAfter
+        $script:dummyCert.NotBefore.ToUniversalTime().Date | Should -Be $expectedNotBefore
+        $script:dummyCert.NotAfter.ToUniversalTime().Date | Should -Be $expectedNotAfter
 
         # On Windows, verify the FriendlyName is set.
         if ($IsWindows) {
-            $cert.FriendlyName | Should -Be $friendlyName
+            $script:dummyCert.FriendlyName | Should -Be $script:friendlyName
         }
     }
 
@@ -333,65 +334,39 @@ Describe 'New-PodeSelfSignedCertificate Function (Cross‑Platform)' {
 Describe 'Export-PodeCertificate Function' {
     BeforeAll {
         # Create a temporary directory for exported files.
-        $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
-        New-Item -Path $tempDir -ItemType Directory | Out-Null
-        # Define test parameters.
-        $dnsName = @('test.example.com')
-        $commonName = 'test.example.com'
-        $org = 'TestOrg'
-        $locality = 'TestCity'
-        $state = 'TestState'
-        $country = 'US'
-        $keyType = 'RSA'
-        $keyLength = 2048
-        $purpose = 'ServerAuth'
-        $notBefore = (Get-Date).ToUniversalTime()
-        $friendlyName = 'MyTestCertificate'
-        $validityDays = 365
+        $script:tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
+        New-Item -Path  $script:tempDir -ItemType Directory -Force | Out-Null
 
-        # Optionally, supply a secure string password for PFX protection.
-        $password = ConvertTo-SecureString 'TestPassword' -AsPlainText -Force
-
-        # Call the certificate function.
-        $script:dummyCert = New-PodeSelfSignedCertificate -DnsName $dnsName  `
-            -Organization $org -Locality $locality -State $state -Country $country `
-            -KeyType $keyType -KeyLength $keyLength  -CertificatePurpose $purpose `
-            -NotBefore $notBefore -FriendlyName $friendlyName -ValidityDays $validityDays -Password $password -Exportable
-    }
-
-    AfterAll {
-        # Cleanup the temporary directory.
-        Remove-Item -Path $tempDir -Recurse -Force
     }
 
     Context 'File Export - PFX format' {
         It 'Exports certificate to a PFX file' {
-            $filePathBase = Join-Path $tempDir 'dummycertPFX'
-            $output = Export-PodeCertificate -Certificate $script:dummyCert -FilePath $filePathBase -Format 'PFX' -CertificatePassword (ConvertTo-SecureString 'TestPassword' -AsPlainText -Force)
-            $output | Should -BeOfType pscustomobject
-            $output.CertificateFile | Should -Match '\.pfx'
-            (Test-Path  $output.CertificateFile) | Should -BeTrue
+            $filePathBase = Join-Path  $script:tempDir 'dummycertPFX'
+            $script:pfxCertPath = Export-PodeCertificate -Certificate $script:dummyCert -FilePath $filePathBase -Format 'PFX' -CertificatePassword $script:dummyPassword
+            $script:pfxCertPath | Should -BeOfType pscustomobject
+            $script:pfxCertPath.CertificateFile | Should -Match '\.pfx'
+            (Test-Path $script:pfxCertPath.CertificateFile) | Should -BeTrue
         }
     }
 
     Context 'File Export - CER format' {
         It 'Exports certificate to a CER file' {
-            $filePathBase = Join-Path $tempDir 'dummycertCER'
-            $output = Export-PodeCertificate -Certificate $script:dummyCert -FilePath $filePathBase -Format 'CER' -CertificatePassword (ConvertTo-SecureString 'TestPassword' -AsPlainText -Force)
-            $output | Should -BeOfType pscustomobject
-            $output.CertificateFile | Should -Match '\.cer'
-            (Test-Path  $output.CertificateFile) | Should -BeTrue
+            $filePathBase = Join-Path  $script:tempDir 'dummycertCER'
+            $script:cerCertPath = Export-PodeCertificate -Certificate $script:dummyCert -FilePath $filePathBase -Format 'CER' -CertificatePassword $script:dummyPassword
+            $script:cerCertPath | Should -BeOfType pscustomobject
+            $script:cerCertPath.CertificateFile | Should -Match '\.cer'
+            (Test-Path $script:cerCertPath.CertificateFile) | Should -BeTrue
         }
     }
 
     Context 'File Export - PEM format without private key' {
         It 'Exports certificate to a PEM file without private key' {
-            $filePathBase = Join-Path $tempDir 'dummycertPEM_NoKey'
-            $output = Export-PodeCertificate -Certificate $script:dummyCert -FilePath $filePathBase -Format 'PEM' -CertificatePassword (ConvertTo-SecureString 'TestPassword' -AsPlainText -Force)
+            $filePathBase = Join-Path  $script:tempDir 'dummycertPEM_NoKey'
+            $output = Export-PodeCertificate -Certificate $script:dummyCert -FilePath $filePathBase -Format 'PEM' -CertificatePassword $script:dummyPassword
             # The output for PEM (without key) is a string containing the file path.
             $output | Should -BeOfType pscustomobject
             $output.CertificateFile | Should -Match '\.pem'
-            (Test-Path  $output.CertificateFile) | Should -BeTrue
+            (Test-Path -Path $output.CertificateFile) | Should -BeTrue
             (Get-Content -Path $output.CertificateFile -Raw) | Should -Match '-----BEGIN CERTIFICATE-----'
         }
     }
@@ -399,23 +374,24 @@ Describe 'Export-PodeCertificate Function' {
     Context 'File Export - PEM format with private key' {
 
         It 'Exports certificate to a PEM file and exports the private key separately' {
-            $filePathBase = Join-Path $tempDir 'dummycertPEM_WithKey'
-            $password = ConvertTo-SecureString 'dummyPass' -AsPlainText -Force
-            $output = Export-PodeCertificate -Certificate $script:dummyCert -FilePath $filePathBase -Format 'PEM' -IncludePrivateKey -CertificatePassword $password
+            $filePathBase = Join-Path  $script:tempDir 'dummycertPEM_WithKey'
+            $script:pemCertPath = Export-PodeCertificate -Certificate $script:dummyCert -FilePath $filePathBase -Format 'PEM' -IncludePrivateKey -CertificatePassword $script:dummyPassword
             # When IncludePrivateKey is used, output is a hashtable.
-            $output | Should -BeOfType 'pscustomobject'
-            $output.CertificateFile | Should -Match '\.pem$'
-            $output.PrivateKeyFile | Should -Match '\.key$'
-            (Test-Path $output.CertificateFile) | Should -BeTrue
-            (Test-Path $output.PrivateKeyFile) | Should -BeTrue
+            $script:pemCertPath | Should -BeOfType 'pscustomobject'
+            $script:pemCertPath.CertificateFile | Should -Match '\.pem$'
+            $script:pemCertPath.PrivateKeyFile | Should -Match '\.key$'
+            (Test-Path $script:pemCertPath.CertificateFile) | Should -BeTrue
+            (Test-Path $script:pemCertPath.PrivateKeyFile) | Should -BeTrue
 
-            (Get-Content -Path $output.CertificateFile -Raw) | Should -Match '-----BEGIN CERTIFICATE-----'
-            (Get-Content -Path $output.PrivateKeyFile -Raw) | Should -Match '-----BEGIN ENCRYPTED PRIVATE KEY-----'
+            (Get-Content -Path $script:pemCertPath.CertificateFile -Raw) | Should -Match '-----BEGIN CERTIFICATE-----'
+            (Get-Content -Path $script:pemCertPath.PrivateKeyFile -Raw) | Should -Match '-----BEGIN ENCRYPTED PRIVATE KEY-----'
         }
     }
 
     Context 'Windows Store Export' {
         It 'Stores certificate in the Windows certificate store' -Tag 'Exclude_MacOs', 'Exclude_Linux' {
+            $script:thumbprint = $script:dummyCert.Thumbprint
+
             $result = Export-PodeCertificate -Certificate $script:dummyCert -CertificateStoreName 'My' -CertificateStoreLocation 'CurrentUser'
             $result | Should -BeTrue
         }
@@ -425,80 +401,139 @@ Describe 'Export-PodeCertificate Function' {
 
 
 Describe 'Import-PodeCertificate Function' {
+    Describe 'Sanity Check' {
+        BeforeAll {
+            # Create a dummy certificate using New-PodeSelfSignedCertificate.
+            # This call should work on PS 5.1 as well as Core.
+            $script:dummyCert = New-PodeSelfSignedCertificate -CommonName 'dummy.test' -ValidityDays 365 -Exportable
 
-    BeforeAll {
-        # Create a dummy certificate using New-PodeSelfSignedCertificate.
-        # This call should work on PS 5.1 as well as Core.
-        $script:dummyCert = New-PodeSelfSignedCertificate -CommonName 'dummy.test' -ValidityDays 365 -Exportable
 
+            # Simulate Test-Path so that paths containing "exists" return true, others false.
+            Mock -CommandName Test-Path -MockWith {
+                param($Path, $PathType)
+                if ($Path[0].Contains('notexists')) { return $false } else { return $true }
+            }
 
-        # Simulate Test-Path so that paths containing "exists" return true, others false.
-        Mock -CommandName Test-Path -MockWith {
-            param($Path, $PathType)
-            if ($Path[0].Contains('notexists')) { return $false } else { return $true }
+            # Mock certificate import helper functions to return our dummy certificate.
+            Mock -CommandName Get-PodeCertificateByFile -MockWith {
+                param($Certificate, $SecurePassword, $PrivateKeyPath, $Persistent)
+                return $script:dummyCert
+            }
+            Mock -CommandName Get-PodeCertificateByThumbprint -MockWith {
+                param($Thumbprint, $StoreName, $StoreLocation)
+                return $script:dummyCert
+            }
+            Mock -CommandName Get-PodeCertificateByName -MockWith {
+                param($Name, $StoreName, $StoreLocation)
+                return $script:dummyCert
+            }
         }
 
-        # Mock certificate import helper functions to return our dummy certificate.
-        Mock -CommandName Get-PodeCertificateByFile -MockWith {
-            param($Certificate, $SecurePassword, $PrivateKeyPath, $Persistent)
-            return $script:dummyCert
-        }
-        Mock -CommandName Get-PodeCertificateByThumbprint -MockWith {
-            param($Thumbprint, $StoreName, $StoreLocation)
-            return $script:dummyCert
-        }
-        Mock -CommandName Get-PodeCertificateByName -MockWith {
-            param($Name, $StoreName, $StoreLocation)
-            return $script:dummyCert
-        }
-    }
+        Context 'When importing from a certificate file' {
+            It 'Throws an error if the certificate file does not exist' {
+                {
+                    Import-PodeCertificate -FilePath 'C:\Certs\notexists.pfx' `
+                        -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force)
+                } | Should -Throw
+            }
 
-    Context 'When importing from a certificate file' {
-        It 'Throws an error if the certificate file does not exist' {
-            {
-                Import-PodeCertificate -FilePath 'C:\Certs\notexists.pfx' `
+            It 'Throws an error if a PrivateKeyPath is provided but does not exist' {
+                {
+                    Import-PodeCertificate -FilePath 'C:\Certs\exists.pfx' `
+                        -PrivateKeyPath 'C:\Certs\notexists.key' `
+                        -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force)
+                } | Should -Throw
+            }
+
+            It 'Imports a certificate from file when the certificate file exists' {
+                $cert = Import-PodeCertificate -FilePath 'C:\Certs\exists.pfx' `
                     -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force)
-            } | Should -Throw
+                $cert | Should -Be $script:dummyCert
+            }
+
+            It 'Imports a certificate from file with the persistent flag when both files exist' {
+                $cert = Import-PodeCertificate -FilePath 'C:\Certs\exists.pfx' `
+                    -PrivateKeyPath 'C:\Certs\exists.key' `
+                    -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force) `
+                    -Exportable
+                $cert | Should -Be $script:dummyCert
+            }
         }
 
-        It 'Throws an error if a PrivateKeyPath is provided but does not exist' {
-            {
-                Import-PodeCertificate -FilePath 'C:\Certs\exists.pfx' `
-                    -PrivateKeyPath 'C:\Certs\notexists.key' `
-                    -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force)
-            } | Should -Throw
+        Context 'When importing from the certificate store by thumbprint' -Tag 'Exclude_MacOs', 'Exclude_Linux' {
+            It 'Retrieves a certificate using its thumbprint' {
+                $thumbprint = 'DUMMYTHUMBPRINT'
+                $cert = Import-PodeCertificate -CertificateThumbprint $thumbprint `
+                    -CertificateStoreName 'My' -CertificateStoreLocation 'CurrentUser'
+                $cert | Should -Be $script:dummyCert
+            }
         }
 
-        It 'Imports a certificate from file when the certificate file exists' {
-            $cert = Import-PodeCertificate -FilePath 'C:\Certs\exists.pfx' `
-                -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force)
-            $cert | Should -Be $script:dummyCert
-        }
-
-        It 'Imports a certificate from file with the persistent flag when both files exist' {
-            $cert = Import-PodeCertificate -FilePath 'C:\Certs\exists.pfx' `
-                -PrivateKeyPath 'C:\Certs\exists.key' `
-                -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force) `
-                -Exportable
-            $cert | Should -Be $script:dummyCert
-        }
-    }
-
-    Context 'When importing from the certificate store by thumbprint' -Tag 'Exclude_MacOs', 'Exclude_Linux' {
-        It 'Retrieves a certificate using its thumbprint' {
-            $thumbprint = 'DUMMYTHUMBPRINT'
-            $cert = Import-PodeCertificate -CertificateThumbprint $thumbprint `
-                -CertificateStoreName 'My' -CertificateStoreLocation 'CurrentUser'
-            $cert | Should -Be $script:dummyCert
+        Context 'When importing from the certificate store by name' -Tag 'Exclude_MacOs', 'Exclude_Linux' {
+            It 'Retrieves a certificate using its subject name' {
+                $name = 'DummyCert'
+                $cert = Import-PodeCertificate -CertificateName $name `
+                    -CertificateStoreName 'My' -CertificateStoreLocation 'CurrentUser'
+                $cert | Should -Be $script:dummyCert
+            }
         }
     }
 
-    Context 'When importing from the certificate store by name' -Tag 'Exclude_MacOs', 'Exclude_Linux' {
-        It 'Retrieves a certificate using its subject name' {
-            $name = 'DummyCert'
-            $cert = Import-PodeCertificate -CertificateName $name `
-                -CertificateStoreName 'My' -CertificateStoreLocation 'CurrentUser'
-            $cert | Should -Be $script:dummyCert
+    Describe 'Import Functionality' {
+        AfterAll {
+            # Cleanup the temporary directory.
+            Remove-Item -Path  $script:tempDir -Recurse -Force
+        }
+
+        Context 'File Import - PFX format' {
+            It 'Imports certificate to a PFX file' {
+
+                $cert = Import-PodeCertificate -FilePath $script:pfxCertPath.CertificateFile -CertificatePassword $script:dummyPassword
+
+                $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
+
+                # Validate the certificate's subject contains the common name.
+                $cert.Subject | Should -MatchExactly 'CN=SelfSigned, O=TestOrg, L=TestCity, S=TestState, C=US'
+                # On Windows, verify the FriendlyName is set.
+                if ($IsWindows) {
+                    $cert.FriendlyName | Should -Be $script:friendlyName
+                }
+            }
+        }
+
+        Context 'File Import - CER format' {
+            It 'Imports certificate to a CER file' {
+                $cert = Import-PodeCertificate -FilePath  $script:cerCertPath.CertificateFile -CertificatePassword $script:dummyPassword
+
+                $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
+
+                # Validate the certificate's subject contains the common name.
+                $cert.Subject | Should -MatchExactly 'CN=SelfSigned, O=TestOrg, L=TestCity, S=TestState, C=US'
+
+            }
+        }
+
+        Context 'File Import - PEM format with private key' {
+
+            It 'Imports certificate to a PEM file with private key' {
+                $cert = Import-PodeCertificate -FilePath  $script:pemCertPath.CertificateFile -CertificatePassword $script:dummyPassword -PrivateKeyPath $script:pemCertPath.PrivateKeyFile
+                # The output for PEM (without key) is a string containing the file path.
+                $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
+
+                # Validate the certificate's subject contains the common name.
+                $cert.Subject | Should -MatchExactly 'CN=SelfSigned, O=TestOrg, L=TestCity, S=TestState, C=US'
+            }
+        }
+
+        Context 'Windows Store Import' {
+            It 'Stores certificate in the Windows certificate store' -Tag 'Exclude_MacOs', 'Exclude_Linux' {
+                $cert = Import-PodeCertificate -CertificateStoreName 'My' -CertificateStoreLocation 'CurrentUser' -CertificateThumbprint $script:thumbprint
+                $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
+
+                # Validate the certificate's subject contains the common name.
+                $cert.Subject | Should -MatchExactly 'CN=SelfSigned, O=TestOrg, L=TestCity, S=TestState, C=US'
+                $cert.FriendlyName | Should -Be $script:friendlyName
+            }
         }
     }
 }
