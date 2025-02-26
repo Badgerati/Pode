@@ -8,7 +8,7 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 }
 
-Describe 'JWT Bearer Authentication Requests' { #-Tag 'No_DesktopEdition' {
+Describe 'JWT Bearer Authentication Requests' {
 
     BeforeAll {
         $Port = 8080

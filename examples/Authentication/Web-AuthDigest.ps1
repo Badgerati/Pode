@@ -145,7 +145,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # setup digest auth
-    New-PodeAuthScheme -Digest -Algorithm $Algorithm -QualityOfProtection $QualityOfProtection | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthDigestScheme -Algorithm $Algorithm -QualityOfProtection $QualityOfProtection | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $params)
 
         # here you'd check a real user storage, this is just for example
