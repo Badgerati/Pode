@@ -311,10 +311,6 @@ Describe 'Digest Authentication Requests' {
         Receive-Job -Name 'Pode' | Out-Default
         Invoke-RestMethod -Uri "$($Endpoint)/close" -Method Get | Out-Null
         Get-Job -Name 'Pode' | Remove-Job -Force
-        if ( (Test-Path -Path $CertsPath -PathType Container)) {
-            Remove-Item -Path $CertsPath  -Recurse -Force
-            Write-Output "$CertsPath removed."
-        }
     }
 
 
