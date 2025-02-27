@@ -273,3 +273,4 @@ examples/certs/*-public.pem
 examples/certs/*-private.pem
 tests/certs/*
 /examples/certs
+examples/Authentication/certs/*

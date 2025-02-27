@@ -141,11 +141,14 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
         }
     }
 
-    if (!(Test-Path -Path "$(Get-PodeServerPath)/cert" -PathType Container)) {
-        New-Item -Path "$(Get-PodeServerPath)/cert" -ItemType Directory
+    $CertsPath = Join-Path -Path (Get-PodeServerPath) -ChildPath "certs"
+    if (!(Test-Path -Path $CertsPath -PathType Container)) {
+        New-Item -Path $CertsPath -ItemType Directory
     }
     foreach ($alg in $certificateTypes.Keys) {
         $x509Certificate = New-PodeSelfSignedCertificate -Loopback -KeyType $certificateTypes[$alg].KeyType -KeyLength $certificateTypes[$alg].KeyLength -CertificatePurpose CodeSigning -Ephemeral -Exportable
+
+        Export-PodeCertificate -Certificate $x509Certificate -Format PFX -Path (join-path -path $CertsPath -ChildPath $alg)
 
         # Define the authentication location dynamically (e.g., `/auth/bearer/jwt/{algorithm}`)
         $pathRoute = "/auth/bearer/jwt/$alg"

@@ -1675,6 +1675,9 @@ function Export-PodeCertificate {
 
             $filePath = Join-Path -Path $($PodeContext.Server.Root) -ChildPath $baseName
         }
+        else {
+            $filePath = $Path
+        }
         switch ($PSCmdlet.ParameterSetName) {
             'File' {
                 switch ($Format) {

@@ -66,7 +66,7 @@ try {
     }
 
     # Define the key storage path
-    $certsPath = Join-Path -Path $podePath -ChildPath 'examples/Authentication/cert'
+    $certsPath = Join-Path -Path $podePath -ChildPath 'examples/Authentication/certs'
 }
 catch { throw }
 
@@ -79,25 +79,25 @@ if (-Not (Test-Path $certsPath)) {
     Write-Error "Certificate directory does not exist: $certsPath"
     Exit
 }
- 
- 
+
+
 $algorithms = 'RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512'
 #  $algorithms = 'PS256', 'PS384', 'PS512', 'ES256', 'ES384', 'ES512'
 foreach ($alg in $algorithms) {
     Write-Output '-----------------------------------------------'
     Write-Output "Testing Algorithm: $alg"
-                
-   
+
+
     #$securePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
     $privateKeyPath = "$certsPath/$alg.pfx"
-    $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 
+    $rsaPaddingScheme = if ($alg.StartsWith('PS')) {
         'Pss'
     }
     else {
         'Pkcs1V15'
     }
-    
-   
+
+
 
     if (-Not (Test-Path $privateKeyPath)) {
         Write-Warning "Skipping $($alg): Private key file not found ($privateKeyPath)"
@@ -107,16 +107,16 @@ foreach ($alg in $algorithms) {
 
     Write-Output "Generating JWT for $alg..."
 
-    try { 
+    try {
         $jwt = ConvertTo-PodeJwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme -Payload @{
             id       = 'id'
             name     = 'Morty'
             Type     = 'Human'
             username = 'morty'
-        } 
-        ConvertFrom-PodeJwt -Token $jwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme  
+        }
+        ConvertFrom-PodeJwt -Token $jwt -Certificate $privateKeyPath -RsaPaddingScheme $rsaPaddingScheme
         $apiUrl = "$ApiBaseUrl/$alg"
-         
+
     }
     catch {
         Write-Error "JWT generation failed for $($alg): $_"
@@ -128,7 +128,7 @@ foreach ($alg in $algorithms) {
         'Authorization' = "Bearer $jwt"
         'Accept'        = 'application/json'
     }
- 
+
     Write-Output "Sending request to: $apiUrl"
 
     try {
@@ -142,5 +142,5 @@ foreach ($alg in $algorithms) {
     Write-Output 'Waiting 3 seconds before next test...'
     Start-Sleep 3
 }
- 
+
 Write-Output 'All JWT authentication tests completed!'
