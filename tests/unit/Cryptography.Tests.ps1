@@ -432,27 +432,27 @@ Describe 'Import-PodeCertificate Function' {
         Context 'When importing from a certificate file' {
             It 'Throws an error if the certificate file does not exist' {
                 {
-                    Import-PodeCertificate -FilePath 'C:\Certs\notexists.pfx' `
+                    Import-PodeCertificate -Path 'C:\Certs\notexists.pfx' `
                         -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force)
                 } | Should -Throw
             }
 
             It 'Throws an error if a PrivateKeyPath is provided but does not exist' {
                 {
-                    Import-PodeCertificate -FilePath 'C:\Certs\exists.pfx' `
+                    Import-PodeCertificate -Path 'C:\Certs\exists.pfx' `
                         -PrivateKeyPath 'C:\Certs\notexists.key' `
                         -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force)
                 } | Should -Throw
             }
 
             It 'Imports a certificate from file when the certificate file exists' {
-                $cert = Import-PodeCertificate -FilePath 'C:\Certs\exists.pfx' `
+                $cert = Import-PodeCertificate -Path 'C:\Certs\exists.pfx' `
                     -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force)
                 $cert | Should -Be $script:dummyCert
             }
 
             It 'Imports a certificate from file with the persistent flag when both files exist' {
-                $cert = Import-PodeCertificate -FilePath 'C:\Certs\exists.pfx' `
+                $cert = Import-PodeCertificate -Path 'C:\Certs\exists.pfx' `
                     -PrivateKeyPath 'C:\Certs\exists.key' `
                     -CertificatePassword (ConvertTo-SecureString 'pass' -AsPlainText -Force) `
                     -Exportable
@@ -488,7 +488,7 @@ Describe 'Import-PodeCertificate Function' {
         Context 'File Import - PFX format' {
             It 'Imports certificate to a PFX file' {
 
-                $cert = Import-PodeCertificate -FilePath $script:pfxCertPath.CertificateFile -CertificatePassword $script:dummyPassword
+                $cert = Import-PodeCertificate -Path $script:pfxCertPath.CertificateFile -CertificatePassword $script:dummyPassword
 
                 $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
 
@@ -503,7 +503,7 @@ Describe 'Import-PodeCertificate Function' {
 
         Context 'File Import - CER format' {
             It 'Imports certificate to a CER file' {
-                $cert = Import-PodeCertificate -FilePath  $script:cerCertPath.CertificateFile -CertificatePassword $script:dummyPassword
+                $cert = Import-PodeCertificate -Path  $script:cerCertPath.CertificateFile -CertificatePassword $script:dummyPassword
 
                 $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
 
@@ -516,7 +516,7 @@ Describe 'Import-PodeCertificate Function' {
         Context 'File Import - PEM format with private key' {
 
             It 'Imports certificate to a PEM file with private key' {
-                $cert = Import-PodeCertificate -FilePath  $script:pemCertPath.CertificateFile -CertificatePassword $script:dummyPassword -PrivateKeyPath $script:pemCertPath.PrivateKeyFile
+                $cert = Import-PodeCertificate -Path  $script:pemCertPath.CertificateFile -CertificatePassword $script:dummyPassword -PrivateKeyPath $script:pemCertPath.PrivateKeyFile
                 # The output for PEM (without key) is a string containing the file path.
                 $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
 

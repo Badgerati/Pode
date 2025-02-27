@@ -1436,7 +1436,7 @@ function New-PodeSelfSignedCertificate {
   exists **only for the current session** and is not persisted. If the `-Persistent` flag is
   specified, the private key will be stored in an exportable format.
 
-.PARAMETER FilePath
+.PARAMETER Path
   The path to the certificate file (.pfx, .pem, or .cer) to import.
 
 .PARAMETER PrivateKeyPath
@@ -1472,15 +1472,15 @@ function New-PodeSelfSignedCertificate {
   Returns the imported certificate as an X509Certificate2 object.
 
 .EXAMPLE
-  $cert = Import-PodeCertificate -FilePath "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force)
+  $cert = Import-PodeCertificate -Path "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force)
   Imports a PFX certificate file with an ephemeral private key.
 
 .EXAMPLE
-  $cert = Import-PodeCertificate -FilePath "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force) -Persistent
+  $cert = Import-PodeCertificate -Path "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force) -Persistent
   Imports a PFX certificate file **with a persistent private key**, allowing it to be saved.
 
 .EXAMPLE
-  $cert = Import-PodeCertificate -FilePath "C:\Certs\mycert.cer"
+  $cert = Import-PodeCertificate -Path "C:\Certs\mycert.cer"
   Imports a CER certificate file (public key only).
 
 .EXAMPLE
@@ -1504,7 +1504,7 @@ function Import-PodeCertificate {
         # Certificate-based parameters for RSA/ECDSA
         [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
         [string]
-        $FilePath,
+        $Path,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
         [string]

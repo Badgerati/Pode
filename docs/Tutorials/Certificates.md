@@ -118,7 +118,7 @@ Once you have generated a CSR, you need to submit it to a **Certificate Authorit
 Example: Importing the signed certificate after receiving it from the CA:
 
 ```powershell
-$cert = Import-PodeCertificate -FilePath "C:\Certs\signed-cert.pfx" -CertificatePassword (ConvertTo-SecureString "MyPass" -AsPlainText -Force)
+$cert = Import-PodeCertificate -Path "C:\Certs\signed-cert.pfx" -CertificatePassword (ConvertTo-SecureString "MyPass" -AsPlainText -Force)
 if (-not (Test-PodeCertificate -Certificate $cert -ErrorAction Stop)) {
     throw 'Certificate not valid'
 }
@@ -186,7 +186,7 @@ If the certificate lacks the correct EKU, Pode will return an error when attempt
 To import a certificate from a file or the Windows certificate store:
 
 ```powershell
-$cert = Import-PodeCertificate -FilePath "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString "MyPass" -AsPlainText -Force)
+$cert = Import-PodeCertificate -Path "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString "MyPass" -AsPlainText -Force)
 ```
 
 If you import a certificate without validating it, you should then call **`Test-PodeCertificate`** to verify that the certificate is valid:
@@ -279,7 +279,7 @@ Test-PodeCertificate -Certificate $cert -ExpectedPurpose CodeSigning -Strict
 Pode supports using X.509 certificates for JWT authentication. You can specify a certificate for signing and verifying JWTs by providing `-X509Certificate` when creating a bearer authentication scheme:
 
 ```powershell
-$cert = Import-PodeCertificate -FilePath "C:\Certs\jwt-signing-cert.pfx" -CertificatePassword (ConvertTo-SecureString "MyPass" -AsPlainText -Force)
+$cert = Import-PodeCertificate -Path "C:\Certs\jwt-signing-cert.pfx" -CertificatePassword (ConvertTo-SecureString "MyPass" -AsPlainText -Force)
 
 Start-PodeServer {
     New-PodeAuthBearerScheme `
