@@ -1540,13 +1540,13 @@ function Import-PodeCertificate {
     switch ($PSCmdlet.ParameterSetName) {
         'CertFile' {
             # If using a file-based certificate, ensure it exists, then load it
-            if (!(Test-Path -Path $FilePath -PathType Leaf)) {
-                throw ($PodeLocale.pathNotExistExceptionMessage -f $FilePath)
+            if (!(Test-Path -Path $Path -PathType Leaf)) {
+                throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
             }
             if (![string]::IsNullOrEmpty($PrivateKeyPath) -and !(Test-Path -Path $PrivateKeyPath -PathType Leaf)) {
                 throw ($PodeLocale.pathNotExistExceptionMessage -f $PrivateKeyPath)
             }
-            $X509Certificate = Get-PodeCertificateByFile -Certificate $FilePath -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath -Exportable:$Exportable
+            $X509Certificate = Get-PodeCertificateByFile -Certificate $Path -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath -Exportable:$Exportable
             break
         }
 
