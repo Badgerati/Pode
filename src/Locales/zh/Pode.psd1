@@ -354,4 +354,5 @@
     certificateValidationFailedExceptionMessage                       = '证书 {0} 的验证失败。请检查证书链和有效期。'
     certificateWeakAlgorithmExceptionMessage                          = '证书 {0} 使用了弱加密算法: {1}。建议使用 SHA-256 或更强的算法。'
     selfSignedCertificatesNotAllowedExceptionMessage                  = '由于安全限制，不允许使用自签名证书。'
+    digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int' 仅支持 HTTP PUT、POST 或 PATCH 方法。"
 }

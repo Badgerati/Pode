@@ -354,4 +354,5 @@
     certificateValidationFailedExceptionMessage                       = 'Certificaatvalidatie mislukt voor {0}. Controleer de certificaatketen en de geldigheidsperiode.'
     certificateWeakAlgorithmExceptionMessage                          = 'Het certificaat {0} gebruikt een zwak cryptografisch algoritme: {1}. Het wordt aanbevolen om SHA-256 of sterker te gebruiken.'
     selfSignedCertificatesNotAllowedExceptionMessage                  = 'Zelfondertekende certificaten zijn niet toegestaan vanwege beveiligingsbeperkingen.'
+    digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int' wordt alleen ondersteund voor HTTP PUT-, POST- of PATCH-methoden."
 }

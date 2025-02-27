@@ -2363,12 +2363,25 @@ function Test-PodeBodyAuthMethod {
             $authentications = @($Authentication)
         }
         foreach ($auth in $authentications) {
-            $arguments = $PodeContext.Server.Authentications.Methods[$auth].Scheme.Arguments
-            if (($null -ne $arguments ) -and $arguments.ContainsKey('Location') -and $arguments['Location'] -eq 'body') {
-                $Method | Foreach-Object({ if ($_ -inotmatch '^(PUT|POST|PATCH)$') {
-                            throw $PodeContext.bearerTokenAuthMethodNotSupportedExceptionMessage
-                        } })
+            switch ($PodeContext.Server.Authentications.Methods[$auth].Scheme.Name) {
+                'Digest' {
+                    $arguments = $PodeContext.Server.Authentications.Methods[$auth].Scheme.Arguments
+                    if (($null -ne $arguments ) -and ($arguments.QualityOfProtection -eq 'auth-int')) {
+                        $Method | Foreach-Object({ if ($_ -inotmatch '^(PUT|POST|PATCH)$') {
+                                    throw $PodeLocale.digestTokenAuthMethodNotSupportedExceptionMessage
+                                } })
+                    }
+                }
+                default {
+                    $arguments = $PodeContext.Server.Authentications.Methods[$auth].Scheme.Arguments
+                    if (($null -ne $arguments ) -and $arguments.ContainsKey('Location') -and $arguments['Location'] -eq 'body') {
+                        $Method | Foreach-Object({ if ($_ -inotmatch '^(PUT|POST|PATCH)$') {
+                                    throw $PodeLocale.bearerTokenAuthMethodNotSupportedExceptionMessage
+                                } })
+                    }
+                }
             }
         }
+
     }
 }

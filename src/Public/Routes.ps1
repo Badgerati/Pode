@@ -337,15 +337,13 @@ function Add-PodeRoute {
         $Middleware = (@(Get-PodeAccessMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
     }
 
-
-
     # if an auth name was supplied, setup the auth as the first middleware
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
         if (!(Test-PodeAuthExists -Name $Authentication)) {
             # Authentication method does not exist
             throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Authentication)
         }
- 
+
         # Validate that the HTTP method supports a request body when using bearer token authentication.
         # This ensures that only PUT, POST, and PATCH methods are used for body-based authentication.
         Test-PodeBodyAuthMethod -Method $Method -Authentication $Authentication

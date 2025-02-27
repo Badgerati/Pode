@@ -147,7 +147,6 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
     foreach ($alg in $certificateTypes.Keys) {
         $x509Certificate = New-PodeSelfSignedCertificate -Loopback -KeyType $certificateTypes[$alg].KeyType -KeyLength $certificateTypes[$alg].KeyLength -CertificatePurpose CodeSigning -Ephemeral -Exportable
 
-   #     Export-PodeCertificate -Certificate $x509Certificate -Format PFX -FilePath "$(Get-PodeServerPath)/cert/$alg"
         # Define the authentication location dynamically (e.g., `/auth/bearer/jwt/{algorithm}`)
         $pathRoute = "/auth/bearer/jwt/$alg"
         # Register Pode Bearer Authentication

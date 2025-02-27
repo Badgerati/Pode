@@ -123,7 +123,7 @@ Describe 'JWT Bearer Authentication Requests' {
                 foreach ($alg in $certificateTypes.Keys) {
                     $x509Certificate = New-PodeSelfSignedCertificate -Loopback -KeyType $certificateTypes[$alg].KeyType -KeyLength $certificateTypes[$alg].KeyLength -CertificatePurpose CodeSigning -Ephemeral -Exportable
 
-                    Export-PodeCertificate -Certificate $x509Certificate -Format PFX -FilePath "$using:CertsPath/$alg"
+                    Export-PodeCertificate -Certificate $x509Certificate -Format PFX -Path "$using:CertsPath/$alg"
                     $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
 
 

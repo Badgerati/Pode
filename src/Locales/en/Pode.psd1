@@ -354,4 +354,5 @@
     certificateValidationFailedExceptionMessage                       = 'Certificate validation failed for {0}. Please check the certificate chain and validity period.'
     certificateWeakAlgorithmExceptionMessage                          = 'The certificate {0} uses a weak cryptographic algorithm: {1}. It is recommended to use SHA-256 or stronger.'
     selfSignedCertificatesNotAllowedExceptionMessage                  = 'Self-signed certificates are not permitted due to security restrictions.'
+    digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int' is only supported for HTTP PUT, POST, or PATCH methods."
 }

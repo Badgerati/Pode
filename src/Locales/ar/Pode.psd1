@@ -354,5 +354,6 @@
     certificateValidationFailedExceptionMessage                       = 'فشلت عملية التحقق من الشهادة {0}. يرجى التحقق من سلسلة الشهادات وفترة الصلاحية.'
     certificateWeakAlgorithmExceptionMessage                          = 'الشهادة {0} تستخدم خوارزمية تشفير ضعيفة: {1}. يُوصى باستخدام SHA-256 أو أقوى.'
     selfSignedCertificatesNotAllowedExceptionMessage                  = 'لا يُسمح باستخدام الشهادات الموقعة ذاتيًا بسبب قيود الأمان.'
+    digestTokenAuthMethodNotSupportedExceptionMessage = "ميزة Digest Quality of Protection 'auth-int' مدعومة فقط لطرق HTTP PUT أو POST أو PATCH."
 }
 

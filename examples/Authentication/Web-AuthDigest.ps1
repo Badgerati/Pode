@@ -162,20 +162,22 @@ Start-PodeServer -Threads 2 {
 
         return $null
     }
-
-    # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ErrorContentType  'application/json' -ScriptBlock {
-        Write-PodeJsonResponse -Value @{
-            Users = @(
-                @{
-                    Name = 'Deep Thought'
-                    Age  = 42
-                },
-                @{
-                    Name = 'Leeroy Jenkins'
-                    Age  = 1337
-                }
-            )
+    # If QualityOfProtection is 'auth-int' skip GET because it is not supported
+    if ($QualityOfProtection -ne 'auth-int') {
+        # GET request to get list of users (since there's no session, authentication will always happen)
+        Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ErrorContentType  'application/json' -ScriptBlock {
+            Write-PodeJsonResponse -Value @{
+                Users = @(
+                    @{
+                        Name = 'Deep Thought'
+                        Age  = 42
+                    },
+                    @{
+                        Name = 'Leeroy Jenkins'
+                        Age  = 1337
+                    }
+                )
+            }
         }
     }
 

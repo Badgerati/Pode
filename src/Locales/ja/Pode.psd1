@@ -354,4 +354,5 @@
     certificateValidationFailedExceptionMessage                       = '証明書 {0} の検証に失敗しました。証明書チェーンと有効期限を確認してください。'
     certificateWeakAlgorithmExceptionMessage                          = '証明書 {0} は脆弱な暗号アルゴリズム ({1}) を使用しています。SHA-256 以上を使用することを推奨します。'
     selfSignedCertificatesNotAllowedExceptionMessage                  = 'セキュリティ上の制限により、自己署名証明書は許可されていません。'
+    digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int' は HTTP PUT、POST、PATCH メソッドでのみサポートされます。"
 }

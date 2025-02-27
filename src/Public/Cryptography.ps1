@@ -1581,7 +1581,7 @@ function Import-PodeCertificate {
 .PARAMETER Certificate
   The X509Certificate2 object to export. This must be a valid certificate.
 
-.PARAMETER FilePath
+.PARAMETER Path
   The output file path (without an extension) where the certificate will be saved.
   Defaults to the current working directory with the certificate subject name.
 
@@ -1611,7 +1611,7 @@ function Import-PodeCertificate {
 
 .EXAMPLE
   $cert = Get-PodeCertificate -Path "mycert.pfx" -Password (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force)
-  Export-PodeCertificate -Certificate $cert -FilePath "C:\Certs\mycert" -Format "PEM" -IncludePrivateKey
+  Export-PodeCertificate -Certificate $cert -Path "C:\Certs\mycert" -Format "PEM" -IncludePrivateKey
 
   Exports the certificate as a PEM file with a separate private key file.
 
@@ -1636,7 +1636,7 @@ function Export-PodeCertificate {
 
         [Parameter(Mandatory = $false, ParameterSetName = 'File')]
         [string]
-        $FilePath = "$($PodeContext.Server.Root)\$($Certificate.Subject.Replace('CN=', '').Replace(' ', '_'))",
+        $Path,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'File')]
         [ValidateSet('PFX', 'PEM', 'CER')]
@@ -1660,6 +1660,21 @@ function Export-PodeCertificate {
     )
 
     process {
+
+        if (Test-Path -Path $Path -PathType Container) {
+            # Extract CN (Common Name) from Subject (ensures it only grabs CN=XX)
+            if ($Certificate.Subject -match 'CN=([^,]+)') {
+                $baseName = $matches[1]
+            }
+            else {
+                $baseName = $Certificate.Thumbprint  # Fallback to thumbprint
+            }
+
+            # Replace invalid filename characters and normalize spaces
+            $baseName = $baseName -replace '[\\/:*?"<>|]', '_' -replace '\s+', '_'
+
+            $filePath = Join-Path -Path $($PodeContext.Server.Root) -ChildPath $baseName
+        }
         switch ($PSCmdlet.ParameterSetName) {
             'File' {
                 switch ($Format) {

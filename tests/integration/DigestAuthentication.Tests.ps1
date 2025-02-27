@@ -46,7 +46,7 @@ BeforeAll {
         $httpClient = [System.Net.Http.HttpClient]::new($handler)
 
         # Step 1: Send an initial request to get the challenge
-        $initialRequest = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $Uri)
+        $initialRequest = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::$Method, $Uri)
         $initialResponse = $httpClient.SendAsync($initialRequest).Result
         if ($null -eq $initialResponse) {
             Throw "Server $uri is not responding"
@@ -283,10 +283,13 @@ Describe 'Digest Authentication Requests' {
                             return $null
                         }
 
-                        # GET request to get list of users (since there's no session, authentication will always happen)
-                        Add-PodeRoute -Method Get -Path "/auth/$alg/$qop" -Authentication "digest_$($alg)_$qop" -ErrorContentType  'application/json' -ScriptBlock {
-                            Write-PodeJsonResponse -Value @{
-                                success = $true
+                        # If QualityOfProtection is 'auth-int' skip GET because it is not supported
+                        if ($qop -ne 'auth-int') {
+                            # GET request to get list of users (since there's no session, authentication will always happen)
+                            Add-PodeRoute -Method Get -Path "/auth/$alg/$qop" -Authentication "digest_$($alg)_$qop" -ErrorContentType  'application/json' -ScriptBlock {
+                                Write-PodeJsonResponse -Value @{
+                                    success = $true
+                                }
                             }
                         }
 
@@ -327,7 +330,7 @@ Describe 'Digest Authentication Requests' {
                     }
                 }
             }
-            It "Digest - Method Get - Algorithm:<algorithm> - QOP:<qop>" -ForEach $alg_qop {
+            It 'Digest - Method Get - Algorithm:<algorithm> - QOP:<qop>' -ForEach $alg_qop {
 
                 #Write-PodeHost "Testing Algorithm: $algorithm with QOP: $qop"
                 if ($qop -eq 'auth-int') {
@@ -362,7 +365,7 @@ Describe 'Digest Authentication Requests' {
 
                 }
             }
-            It "Digest - Method Post - Algorithm:<algorithm> - QOP:<qop>" -ForEach $alg_qop {
+            It 'Digest - Method Post - Algorithm:<algorithm> - QOP:<qop>' -ForEach $alg_qop {
 
                 $challenge = ChallengeDigest -Uri "$($Endpoint)/auth/$algorithm/$qop" -Method Post
 
