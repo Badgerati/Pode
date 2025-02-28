@@ -26,13 +26,13 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will look for an `X-API-KEY` header in the request. You can change this to Cookie or Query by using the `-Location` parameter. To change the name of what Pode looks for, you can use `-LocationName`.
+By default, Pode will look for an `X-API-KEY` header in the request. You can change this to Cookie or Query by using the `-ApiKeyLocation` parameter. To change the name of what Pode looks for, you can use `-LocationName`.
 
 For example, to look for an `appId` query value:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -ApiKey -Location Query -LocationName 'appId' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -ApiKey -ApiKeyLocation Query -LocationName 'appId' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($key)
 
         # check if the key is valid, and get user

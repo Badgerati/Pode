@@ -314,6 +314,7 @@ function Get-PodeBodyMiddleware {
                 # set session data
                 $WebEvent.Data = $result.Data
                 $WebEvent.Files = $result.Files
+                $WebEvent.RawData = $result.RawData
 
                 # payload parsed
                 return $true
@@ -425,7 +426,7 @@ function Initialize-PodeIISMiddleware {
 
             try {
                 $value = Get-PodeHeader -Name $header
-                $WebEvent.Request.ClientCertificate = [X509Certificates.X509Certificate2]::new([Convert]::FromBase64String($value))
+                $WebEvent.Request.ClientCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([Convert]::FromBase64String($value))
             }
             catch {
                 $WebEvent.Request.ClientCertificateErrors = [System.Net.Security.SslPolicyErrors]::RemoteCertificateNotAvailable

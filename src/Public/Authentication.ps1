@@ -368,54 +368,43 @@ function New-PodeAuthScheme {
             }
 
             'digest' {
-                return @{
-                    Name          = 'Digest'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthDigestType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = @{
-                        Script         = (Get-PodeAuthDigestPostValidator)
-                        UsingVariables = $null
-                    }
-                    Middleware    = $Middleware
-                    InnerScheme   = $InnerScheme
-                    Scheme        = 'http'
-                    Arguments     = @{
-                        HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
-                    }
+                # Display a deprecation warning for the old function.
+                # This ensures users are informed that the function is obsolete and should transition to the new function.
+                Write-PodeDeprecationWarning -OldFunction 'New-PodeAuthScheme -Digest' -NewFunction 'New-PodeAuthDigestScheme'
+
+                $params = @{
+                    HeaderTag = $HeaderTag
+                    Scope     = $Scope
                 }
+                return New-PodeAuthDigestScheme $params
             }
 
             'bearer' {
-                $secretBytes = $null
-                if (![string]::IsNullOrWhiteSpace($Secret)) {
-                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+                # Display a deprecation warning for the old function.
+                # This ensures users are informed that the function is obsolete and should transition to the new function.
+                Write-PodeDeprecationWarning -OldFunction 'New-PodeAuthScheme -Bearer' -NewFunction 'New-PodeAuthBearerScheme'
+
+                $params = @{
+                    BearerTag = $HeaderTag
+                    Scope     = $Scope
+                    AsJWT     = $AsJWT
                 }
 
-                return @{
-                    Name          = 'Bearer'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthBearerType)
-                        UsingVariables = $null
+                if ($Secret) {
+                    if ($Secret -isnot [SecureString]) {
+                        if ( $Secret -is [string]) {
+                            # Convert plain string to SecureString
+                            $params['Secret'] = ConvertTo-SecureString -String $Secret  -AsPlainText -Force
+                        }
+                        else {
+                            throw
+                        }
                     }
-                    PostValidator = @{
-                        Script         = (Get-PodeAuthBearerPostValidator)
-                        UsingVariables = $null
-                    }
-                    Middleware    = $Middleware
-                    Scheme        = 'http'
-                    InnerScheme   = $InnerScheme
-                    Arguments     = @{
-                        Description = $Description
-                        HeaderTag   = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
-                        Scopes      = $Scope
-                        AsJWT       = $AsJWT
-                        Secret      = $secretBytes
+                    else {
+                        $params['Secret'] = $Secret
                     }
                 }
+                return New-PodeAuthBearerScheme @params
             }
 
             'form' {
@@ -508,9 +497,13 @@ function New-PodeAuthScheme {
                         })[$Location]
                 }
 
-                $secretBytes = $null
-                if (![string]::IsNullOrWhiteSpace($Secret)) {
-                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+                if (! ([string]::IsNullOrEmpty($Secret))) {
+                    $SecretString = ConvertTo-SecureString -String $Secret  -AsPlainText -Force
+                    $alg = @( 'HS256', 'HS384', 'HS512' )
+                }
+                else {
+                    $SecretString = $null
+                    $alg = 'NONE'
                 }
 
                 return @{
@@ -529,7 +522,8 @@ function New-PodeAuthScheme {
                         Location     = $Location
                         LocationName = $LocationName
                         AsJWT        = $AsJWT
-                        Secret       = $secretBytes
+                        Secret       = $SecretString
+                        Algorithm    = $alg
                     }
                 }
             }
@@ -2210,217 +2204,7 @@ function Add-PodeAuthWindowsLocal {
     }
 }
 
-<#
-.SYNOPSIS
-Convert a Header/Payload into a JWT.
 
-.DESCRIPTION
-Convert a Header/Payload hashtable into a JWT, with the option to sign it.
-
-.PARAMETER Header
-A Hashtable containing the Header information for the JWT.
-
-.PARAMETER Payload
-A Hashtable containing the Payload information for the JWT.
-
-.PARAMETER Secret
-An Optional Secret for signing the JWT, should be a string or byte[]. This is mandatory if the Header algorithm isn't "none".
-
-.EXAMPLE
-ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'John' }
-
-.EXAMPLE
-ConvertTo-PodeJwt -Header @{ alg = 'hs256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
-#>
-function ConvertTo-PodeJwt {
-    [CmdletBinding()]
-    [OutputType([string])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [hashtable]
-        $Header,
-
-        [Parameter(Mandatory = $true)]
-        [hashtable]
-        $Payload,
-
-        [Parameter()]
-        $Secret = $null
-    )
-
-    # validate header
-    if ([string]::IsNullOrWhiteSpace($Header.alg)) {
-        # No algorithm supplied in JWT Header
-        throw ($PodeLocale.noAlgorithmInJwtHeaderExceptionMessage)
-    }
-
-    # convert the header
-    $header64 = ConvertTo-PodeBase64UrlValue -Value ($Header | ConvertTo-Json -Compress)
-
-    # convert the payload
-    $payload64 = ConvertTo-PodeBase64UrlValue -Value ($Payload | ConvertTo-Json -Compress)
-
-    # combine
-    $jwt = "$($header64).$($payload64)"
-
-    # convert secret to bytes
-    if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
-        $Secret = [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
-    }
-
-    # make the signature
-    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $Secret
-
-    # add the signature and return
-    $jwt += ".$($sig)"
-    return $jwt
-}
-
-<#
-.SYNOPSIS
-Convert and return the payload of a JWT token.
-
-.DESCRIPTION
-Convert and return the payload of a JWT token, verifying the signature by default with support to ignore the signature.
-
-.PARAMETER Token
-The JWT token.
-
-.PARAMETER Secret
-The Secret, as a string or byte[], to verify the token's signature.
-
-.PARAMETER IgnoreSignature
-Skip signature verification, and return the decoded payload.
-
-.EXAMPLE
-ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI1NTMyMTQsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMyJ9.LP-O8OKwix91a-SZwVK35gEClLZQmsORbW0un2Z4RkY"
-#>
-function ConvertFrom-PodeJwt {
-    [CmdletBinding(DefaultParameterSetName = 'Secret')]
-    [OutputType([pscustomobject])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Token,
-
-        [Parameter(ParameterSetName = 'Signed')]
-        $Secret = $null,
-
-        [Parameter(ParameterSetName = 'Ignore')]
-        [switch]
-        $IgnoreSignature
-    )
-
-    # get the parts
-    $parts = ($Token -isplit '\.')
-
-    # check number of parts (should be 3)
-    if ($parts.Length -ne 3) {
-        # Invalid JWT supplied
-        throw ($PodeLocale.invalidJwtSuppliedExceptionMessage)
-    }
-
-    # convert to header
-    $header = ConvertFrom-PodeJwtBase64Value -Value $parts[0]
-    if ([string]::IsNullOrWhiteSpace($header.alg)) {
-        # Invalid JWT header algorithm supplied
-        throw ($PodeLocale.invalidJwtHeaderAlgorithmSuppliedExceptionMessage)
-    }
-
-    # convert to payload
-    $payload = ConvertFrom-PodeJwtBase64Value -Value $parts[1]
-
-    # get signature
-    if ($IgnoreSignature) {
-        return $payload
-    }
-
-    $signature = $parts[2]
-
-    # check "none" signature, and return payload if no signature
-    $isNoneAlg = ($header.alg -ieq 'none')
-
-    if ([string]::IsNullOrWhiteSpace($signature) -and !$isNoneAlg) {
-        # No JWT signature supplied for {0}
-        throw  ($PodeLocale.noJwtSignatureForAlgorithmExceptionMessage -f $header.alg)
-    }
-
-    if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
-        # Expected no JWT signature to be supplied
-        throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
-    }
-
-    if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
-        # Expected no JWT signature to be supplied
-        throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
-    }
-
-    if ($isNoneAlg) {
-        return $payload
-    }
-
-    # otherwise, we have an alg for the signature, so we need to validate it
-    if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
-        $Secret = [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
-    }
-
-    $sig = "$($parts[0]).$($parts[1])"
-    $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret
-
-    if ($sig -ne $parts[2]) {
-        # Invalid JWT signature supplied
-        throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
-    }
-
-    # it's valid return the payload!
-    return $payload
-}
-
-<#
-.SYNOPSIS
-Validates JSON Web Tokens (JWT) claims.
-
-.DESCRIPTION
-Validates JSON Web Tokens (JWT) claims. Checks time related claims: 'exp' and 'nbf'.
-
-.PARAMETER Payload
-Object containing JWT claims. Some of them are:
-    - exp (expiration time)
-    - nbf (not before)
-
-.EXAMPLE
-Test-PodeJwt @{exp = 2696258821 }
-
-.EXAMPLE
-Test-PodeJwt -Payload @{nbf = 1696258821 }
-#>
-function Test-PodeJwt {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [pscustomobject]
-        $Payload
-    )
-
-    $now = [datetime]::UtcNow
-    $unixStart = [datetime]::new(1970, 1, 1, 0, 0, [DateTimeKind]::Utc)
-
-    # validate expiry
-    if (![string]::IsNullOrWhiteSpace($Payload.exp)) {
-        if ($now -gt $unixStart.AddSeconds($Payload.exp)) {
-            # The JWT has expired
-            throw ($PodeLocale.jwtExpiredExceptionMessage)
-        }
-    }
-
-    # validate not-before
-    if (![string]::IsNullOrWhiteSpace($Payload.nbf)) {
-        if ($now -lt $unixStart.AddSeconds($Payload.nbf)) {
-            # The JWT is not yet valid for use
-            throw ($PodeLocale.jwtNotYetValidExceptionMessage)
-        }
-    }
-}
 
 <#
 .SYNOPSIS
@@ -2734,4 +2518,340 @@ function New-PodeAuthKeyTab {
     )
 
     ktpass /princ HTTP/$Hostname@$DomainName /mapuser $Username /pass $Password /out $FilePath /crypto $Crypto /ptype KRB5_NT_PRINCIPAL /mapop set
+}
+
+<#
+.SYNOPSIS
+    Creates a new Bearer authentication scheme for Pode.
+
+.DESCRIPTION
+    Defines a Bearer authentication scheme that allows authentication using a raw Bearer token or JWT.
+    Supports JWT validation with configurable security levels and token extraction from headers or query parameters.
+
+.PARAMETER BearerTag
+    The header tag used for the Bearer token (default: "Bearer").
+
+.PARAMETER Location
+    Specifies the token extraction location: `Header` (default) or `Query`.
+
+.PARAMETER Scope
+    A list of required scopes for the authentication scheme.
+
+.PARAMETER Algorithm
+    Accepted JWT signing algorithms:  HS256, HS384, HS512.
+
+.PARAMETER AsJWT
+    Indicates if the Bearer token should be treated and validated as a JWT.
+
+.PARAMETER Secret
+    The HMAC secret key for JWT validation (required for HS256, HS384, HS512).
+
+.PARAMETER Certificate
+    The path to a certificate that can be use to enable HTTPS
+
+.PARAMETER Certificate
+    The path to a certificate used for RSA or ECDSA verification.
+
+.PARAMETER CertificatePassword
+    The password for the certificate file referenced in Certificate
+
+.PARAMETER PrivateKeyPath
+    A key file to be paired with a PEM certificate file referenced in Certificate
+
+.PARAMETER CertificateThumbprint
+    A certificate thumbprint to use for RSA or ECDSA verification. (Windows).
+
+.PARAMETER CertificateName
+    A certificate subject name to use for RSA or ECDSA verification. (Windows).
+
+.PARAMETER CertificateStoreName
+    The name of a certifcate store where a certificate can be found (Default: My) (Windows).
+
+.PARAMETER CertificateStoreLocation
+    The location of a certifcate store where a certificate can be found (Default: CurrentUser) (Windows).
+
+.PARAMETER SelfSigned
+    Create and bind a self-signed CodeSigning ECSDA 384 Certificate.
+
+.PARAMETER X509Certificate
+    The raw X509 certificate used for RSA or ECDSA verification.
+
+.PARAMETER RsaPaddingScheme
+    RSA padding scheme: `Pkcs1V15` (default) or `Pss`.
+
+.PARAMETER JwtVerificationMode
+    JWT validation strictness: `Strict`, `Moderate`, or `Lenient` (default).
+
+.OUTPUTS
+    [hashtable] - Returns the Bearer authentication scheme configuration.
+
+.EXAMPLE
+    New-PodeAuthBearerScheme -AsJWT -Algorithm "HS256" -Secret (ConvertTo-SecureString "MySecretKey" -AsPlainText -Force)
+
+.EXAMPLE
+    New-PodeAuthBearerScheme -AsJWT -Algorithm "RS256" -PrivateKey (Get-Content "private.pem" -Raw) -PublicKey (Get-Content "public.pem" -Raw)
+#>
+function New-PodeAuthBearerScheme {
+    [CmdletBinding(DefaultParameterSetName = 'Basic')]
+    [OutputType([hashtable])]
+    param(
+        [string]
+        $BearerTag,
+
+        [ValidateSet('Header', 'Query', 'Body')]
+        [string]
+        $Location = 'Header',
+
+        [string[]]
+        $Scope,
+
+        [switch]
+        $AsJWT,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_HS')]
+        [ValidateSet('HS256', 'HS384', 'HS512')]
+        [string[]]
+        $Algorithm = @(),
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bearer_HS')]
+        [SecureString]
+        $Secret,
+
+        # Certificate-based parameters for RSA/ECDSA
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
+        [string]
+        $Certificate,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [string]
+        $PrivateKeyPath = $null,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [SecureString]
+        $CertificatePassword,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
+        [string]
+        $CertificateThumbprint,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
+        [string]
+        $CertificateName,
+
+        [Parameter(ParameterSetName = 'CertName')]
+        [Parameter(ParameterSetName = 'CertThumb')]
+        [System.Security.Cryptography.X509Certificates.StoreName]
+        $CertificateStoreName = 'My',
+
+        [Parameter(ParameterSetName = 'CertName')]
+        [Parameter(ParameterSetName = 'CertThumb')]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        $CertificateStoreLocation = 'CurrentUser',
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
+        [X509Certificate]
+        $X509Certificate = $null,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertSelf')]
+        [switch]
+        $SelfSigned,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertRaw')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertName')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertThumb')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertSelf')]
+        [ValidateSet('Pkcs1V15', 'Pss')]
+        [string]
+        $RsaPaddingScheme = 'Pkcs1V15',
+
+        # Mode for verifying the JWT claims if AsJWT is used
+        [Parameter(Mandatory = $false, ParameterSetName = 'Bearer_HS')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertName')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertThumb')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertRaw')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CertSelf')]
+        [ValidateSet('Strict', 'Moderate', 'Lenient')]
+        [string]
+        $JwtVerificationMode = 'Lenient'
+    )
+
+    # The default authentication realm
+    $_realm = 'User'
+
+    # Convert any middleware to valid hashtables, if used in Pode
+    # (Assumes ConvertTo-PodeMiddleware is a function available in your codebase)
+    $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+
+    # Determine parameter set behavior for different JWT signing methods
+    switch ($PSCmdlet.ParameterSetName) {
+        'CertFile' {
+            # If using a file-based certificate, ensure it exists, then load it
+            if (!(Test-Path -Path $Certificate -PathType Leaf)) {
+                throw ($PodeLocale.pathNotExistExceptionMessage -f $Certificate)
+            }
+            $X509Certificate = Get-PodeCertificateByFile -Certificate $Certificate -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath
+            break
+        }
+
+        'certthumb' {
+            # Retrieve a certificate from the local store by thumbprint
+            $X509Certificate = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+        }
+
+        'certname' {
+            # Retrieve a certificate from the local store by name
+            $X509Certificate = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+        }
+
+        'Bearer_HS' {
+            # If no algorithm is provided for HMAC, default to HS256
+            $alg = if ($Algorithm.Count -eq 0) {
+                @('HS256')
+            }
+            else {
+                $Algorithm
+            }
+            break
+        }
+
+        'CertSelf' {
+            $X509Certificate = New-PodeSelfSignedCertificate -CommonName 'JWT Signing Certificate' `
+                -KeyType ECDSA -KeyLength 384 -CertificatePurpose CodeSigning -Ephemeral
+            break
+        }
+
+        'Bearer_NONE' {
+            # Use the 'NONE' algorithm, meaning no signature check
+            $alg = @('NONE')
+            break
+        }
+    }
+
+    # If an X509 certificate is being used, detect the signing algorithm
+    if ($null -ne $X509Certificate) {
+        
+        # Skip certificate validation if it has been explicitly provided as a variable.
+        if ($PSCmdlet.ParameterSetName -ne 'CertRaw') {
+            # Validate that the certificate:
+            # 1. Is within its validity period.
+            # 2. Has a valid certificate chain.
+            # 3. Is explicitly authorized for the expected purpose (Code Signing).
+            # 4. Meets strict Enhanced Key Usage (EKU) enforcement.
+            $null = Test-PodeCertificate -Certificate $X509Certificate -ExpectedPurpose CodeSigning -Strict -ErrorAction Stop
+        }
+
+        # Retrieve appropriate JWT algorithms (e.g., RS256, ES256) from the provided certificate
+        $alg = @( Get-PodeJwtSigningAlgorithm -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme )
+    }
+
+    # Return the Bearer authentication scheme configuration as a hashtable
+    # This hashtable is how Pode recognizes and initializes the scheme
+    return @{
+        Name          = 'Bearer'
+        Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+        ScriptBlock   = @{
+            Script         = (Get-PodeAuthBearerType)
+            UsingVariables = $null
+        }
+        PostValidator = @{
+            Script         = (Get-PodeAuthBearerPostValidator)
+            UsingVariables = $null
+        }
+        Middleware    = $Middleware
+        Scheme        = 'http'
+        InnerScheme   = $InnerScheme
+        Arguments     = @{
+            Description         = $Description
+            BearerTag           = (Protect-PodeValue -Value $BearerTag -Default 'Bearer')
+            Scopes              = $Scope
+            AsJWT               = $AsJWT
+            Secret              = $Secret
+            Location            = $Location
+            JwtVerificationMode = $JwtVerificationMode
+            Algorithm           = $alg
+            X509Certificate     = $X509Certificate
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    Creates a new Digest authentication scheme for Pode.
+
+.DESCRIPTION
+    This function defines a Digest authentication scheme in Pode. It allows specifying
+    parameters such as the authentication algorithm, quality of protection, and an optional
+    header tag. The function ensures secure authentication by leveraging Pode’s built-in
+    digest authentication mechanisms.
+
+.PARAMETER HeaderTag
+    An optional custom header tag for the authentication scheme. Defaults to 'Digest'.
+
+.PARAMETER Algorithm
+    Specifies the digest algorithm used for authentication. The default is 'MD5'.
+    Other supported values include 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', and 'SHA-512/256'.
+
+.PARAMETER QualityOfProtection
+    Determines the Quality of Protection (QoP) setting for authentication. The default is 'auth'.
+    Available options are 'auth', 'auth-int', and 'auth,auth-int'.
+
+.OUTPUTS
+    Hashtable containing the defined Digest authentication scheme for Pode.
+
+.EXAMPLE
+    New-PodeAuthDigestScheme -Algorithm 'SHA-256' -QualityOfProtection 'auth-int'
+
+    This example creates a new Digest authentication scheme using SHA-256 and sets
+    the Quality of Protection to 'auth-int'.
+
+.NOTES
+    Internal function for Pode authentication schemes. Subject to change in future updates.
+#>
+function New-PodeAuthDigestScheme {
+    [CmdletBinding(DefaultParameterSetName = 'Basic')]
+    [OutputType([hashtable])]
+    param(
+
+        [Parameter(ParameterSetName = 'Digest')]
+        [string]
+        $HeaderTag,
+
+        [Parameter(ParameterSetName = 'Digest')]
+        [ValidateSet('MD5', 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256')]
+        [string[]]
+        $Algorithm = 'MD5',
+
+        [Parameter(ParameterSetName = 'Digest')]
+        [ValidateSet('auth', 'auth-int', 'auth,auth-int'  )]
+        [string[]]
+        $QualityOfProtection = 'auth'
+    )
+    # default realm
+    $_realm = 'User'
+
+    # convert any middleware into valid hashtables
+    $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+
+    return @{
+        Name          = 'Digest'
+        Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+        ScriptBlock   = @{
+            Script         = (Get-PodeAuthDigestType)
+            UsingVariables = $null
+        }
+        PostValidator = @{
+            Script         = (Get-PodeAuthDigestPostValidator)
+            UsingVariables = $null
+        }
+        Middleware    = $Middleware
+        InnerScheme   = $InnerScheme
+        Scheme        = 'http'
+        Arguments     = @{
+            HeaderTag           = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
+            Algorithm           = $Algorithm
+            QualityOfProtection = $QualityOfProtection
+        }
+    }
 }
