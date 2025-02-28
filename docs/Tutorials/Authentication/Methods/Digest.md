@@ -143,13 +143,78 @@ Start-PodeServer {
 }
 ```
 
-## Windows-Specific Limitations
+### **Windows-Specific Limitations and the Pode Client Module**
 
-Windows’ built-in Digest authentication has several restrictions:
+Windows' built-in Digest authentication has several **critical limitations** that restrict its compatibility with modern security practices:
 
-- **Only supports MD5.**
-- **Does not support `auth-int`.**
-- **Fails if multiple algorithms are listed in `WWW-Authenticate`.**
-- **Cannot perform algorithm negotiation.**
+- **Limited to MD5:** Windows does not support stronger hashing algorithms like SHA-256 or SHA-512.
+- **No Support for `auth-int`:** Integrity protection (`auth-int`) is not available, making it less secure.
+- **Fails with Multiple Algorithms:** If the `WWW-Authenticate` header lists multiple algorithms, Windows' built-in implementation fails to negotiate properly.
+- **Lack of Algorithm Negotiation:** Windows cannot automatically select the strongest supported algorithm from a list.
 
-These features can still be implemented manually in Pode. See [`examples/Utilities/DigestClient.ps1`](https://github.com/Badgerati/Pode/blob/develop/examples/utilities/DigestClient.ps1) for a custom client example.
+### **Overcoming Windows Limitations with the Pode Client Module**
+
+To bypass these **Windows client limitations**, Pode provides a custom **client module** that supports full RFC 7616-compliant Digest authentication. This module allows PowerShell scripts to authenticate using modern algorithms, multiple QoP modes, and cross-platform compatibility.
+
+The **client module** is available under:
+
+```powershell
+Import-Module ./examples/Authentication/Modules/Invoke-Digest.psm1
+```
+
+By using this module, you can perform **secure Digest authentication** in PowerShell, even on Windows, without being restricted to **MD5-only authentication**.
+
+The module includes the following functions:
+
+### **Invoke-WebRequestDigest**
+
+A replacement for `Invoke-WebRequest` that supports Digest authentication.
+
+#### **Example Usage**
+
+```powershell
+Import-Module './examples/Authentication/Modules/Invoke-Digest.psm1'
+
+# Define the URI and credentials
+$uri = 'http://localhost:8081/users'
+$username = 'morty'
+$password = 'pickle'
+
+# Convert the password to a SecureString and create a credential object
+$securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+$credential = [System.Management.Automation.PSCredential]::new($username, $securePassword)
+
+# Make a GET request using Digest authentication
+$response = Invoke-WebRequestDigest -Uri $uri -Method 'GET' -Credential $credential
+
+# Display response headers and content
+$response.Headers | Format-List
+Write-Output $response.Content
+```
+
+---
+
+### **Invoke-RestMethodDigest**
+
+A replacement for `Invoke-RestMethod` that supports Digest authentication.
+
+#### **Example Usage**
+
+```powershell
+Import-Module './examples/Authentication/Modules/Invoke-Digest.psm1'
+
+# Define the URI and credentials
+$uri = 'http://localhost:8081/users'
+$username = 'morty'
+$password = 'pickle'
+
+# Convert the password to a SecureString and create a credential object
+$securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+$credential = [System.Management.Automation.PSCredential]::new($username, $securePassword)
+
+# Make a GET request and automatically parse JSON response
+$response = Invoke-RestMethodDigest -Uri $uri -Method 'GET' -Credential $credential
+
+# Output the parsed response
+$response
+```

@@ -6,7 +6,8 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/src/'
     $CertsPath = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/tests/certs/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-
+    $module = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/examples/Authentication/Modules'
+    Import-Module "$module/Invoke-Digest.psm1"
 
     function ConvertTo-Hash {
         param (
@@ -393,6 +394,41 @@ Describe 'Digest Authentication Requests' {
 
             }
 
+        }
+
+        Context 'Invoke-Digest module - Algorithm <_> - Path /auth/<_>' -ForEach ('MD5', 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256') {
+            BeforeDiscovery {
+                $alg_qop = @()
+                ForEach ($qop in 'auth', 'auth-int', 'auth,auth-int') {
+                    $alg_qop += @{
+                        qop       = $qop
+                        algorithm = $_
+                    }
+                }
+            }
+            BeforeAll {
+                $username = 'morty'
+                $password = 'pickle'
+
+                $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+                $credential = [System.Management.Automation.PSCredential]::new($username, $securePassword)
+            }
+            
+            It 'Digest - Method Get - Algorithm:<algorithm> - QOP:<qop>' -ForEach $alg_qop {
+
+                #Write-PodeHost "Testing Algorithm: $algorithm with QOP: $qop"
+                if ($qop -eq 'auth-int') {
+                    { Invoke-RestMethodDigest -Uri "$($Endpoint)/auth/$algorithm/$qop" -Method Get -Credential $credential } | Should -Throw
+                }
+                else {
+                    $response = Invoke-RestMethodDigest -Uri "$($Endpoint)/auth/$algorithm/$qop" -Method Get -Credential $credential
+                    # Validate challenge structure
+                    $response | Should -Not -BeNullOrEmpty
+                    $response | Should -BeOfType 'PSCustomObject'
+                    $response.success | Should -BeTrue
+
+                }
+            }
         }
     }
 }
