@@ -1690,7 +1690,7 @@ function Export-PodeCertificate {
                 else {
                     $filePath = $Path
                 }
-                
+
                 switch ($Format) {
                     'PFX' {
                         $pfxBytes = if ($CertificatePassword) {
@@ -1712,22 +1712,15 @@ function Export-PodeCertificate {
                         break
                     }
                     'PEM' {
-                        if (Test-PodeIsPSDesktop) {
+                        if (!Test-PodeIsPSCore) {
                             throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
-                        }
-                        # Define the encoding based on the powershell edition
-                        $encoding = if ($PSVersionTable.PSEdition -eq 'Core') {
-                            'utf8NoBOM'
-                        }
-                        else {
-                            'utf8'
                         }
                         # Export the certificate in PEM format
                         $pemCert = "-----BEGIN CERTIFICATE-----`n"
                         $pemCert += [Convert]::ToBase64String($Certificate.RawData, 'InsertLineBreaks')
                         $pemCert += "`n-----END CERTIFICATE-----"
                         $certFilePath = "$FilePath.pem"
-                        $pemCert | Out-File -FilePath $certFilePath -Encoding $encoding
+                        $pemCert | Out-File -FilePath $certFilePath -Encoding utf8NoBOM
 
                         Write-PodeHost "Certificate exported successfully: $certFilePath"
 
@@ -1735,7 +1728,7 @@ function Export-PodeCertificate {
                         if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
                             $pemKey = Export-PodePrivateKeyPem -Key $Certificate.PrivateKey -Password $CertificatePassword
                             $keyFilePath = "$FilePath.key"
-                            $pemKey | Out-File -FilePath $keyFilePath -Encoding $encoding
+                            $pemKey | Out-File -FilePath $keyFilePath -Encoding utf8NoBOM
 
                             Write-PodeHost "Private key exported successfully: $keyFilePath"
                         }

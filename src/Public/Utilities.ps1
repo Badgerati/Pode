@@ -749,25 +749,6 @@ function Test-PodeIsPSCore {
     return (Get-PodePSVersionTable).PSEdition -ieq 'core'
 }
 
-
-
-<#
-.SYNOPSIS
-Tests if the the current session is running in PowerShell Desktop.
-
-.DESCRIPTION
-Tests if the the current session is running in PowerShell Desktop.
-
-.EXAMPLE
-if (Test-PodeIsPSDesktop) { /* logic */ }
-#>
-function Test-PodeIsPSDesktop {
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param()
-
-    return (Get-PodePSVersionTable).PSEdition -ieq 'Desktop'
-}
 <#
 .SYNOPSIS
 Tests if the current OS is Unix.

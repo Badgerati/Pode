@@ -257,10 +257,10 @@ function Get-PodeCertificateByPemFile {
         $PrivateKeyPath
     )
 
-    if (Test-PodeIsPSDesktop) {
+    if (!Test-PodeIsPSCore) {
         throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
     }
-    
+
     $cert = $null
 
     $certPath = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
