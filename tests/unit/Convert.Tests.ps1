@@ -10,6 +10,9 @@ BeforeAll {
     # Import Pode Assembly
     $helperPath = (Split-Path -Parent -Path $path) -ireplace 'unit', 'shared'
     . "$helperPath/TestHelper.ps1"
+
+    # Import the module manifest to access its properties
+    $PodeManifest = Get-PodeModuleManifest -Src $src
 }
 
 Describe 'ConvertFrom-PodeCustomDictionaryJson' {

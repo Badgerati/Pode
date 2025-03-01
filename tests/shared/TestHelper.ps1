@@ -177,3 +177,15 @@ function Convert-PsCustomObjectToOrderedHashtable {
         Convert-ObjectRecursively -InputObject $InputObject
     }
 }
+
+function Get-PodeModuleManifest {
+    param(
+        [string]$Src
+    )
+    # Construct the path to the module manifest (.psd1 file)
+    $moduleManifestPath = Join-Path -Path $Src -ChildPath 'Pode.psd1'
+
+    # Import the module manifest to access its properties
+    $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath
+    return  $moduleManifest
+}
