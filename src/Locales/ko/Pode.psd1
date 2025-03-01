@@ -355,5 +355,5 @@
     certificateWeakAlgorithmExceptionMessage                          = '인증서 {0}는 약한 암호화 알고리즘 ({1})을 사용합니다. SHA-256 이상의 강력한 알고리즘을 사용하는 것이 권장됩니다.'
     selfSignedCertificatesNotAllowedExceptionMessage                  = '보안 제한으로 인해 자체 서명된 인증서는 허용되지 않습니다.'
     digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int'는 HTTP PUT, POST, PATCH 메서드에서만 지원됩니다."
-    pemCertificateNotSupportedOnPowerShell5ExceptionMessage           = 'PEM 인증서 형식은 PowerShell 5.1에서 지원되지 않습니다. 다른 인증서 형식을 사용하거나 PowerShell 7.0 이상으로 업그레이드하세요.'
+    pemCertificateNotSupportedByPwshVersionExceptionMessage           = 'PEM 인증서 형식은 PowerShell {0}에서 지원되지 않습니다. 다른 인증서 형식을 사용하거나 PowerShell 7.0 이상으로 업그레이드하세요.'
 }

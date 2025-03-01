@@ -257,8 +257,8 @@ function Get-PodeCertificateByPemFile {
         $PrivateKeyPath
     )
 
-    if (!Test-PodeIsPSCore) {
-        throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
+    if ($PSVersionTable.PSVersion.Major -lt 7) {
+        throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
     }
 
     $cert = $null

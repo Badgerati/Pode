@@ -1712,8 +1712,8 @@ function Export-PodeCertificate {
                         break
                     }
                     'PEM' {
-                        if (!Test-PodeIsPSCore) {
-                            throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
+                        if ($PSVersionTable.PSVersion.Major -lt 7) {
+                            throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
                         }
                         # Export the certificate in PEM format
                         $pemCert = "-----BEGIN CERTIFICATE-----`n"

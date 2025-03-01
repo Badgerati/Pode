@@ -363,7 +363,7 @@ Describe 'Export-PodeCertificate Function' {
         It 'Exports certificate to a PEM file without private key' {
             $filePathBase = Join-Path  $script:tempDir 'dummycertPEM_NoKey'
             if ($PSVersionTable.PSEdition -eq 'Desktop') {
-                { Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -CertificatePassword $script:dummyPassword } | Should -Throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
+                { Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -CertificatePassword $script:dummyPassword } | Should -Throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
             }
             else {
                 $output = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -CertificatePassword $script:dummyPassword
@@ -381,7 +381,7 @@ Describe 'Export-PodeCertificate Function' {
         It 'Exports certificate to a PEM file and exports the private key separately' {
             $filePathBase = Join-Path  $script:tempDir 'dummycertPEM_WithKey'
             if ($PSVersionTable.PSEdition -eq 'Desktop') {
-                { Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -IncludePrivateKey -CertificatePassword $script:dummyPassword } | Should -Throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
+                { Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -IncludePrivateKey -CertificatePassword $script:dummyPassword } | Should -Throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
             }
             else {
                 $script:pemCertPath = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -IncludePrivateKey -CertificatePassword $script:dummyPassword
@@ -527,7 +527,8 @@ Describe 'Import-PodeCertificate Function' {
             It 'Imports certificate to a PEM file with private key' {
                 if ($PSVersionTable.PSEdition -eq 'Desktop') {
                     Mock Test-Path { $true }
-                    { $cert = Import-PodeCertificate -Path ( Join-Path  $script:tempDir 'dummycertPEM.pem') -CertificatePassword $script:dummyPassword -PrivateKeyPath ( Join-Path  $script:tempDir 'dummycertPEM.key') } | Should -Throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
+                    { $cert = Import-PodeCertificate -Path ( Join-Path  $script:tempDir 'dummycertPEM.pem') -CertificatePassword $script:dummyPassword -PrivateKeyPath ( Join-Path  $script:tempDir 'dummycertPEM.key') } |
+                        Should -Throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
                 }
                 else {
                     $cert = Import-PodeCertificate -Path  $script:pemCertPath.CertificateFile -CertificatePassword $script:dummyPassword -PrivateKeyPath $script:pemCertPath.PrivateKeyFile

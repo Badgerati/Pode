@@ -355,5 +355,5 @@
     certificateWeakAlgorithmExceptionMessage                          = 'El certificado {0} usa un algoritmo criptográfico débil: {1}. Se recomienda usar SHA-256 o superior.'
     selfSignedCertificatesNotAllowedExceptionMessage                  = 'Los certificados autofirmados no están permitidos debido a restricciones de seguridad.'
     digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int' solo es compatible con los métodos HTTP PUT, POST o PATCH."
-    pemCertificateNotSupportedOnPowerShell5ExceptionMessage           = 'El formato de certificado PEM no es compatible con PowerShell 5.1. Utilice un formato de certificado diferente o actualice a PowerShell 7.0 o posterior.'
+    pemCertificateNotSupportedByPwshVersionExceptionMessage           = 'El formato de certificado PEM no es compatible con PowerShell {0}. Utilice un formato de certificado diferente o actualice a PowerShell 7.0 o posterior.'
 }
