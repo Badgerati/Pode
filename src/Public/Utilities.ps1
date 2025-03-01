@@ -1356,27 +1356,51 @@ function New-PodeCron {
 
 <#
 .SYNOPSIS
-Gets the version of the Pode module.
+    Retrieves the version of the Pode module.
 
 .DESCRIPTION
-The Get-PodeVersion function checks the version of the Pode module specified in the module manifest. If the module version is not a placeholder value ('$version$'), it returns the actual version prefixed with 'v.'. If the module version is the placeholder value, indicating the development branch, it returns '[develop branch]'.
+    The `Get-PodeVersion` function checks the version of the Pode module as specified in the module manifest.
+    If the module version is **not** the placeholder value (`'$version$'`), it returns the actual version prefixed with `'v'`.
+    If the module version **is** the placeholder value, indicating the development branch, it returns `"[dev]"`.
 
-.PARAMETER None
-This function does not accept any parameters.
+.PARAMETER Raw
+    If specified, the function returns only the raw module version without the `'v'` prefix.
+    By default, the function formats the version as `'vX.Y.Z'` unless the module is in development mode.
 
 .OUTPUTS
-System.String
-Returns a string indicating the version of the Pode module or '[dev]' if on a development version.
+    System.String
+    Returns a string representing the Pode module version in one of the following formats:
+    - `"vX.Y.Z"` for a release version (e.g., `"v1.2.3"`).
+    - `"[dev]"` for development versions.
+
+.EXAMPLE
+    PS> Get-PodeVersion
+    Returns the Pode module version, e.g., `'v1.2.3'` for release versions or `"[dev]"` if in development.
+
+.EXAMPLE
+    PS> Get-PodeVersion -Raw
+    Returns the raw version number, e.g., `'1.2.3'`, without the `'v'` prefix.
+
+.NOTES
+    - This function relies on `Get-PodeModuleManifest` to retrieve the module version.
+    - If the module version is a placeholder (`'$version$'`), the function assumes it's running from the development branch.
 #>
 function Get-PodeVersion {
+    param (
+        [switch]
+        $Raw
+    )
+
     if ($PodeManifest.ModuleVersion -ne '$version$') {
+        if ($Raw) {
+            return $PodeManifest.ModuleVersion
+        }
         return "v$($PodeManifest.ModuleVersion)"
     }
     else {
         return '[dev]'
     }
 }
-
 <#
 .SYNOPSIS
 Converts an XML node to a PowerShell hashtable.
