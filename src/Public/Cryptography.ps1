@@ -1132,16 +1132,25 @@ function New-PodeCertificateRequest {
         FriendlyName      = $FriendlyName
     }
 
+    # Define the encoding based on the powershell edition
+    $encoding = if ($PSVersionTable.PSEdition -eq 'Core') {
+        'utf8NoBOM'
+    }
+    else {
+        'utf8'
+    }
+
     $csrObject = New-PodeCertificateRequestInternal @csrParams
 
 
     $csrPath = Join-Path -Path $OutputPath -ChildPath "$CommonName.csr"
     $keyPath = Join-Path -Path $OutputPath -ChildPath "$CommonName.key"
 
-    $csrObject.Request | Out-File -FilePath $csrPath -Encoding utf8NoBOM
+    $csrObject.Request | Out-File -FilePath $csrPath -Encoding $encoding
     $privateKeyBytes = $csrObject.PrivateKey.ExportPkcs8PrivateKey()
     $privateKeyBase64 = [Convert]::ToBase64String($privateKeyBytes)
-    "-----BEGIN PRIVATE KEY-----`n$privateKeyBase64`n-----END PRIVATE KEY-----" | Out-File -FilePath $keyPath -Encoding utf8NoBOM
+
+    "-----BEGIN PRIVATE KEY-----`n$privateKeyBase64`n-----END PRIVATE KEY-----" | Out-File -FilePath $keyPath -Encoding $encoding
 
     Write-PodeHost "CSR saved to: $csrPath"
     Write-PodeHost "Private Key saved to: $keyPath"
@@ -1661,25 +1670,27 @@ function Export-PodeCertificate {
 
     process {
 
-        if (Test-Path -Path $Path -PathType Container) {
-            # Extract CN (Common Name) from Subject (ensures it only grabs CN=XX)
-            if ($Certificate.Subject -match 'CN=([^,]+)') {
-                $baseName = $matches[1]
-            }
-            else {
-                $baseName = $Certificate.Thumbprint  # Fallback to thumbprint
-            }
 
-            # Replace invalid filename characters and normalize spaces
-            $baseName = $baseName -replace '[\\/:*?"<>|]', '_' -replace '\s+', '_'
-
-            $filePath = Join-Path -Path $($PodeContext.Server.Root) -ChildPath $baseName
-        }
-        else {
-            $filePath = $Path
-        }
         switch ($PSCmdlet.ParameterSetName) {
             'File' {
+                if (Test-Path -Path $Path -PathType Container) {
+                    # Extract CN (Common Name) from Subject (ensures it only grabs CN=XX)
+                    if ($Certificate.Subject -match 'CN=([^,]+)') {
+                        $baseName = $matches[1]
+                    }
+                    else {
+                        $baseName = $Certificate.Thumbprint  # Fallback to thumbprint
+                    }
+
+                    # Replace invalid filename characters and normalize spaces
+                    $baseName = $baseName -replace '[\\/:*?"<>|]', '_' -replace '\s+', '_'
+
+                    $filePath = Join-Path -Path $($PodeContext.Server.Root) -ChildPath $baseName
+                }
+                else {
+                    $filePath = $Path
+                }
+                
                 switch ($Format) {
                     'PFX' {
                         $pfxBytes = if ($CertificatePassword) {
@@ -1701,12 +1712,22 @@ function Export-PodeCertificate {
                         break
                     }
                     'PEM' {
+                        if (Test-PodeIsPSDesktop) {
+                            throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
+                        }
+                        # Define the encoding based on the powershell edition
+                        $encoding = if ($PSVersionTable.PSEdition -eq 'Core') {
+                            'utf8NoBOM'
+                        }
+                        else {
+                            'utf8'
+                        }
                         # Export the certificate in PEM format
                         $pemCert = "-----BEGIN CERTIFICATE-----`n"
                         $pemCert += [Convert]::ToBase64String($Certificate.RawData, 'InsertLineBreaks')
                         $pemCert += "`n-----END CERTIFICATE-----"
                         $certFilePath = "$FilePath.pem"
-                        $pemCert | Out-File -FilePath $certFilePath -Encoding utf8NoBOM
+                        $pemCert | Out-File -FilePath $certFilePath -Encoding $encoding
 
                         Write-PodeHost "Certificate exported successfully: $certFilePath"
 
@@ -1714,7 +1735,7 @@ function Export-PodeCertificate {
                         if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
                             $pemKey = Export-PodePrivateKeyPem -Key $Certificate.PrivateKey -Password $CertificatePassword
                             $keyFilePath = "$FilePath.key"
-                            $pemKey | Out-File -FilePath $keyFilePath -Encoding utf8NoBOM
+                            $pemKey | Out-File -FilePath $keyFilePath -Encoding $encoding
 
                             Write-PodeHost "Private key exported successfully: $keyFilePath"
                         }

@@ -355,4 +355,5 @@
     certificateWeakAlgorithmExceptionMessage                          = '証明書 {0} は脆弱な暗号アルゴリズム ({1}) を使用しています。SHA-256 以上を使用することを推奨します。'
     selfSignedCertificatesNotAllowedExceptionMessage                  = 'セキュリティ上の制限により、自己署名証明書は許可されていません。'
     digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int' は HTTP PUT、POST、PATCH メソッドでのみサポートされます。"
+    pemCertificateNotSupportedOnPowerShell5ExceptionMessage           = 'PEM 証明書フォーマットは PowerShell 5.1 ではサポートされていません。別の証明書フォーマットを使用するか、PowerShell 7.0 以降にアップグレードしてください。'
 }

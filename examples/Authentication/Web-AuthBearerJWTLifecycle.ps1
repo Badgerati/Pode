@@ -131,8 +131,8 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
 
 
-    $JwtVerificationMode =  'Strict'  # Set your desired verification mode (Lenient or Strict)
-     # $SecurePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
+    $JwtVerificationMode = 'Strict'  # Set your desired verification mode (Lenient or Strict)
+    # $SecurePassword = ConvertTo-SecureString 'MySecurePassword' -AsPlainText -Force
 
     $param = @{
         Location            = $Location
@@ -198,7 +198,7 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
             Write-PodeJsonResponse -StatusCode 200 -Value @{
                 'success' = $true
                 'user'    = $user
-                'jwt'     = $jwt
+                'token'     = $jwt
             }
 
         }
@@ -219,7 +219,7 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
                 New-PodeOAContentMediaType -ContentType 'application/json' -Content (
                     New-PodeOABoolProperty -Name 'success' -Description 'Operation success' -Example $true |
                         New-PodeOAStringProperty -Name 'user' -Description 'The user  for login' -Example 'morty' |
-                        New-PodeOAStringProperty -Name 'jwt' -Description 'Bearen JWT token' -Example '6656565' |
+                        New-PodeOAStringProperty -Name 'token' -Description 'Bearen JWT token' -Example '6656565' |
                         New-PodeOAObjectProperty
                     )
                 )  -PassThru |
@@ -232,7 +232,7 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
 
             Write-PodeJsonResponse -StatusCode 200 -Value @{
                 'success' = $true
-                'jwt'     = $jwt
+                'token'     = $jwt
             }
         }
         catch {
@@ -243,15 +243,17 @@ Start-PodeServer -Threads 2 -ApplicationName 'webauth' {
             New-PodeOAContentMediaType -ContentType 'application/json' -Content (
                 New-PodeOABoolProperty -Name 'success' -Description 'Operation success' -Example $true |
                     New-PodeOAStringProperty -Name 'user' -Description 'The user  for login' -Example 'morty' |
-                    New-PodeOAStringProperty -Name 'jwt' -Description 'Bearen JWT token' -Example 'eyJ0eXAiOiJKV1QifQ.eyJpZCI6Ik0wUjdZMzAyIi ... UG9kZSJ9.hhU1fmykkSyZhUCr1NSZto-dGyt50r5OUlYj5SgL88EFlnulSOtsM-61tht-X5lEZVP7TCwG2q6ZELiA-4zey7BTIEecKg8zQ4NasZQi6eq9scSL0WJPNHNiGf91F1BsSAQmTxmtJz9-R9l7dxxonFlgLhq9ZwToPuAEK76lYuEQ45ERH-LoO5En9nRnar5N8SLe244To_T7UPKKBgd_DQNSuW4pShMbeK1_TTwELxroV2-d7bPyhUKIwrP61DDsGxgYCzsJ_8XG4YOfFg_u3bHp_JEplCFPoc5KUVNOQHFCzYR0WMZDhRDMnAF6J8Xn0RKTsFB7q1QNC0NF1-7TGQ' |
+                    New-PodeOAStringProperty -Name 'token' -Description 'Bearen JWT token' -Example 'eyJ0eXAiOiJKV1QifQ.eyJpZCI6Ik0wUjdZMzAyIi ... UG9kZSJ9.hhU1fmykkSyZhUCr1NSZto-dGyt50r5OUlYj5SgL88EFlnulSOtsM-61tht-X5lEZVP7TCwG2q6ZELiA-4zey7BTIEecKg8zQ4NasZQi6eq9scSL0WJPNHNiGf91F1BsSAQmTxmtJz9-R9l7dxxonFlgLhq9ZwToPuAEK76lYuEQ45ERH-LoO5En9nRnar5N8SLe244To_T7UPKKBgd_DQNSuW4pShMbeK1_TTwELxroV2-d7bPyhUKIwrP61DDsGxgYCzsJ_8XG4YOfFg_u3bHp_JEplCFPoc5KUVNOQHFCzYR0WMZDhRDMnAF6J8Xn0RKTsFB7q1QNC0NF1-7TGQ' |
                     New-PodeOAObjectProperty
                 )
             )  -PassThru |
             Add-PodeOAResponse -StatusCode 401 -Description 'Invalid JWT token supplied'
 
-    Add-PodeRoute -PassThru -Method Post -Path '/auth/bearer/jwt/info' -Authentication "Bearer_JWT_$Algorithm" -ScriptBlock {
+
+    Add-PodeRoute -PassThru -Method Get -Path '/auth/bearer/jwt/info' -Authentication "Bearer_JWT_$Algorithm" -ScriptBlock {
         try {
             $jwtInfo = ConvertFrom-PodeJwt -Outputs  'Header,Payload,Signature' -HumanReadable
+            $jwtInfo.success = $true
             Write-PodeJsonResponse -StatusCode 200 -Value $jwtInfo
         }
         catch {

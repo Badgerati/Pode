@@ -355,4 +355,5 @@
     certificateWeakAlgorithmExceptionMessage                          = '证书 {0} 使用了弱加密算法: {1}。建议使用 SHA-256 或更强的算法。'
     selfSignedCertificatesNotAllowedExceptionMessage                  = '由于安全限制，不允许使用自签名证书。'
     digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int' 仅支持 HTTP PUT、POST 或 PATCH 方法。"
+    pemCertificateNotSupportedOnPowerShell5ExceptionMessage           = 'PEM 证书格式在 PowerShell 5.1 中不受支持。请使用其他证书格式或升级到 PowerShell 7.0 或更高版本。'
 }

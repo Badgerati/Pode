@@ -6,6 +6,11 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/src/'
     $CertsPath = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/tests/certs/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    
+    # load assemblies
+    Add-Type -AssemblyName System.Web -ErrorAction Stop
+    Add-Type -AssemblyName System.Net.Http -ErrorAction Stop
+
     $module = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/examples/Authentication/Modules'
     Import-Module "$module/Invoke-Digest.psm1"
 
@@ -64,7 +69,7 @@ BeforeAll {
         $wwwAuthHeaders | ForEach-Object { Write-Verbose " - $_" }
 
         # Ensure we have a Digest header before continuing
-        if (-not $wwwAuthHeader) {
+        if (! $wwwAuthHeader) {
             Throw 'Digest authentication not supported by server!'
         }
 
@@ -396,7 +401,7 @@ Describe 'Digest Authentication Requests' {
 
         }
 
-        Context 'Invoke-Digest module - Algorithm <_> - Path /auth/<_>' -ForEach ('MD5', 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256') {
+        Context 'Invoke-Digest module - Algorithm <_> - Path /auth/<_>' -ForEach ('MD5', 'SHA-1', 'SHA-256', 'SHA-512', 'SHA-384', 'SHA-512/256') -Tag 'Exclude_DesktopEdition' {
             BeforeDiscovery {
                 $alg_qop = @()
                 ForEach ($qop in 'auth', 'auth-int', 'auth,auth-int') {
@@ -413,7 +418,7 @@ Describe 'Digest Authentication Requests' {
                 $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
                 $credential = [System.Management.Automation.PSCredential]::new($username, $securePassword)
             }
-            
+
             It 'Digest - Method Get - Algorithm:<algorithm> - QOP:<qop>' -ForEach $alg_qop {
 
                 #Write-PodeHost "Testing Algorithm: $algorithm with QOP: $qop"

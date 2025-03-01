@@ -388,7 +388,7 @@ function Invoke-WebRequestDigest {
 
         # Set Transfer-Encoding if provided.
         if ($TransferEncoding) {
-            $authRequest.Headers.TryAddWithoutValidation("Transfer-Encoding", $TransferEncoding) | Out-Null
+            $authRequest.Headers.TryAddWithoutValidation('Transfer-Encoding', $TransferEncoding) | Out-Null
         }
 
         # Set User-Agent if provided.
@@ -588,7 +588,7 @@ function Invoke-RestMethodDigest {
 
         # If specified, output the response object even if OutFile is used
         [Parameter()]
-        [switch]$PassThru, 
+        [switch]$PassThru,
 
         # Skip certificate validation (useful for self-signed certs)
         [Parameter()]
@@ -597,7 +597,7 @@ function Invoke-RestMethodDigest {
         # Specify allowed SSL/TLS protocol(s) (e.g. 'Tls12')
         [Parameter()]
         [string]$SslProtocol,
- 
+
 
         # Transfer-Encoding header value
         [Parameter()]
@@ -623,9 +623,9 @@ function Invoke-RestMethodDigest {
         MaximumRetryCount        = $MaximumRetryCount
         RetryIntervalSec         = $RetryIntervalSec
         OutFile                  = $OutFile
-        PassThru                 = $PassThru 
+        PassThru                 = $PassThru
         SkipCertificateCheck     = $SkipCertificateCheck
-        SslProtocol              = $SslProtocol 
+        SslProtocol              = $SslProtocol
         TransferEncoding         = $TransferEncoding
         UserAgent                = $UserAgent
     }

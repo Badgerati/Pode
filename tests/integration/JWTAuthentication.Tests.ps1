@@ -123,8 +123,8 @@ Describe 'JWT Bearer Authentication Requests' {
                 foreach ($alg in $certificateTypes.Keys) {
                     $x509Certificate = New-PodeSelfSignedCertificate -Loopback -KeyType $certificateTypes[$alg].KeyType -KeyLength $certificateTypes[$alg].KeyLength -CertificatePurpose CodeSigning -Ephemeral -Exportable
 
-                    Export-PodeCertificate -Certificate $x509Certificate -Format PFX -Path (join-path -path $using:CertsPath -ChildPath $alg)|    Out-File -FilePath "$using:CertsPath/a.txt" -Append
-                  
+                    Export-PodeCertificate -Certificate $x509Certificate -Format PFX -Path (join-path -path $using:CertsPath -ChildPath $alg) | Out-File -FilePath "$using:CertsPath/a.txt" -Append
+
                     $rsaPaddingScheme = if ($alg.StartsWith('PS')) { 'Pss' } else { 'Pkcs1V15' }
 
 
@@ -247,7 +247,7 @@ Describe 'JWT Bearer Authentication Requests' {
                         Write-PodeJsonResponse -StatusCode 200 -Value @{
                             'success' = $true
                             'user'    = $user
-                            'jwt'     = $jwt
+                            'token'     = $jwt
                         }
 
                     }
@@ -264,7 +264,7 @@ Describe 'JWT Bearer Authentication Requests' {
 
                         Write-PodeJsonResponse -StatusCode 200 -Value @{
                             'success' = $true
-                            'jwt'     = $jwt
+                            'token'     = $jwt
                         }
                     }
                     catch {
@@ -272,9 +272,10 @@ Describe 'JWT Bearer Authentication Requests' {
                     }
                 }
 
-                Add-PodeRoute  -Method Post -Path '/auth/bearer/jwt/info' -Authentication 'Bearer_JWT_SelfSigned' -ScriptBlock {
+                Add-PodeRoute -Method Get -Path '/auth/bearer/jwt/info' -Authentication 'Bearer_JWT_SelfSigned' -ScriptBlock {
                     try {
                         $jwtInfo = ConvertFrom-PodeJwt -Outputs  'Header,Payload,Signature' -HumanReadable
+                        $jwtInfo.success = $true
                         Write-PodeJsonResponse -StatusCode 200 -Value $jwtInfo
                     }
                     catch {
@@ -469,8 +470,8 @@ Describe 'JWT Bearer Authentication Requests' {
             $Response.success | Should -Be $true
 
             # Validate JWT token format
-            $Response.jwt | Should -Not -BeNullOrEmpty
-            $Response.jwt | Should -Match '^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$'
+            $Response.token | Should -Not -BeNullOrEmpty
+            $Response.token | Should -Match '^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$'
 
             # Validate user details
             $Response.User | Should -Not -BeNullOrEmpty
@@ -480,17 +481,16 @@ Describe 'JWT Bearer Authentication Requests' {
             $Response.User.Id | Should -Be 'M0R7Y302'
 
             # Store JWT for subsequent tests
-            $script:JwtToken = $Response.Jwt
+            $script:JwtToken = $Response.token
         }
 
         It 'Validates JWT Token Structure and Claims' {
             $Response = Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer/jwt/info" `
-                -Method Post `
+                -Method Get `
                 -Headers @{
                 'accept'        = 'application/json'
                 'Authorization' = "Bearer $($script:JwtToken)"
-            } `
-                -Body ''
+            }
 
             # Validate response structure
             $Response | Should -Not -BeNullOrEmpty
@@ -541,26 +541,26 @@ Describe 'JWT Bearer Authentication Requests' {
             $Response.success | Should -Be $true
 
             # Validate JWT token format
-            $Response.jwt | Should -Not -BeNullOrEmpty
-            $Response.jwt | Should -Match '^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$'
+            $Response.token | Should -Not -BeNullOrEmpty
+            $Response.token | Should -Match '^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$'
 
             # Store previous token for comparison
             $script:PreviousJwtToken = $script:JwtToken
-            $script:JwtToken = $Response.Jwt
+            $script:JwtToken = $Response.token
         }
 
         It 'Validates Renewed JWT Token and Claims' {
             $Response = Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer/jwt/info" `
-                -Method Post `
+                -Method Get `
                 -Headers @{
                 'accept'        = 'application/json'
                 'Authorization' = "Bearer $($script:JwtToken)"
-            } `
-                -Body ''
+            } 
 
             # Validate response structure
             $Response | Should -Not -BeNullOrEmpty
             $Response | Should -BeOfType 'PSCustomObject'
+            $Response.success | Should -Be $true
 
             # Validate JWT Header
             $Response.Header | Should -Not -BeNullOrEmpty

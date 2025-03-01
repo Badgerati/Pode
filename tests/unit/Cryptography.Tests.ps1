@@ -266,7 +266,7 @@ Describe 'New-PodeCertificateRequest Function' {
 }
 
 
-Describe 'New-PodeSelfSignedCertificate Function (Cross‑Platform)' {
+Describe 'New-PodeSelfSignedCertificate Function' {
 
 
     It 'Generates a valid self-signed certificate with specified parameters' {
@@ -359,15 +359,20 @@ Describe 'Export-PodeCertificate Function' {
         }
     }
 
-    Context 'File Export - PEM format without private key' {
+    Context 'File Export - PEM format without private key' -Tag 'Exclude_DesktopEdition' {
         It 'Exports certificate to a PEM file without private key' {
             $filePathBase = Join-Path  $script:tempDir 'dummycertPEM_NoKey'
-            $output = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -CertificatePassword $script:dummyPassword
-            # The output for PEM (without key) is a string containing the file path.
-            $output | Should -BeOfType pscustomobject
-            $output.CertificateFile | Should -Match '\.pem'
+            if ($PSVersionTable.PSEdition -eq 'Desktop') {
+                { Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -CertificatePassword $script:dummyPassword } | Should -Throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
+            }
+            else {
+                $output = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -CertificatePassword $script:dummyPassword
+                # The output for PEM (without key) is a string containing the file path.
+                $output | Should -BeOfType pscustomobject
+                $output.CertificateFile | Should -Match '\.pem'
             (Test-Path -Path $output.CertificateFile) | Should -BeTrue
             (Get-Content -Path $output.CertificateFile -Raw) | Should -Match '-----BEGIN CERTIFICATE-----'
+            }
         }
     }
 
@@ -375,16 +380,21 @@ Describe 'Export-PodeCertificate Function' {
 
         It 'Exports certificate to a PEM file and exports the private key separately' {
             $filePathBase = Join-Path  $script:tempDir 'dummycertPEM_WithKey'
-            $script:pemCertPath = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -IncludePrivateKey -CertificatePassword $script:dummyPassword
-            # When IncludePrivateKey is used, output is a hashtable.
-            $script:pemCertPath | Should -BeOfType 'pscustomobject'
-            $script:pemCertPath.CertificateFile | Should -Match '\.pem$'
-            $script:pemCertPath.PrivateKeyFile | Should -Match '\.key$'
+            if ($PSVersionTable.PSEdition -eq 'Desktop') {
+                { Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -IncludePrivateKey -CertificatePassword $script:dummyPassword } | Should -Throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
+            }
+            else {
+                $script:pemCertPath = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -IncludePrivateKey -CertificatePassword $script:dummyPassword
+                # When IncludePrivateKey is used, output is a hashtable.
+                $script:pemCertPath | Should -BeOfType 'pscustomobject'
+                $script:pemCertPath.CertificateFile | Should -Match '\.pem$'
+                $script:pemCertPath.PrivateKeyFile | Should -Match '\.key$'
             (Test-Path $script:pemCertPath.CertificateFile) | Should -BeTrue
             (Test-Path $script:pemCertPath.PrivateKeyFile) | Should -BeTrue
 
             (Get-Content -Path $script:pemCertPath.CertificateFile -Raw) | Should -Match '-----BEGIN CERTIFICATE-----'
             (Get-Content -Path $script:pemCertPath.PrivateKeyFile -Raw) | Should -Match '-----BEGIN ENCRYPTED PRIVATE KEY-----'
+            }
         }
     }
 
@@ -513,15 +523,20 @@ Describe 'Import-PodeCertificate Function' {
             }
         }
 
-        Context 'File Import - PEM format with private key' {
-
+        Context 'File Import - PEM format with private key' -Tag 'Exclude_DesktopEdition' {
             It 'Imports certificate to a PEM file with private key' {
-                $cert = Import-PodeCertificate -Path  $script:pemCertPath.CertificateFile -CertificatePassword $script:dummyPassword -PrivateKeyPath $script:pemCertPath.PrivateKeyFile
-                # The output for PEM (without key) is a string containing the file path.
-                $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
+                if ($PSVersionTable.PSEdition -eq 'Desktop') {
+                    Mock Test-Path { $true }
+                    { $cert = Import-PodeCertificate -Path ( Join-Path  $script:tempDir 'dummycertPEM.pem') -CertificatePassword $script:dummyPassword -PrivateKeyPath ( Join-Path  $script:tempDir 'dummycertPEM.key') } | Should -Throw $PodeLocale.pemCertificateNotSupportedOnPowerShell5ExceptionMessage
+                }
+                else {
+                    $cert = Import-PodeCertificate -Path  $script:pemCertPath.CertificateFile -CertificatePassword $script:dummyPassword -PrivateKeyPath $script:pemCertPath.PrivateKeyFile
+                    # The output for PEM (without key) is a string containing the file path.
+                    $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
 
-                # Validate the certificate's subject contains the common name.
-                $cert.Subject | Should -MatchExactly 'CN=SelfSigned, O=TestOrg, L=TestCity, S=TestState, C=US'
+                    # Validate the certificate's subject contains the common name.
+                    $cert.Subject | Should -MatchExactly 'CN=SelfSigned, O=TestOrg, L=TestCity, S=TestState, C=US'
+                }
             }
         }
 
