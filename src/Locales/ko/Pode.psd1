@@ -328,4 +328,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "이름이 '{0}'인 비율 제한 규칙이 존재하지 않습니다."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "이름이 '{0}'인 액세스 제한 규칙이 이미 존재합니다."
     accessLimitRuleDoesNotExistExceptionMessage                       = "이름이 '{0}'인 액세스 제한 규칙이 존재하지 않습니다."
+    loggerDoesNotExistExceptionMessage                                = "로거 '{0}'가 존재하지 않습니다."
 }

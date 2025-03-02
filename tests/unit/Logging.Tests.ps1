@@ -33,7 +33,7 @@ BeforeAll {
 Describe 'Get-PodeLogger' {
     It 'Returns null as the logger does not exist' {
         $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Type' = @{}; } }; }
-        Get-PodeLogger -Name 'test' | Should -Be $null
+        { Get-PodeLogger -Name 'test' } | Should -Throw $PodeLocale.loggerDoesNotExistExceptionMessage
     }
 
     It 'Returns terminal logger for name' {
@@ -93,7 +93,10 @@ Describe 'Write-PodeErrorLog' {
             Server = @{
                 Logging = @{
                     Type = @{
-                        test = @{
+                        ([Pode.PodeLogger]::ErrorLogName) = @{
+                            Standard = $false
+                        }
+                        test                            = @{
                             Standard = $false
                         }
                     }

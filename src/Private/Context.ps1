@@ -47,6 +47,9 @@ using namespace Pode
 .PARAMETER EnableBreakpoints
     A switch to enable debugging breakpoints.
 
+.PARAMETER Daemon
+    Configures the server to run as a daemon with minimal console interaction and output.
+
 .EXAMPLE
     $context = New-PodeContext -ScriptBlock $script -FilePath 'path/to/file' -Threads 4 -ServerRoot 'path/to/root'
 #>
@@ -369,7 +372,6 @@ function New-PodeContext {
             }
         }
         catch {
-            $_ | Write-PodeErrorLog
             # Console support is partial , configure the context for non-console behavior
             $ctx.Server.Console.DisableTermination = $true  # Prevent termination
             $ctx.Server.Console.DisableConsoleInput = $true # Disable console input

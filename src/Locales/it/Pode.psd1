@@ -328,4 +328,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "La regola di limitazione del tasso con il nome '{0}' non esiste."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Una regola di limitazione dell'accesso con il nome '{0}' esiste già."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La regola di limitazione dell'accesso con il nome '{0}' non esiste."
+    loggerDoesNotExistExceptionMessage                                = "Il logger '{0}' non esiste."
 }

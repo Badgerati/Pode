@@ -746,6 +746,8 @@ function Remove-PodeLogger {
 
             # Finally, remove the logging type from the Types collection
             $null = $PodeContext.Server.Logging.Type.Remove($Name)
+        }else{
+            throw $PodeLocale.loggerDoesNotExistExceptionMessage
         }
     }
 }
@@ -960,12 +962,21 @@ function Write-PodeLog {
 
     )
     begin {
+        if ($null -eq $PodeContext.Server.Logging) {
+            Write-Debug 'Pode not yet initialised'
+            return
+        }
+
         if (!$Name) {
             $Name = [Pode.PodeLogger]::DefaultLogName
         }
 
+        if (!$PodeContext.Server.Logging.Type.ContainsKey($Name)) {
+            throw $PodeLocale.loggerDoesNotExistExceptionMessage
+        }
         # Get the configured log method.
         $log = $PodeContext.Server.Logging.Type[$Name]
+
     }
     Process {
         # Define the log item based on the selected parameter set.

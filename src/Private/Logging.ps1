@@ -475,7 +475,9 @@ function Get-PodeLogger {
         [string]
         $Name
     )
-
+    if (!$PodeContext.Server.Logging.Type.ContainsKey($Name)) {
+        throw $PodeLocale.loggerDoesNotExistExceptionMessage
+    }
     return $PodeContext.Server.Logging.Type[$Name]
 }
 
@@ -503,7 +505,9 @@ function Test-PodeStandardLogger {
         [string]
         $Name
     )
-
+    if (!$PodeContext.Server.Logging.Type.ContainsKey($Name)) {
+        throw $PodeLocale.loggerDoesNotExistExceptionMessage
+    }
     # Check if the specified logger is a standard logger
     return $PodeContext.Server.Logging.Type[$Name].Standard
 }
