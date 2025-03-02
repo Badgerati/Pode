@@ -196,8 +196,11 @@ function Get-PodeStateNames {
 
     if ($Scope.Length -gt 0) {
         $keys = @(foreach ($key in $keys) {
-                if ($PodeContext.Server.State.ContainsKey($key) -and ($PodeContext.Server.State[$key].Scope -iin $Scope)) {
-                    $key
+                if ($PodeContext.Server.State.ContainsKey($key)) {
+                    $scopeValue = $PodeContext.Server.State[$key]['Scope']
+                    if ($scopeValue -is [string] -and ($scopeValue -iin $Scope)) {
+                        $key
+                    }
                 }
             })
     }

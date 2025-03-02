@@ -7,6 +7,12 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
+    $helperPath = (Split-Path -Parent -Path $path) -ireplace 'unit', 'shared'
+    . "$helperPath/TestHelper.ps1"
+
+    # Import the module manifest to access its properties
+    $PodeManifest = Get-PodeModuleManifest -Src $src
+
     $PodeContext = @{ 'Server' = $null; }
 }
 
@@ -156,56 +162,7 @@ Describe 'Get-PodeStateNames' -Tags 'Unit', 'Pode' {
                 State = $null
             }
         }
-
-        # Define (or dot-source) the function here if not already loaded:
-        function Get-PodeStateNames {
-            [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
-            [CmdletBinding()]
-            param(
-                [Parameter()]
-                [string]
-                $Pattern,
-
-                [Parameter()]
-                [string[]]
-                $Scope
-            )
-
-            if ($null -eq $PodeContext.Server.State) {
-                throw ($PodeLocale.podeNotInitializedExceptionMessage)
-            }
-
-            if ($null -eq $Scope) {
-                $Scope = @()
-            }
-
-            $keys = $PodeContext.Server.State.Keys
-
-            if ($Scope.Length -gt 0) {
-                $keys = @(
-                    foreach ($key in $keys) {
-                        if ($PodeContext.Server.State.ContainsKey($key)) {
-                            $scopeValue = $PodeContext.Server.State[$key]['Scope']
-                            if ($scopeValue -is [string] -and ($scopeValue -iin $Scope)) {
-                                $key
-                            }
-                        }
-                    }
-                )
-            }
-
-            if (![string]::IsNullOrWhiteSpace($Pattern)) {
-                $keys = @(
-                    foreach ($key in $keys) {
-                        if ($key -imatch $Pattern) {
-                            $key
-                        }
-                    }
-                )
-            }
-
-            return $keys
-        }
+ 
     }
 
     Context 'When PodeContext.Server.State is $null' {
