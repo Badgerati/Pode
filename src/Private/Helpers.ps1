@@ -4084,6 +4084,7 @@ function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }
 
+
 <#
 .SYNOPSIS
     Retrieves the name of the main Pode application script.
@@ -4125,7 +4126,6 @@ function Get-PodeApplicationName {
         return 'NoName'
     }
 }
-
 
 <#
     .SYNOPSIS

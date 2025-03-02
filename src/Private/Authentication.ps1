@@ -2385,3 +2385,53 @@ function Test-PodeBodyAuthMethod {
 
     }
 }
+
+
+<#
+.SYNOPSIS
+  Retrieves the Bearer token from an HTTP request based on authentication configuration.
+
+.DESCRIPTION
+  The `Get-PodeBearerToken` function extracts the Bearer token from an HTTP request, depending on
+  the authentication method's configured token location. It supports retrieval from the request's
+  header, query parameters, or body.
+
+.PARAMETER Authentication
+  Specifies the authentication method configured in Pode. The function checks if the method exists
+  within the server's authentication methods.
+
+.OUTPUTS
+  [string]
+  Returns the extracted Bearer token as a string. If the authentication method does not exist,
+  the function throws an exception.
+
+.EXAMPLE
+  $token = Get-PodeBearerToken
+  # Retrieves the Bearer token from the request's headers, query parameters, or body.
+
+.NOTES
+  - This function depends on Pode's authentication context and must be used within a Pode route.
+  - The token location is determined based on the authentication method's configuration.
+  - If the authentication method does not exist, an exception is thrown.
+  - Supported token locations: `header`, `query`, `body`.
+#>
+function Get-PodeBearenToken {
+    if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
+        $authOptions = $PodeContext.Server.Authentications.Methods[$Authentication].Scheme.Arguments
+        switch ($authOptions.Location.ToLowerInvariant()) {
+            'header' {
+                $atoms = $(Get-PodeHeader -Name 'Authorization') -isplit '\s+'
+                return $atoms[1]
+            }
+            'query' {
+                return $WebEvent.Query[$options.BearerTag]
+            }
+            'body' {
+                return $WebEvent.Data.($options.BearerTag)
+            }
+        }
+    }
+    else {
+        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage)
+    }
+}
