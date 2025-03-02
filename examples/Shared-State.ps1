@@ -44,13 +44,24 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-    $Path = Get-PodeRelativePath -Path './State' -JoinRoot -Resolve
+    $Path = Join-Path (Get-PodeServerPath) "State"
 
     if (!(Test-Path -Path $Path -PathType Container)) {
         New-Item -Path $Path -ItemType Directory
 
     }
     $stateScope1Path = Join-Path -Path $Path -ChildPath 'LegacyStateScope1.json'
+    #if no previous state exist create a new one old Pode style
+    if (!( Test-Path $stateScope1Path)) {
+        @{
+            'hash1' = @{
+                'Scope' = @('Scope0', 'Scope1')
+                'Value' = @{
+                    'values' = @(4, 4, 8, 0, 5, 5, 1, 9, 1, 1, 2, 4, 9, 2, 5)
+                }
+            }
+        } | ConvertTo-Json -Depth 10 |  Out-File $stateScope1Path
+    }
     # re-initialise the state
     Restore-PodeState -Path $stateScope1Path
 

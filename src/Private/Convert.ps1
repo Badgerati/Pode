@@ -331,86 +331,125 @@ function ConvertTo-PodeCustomDictionaryJson {
     return $converted | ConvertTo-Json -Depth $Depth -Compress:$Compress
 }
 
-
 <#
 .SYNOPSIS
-    Converts a PSCustomObject or nested object structure into a hashtable.
+  Converts a PSCustomObject or nested object structure into a hashtable.
 
 .DESCRIPTION
-    The `ConvertTo-PodeHashtable` function recursively converts a PowerShell `PSCustomObject`
-    into a hashtable while preserving the original data structure. It ensures that objects,
-    arrays, and collections are properly transformed, while primitive types such as numbers,
-    booleans, and strings remain unchanged.
+  The `ConvertTo-PodeHashtable` function recursively converts a PowerShell `PSCustomObject`
+  into a hashtable while preserving the original data structure. It ensures that objects,
+  arrays, and collections are properly transformed, while primitive types such as numbers,
+  booleans, and strings remain unchanged. Optionally, it can create an ordered hashtable.
 
 .PARAMETER InputObject
-    Specifies the input object to convert. The function can accept:
-    - A `PSCustomObject`, which will be transformed into a hashtable.
-    - A collection (`Array`, `List`), which will be processed recursively.
-    - A primitive type (`String`, `Number`, `Boolean`), which will remain unchanged.
+  Specifies the input object to convert. The function can accept:
+  - A `PSCustomObject`, which will be transformed into a hashtable.
+  - A collection (`Array`, `List`), which will be processed recursively.
+  - A primitive type (`String`, `Number`, `Boolean`), which will remain unchanged.
+
+.PARAMETER Ordered
+  If specified, the resulting hashtable will be an ordered dictionary (`[ordered]@{}`),
+  preserving the order of properties as they appear in the original object.
+
+.OUTPUTS
+  [hashtable]
+  Returns a hashtable representation of the provided PSCustomObject.
 
 .EXAMPLE
-    $psCustomObject = [PSCustomObject]@{
-        Name    = "Pode"
-        Version = 2.0
-        Active  = $true
-        Metadata = [PSCustomObject]@{
-            Author  = "Pode Team"
-            Created = "2025-02-03"
-            Stats   = [PSCustomObject]@{
-                Users   = 150
-                Servers = 5
-            }
-        }
-        Features = @("Fast", "Lightweight", "Modular")
-    }
+  $psCustomObject = [PSCustomObject]@{
+      Name    = "Pode"
+      Version = 2.0
+      Active  = $true
+      Metadata = [PSCustomObject]@{
+          Author  = "Pode Team"
+          Created = "2025-02-03"
+          Stats   = [PSCustomObject]@{
+              Users   = 150
+              Servers = 5
+          }
+      }
+      Features = @("Fast", "Lightweight", "Modular")
+  }
 
-    $hashtable = ConvertTo-PodeHashtable -InputObject $psCustomObject
-    $hashtable
-
-.EXAMPLE
-    # Convert a list of PSCustomObjects to an array of hashtables
-    $users = @(
-        [PSCustomObject]@{ ID = 1; Name = "Alice" }
-        [PSCustomObject]@{ ID = 2; Name = "Bob" }
-    )
-
-    $hashtableList = ConvertTo-PodeHashtable -InputObject $users
-    $hashtableList
+  $hashtable = ConvertTo-PodeHashtable -InputObject $psCustomObject
+  $hashtable
 
 .EXAMPLE
-    # Using pipeline input
-    $users | ConvertTo-PodeHashtable
+  # Convert a list of PSCustomObjects to an array of hashtables
+  $users = @(
+      [PSCustomObject]@{ ID = 1; Name = "Alice" }
+      [PSCustomObject]@{ ID = 2; Name = "Bob" }
+  )
+
+  $hashtableList = ConvertTo-PodeHashtable -InputObject $users
+  $hashtableList
+
+.EXAMPLE
+  # Using pipeline input
+  $users | ConvertTo-PodeHashtable
+
+.EXAMPLE
+  # Convert a PSCustomObject to an ordered hashtable
+  $orderedHashtable = ConvertTo-PodeHashtable -InputObject $psCustomObject -Ordered
+  $orderedHashtable
 
 .NOTES
-    - This function ensures deep conversion of nested PSCustomObjects while leaving primitive values intact.
-    - Collections (e.g., Arrays, Lists) are processed recursively, preserving structure.
-    - This function is for internal Pode usage and may be subject to change.
+  - This function ensures deep conversion of nested PSCustomObjects while leaving primitive values intact.
+  - Collections (e.g., Arrays, Lists) are processed recursively, preserving structure.
+  - The `Ordered` switch allows for property order preservation in the resulting hashtable.
+  - This function is for internal Pode usage and may be subject to change.
 #>
-
 function ConvertTo-PodeHashtable {
+    [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline)]
-        [psobject]
-        $InputObject
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [PSCustomObject]$InputObject,
+        [switch]
+        $Ordered
     )
-
-    process {
-        if ($null -eq $InputObject) { return $null }
-
-        if ($InputObject -is [System.Collections.IEnumerable] -and $InputObject -isnot [string]) {
-            Write-Output -NoEnumerate -InputObject  @(
-                foreach ($object in $InputObject) { ConvertTo-PodeHashtable -InputObject $object }
+    begin {
+        # Define a recursive function within the process block
+        function Convert-ObjectRecursively {
+            param (
+                [Parameter(Mandatory = $true)]
+                [System.Object]
+                $InputObject
             )
-        }
-        elseif ($InputObject -is [psobject]) {
-            $hash = @{}
+            # Initialize an ordered dictionary
+            $hashtable = if ($Ordered) { [ordered]@{} }else { @{} }
+
+            # Loop through each property of the PSCustomObject
             foreach ($property in $InputObject.PSObject.Properties) {
-                $hash[$property.Name] = (ConvertTo-PodeHashtable -InputObject $property.Value).PSObject.BaseObject
+                # Check if the property value is a PSCustomObject
+                if ($property.Value -is [PSCustomObject]) {
+                    # Recursively convert the nested PSCustomObject
+                    $hashtable[$property.Name] = Convert-ObjectRecursively -InputObject $property.Value
+                }
+                elseif ($property.Value -is [System.Collections.IEnumerable] -and -not ($property.Value -is [string])) {
+                    # If the value is a collection, check each element
+                    $convertedCollection = @()
+                    foreach ($item in $property.Value) {
+                        if ($item -is [PSCustomObject]) {
+                            $convertedCollection += Convert-ObjectRecursively -InputObject $item
+                        }
+                        else {
+                            $convertedCollection += $item
+                        }
+                    }
+                    $hashtable[$property.Name] = $convertedCollection
+                }
+                else {
+                    # Add the property name and value to the ordered hashtable
+                    $hashtable[$property.Name] = $property.Value
+                }
             }
-            $hash
+
+            # Return the resulting ordered hashtable
+            return $hashtable
         }
-        else {
-            $InputObject
-        }
+    }
+    process {
+        # Call the recursive helper function for each input object
+        Convert-ObjectRecursively -InputObject $InputObject
     }
 }
