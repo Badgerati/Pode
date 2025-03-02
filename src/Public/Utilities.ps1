@@ -1382,7 +1382,6 @@ function New-PodeCron {
     Returns the raw version number, e.g., `'1.2.3'`, without the `'v'` prefix.
 
 .NOTES
-    - This function relies on `Get-PodeModuleManifest` to retrieve the module version.
     - If the module version is a placeholder (`'$version$'`), the function assumes it's running from the development branch.
 #>
 function Get-PodeVersion {
