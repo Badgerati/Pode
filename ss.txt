@@ -1,0 +1,12 @@
+__pode_log_errors__
+Write-PodeLog: C:\Users\m_dan\Documents\GitHub\Pode\src\Public\Logging.ps1:850:9
+Line |
+ 850 |          Write-PodeLog @PSBoundParameters -name $name -SuppressErrorLo …
+     |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Cannot index into a null array.
+
+
+Key         Value
+---         -----
+ErrorRecord Exception setting "TreatControlCAsInput": "The parameter is incorrect."
+
