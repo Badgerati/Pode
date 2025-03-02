@@ -746,7 +746,8 @@ function Remove-PodeLogger {
 
             # Finally, remove the logging type from the Types collection
             $null = $PodeContext.Server.Logging.Type.Remove($Name)
-        }else{
+        }
+        else {
             throw $PodeLocale.loggerDoesNotExistExceptionMessage
         }
     }
@@ -845,9 +846,11 @@ function Write-PodeErrorLog {
 
     Process {
         $name = [Pode.PodeLogger]::ErrorLogName
-        Write-PodeLog @PSBoundParameters -name $name -SuppressErrorLog
-        if ($PodeContext.Server.Logging.Type[$name].DuplicateToDefaultLog -and ! $SuppressDefaultLog) {
-            Write-PodeLog @PSBoundParameters -name ([Pode.PodeLogger]::DefaultLogName) -SuppressErrorLog
+        if (Test-PodeLoggerEnabled -Name $name) {
+            Write-PodeLog @PSBoundParameters -name $name -SuppressErrorLog
+            if ($PodeContext.Server.Logging.Type[$name].DuplicateToDefaultLog -and ! $SuppressDefaultLog) {
+                Write-PodeLog @PSBoundParameters -name ([Pode.PodeLogger]::DefaultLogName) -SuppressErrorLog
+            }
         }
     }
 }

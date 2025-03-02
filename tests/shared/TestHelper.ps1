@@ -1,3 +1,5 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+param()
 <#
 .SYNOPSIS
 	Ensures the Pode assembly is loaded into the current session.
@@ -49,7 +51,35 @@ function Import-PodeAssembly {
 }
 
 
+<#
+.SYNOPSIS
+  Compares two strings while normalizing line endings.
 
+.DESCRIPTION
+  This function trims both input strings and replaces all variations of line endings (`CRLF`, `LF`, `CR`) with a normalized `LF` (`\n`).
+  It then compares the normalized strings for equality.
+
+.PARAMETER InputString1
+  The first string to compare.
+
+.PARAMETER InputString2
+  The second string to compare.
+
+.OUTPUTS
+  [bool]
+  Returns `$true` if both strings are equal after normalization; otherwise, returns `$false`.
+
+.EXAMPLE
+  Compare-StringRnLn -InputString1 "Hello`r`nWorld" -InputString2 "Hello`nWorld"
+  # Returns: $true
+
+.EXAMPLE
+  Compare-StringRnLn -InputString1 "Line1`r`nLine2" -InputString2 "Line1`rLine2"
+  # Returns: $true
+
+.NOTES
+  This function ensures that strings with different line-ending formats are treated as equal if their content is otherwise identical.
+#>
 function Compare-StringRnLn {
     param (
         [string]$InputString1,
@@ -58,7 +88,34 @@ function Compare-StringRnLn {
     return ($InputString1.Trim() -replace "`r`n|`n|`r", "`n") -eq ($InputString2.Trim() -replace "`r`n|`n|`r", "`n")
 }
 
+<#
+.SYNOPSIS
+  Converts a PSCustomObject into an ordered hashtable.
 
+.DESCRIPTION
+  This function recursively converts a PSCustomObject, including nested objects and collections, into an ordered hashtable.
+  It ensures that all properties are retained while maintaining their original structure.
+
+.PARAMETER InputObject
+  The PSCustomObject to be converted into an ordered hashtable.
+
+.OUTPUTS
+  [System.Collections.Specialized.OrderedDictionary]
+  Returns an ordered hashtable representation of the input PSCustomObject.
+
+.EXAMPLE
+  $object = [PSCustomObject]@{ Name = "Pode"; Version = "2.0"; Config = [PSCustomObject]@{ Debug = $true } }
+  Convert-PsCustomObjectToOrderedHashtable -InputObject $object
+  # Returns: An ordered hashtable representation of $object.
+
+.EXAMPLE
+  $object = [PSCustomObject]@{ Users = @([PSCustomObject]@{ Name = "Alice" }, [PSCustomObject]@{ Name = "Bob" }) }
+  Convert-PsCustomObjectToOrderedHashtable -InputObject $object
+  # Returns: An ordered hashtable where 'Users' is an array of ordered hashtables.
+
+.NOTES
+  This function preserves key order and supports recursive conversion of nested objects and collections.
+#>
 function Convert-PsCustomObjectToOrderedHashtable {
     [CmdletBinding()]
     param (
@@ -113,6 +170,37 @@ function Convert-PsCustomObjectToOrderedHashtable {
     }
 }
 
+<#
+.SYNOPSIS
+  Compares two hashtables to determine if they are equal.
+
+.DESCRIPTION
+  This function recursively compares two hashtables, checking whether they contain the same keys and values.
+  It also handles nested hashtables and arrays, ensuring deep comparison of all elements.
+
+.PARAMETER Hashtable1
+  The first hashtable to compare.
+
+.PARAMETER Hashtable2
+  The second hashtable to compare.
+
+.OUTPUTS
+  [bool]
+  Returns `$true` if both hashtables are equal, otherwise returns `$false`.
+
+.EXAMPLE
+  $hash1 = @{ Name = "Pode"; Version = "2.0"; Config = @{ Debug = $true } }
+  $hash2 = @{ Name = "Pode"; Version = "2.0"; Config = @{ Debug = $true } }
+  Compare-Hashtable -Hashtable1 $hash1 -Hashtable2 $hash2
+  # Returns: $true
+
+.EXAMPLE
+  $hash1 = @{ Name = "Pode"; Version = "2.0" }
+  $hash2 = @{ Name = "Pode"; Version = "2.1" }
+  Compare-Hashtable -Hashtable1 $hash1 -Hashtable2 $hash2
+  # Returns: $false
+
+#>
 function Compare-Hashtable {
     param (
         [object]$Hashtable1,
@@ -251,6 +339,7 @@ function Wait-ForWebServer {
         try {
             # Send a request but ignore status codes (any response means the server is online)
             $null = Invoke-WebRequest -Uri $Uri -UseBasicParsing -TimeoutSec 3
+             Write-Host "Webserver is online at $Uri"
             return $true
         }
         catch {
@@ -258,7 +347,7 @@ function Wait-ForWebServer {
                 return $true
             }
             else {
-                Write-Debug "Waiting for webserver to come online at $Uri... (Attempt $($RetryCount+1)/$MaxRetries)"
+                Write-Host "Waiting for webserver to come online at $Uri... (Attempt $($RetryCount+1)/$MaxRetries)"
             }
         }
 

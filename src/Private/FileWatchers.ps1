@@ -13,7 +13,7 @@ function New-PodeFileWatcher {
     param()
     $watcher = [PodeWatcher]::new($PodeContext.Tokens.Cancellation.Token)
     $watcher.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-    $watcher.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
+    $watcher.ErrorLoggingLevels = If ( $listener.ErrorLoggingEnabled) { @(Get-PodeErrorLoggingLevel) } else { @() }
     return $watcher
 }
 
