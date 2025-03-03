@@ -1,40 +1,67 @@
 <#
 .SYNOPSIS
-Sets an object within the shared state.
+    Sets an object within the shared state.
 
 .DESCRIPTION
-Sets an object within the shared state.
+    Sets an object within the shared state, allowing for the creation of different collection types, such as a Hashtable, ConcurrentDictionary, or other concurrent collections.
 
 .PARAMETER Name
-The name of the state object.
+    The name of the state object.
 
 .PARAMETER Value
-The value to set in the state.
+    The value to set in the state. If a collection type is specified using `-NewCollectionType`, this value is ignored.
 
 .PARAMETER Scope
-An optional Scope for the state object, used when saving the state.
+    An optional scope for the state object, used when saving the state.
+
+.PARAMETER NewCollectionType
+    Specifies the type of collection to create. Supported options include:
+    - Hashtable
+    - ConcurrentDictionary
+    - OrderedDictionary
+    - ConcurrentBag
+    - ConcurrentQueue
+    - ConcurrentStack
+
+    If this parameter is used, the state object will be initialized as the specified collection type.
 
 .EXAMPLE
-Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
+    Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
 
 .EXAMPLE
-Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
+    Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
+
+.EXAMPLE
+    Set-PodeState -Name 'Cache' -NewCollectionType 'ConcurrentDictionary'
+
+.EXAMPLE
+    Set-PodeState -Name 'Tasks' -NewCollectionType 'ConcurrentQueue'
+
+.NOTES
+    - `NewCollectionType` and `Value` are mutually exclusive; only one can be used at a time.
+    - The function ensures thread safety when using concurrent collections.
+    - Pode must be initialized before calling this function.
 #>
 function Set-PodeState {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Value')]
     [OutputType([object])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(ValueFromPipeline = $true, Position = 0)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Value')]
         [object]
         $Value,
 
         [Parameter()]
         [string[]]
-        $Scope
+        $Scope,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Collection')]
+        [ValidateSet('Hashtable', 'ConcurrentDictionary', 'OrderedDictionary', 'ConcurrentBag', 'ConcurrentQueue', 'ConcurrentStack')]
+        [string]
+        $NewCollectionType
     )
 
     begin {
@@ -52,24 +79,37 @@ function Set-PodeState {
     }
 
     process {
-        # Add the current piped-in value to the array
+        # Collect piped-in values
         $pipelineValue += $_
     }
 
     end {
-        # Set Value to the array of values
+        # If multiple values were piped in, store them as an array
         if ($pipelineValue.Count -gt 1) {
             $Value = $pipelineValue
         }
 
-        $PodeContext.Server.State[$Name] = @{
-            Value = $Value
-            Scope = $Scope
+        # Initialize the state as a case-insensitive ConcurrentDictionary
+        $PodeContext.Server.State[$Name] = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
+        # Create the specified collection type, or use the provided value
+        $PodeContext.Server.State[$Name].Value = switch ($NewCollectionType) {
+            'Hashtable' { @{} }
+            'ConcurrentDictionary' { [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
+            'OrderedDictionary' { [ordered]@{} }
+            'ConcurrentBag' { [System.Collections.Concurrent.ConcurrentBag[object]]::new() }
+            'ConcurrentQueue' { [System.Collections.Concurrent.ConcurrentQueue[object]]::new() }
+            'ConcurrentStack' { [System.Collections.Concurrent.ConcurrentStack[object]]::new() }
+            default { $Value }  # If no collection type is specified, use the provided value
         }
 
-        return $Value
+        # Store the scope for the state object
+        $PodeContext.Server.State[$Name].Scope = $Scope
+
+        return $PodeContext.Server.State[$Name].Value
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -144,7 +184,6 @@ function Get-PodeStateNames {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        # Pode has not been initialized
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
@@ -152,13 +191,16 @@ function Get-PodeStateNames {
         $Scope = @()
     }
 
-    $tempState = $PodeContext.Server.State.Clone()
-    $keys = $tempState.Keys
+    # Directly retrieve the keys from the ConcurrentDictionary
+    $keys = $PodeContext.Server.State.Keys
 
     if ($Scope.Length -gt 0) {
         $keys = @(foreach ($key in $keys) {
-                if ($tempState[$key].Scope -iin $Scope) {
-                    $key
+                if ($PodeContext.Server.State.ContainsKey($key)) {
+                    $scopeValue = $PodeContext.Server.State[$key]['Scope']
+                    if ($scopeValue -is [string] -and ($scopeValue -iin $Scope)) {
+                        $key
+                    }
                 }
             })
     }
@@ -173,6 +215,7 @@ function Get-PodeStateNames {
 
     return $keys
 }
+
 
 <#
 .SYNOPSIS
@@ -189,56 +232,81 @@ Remove-PodeState -Name 'Data'
 #>
 function Remove-PodeState {
     [CmdletBinding()]
-    [OutputType([object])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
 
-    if ($null -eq $PodeContext.Server.State) {
+    if ($null -eq $PodeContext -or $null -eq $PodeContext.Server -or $null -eq $PodeContext.Server.State) {
         # Pode has not been initialized
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
-    $value = $PodeContext.Server.State[$Name].Value
-    $null = $PodeContext.Server.State.Remove($Name)
-    return $value
+    # ConcurrentDictionary requires TryRemove to remove and retrieve the value
+    $removedValue = $null
+    $removed = $PodeContext.Server.State.TryRemove($Name, [ref]$removedValue)
+
+    if ($removed) {
+        return $removedValue.Value
+    }
+
+    # If not removed (key didn't exist), return $null
+    return $null
 }
 
 <#
 .SYNOPSIS
-Saves the current shared state to a supplied JSON file.
+    Saves the current Pode server state to a JSON file.
 
 .DESCRIPTION
-Saves the current shared state to a supplied JSON file. When using this function, it's recommended to wrap it in a Lock-PodeObject block.
+    This function serializes the Pode state into a JSON file while preserving the structure
+    of dictionaries (`ConcurrentDictionary`, `Hashtable`, `OrderedDictionary`). It allows
+    filtering the saved state by scope, inclusion, or exclusion of specific keys.
+
+    For thread safety, it is recommended to wrap this function inside a `Lock-PodeObject` block.
 
 .PARAMETER Path
-The path to a JSON file which the current state will be saved to.
+    Specifies the file path where the state should be saved.
 
 .PARAMETER Scope
-An optional array of scopes for state objects that should be saved. (This has a lower precedence than Exclude/Include)
+    Filters the state objects to be saved based on their scope.
+    Only state objects within the specified scope(s) will be included.
+    This filter has **lower precedence** than Exclude and Include.
 
 .PARAMETER Exclude
-An optional array of state object names to exclude from being saved. (This has a higher precedence than Include)
+    Specifies state object names to **exclude** from being saved.
+    This filter has **higher precedence** than Include.
 
 .PARAMETER Include
-An optional array of state object names to only include when being saved.
+    Specifies state object names to **only** include in the saved state.
+    This filter has **lower precedence** than Exclude.
 
 .PARAMETER Depth
-Saved JSON maximum depth. Will be passed to ConvertTo-JSON's -Depth parameter. Default is 10.
+    Defines the maximum depth for JSON serialization.
+    This value is passed to `ConvertTo-PodeCustomDictionaryJson`. Default is **20**.
 
 .PARAMETER Compress
-If supplied, the saved JSON will be compressed.
+    If specified, the JSON output will be minified (no extra whitespace).
 
 .EXAMPLE
-Save-PodeState -Path './state.json'
+    Save-PodeState -Path './state.json'
+    Saves the entire Pode state to `state.json`.
 
 .EXAMPLE
-Save-PodeState -Path './state.json' -Exclude Name1, Name2
+    Save-PodeState -Path './state.json' -Exclude 'SessionData', 'UserCache'
+    Saves the Pode state but **excludes** the specified state keys.
 
 .EXAMPLE
-Save-PodeState -Path './state.json' -Scope Users
+    Save-PodeState -Path './state.json' -Scope 'Users'
+    Saves **only** state objects that belong to the `"Users"` scope.
+
+.OUTPUTS
+    [System.Void] - This function does not return an output. The state is saved to a file.
+
+.NOTES
+    - This function is intended for internal Pode usage and may be subject to changes.
+    - For more information, refer to: https://github.com/Badgerati/Pode/tree/develop
 #>
 function Save-PodeState {
     [CmdletBinding()]
@@ -261,158 +329,190 @@ function Save-PodeState {
 
         [Parameter()]
         [int16]
-        $Depth = 10,
+        $Depth = 20,
 
         [switch]
         $Compress
     )
 
-    # error if attempting to use outside of the pode server
-    if ($null -eq $PodeContext.Server.State) {
-        # Pode has not been initialized
+
+    # Validate Pode Server Context
+
+    if ($null -eq $PodeContext -or
+        $null -eq $PodeContext.Server -or
+        $null -eq $PodeContext.Server.State) {
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
-    # get the full path to save the state
+    # Convert relative path to absolute
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
-    # contruct the state to save (excludes, etc)
-    $state = $PodeContext.Server.State.Clone()
 
-    # scopes
+    # Create a Shallow Copy of the Current State
+
+    # A new ConcurrentDictionary is created to store a snapshot of the current state,
+    # preventing modifications while the state is being serialized.
+    $state = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($kvp in $PodeContext.Server.State.GetEnumerator()) {
+        $null = $state.TryAdd($kvp.Key, $kvp.Value)
+    }
+
+
+    # Filter State by Scope
+
     if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
-        foreach ($_key in $state.Clone().Keys) {
-            # remove if no scope
-            if (($null -eq $state[$_key].Scope) -or ($state[$_key].Scope.Length -eq 0)) {
-                $null = $state.Remove($_key)
-                continue
-            }
+        $keys = $state.Keys
+        foreach ($key in $keys) {
+            if ($state.ContainsKey($key)) {
+                $value = $state[$key]
 
-            # check scopes (only remove if none match)
-            $found = $false
+                # Remove state objects that lack a scope
+                if (($null -eq $value.Scope) -or ($value.Scope.Count -eq 0)) {
+                    $null = $state.TryRemove($key, [ref]$null)
+                    continue
+                }
 
-            foreach ($_scope in $state[$_key].Scope) {
-                if ($Scope -icontains $_scope) {
-                    $found = $true
-                    break
+                # Remove objects that do not match the specified scope(s)
+                $found = $false
+                foreach ($item in $value.Scope) {
+                    if ($Scope -icontains $item) {
+                        $found = $true
+                        break
+                    }
+                }
+
+                if (!$found) {
+                    $null = $state.TryRemove($key, [ref]$null)
                 }
             }
-
-            if ($found) {
-                continue
-            }
-
-            # none matched, remove
-            $null = $state.Remove($_key)
         }
     }
 
-    # include keys
+
+    # If Include is defined, only keep the specified keys
     if (($null -ne $Include) -and ($Include.Length -gt 0)) {
-        foreach ($_key in $state.Clone().Keys) {
-            if ($Include -inotcontains $_key) {
-                $null = $state.Remove($_key)
+        $keys = $state.Keys
+        foreach ($key in $keys) {
+            if ($Include -inotcontains $key) {
+                $null = $state.TryRemove($key, [ref]$null)
             }
         }
     }
 
-    # exclude keys
+    # If Exclude is defined, remove the specified keys from the state
     if (($null -ne $Exclude) -and ($Exclude.Length -gt 0)) {
-        foreach ($_key in $state.Clone().Keys) {
-            if ($Exclude -icontains $_key) {
-                $null = $state.Remove($_key)
+        $keys = $state.Keys
+        foreach ($key in $keys) {
+            if ($Exclude -icontains $key) {
+                $null = $state.TryRemove($key, [ref]$null)
             }
         }
     }
 
-    # save the state
-    $null = ConvertTo-Json -InputObject $state -Depth $Depth -Compress:$Compress | Out-File -FilePath $Path -Force
+    # The state is converted to JSON while preserving dictionary types (Hashtable,
+    # OrderedDictionary, ConcurrentDictionary). The Compress flag minifies output.
+    $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $state -Depth $Depth -Compress:$Compress
+    $json | Out-File -FilePath $Path -Force
 }
 
 <#
 .SYNOPSIS
-Restores the shared state from some JSON file.
+    Restores the Pode shared state from a JSON file.
 
 .DESCRIPTION
-Restores the shared state from some JSON file.
+    This function reads a JSON file and restores the Pode server state.
+    It preserves dictionary types (ConcurrentDictionary, Hashtable, OrderedDictionary)
+    and ensures state integrity. If the file does not exist, the function exits silently.
+
+    The function supports **merging** the restored state with the current Pode state or
+    **overwriting** it entirely.
 
 .PARAMETER Path
-The path to a JSON file that contains the state information.
+    Specifies the JSON file path containing the saved state.
 
 .PARAMETER Merge
-If supplied, the state loaded from the JSON file will be merged with the current state, instead of overwriting it.
+    If specified, the loaded state will be merged with the existing Pode state instead
+    of replacing it.
 
 .PARAMETER Depth
-Saved JSON maximum depth. Will be passed to ConvertFrom-JSON's -Depth parameter (Powershell >=6). Default is 10.
+    Defines the maximum depth for JSON deserialization.
+    This value is passed to `ConvertFrom-PodeCustomDictionaryJson`. Default is **20**.
 
 .EXAMPLE
-Restore-PodeState -Path './state.json'
+    Restore-PodeState -Path './state.json'
+    Restores the Pode state from `state.json`, replacing the current state.
+
+.EXAMPLE
+    Restore-PodeState -Path './state.json' -Merge
+    Merges the loaded state with the existing Pode state.
+
+.OUTPUTS
+    [System.Void] - The function updates `$PodeContext.Server.State` but does not return a value.
+
+.NOTES
+    - This function is intended for internal Pode usage and may be subject to changes.
+    - For more details, refer to: https://github.com/Badgerati/Pode/tree/develop
 #>
 function Restore-PodeState {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string]
-        $Path,
+        [string]$Path,
 
-        [switch]
-        $Merge,
+        [switch]$Merge,
 
-        [int16]
-        $Depth = 10
+        [int16]$Depth = 20
     )
 
-    # error if attempting to use outside of the pode server
-    if ($null -eq $PodeContext.Server.State) {
-        # Pode has not been initialized
+    <# Validate Pode Server Context #>
+    if ($null -eq $PodeContext -or
+        $null -eq $PodeContext.Server -or
+        $null -eq $PodeContext.Server.State) {
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
-    # get the full path to the state
+    <# Resolve File Path and Check Existence #>
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
     if (!(Test-Path $Path)) {
-        return
+        return  # Exit silently if the file does not exist
     }
 
-    # restore the state from file
-    $state = @{}
-
-    if (Test-PodeIsPSCore) {
-        $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth $Depth)
+    <# Read and Deserialize JSON #>
+    $json = Get-Content -Path $Path -Raw -Force
+    if (![string]::IsNullOrWhiteSpace($json)) {
+        # Deserialize the JSON, preserving dictionary structures
+        $state = ConvertFrom-PodeCustomDictionaryJson -Json $json
     }
     else {
-        $props = (Get-Content $Path -Force | ConvertFrom-Json).psobject.properties
-        foreach ($prop in $props) {
-            $state[$prop.Name] = $prop.Value
-        }
+        return  # Exit if the file is empty
     }
 
-    # check for no scopes, and add for backwards compat
-    $convert = $false
-    foreach ($_key in $state.Clone().Keys) {
-        if ($null -eq $state[$_key].Scope) {
-            $convert = $true
-            break
-        }
-    }
+    <# Ensure Backward Compatibility for Missing Scopes #>
+    # Older versions of Pode may not include scope properties in state objects.
+    foreach ($_key in $state.Keys) {
+        if ($_key) {
+            if ($null -eq $state[$_key].Scope) {
+                $state[$_key].Scope = @()
 
-    if ($convert) {
-        foreach ($_key in $state.Clone().Keys) {
-            $state[$_key] = @{
-                Value = $state[$_key]
-                Scope = @()
             }
         }
     }
 
-    # set the scope to the main context
-    if ($Merge) {
-        foreach ($_key in $state.Clone().Keys) {
-            $PodeContext.Server.State[$_key] = $state[$_key]
+
+    <# Validate and Apply the Restored State #>
+    if ($state -is [System.Collections.IDictionary]) {
+        if (! $Merge) {
+            # If not merging, clear the existing state before applying the restored data
+            $PodeContext.Server.State.Clear()
+        }
+        # Merge or replace each key in the state
+        foreach ($key in $state.Keys) {
+            $null = $PodeContext.Server.State.TryAdd($key, $state[$key])
         }
     }
     else {
-        $PodeContext.Server.State = $state.Clone()
+        # Raise an error if the file format is invalid
+        throw ($PodeLocale.invalidPodeStateFormatExceptionMessage -f $Path, $state.GetType().FullName)
     }
 }
 

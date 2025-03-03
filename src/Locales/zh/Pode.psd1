@@ -326,4 +326,9 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = '速率限制规则不存在: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = '访问限制规则已存在: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = '访问限制规则不存在: {0}'
+    invalidPodeStateFormatExceptionMessage                            = 'PodeState 文件 "{0}" 的格式无效。预期为类似字典的结构 (ConcurrentDictionary、Hashtable 或 OrderedDictionary)，但发现 [{1}]。请验证文件内容或重新初始化状态。'
+    unknownJsonDictionaryTypeExceptionMessage                         = 'JSON 中的未知字典/集合类型: {0}'
+    invalidPodeStateDataExceptionMessage                              = '提供的数据不是有效的 Pode 状态数据。'
+    podeStateVersionMismatchExceptionMessage                          = '提供的状态数据来自较新版本的 Pode：{0}。'
+    podeStateApplicationMismatchExceptionMessage                      = '提供的状态数据属于另一个应用程序：{0}。'
 }

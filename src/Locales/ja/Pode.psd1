@@ -326,4 +326,9 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "名前が '{0}' のレート制限ルールは存在しません。"
     accessLimitRuleAlreadyExistsExceptionMessage                      = "名前が '{0}' のアクセス制限ルールは既に存在します。"
     accessLimitRuleDoesNotExistExceptionMessage                       = "名前が '{0}' のアクセス制限ルールは存在しません。"
+    invalidPodeStateFormatExceptionMessage                            = 'PodeState ファイル "{0}" の形式が無効です。辞書のような構造 (ConcurrentDictionary、Hashtable、OrderedDictionary) が期待されましたが、[{1}] が見つかりました。ファイルの内容を確認するか、状態を再初期化してください。'
+    unknownJsonDictionaryTypeExceptionMessage                         = 'JSON 内の不明な辞書/コレクション型: {0}'
+    invalidPodeStateDataExceptionMessage                              = '提供されたデータは有効なPodeの状態ではありません。'
+    podeStateVersionMismatchExceptionMessage                          = '提供された状態データは、新しいバージョンのPode ({0}) からのものです。'
+    podeStateApplicationMismatchExceptionMessage                      = '提供された状態データは、別のアプリケーション ({0}) のものです。'
 }

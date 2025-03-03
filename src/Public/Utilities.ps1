@@ -1357,12 +1357,19 @@ function New-PodeCron {
 <#
 .SYNOPSIS
     Retrieves the version of the Pode module.
+    Retrieves the version of the Pode module.
 
 .DESCRIPTION
     The `Get-PodeVersion` function checks the version of the Pode module as specified in the module manifest.
     If the module version is **not** the placeholder value (`'$version$'`), it returns the actual version prefixed with `'v'`.
     If the module version **is** the placeholder value, indicating the development branch, it returns `"[dev]"`.
+    The `Get-PodeVersion` function checks the version of the Pode module as specified in the module manifest.
+    If the module version is **not** the placeholder value (`'$version$'`), it returns the actual version prefixed with `'v'`.
+    If the module version **is** the placeholder value, indicating the development branch, it returns `"[dev]"`.
 
+.PARAMETER Raw
+    If specified, the function returns only the raw module version without the `'v'` prefix.
+    By default, the function formats the version as `'vX.Y.Z'` unless the module is in development mode.
 .PARAMETER Raw
     If specified, the function returns only the raw module version without the `'v'` prefix.
     By default, the function formats the version as `'vX.Y.Z'` unless the module is in development mode.
@@ -1372,16 +1379,25 @@ function New-PodeCron {
     Returns a string representing the Pode module version in one of the following formats:
     - `"vX.Y.Z"` for a release version (e.g., `"v1.2.3"`).
     - `"[dev]"` for development versions.
+    System.String
+    Returns a string representing the Pode module version in one of the following formats:
+    - `"vX.Y.Z"` for a release version (e.g., `"v1.2.3"`).
+    - `"[dev]"` for development versions.
 
 .EXAMPLE
+    PS> Get-PodeVersion
+    Returns the Pode module version, e.g., `'v1.2.3'` for release versions or `"[dev]"` if in development.
     PS> Get-PodeVersion
     Returns the Pode module version, e.g., `'v1.2.3'` for release versions or `"[dev]"` if in development.
 
 .EXAMPLE
     PS> Get-PodeVersion -Raw
     Returns the raw version number, e.g., `'1.2.3'`, without the `'v'` prefix.
+    PS> Get-PodeVersion -Raw
+    Returns the raw version number, e.g., `'1.2.3'`, without the `'v'` prefix.
 
 .NOTES
+    - If the module version is a placeholder (`'$version$'`), the function assumes it's running from the development branch.
     - If the module version is a placeholder (`'$version$'`), the function assumes it's running from the development branch.
 #>
 function Get-PodeVersion {

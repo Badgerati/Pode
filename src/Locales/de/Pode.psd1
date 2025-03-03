@@ -326,4 +326,9 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Die Rate-Limit-Regel mit dem Namen '{0}' existiert nicht."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert bereits."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert nicht."
+    invalidPodeStateFormatExceptionMessage                            = 'Die PodeState-Datei "{0}" enthält ein ungültiges Format. Erwartet wurde eine Dictionary-ähnliche Struktur (ConcurrentDictionary, Hashtable oder OrderedDictionary), aber gefunden wurde [{1}]. Bitte überprüfen Sie den Dateiinhalt oder initialisieren Sie den Zustand neu.'
+    unknownJsonDictionaryTypeExceptionMessage                         = 'Unbekannter Wörterbuch-/Sammlungstyp in JSON: {0}'
+    invalidPodeStateDataExceptionMessage                              = 'Die bereitgestellten Daten stellen keinen gültigen Pode-Status dar.'
+    podeStateVersionMismatchExceptionMessage                          = 'Die bereitgestellten Statusdaten stammen aus einer neueren Pode-Version: {0}.'
+    podeStateApplicationMismatchExceptionMessage                      = 'Die bereitgestellten Statusdaten gehören zu einer anderen Anwendung: {0}.'
 }
