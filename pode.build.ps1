@@ -904,6 +904,17 @@ if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParamete
     return
 }
 
+# Import Version File if needed
+if ($Version -eq '0.0.0' -and (Test-Path './Version.json' -PathType Leaf)) {
+    $importedVersion = Get-Content -Path './Version.json' | ConvertFrom-Json
+    if ($importedVersion.Version) {
+        $Version = $importedVersion.Version
+    }
+    if ($importedVersion.Prerelease) {
+        $Prerelease = $importedVersion.Prerelease
+    }
+}
+
 
 Add-BuildTask Default {
     Write-Host 'Tasks in the Build Script:' -ForegroundColor DarkMagenta
