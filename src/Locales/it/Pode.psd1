@@ -291,6 +291,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La funzione '{0}' non accetta una matrice come input della pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La compressione dello stream non è supportata per la codifica {0}'
     localEndpointConflictExceptionMessage                             = "Sia '{0}' che '{1}' sono definiti come endpoint locali OpenAPI, ma è consentito solo un endpoint locale per definizione API."
+    serviceAlreadyRegisteredException                                 = "Il servizio '{0}' è già registrato."
+    serviceIsNotRegisteredException                                   = "Il servizio '{0}' non è registrato."
+    serviceCommandFailedException                                     = "Il comando  '{0}' è fallito sul servizio '{1}'."
+    serviceRegistrationException                                      = "Registrazione del servizio '{0}' non riuscita."
+    serviceIsRunningException                                         = "Il servizio '{0}' è in esecuzione. Utilizzare il parametro -Force per interromperlo forzatamente."
+    serviceUnRegistrationException                                    = "La cancellazione della registrazione del servizio '{0}' è fallita."
+    passwordRequiredForServiceUserException                           = "È richiesta una password quando si specifica un utente del servizio su Windows. Si prega di fornire una password valida per l'utente '{0}'."
+    featureNotSupportedException                                      = '{0} è supportato solo su Windows.'
     suspendingMessage                                                 = 'Sospensione'
     resumingMessage                                                   = 'Ripresa'
     serverControlCommandsTitle                                        = 'Comandi di controllo del server:'

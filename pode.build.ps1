@@ -110,6 +110,9 @@ param(
     [string]
     $UICulture = 'en-US',
 
+    [switch]
+    $DisableLifecycleServiceOperations,
+
     [string[]]
     [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
     $TargetFrameworks = @('netstandard2.0', 'net8.0', 'net9.0'),
@@ -134,28 +137,51 @@ $Versions = @{
 
 <#
 .SYNOPSIS
-    Checks if the current environment is running on Windows.
+    Installs a specified package using the appropriate package manager for the OS.
 
 .DESCRIPTION
-    This function determines if the current PowerShell session is running on Windows.
-    It inspects `$PSVersionTable.Platform` and `$PSVersionTable.PSEdition` to verify the OS,
-    returning `$true` for Windows and `$false` for other platforms.
+    This function installs a specified package at a given version using platform-specific
+    package managers. For Windows, it uses Chocolatey (`choco`). On Unix-based systems,
+    it checks for `brew`, `apt-get`, and `yum` to handle installations. The function sets
+    the security protocol to TLS 1.2 to ensure secure connections during the installation.
+
+.PARAMETER name
+    The name of the package to install (e.g., 'git').
+
+.PARAMETER version
+    The version of the package to install, required only for Chocolatey on Windows.
 
 .OUTPUTS
-    [bool] - Returns `$true` if the current environment is Windows, otherwise `$false`.
+    None.
 
 .EXAMPLE
-    if (Test-PodeBuildIsWindows) {
-        Write-Host "This script is running on Windows."
-    }
+    Invoke-PodeBuildInstall -Name 'git' -Version '2.30.0'
+    # Installs version 2.30.0 of Git on Windows if Chocolatey is available.
 
 .NOTES
-    - Useful for cross-platform scripts to conditionally execute Windows-specific commands.
-    - The `$PSVersionTable.Platform` variable may be `$null` in certain cases, so `$PSEdition` is used as an additional check.
+    - Requires administrator or sudo privileges on Unix-based systems.
+    - This function supports package installation on both Windows and Unix-based systems.
+    - If `choco` is available, it will use `choco` for Windows, and `brew`, `apt-get`, or `yum` for Unix-based systems.
 #>
-function Test-PodeBuildIsWindows {
-    $v = $PSVersionTable
-    return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
+function Invoke-PodeBuildInstall($name, $version) {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    if (Test-PodeBuildIsWindows) {
+        if (Test-PodeBuildCommand 'choco') {
+            choco install $name --version $version -y --no-progress
+        }
+    }
+    else {
+        if (Test-PodeBuildCommand 'brew') {
+            brew install $name
+        }
+        elseif (Test-PodeBuildCommand 'apt-get') {
+            sudo apt-get install $name -y
+        }
+        elseif (Test-PodeBuildCommand 'yum') {
+            sudo yum install $name -y
+        }
+    }
 }
 
 <#
@@ -272,6 +298,33 @@ function Test-PodeBuildCommand($cmd) {
 
 <#
 .SYNOPSIS
+    Checks if the current environment is running on Windows.
+
+.DESCRIPTION
+    This function determines if the current PowerShell session is running on Windows.
+    It inspects `$PSVersionTable.Platform` and `$PSVersionTable.PSEdition` to verify the OS,
+    returning `$true` for Windows and `$false` for other platforms.
+
+.OUTPUTS
+    [bool] - Returns `$true` if the current environment is Windows, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildIsWindows) {
+        Write-Host "This script is running on Windows."
+    }
+
+.NOTES
+    - Useful for cross-platform scripts to conditionally execute Windows-specific commands.
+    - The `$PSVersionTable.Platform` variable may be `$null` in certain cases, so `$PSEdition` is used as an additional check.
+#>
+function Test-PodeBuildIsWindows {
+    $v = $PSVersionTable
+    return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
+}
+
+
+<#
+.SYNOPSIS
     Retrieves the branch name from the GitHub Actions environment variable.
 
 .DESCRIPTION
@@ -293,55 +346,6 @@ function Test-PodeBuildCommand($cmd) {
 #>
 function Get-PodeBuildBranch {
     return ($env:GITHUB_REF -ireplace 'refs\/heads\/', '')
-}
-
-<#
-.SYNOPSIS
-    Installs a specified package using the appropriate package manager for the OS.
-
-.DESCRIPTION
-    This function installs a specified package at a given version using platform-specific
-    package managers. For Windows, it uses Chocolatey (`choco`). On Unix-based systems,
-    it checks for `brew`, `apt-get`, and `yum` to handle installations. The function sets
-    the security protocol to TLS 1.2 to ensure secure connections during the installation.
-
-.PARAMETER name
-    The name of the package to install (e.g., 'git').
-
-.PARAMETER version
-    The version of the package to install, required only for Chocolatey on Windows.
-
-.OUTPUTS
-    None.
-
-.EXAMPLE
-    Invoke-PodeBuildInstall -Name 'git' -Version '2.30.0'
-    # Installs version 2.30.0 of Git on Windows if Chocolatey is available.
-
-.NOTES
-    - Requires administrator or sudo privileges on Unix-based systems.
-    - This function supports package installation on both Windows and Unix-based systems.
-    - If `choco` is available, it will use `choco` for Windows, and `brew`, `apt-get`, or `yum` for Unix-based systems.
-#>
-function Invoke-PodeBuildInstall($name, $version) {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-    if (Test-PodeBuildIsWindows) {
-        if (Test-PodeBuildCommand 'choco') {
-            choco install $name --version $version -y --no-progress
-        }
-    }
-    else {
-        if (Test-PodeBuildCommand 'brew') {
-            brew install $name
-        }
-        elseif (Test-PodeBuildCommand 'apt-get') {
-            sudo apt-get install $name -y
-        }
-        elseif (Test-PodeBuildCommand 'yum') {
-            sudo yum install $name -y
-        }
-    }
 }
 
 <#
@@ -514,8 +518,101 @@ function Invoke-PodeBuildDotnetBuild {
     # Use dotnet publish for .NET Core and .NET 5+
     dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion $AssemblyPrerelease --output ../Libs/$target
 
+    # Throw an error if the build fails
     if (!$?) {
         throw "Build failed for target framework '$target'."
+    }
+}
+
+<#
+.SYNOPSIS
+    Builds the Pode Monitor Service for multiple target platforms using .NET SDK.
+
+.DESCRIPTION
+    This function automates the build process for the Pode Monitor Service. It:
+    - Determines the highest installed .NET SDK version.
+    - Verifies compatibility with the required SDK version.
+    - Optionally sets an assembly version during the build.
+    - Builds the service for specified runtime targets across platforms (Windows, Linux, macOS).
+    - Allows defining custom constants for conditional compilation.
+
+.PARAMETER Version
+    Specifies the assembly version to use for the build. If not provided, no version is set.
+
+.PARAMETER DisableLifecycleServiceOperations
+    If specified, excludes lifecycle service operations during the build by omitting related compilation constants.
+
+.INPUTS
+    None. The function does not accept pipeline input.
+
+.OUTPUTS
+    None. The function produces build artifacts in the output directory.
+
+.NOTES
+    This function is designed to work with .NET SDK and assumes it is installed and configured properly.
+    It throws an error if the build process fails for any target.
+
+.EXAMPLE
+    Invoke-PodeBuildDotnetMonitorSrvBuild -Version "1.0.0"
+
+    Builds the Pode Monitor Service with an assembly version of 1.0.0.
+
+.EXAMPLE
+    Invoke-PodeBuildDotnetMonitorSrvBuild -DisableLifecycleServiceOperations
+
+    Builds the Pode Monitor Service without lifecycle service operations.
+
+.EXAMPLE
+    Invoke-PodeBuildDotnetMonitorSrvBuild
+
+    Builds the Pode Monitor Service for all target runtimes without a specific assembly version.
+#>
+function Invoke-PodeBuildDotnetMonitorSrvBuild() {
+    # Retrieve the highest installed SDK version
+    $majorVersion = ([version](dotnet --version)).Major
+
+    # Determine if the target framework is compatible
+    $isCompatible = $majorVersions -ge $requiredSdkVersion
+
+    # Skip build if not compatible
+    if ($isCompatible) {
+        Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
+    }
+    else {
+        Write-Warning "SDK for target framework '$target' is not compatible with the '$AvailableSdkVersion' framework. Skipping build."
+        return
+    }
+
+    # Optionally set assembly version
+    if ($Version) {
+        Write-Host "Assembly Version $Version"
+        $AssemblyVersion = "-p:Version=$Version"
+    }
+    else {
+        $AssemblyVersion = ''
+    }
+
+    foreach ($target in @('win-x64', 'win-arm64' , 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64','linux-arm','win-x86','linux-musl-x64')) {
+        $DefineConstants = @()
+        $ParamConstants = ''
+
+        # Add compilation constants if lifecycle operations are enabled
+        if (!$DisableLifecycleServiceOperations) {
+            $DefineConstants += 'ENABLE_LIFECYCLE_OPERATIONS'
+        }
+
+        # Prepare constants for the build parameters
+        if ($DefineConstants.Count -gt 0) {
+            $ParamConstants = "-p:DefineConstants=`"$( $DefineConstants -join ';')`""
+        }
+
+        # Perform the build for the target runtime
+        dotnet publish --runtime $target --output ../Bin/$target --configuration Release $AssemblyVersion $ParamConstants
+
+        # Throw an error if the build fails
+        if (!$?) {
+            throw "dotnet publish failed for $($target)"
+        }
     }
 }
 
@@ -567,7 +664,7 @@ function Get-PodeBuildPwshEOL {
 
 .DESCRIPTION
     This function detects whether the current operating system is Windows by checking
-    the `$IsWindows` automatic variable, the presence of the `$env:ProgramFiles` variable,
+    the `Test-PodeBuildIsWindows` automatic variable, the presence of the `$env:ProgramFiles` variable,
     and the PowerShell Edition in `$PSVersionTable`. This function returns `$true` if
     any of these indicate Windows.
 
@@ -896,8 +993,6 @@ function Split-PodeBuildPwshPath {
     }
 }
 
-
-
 # Check if the script is running under Invoke-Build
 if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
     Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
@@ -1130,9 +1225,6 @@ Add-BuildTask Build BuildDeps, {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
 
-
-
-
     # Retrieve the SDK version being used
     #   $dotnetVersion = dotnet --version
 
@@ -1152,6 +1244,20 @@ Add-BuildTask Build BuildDeps, {
     finally {
         Pop-Location
     }
+
+    if (Test-Path ./src/Bin) {
+        Remove-Item -Path ./src/Bin -Recurse -Force | Out-Null
+    }
+
+    try {
+        Push-Location ./src/PodeMonitor
+        Invoke-PodeBuildDotnetMonitorSrvBuild
+    }
+    finally {
+        Pop-Location
+    }
+
+
 
 }
 
@@ -1234,7 +1340,7 @@ Add-BuildTask PackageFolder Build, {
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
     # which source folders do we need? create them and copy their contents
-    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales')
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales', 'Bin')
     $folders | ForEach-Object {
         New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
         Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
@@ -1266,11 +1372,62 @@ Add-BuildTask TestNoBuild TestDeps, {
         Remove-Module Pester -Force -ErrorAction Ignore
         Import-Module Pester -Force -RequiredVersion $Versions.Pester
     }
-
+    Write-Output ''
     # for windows, output current netsh excluded ports
     if (Test-PodeBuildIsWindows) {
         netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
+
+        # Retrieve the current Windows identity and token
+        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+
+        # Gather user information
+        $user = $identity.Name
+        $isElevated = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        $adminStatus = if ($isElevated) { 'Administrator' } else { 'Standard User' }
+        $groups = $identity.Groups | ForEach-Object {
+            try {
+                $_.Translate([Security.Principal.NTAccount]).Value
+            }
+            catch {
+                $_.Value # Fallback to SID if translation fails
+            }
+        }
+
+        # Generate output
+        Write-Output 'Pester Execution Context (Windows):'
+        Write-Output "  - User:                $user"
+        Write-Output "  - Role:                $adminStatus"
+        Write-Output "  - Elevated Privileges: $isElevated"
+        Write-Output "  - Group Memberships:   $( $groups -join ', ')"
     }
+
+
+    if ($IsLinux) {
+        $user = whoami
+        $groupsRaw = (groups $user | Out-String).Trim()
+        $groups = $groupsRaw -split '\s+' | Where-Object { $_ -ne ':' } | Sort-Object -Unique
+
+        # Check for sudo privileges based on group membership
+        $isSudoUser = $groups -match '\bwheel\b' -or $groups -match '\badmin\b' -or $groups -match '\bsudo\b' -or $groups -match '\badm\b'
+
+        Write-Output 'Pester Execution Context (Linux):'
+        Write-Output "  - User:    $user"
+        Write-Output "  - Groups:  $( $groups -join ', ')"
+        Write-Output "  - Sudo:    $($isSudoUser -eq $true)"
+    }
+
+    if ($IsMacOS) {
+        $user = whoami
+        $groups = (id -Gn $user).Split(' ') # Use `id -Gn` for consistent group names on macOS
+        $formattedGroups = $groups -join ', '
+        Write-Output 'Pester Execution Context (macOS):'
+        Write-Output "  - User:    $user"
+        Write-Output "  - Groups:  $formattedGroups"
+    }
+
+    Write-Output ''
+
     if ($UICulture -ne ([System.Threading.Thread]::CurrentThread.CurrentUICulture) ) {
         $originalUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
         Write-Output "Original UICulture is $originalUICulture"
@@ -1445,6 +1602,12 @@ Add-BuildTask CleanPkg {
 # Synopsis: Clean the libs folder
 Add-BuildTask CleanLibs {
     $path = './src/Libs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path  contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    $path = './src/Bin'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing $path  contents"
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -1656,7 +1819,7 @@ Add-BuildTask SetupPowerShell {
 #>
 
 # Synopsis: Build the Release Notes
-task ReleaseNotes {
+Add-BuildTask ReleaseNotes {
     if ([string]::IsNullOrWhiteSpace($ReleaseNoteVersion)) {
         Write-Host 'Please provide a ReleaseNoteVersion' -ForegroundColor Red
         return
