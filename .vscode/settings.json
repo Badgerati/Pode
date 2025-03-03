@@ -38,5 +38,13 @@
     "javascript.format.insertSpaceBeforeFunctionParenthesis": false,
     "[yaml]": {
         "editor.tabSize": 2
+    },
+    "markdownlint.config": {
+        "default": true,
+        "MD045": false,
+        "MD033": false,
+        "MD026": {
+            "punctuation": ".,;:"
+        }
     }
 }

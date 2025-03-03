@@ -20,6 +20,9 @@
     Ignores the server.psd1 configuration file when starting the server.
     This parameter ensures the server does not load or apply any settings defined in the server.psd1 file, allowing for a fully manual configuration at runtime.
 
+.PARAMETER ShowOpenAPI
+    Show the OpenAPI definition on console
+
 .EXAMPLE
     To run the sample: ./OpenApi-TuttiFrutti.ps1
 
@@ -49,7 +52,10 @@ param(
     $Daemon,
 
     [switch]
-    $IgnoreServerConfig
+    $IgnoreServerConfig,
+
+    [switch]
+    $ShowOpenAPI
 )
 
 try {
@@ -371,7 +377,7 @@ Some useful links:
         return @{ User = $user }
     }
     # jwt with no signature:
-    New-PodeAuthScheme -Bearer -AsJWT | Add-PodeAuth -Name 'Jwt' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme -AsJWT | Add-PodeAuth -Name 'Jwt' -Sessionless -ScriptBlock {
         param($payload)
 
         return ConvertFrom-PodeJwt -Token $payload
@@ -1028,11 +1034,12 @@ Some useful links:
         }
     }
 
+    if ($ShowOpenAPI) {
+        $yaml = Get-PodeOADefinition -Format Yaml -DefinitionTag 'v3.1'
+        $json = Get-PodeOADefinition -Format Json -DefinitionTag 'v3'
 
-    $yaml = Get-PodeOADefinition -Format Yaml -DefinitionTag 'v3.1'
-    $json = Get-PodeOADefinition -Format Json -DefinitionTag 'v3'
+        Write-PodeHost "`rYAML Tag: v3.1  Output:`r $yaml"
 
-    Write-PodeHost "`rYAML Tag: v3.1  Output:`r $yaml"
-
-    Write-PodeHost "`rJSON Tag: v3 Output:`r $json"
+        Write-PodeHost "`rJSON Tag: v3 Output:`r $json"
+    }
 }

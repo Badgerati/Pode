@@ -1,29 +1,81 @@
 function Get-PodeAuthBasicType {
+    <#
+    .SYNOPSIS
+        Processes Basic Authentication from the Authorization header.
+
+    .DESCRIPTION
+        The `Get-PodeAuthBasicType` function extracts and validates the Basic Authorization header
+        from an HTTP request. It verifies the header format, decodes Base64 credentials,
+        and returns the extracted username and password. If any validation step fails,
+        an appropriate HTTP response code and challenge are returned.
+
+    .PARAMETER options
+        A hashtable containing options for processing the authentication:
+        - `HeaderTag` [string]: Expected header prefix (e.g., "Basic").
+        - `Encoding` [string]: Character encoding for decoding the credentials (default: UTF-8).
+        - `AsCredential` [bool]: If true, returns credentials as a [PSCredential] object.
+
+    .OUTPUTS
+        [array]
+        Returns an array containing the extracted username and password.
+        If `AsCredential` is set to `$true`, returns a `[PSCredential]` object.
+
+    .EXAMPLE
+        $options = @{ HeaderTag = 'Basic'; Encoding = 'UTF-8'; AsCredential = $false }
+        $result = Get-PodeAuthBasicType -options $options
+
+        Returns:
+        @('username', 'password')
+
+    .EXAMPLE
+        $options = @{ HeaderTag = 'Basic'; Encoding = 'UTF-8'; AsCredential = $true }
+        $result = Get-PodeAuthBasicType -options $options
+
+        Returns:
+        [PSCredential] object containing username and password.
+
+    .NOTES
+        This function is internal to Pode and subject to change in future releases.
+
+        Possible response codes:
+        - 401 Unauthorized: When the Authorization header is missing.
+        - 400 Bad Request: For invalid format, encoding, or credential issues.
+
+        Challenge responses include the following error types:
+        - `invalid_request` for missing or incorrectly formatted headers.
+        - `invalid_token` for improperly encoded or malformed credentials.
+    #>
     return {
         param($options)
 
         # get the auth header
         $header = (Get-PodeHeader -Name 'Authorization')
         if ($null -eq $header) {
+            $message = 'No Authorization header found'
             return @{
-                Message = 'No Authorization header found'
-                Code    = 401
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 401
             }
         }
 
         # ensure the first atom is basic (or opt override)
         $atoms = $header -isplit '\s+'
         if ($atoms.Length -lt 2) {
+            $message = 'Invalid Authorization header format'
             return @{
-                Message = 'Invalid Authorization header'
-                Code    = 400
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 400
             }
         }
 
         if ($atoms[0] -ine $options.HeaderTag) {
+            $message = "Header is not for $($options.HeaderTag) Authorization"
             return @{
-                Message = "Header is not for $($options.HeaderTag) Authorization"
-                Code    = 400
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 400
             }
         }
 
@@ -32,9 +84,11 @@ function Get-PodeAuthBasicType {
             $enc = [System.Text.Encoding]::GetEncoding($options.Encoding)
         }
         catch {
+            $message = 'Invalid encoding specified for Authorization'
             return @{
-                Message = 'Invalid encoding specified for Authorization'
-                Code    = 400
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 400
             }
         }
 
@@ -42,9 +96,22 @@ function Get-PodeAuthBasicType {
             $decoded = $enc.GetString([System.Convert]::FromBase64String($atoms[1]))
         }
         catch {
+            $message = 'Invalid Base64 string found in Authorization header'
             return @{
-                Message = 'Invalid Base64 string found in Authorization header'
-                Code    = 400
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_token -ErrorDescription $message)
+                Code      = 400
+            }
+        }
+
+        # ensure the decoded string contains a colon separator
+        $index = $decoded.IndexOf(':')
+        if ($index -lt 0) {
+            $message = 'Invalid Authorization credential format'
+            return @{
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 400
             }
         }
 
@@ -67,6 +134,7 @@ function Get-PodeAuthBasicType {
         return $result
     }
 }
+
 
 function Get-PodeAuthOAuth2Type {
     return {
@@ -282,32 +350,91 @@ function Get-PodeOAuth2RedirectHost {
 }
 
 function Get-PodeAuthClientCertificateType {
+    <#
+    .SYNOPSIS
+        Validates and extracts information from a client certificate in an HTTP request.
+
+    .DESCRIPTION
+        The `Get-PodeAuthClientCertificateType` function processes the client certificate
+        from an incoming HTTP request. It validates whether the certificate is supplied,
+        checks its validity, and ensures it's trusted. If any of these checks fail,
+        appropriate response codes and challenges are returned.
+
+    .PARAMETER options
+        A hashtable containing options that can be used to extend the function in the future.
+
+    .OUTPUTS
+        [array]
+        Returns an array containing the validated client certificate and any associated errors.
+
+    .EXAMPLE
+        $options = @{}
+        $result = Get-PodeAuthClientCertificateType -options $options
+
+        Returns:
+        An array with the client certificate object and any certificate validation errors.
+
+    .EXAMPLE
+        $options = @{}
+        $result = Get-PodeAuthClientCertificateType -options $options
+
+        Example Output:
+        @($cert, 0)
+
+    .NOTES
+        This function is internal to Pode and subject to change in future releases.
+
+        Possible response codes:
+        - 401 Unauthorized: When the client certificate is missing or invalid.
+        - 403 Forbidden: When the client certificate is untrusted.
+
+        Challenge responses include the following error types:
+        - `invalid_request`: If no certificate is provided.
+        - `invalid_token`: If the certificate is invalid, expired, or untrusted.
+
+    #>
     return {
         param($options)
         $cert = $WebEvent.Request.ClientCertificate
 
         # ensure we have a client cert
         if ($null -eq $cert) {
+            $message = 'No client certificate supplied'
             return @{
-                Message = 'No client certificate supplied'
-                Code    = 401
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 401
             }
         }
 
         # ensure the cert has a thumbprint
         if ([string]::IsNullOrWhiteSpace($cert.Thumbprint)) {
+            $message = 'Invalid client certificate supplied'
             return @{
-                Message = 'Invalid client certificate supplied'
-                Code    = 401
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_token -ErrorDescription $message)
+                Code      = 401
             }
         }
 
         # ensure the cert hasn't expired, or has it even started
         $now = [datetime]::Now
         if (($cert.NotAfter -lt $now) -or ($cert.NotBefore -gt $now)) {
+            $message = 'Invalid client certificate supplied (expired or not yet valid)'
             return @{
-                Message = 'Invalid client certificate supplied'
-                Code    = 401
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_token -ErrorDescription $message)
+                Code      = 401
+            }
+        }
+
+        $errors = $WebEvent.Request.ClientCertificateErrors
+        if ($errors -ne 0) {
+            $message = 'Untrusted client certificate supplied'
+            return @{
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_token -ErrorDescription $message)
+                Code      = 403
             }
         }
 
@@ -358,12 +485,43 @@ function Get-PodeAuthNegotiateType {
 }
 
 function Get-PodeAuthApiKeyType {
+    <#
+    .SYNOPSIS
+        Handles API key authentication by retrieving the key from various locations.
+
+    .DESCRIPTION
+        The `Get-PodeAuthApiKeyType` function extracts and validates API keys
+        from specified locations such as headers, query parameters, or cookies.
+        If the API key is found, it is returned as a result; otherwise,
+        an appropriate authentication challenge is issued.
+
+    .PARAMETER $options
+        A hashtable containing the following keys:
+        - `Location`: Specifies where to retrieve the API key from (`header`, `query`, or `cookie`).
+        - `LocationName`: The name of the header, query parameter, or cookie that holds the API key.
+        - `AsJWT`: (Optional) If set to `$true`, the function will treat the API key as a JWT token.
+        - `Secret`: (Required if `AsJWT` is `$true`) The secret used to validate the JWT token.
+
+    .OUTPUTS
+        [array]
+        Returns an array containing the extracted API key or JWT payload if authentication is successful.
+
+    .NOTES
+        The function will return an HTTP 400 response code if the API key is not found.
+        If `AsJWT` is enabled, the key will be decoded and validated using the provided secret.
+        The challenge response is formatted to align with authentication best practices.
+
+        Possible HTTP response codes:
+        - 400 Bad Request: When the API key is missing or JWT validation fails.
+
+    #>
     return {
         param($options)
 
-        # get api key from appropriate location
+        # Initialize API key variable
         $apiKey = [string]::Empty
 
+        # Determine API key location and retrieve it
         switch ($options.Location.ToLowerInvariant()) {
             'header' {
                 $apiKey = Get-PodeHeader -Name $options.LocationName
@@ -376,38 +534,50 @@ function Get-PodeAuthApiKeyType {
             'cookie' {
                 $apiKey = Get-PodeCookieValue -Name $options.LocationName
             }
-        }
-
-        # 400 if no key
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            return @{
-                Message = "No $($options.LocationName) $($options.Location) found"
-                Code    = 400
+            default {
+                $message = "Invalid API key location: $($options.Location)"
+                return @{
+                    Message   = $message
+                    Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                    Code      = 400
+                }
             }
         }
 
-        # build the result
+        # If no API key found, return error
+        if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            $message = "API key missing in $($options.Location) location: $($options.LocationName)"
+            return @{
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 400
+            }
+        }
+
+        # Trim and process the API key
         $apiKey = $apiKey.Trim()
         $result = @($apiKey)
 
-        # convert as jwt?
+        # Convert to JWT if required
         if ($options.AsJWT) {
             try {
-                $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
-                Test-PodeJwt -Payload $payload
+                #$payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret  -Algorithm $options.Algorithm
+                $result = Confirm-PodeJwt -Token $apiKey -Secret $options.Secret   -Algorithm $options.Algorithm
+                #   Test-PodeJwt -Payload $result #-JwtVerificationMode $options.JwtVerificationMode
+                Test-PodeJwt -Payload $result
             }
             catch {
                 if ($_.Exception.Message -ilike '*jwt*') {
+                    $message = "Invalid JWT token: $($_.Exception.Message)"
                     return @{
-                        Message = $_.Exception.Message
-                        Code    = 400
+                        Message   = $message
+                        Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                        Code      = 400
                     }
                 }
 
                 throw
             }
-
-            $result = @($payload)
         }
 
         # return the result
@@ -416,167 +586,299 @@ function Get-PodeAuthApiKeyType {
 }
 
 function Get-PodeAuthBearerType {
+    <#
+    .SYNOPSIS
+        Validates the Bearer token in the Authorization header.
+
+    .DESCRIPTION
+        This function processes the Authorization header, verifies the presence of a Bearer token,
+        and optionally decodes it as a JWT. It returns appropriate HTTP response codes
+        as per RFC 6750 (OAuth 2.0 Bearer Token Usage).
+
+    .PARAMETER $options
+        A hashtable containing the following keys:
+        - Realm: The authentication realm.
+        - Scopes: Expected scopes for the token.
+        - BearerTag: The expected Authorization header tag (e.g., 'Bearer').
+        - AsJWT: Boolean indicating if the token should be processed as a JWT.
+        - Secret: Secret key for JWT verification.
+
+    .OUTPUTS
+        A hashtable containing the following keys based on the validation result:
+        - Message: Error or success message.
+        - Code: HTTP response code.
+        - Header: HTTP response header for authentication challenges.
+        - Challenge: Optional authentication challenge.
+
+    .NOTES
+        The function adheres to RFC 6750, which mandates:
+        - 401 Unauthorized for missing or invalid authentication credentials.
+        - 400 Bad Request for malformed requests.
+
+        RFC 6750 HTTP Status Code Usage
+        # | Scenario                                  | Recommended Status Code |
+        # |-------------------------------------------|-------------------------|
+        # | No Authorization header provided          | 401 Unauthorized        |
+        # | Incorrect Authorization header format     | 401 Unauthorized        |
+        # | Wrong authentication scheme used          | 401 Unauthorized        |
+        # | Token is empty or malformed               | 400 Bad Request         |
+        # | Invalid JWT signature                     | 401 Unauthorized        |
+    #>
     return {
         param($options)
 
-        # get the auth header
+        # Get the Authorization header
         $header = (Get-PodeHeader -Name 'Authorization')
+
+        # If no Authorization header is provided, return 401 Unauthorized
         if ($null -eq $header) {
+            $message = 'No Authorization header found'
             return @{
-                Message   = 'No Authorization header found'
-                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_request)
-                Code      = 400
+                Message   = $message
+                Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message
+                Code      = 401  # RFC 6750: Missing credentials should return 401
+            }
+        }
+        switch ($options.Location.ToLowerInvariant()) {
+            'header' {
+                # Ensure the first part of the header is 'Bearer'
+                $atoms = $header -isplit '\s+'
+
+                # 400 Bad Request if no token is provided
+                $token = $atoms[1]
+                if ([string]::IsNullOrWhiteSpace($token)) {
+                    $message = 'No Bearer token found'
+                    return @{
+                        Message   = $message
+                        Code      = 401
+                        Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message
+                    }
+                }
+
+                if ($atoms.Length -lt 2) {
+                    $message = 'Invalid Authorization header format'
+                    return @{
+                        Message   = $message
+                        Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message)
+                        Code      = 401  # RFC 6750: Invalid credentials format should return 401
+                    }
+                }
+
+                if ($atoms[0] -ine $options.BearerTag) {
+                    $message = "Authorization header is not $($options.BearerTag)"
+                    return @{
+                        Message   = $message
+                        Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message)
+                        Code      = 401  # RFC 6750: Wrong authentication scheme should return 401
+                    }
+                }
+            }
+
+            'query' {
+                # support RFC6750
+                $token = $WebEvent.Query[$options.BearerTag]
+                if ([string]::IsNullOrWhiteSpace($token)) {
+                    $message = 'No Bearer token found'
+                    return @{
+                        Message   = $message
+                        Code      = 400  # RFC 6750: Malformed request should return 400
+                        Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message
+                    }
+                }
+            }
+
+            'body' {
+                # support RFC6750
+                $token = $WebEvent.Data.($options.BearerTag)
+                if ([string]::IsNullOrWhiteSpace($token)) {
+                    $message = 'No Bearer token found'
+                    return @{
+                        Message   = $message
+                        Code      = 400  # RFC 6750: Malformed request should return 400
+                        Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_request -ErrorDescription $message
+                    }
+                }
+            }
+
+            default {
+                $message = "Invalid Bearer Token location: $($options.Location)"
+                return @{
+                    Message   = $message
+                    Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                    Code      = 400
+                }
             }
         }
 
-        # ensure the first atom is bearer
-        $atoms = $header -isplit '\s+'
-        if ($atoms.Length -lt 2) {
-            return @{
-                Message   = 'Invalid Authorization header'
-                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_request)
-                Code      = 400
-            }
-        }
 
-        if ($atoms[0] -ine $options.HeaderTag) {
-            return @{
-                Message   = "Authorization header is not $($options.HeaderTag)"
-                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_request)
-                Code      = 400
-            }
-        }
-
-        # 400 if no token
-        $token = $atoms[1]
-        if ([string]::IsNullOrWhiteSpace($token)) {
-            return @{
-                Message = 'No Bearer token found'
-                Code    = 400
-            }
-        }
-
-        # build the result
+        # Trim and build the result
         $token = $token.Trim()
-        $result = @($token)
+        #$result = @($token)
 
-        # convert as jwt?
+        # Convert to JWT if required
         if ($options.AsJWT) {
             try {
-                $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret
-                Test-PodeJwt -Payload $payload
+                $param = @{
+                    Token           = $token
+                    Secret          = $options.Secret
+                    X509Certificate = $options.X509Certificate
+                    Algorithm       = $options.Algorithm
+                }
+                $result = Confirm-PodeJwt @param
+                Test-PodeJwt -Payload $result -JwtVerificationMode $options.JwtVerificationMode
             }
             catch {
                 if ($_.Exception.Message -ilike '*jwt*') {
                     return @{
-                        Message = $_.Exception.Message
-                        #https://www.rfc-editor.org/rfc/rfc6750 Bearer token should return 401
-                        Code    = 401
+                        Message   = $_.Exception.Message
+                        Code      = 401  # RFC 6750: Invalid token should return 401
+                        Challenge = New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_token -ErrorDescription $_.Exception.Message
                     }
                 }
 
                 throw
             }
 
-            $result = @($payload)
         }
-
-        # return the result
+        else {
+            $result = $token
+        }
+        # Return the validated result
         return $result
     }
 }
 
 function Get-PodeAuthBearerPostValidator {
+    <#
+    .SYNOPSIS
+        Validates the Bearer token and user authentication.
+
+    .DESCRIPTION
+        This function processes the Bearer token, checks for the presence of a valid user,
+        and verifies token scopes against required scopes. It returns appropriate HTTP response codes
+        as per RFC 6750 (OAuth 2.0 Bearer Token Usage).
+
+    .PARAMETER token
+        The Bearer token provided by the client.
+
+    .PARAMETER result
+        The decoded token result containing user and scope information.
+
+    .PARAMETER options
+        A hashtable containing the following keys:
+        - Scopes: An array of required scopes for authorization.
+
+    .OUTPUTS
+        A hashtable containing the following keys based on the validation result:
+        - Message: Error or success message.
+        - Code: HTTP response code.
+        - Challenge: HTTP response challenge in case of errors.
+
+    .NOTES
+        The function adheres to RFC 6750, which mandates:
+        - 401 Unauthorized for missing or invalid authentication credentials.
+        - 403 Forbidden for insufficient scopes.
+    #>
     return {
         param($token, $result, $options)
 
-        # if there's no user, fail with challenge
+        # Validate user presence in the token
         if (($null -eq $result) -or ($null -eq $result.User)) {
+            $message = 'User authentication failed'
             return @{
-                Message   = 'User not found'
-                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_token)
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType invalid_token -ErrorDescription $message )
                 Code      = 401
             }
         }
 
-        # check for an error and description
+        # Check for token error and return appropriate response
         if (![string]::IsNullOrWhiteSpace($result.Error)) {
             return @{
-                Message   = 'Authorization failed'
-                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType $result.Error -ErrorDescription $result.ErrorDescription)
+                Message   = $result.ErrorDescription
+                Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType $result.Error -ErrorDescription $result.ErrorDescription)
                 Code      = 401
             }
         }
 
-        # check the scopes
+        # Scope validation
         $hasAuthScopes = (($null -ne $options.Scopes) -and ($options.Scopes.Length -gt 0))
-        $hasTokenScope = ![string]::IsNullOrWhiteSpace($result.Scope)
+        $hasTokenScope = (($null -ne $result.Scope) -and ($result.Scope.Length -gt 0))
 
-        # 403 if we have auth scopes but no token scope
+        # Return 403 if authorization scopes exist but token lacks scopes
         if ($hasAuthScopes -and !$hasTokenScope) {
+            $message = 'Token scope is missing or invalid'
             return @{
-                Message   = 'Invalid Scope'
-                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType insufficient_scope)
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType insufficient_scope -ErrorDescription $message )
                 Code      = 403
             }
         }
 
-        # 403 if we have both, but token not in auth scope
-        if ($hasAuthScopes -and $hasTokenScope -and ($options.Scopes -notcontains $result.Scope)) {
+        # Return 403 if token scopes do not intersect with required auth scopes
+        if ($hasAuthScopes -and $hasTokenScope -and (-not ($options.Scopes | Where-Object { $_ -in $result.Scope }))) {
+            $message = 'Token scope is insufficient'
             return @{
-                Message   = 'Invalid Scope'
-                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType insufficient_scope)
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -Scopes $options.Scopes -ErrorType insufficient_scope -ErrorDescription $message )
                 Code      = 403
             }
         }
 
-        # return result
+        # Return the validated token result
         return $result
     }
 }
 
-function New-PodeAuthBearerChallenge {
-    param(
-        [Parameter()]
-        [string[]]
-        $Scopes,
 
-        [Parameter()]
-        [ValidateSet('', 'invalid_request', 'invalid_token', 'insufficient_scope')]
-        [string]
-        $ErrorType,
-
-        [Parameter()]
-        [string]
-        $ErrorDescription
-    )
-
-    $items = @()
-    if (($null -ne $Scopes) -and ($Scopes.Length -gt 0)) {
-        $items += "scope=`"$($Scopes -join ' ')`""
-    }
-
-    if (![string]::IsNullOrWhiteSpace($ErrorType)) {
-        $items += "error=`"$($ErrorType)`""
-    }
-
-    if (![string]::IsNullOrWhiteSpace($ErrorDescription)) {
-        $items += "error_description=`"$($ErrorDescription)`""
-    }
-
-    return ($items -join ', ')
-}
 
 function Get-PodeAuthDigestType {
+    <#
+    .SYNOPSIS
+        Validates the Digest token in the Authorization header.
+
+    .DESCRIPTION
+        This function processes the Authorization header, verifies the presence of a Digest token,
+        and optionally decodes it. It returns appropriate HTTP response codes
+        as per RFC 7616 (HTTP Digest Access Authentication).
+
+    .PARAMETER $options
+        A hashtable containing the following keys:
+        - Realm: The authentication realm.
+        - Nonce: A unique value provided by the server to prevent replay attacks.
+        - HeaderTag: The expected Authorization header tag (e.g., 'Digest').
+
+    .OUTPUTS
+        A hashtable containing the following keys based on the validation result:
+        - Message: Error or success message.
+        - Code: HTTP response code.
+        - Challenge: Optional authentication challenge.
+
+    .NOTES
+        The function adheres to RFC 7616, which mandates:
+        - 401 Unauthorized for missing or invalid authentication credentials.
+        - 400 Bad Request for malformed requests.
+
+        - RFC 7616 HTTP Status Code Usage
+        | Scenario                                  | Recommended Status Code |
+        |-------------------------------------------|-------------------------|
+        | No Authorization header provided          | 401 Unauthorized         |
+        | Incorrect Authorization header format     | 401 Unauthorized         |
+        | Wrong authentication scheme used          | 401 Unauthorized         |
+        | Token is empty or malformed               | 400 Bad Request          |
+        | Invalid digest response                   | 401 Unauthorized         |
+
+    #>
     return {
         param($options)
-
+        $nonce = (New-PodeGuid -Secure -NoDashes)
         # get the auth header - send challenge if missing
         $header = (Get-PodeHeader -Name 'Authorization')
         if ($null -eq $header) {
+            $message = 'No Authorization header found'
             return @{
-                Message   = 'No Authorization header found'
-                Challenge = (New-PodeAuthDigestChallenge)
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
                 Code      = 401
             }
         }
@@ -584,16 +886,19 @@ function Get-PodeAuthDigestType {
         # if auth header isn't digest send challenge
         $atoms = $header -isplit '\s+'
         if ($atoms.Length -lt 2) {
+            $message = 'Invalid Authorization header format'
             return @{
-                Message = 'Invalid Authorization header'
-                Code    = 400
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
+                Code      = 401  # RFC 7616: Invalid credentials format should return 401
             }
         }
 
         if ($atoms[0] -ine $options.HeaderTag) {
+            $message = "Authorization header is not $($options.HeaderTag)"
             return @{
-                Message   = "Authorization header is not $($options.HeaderTag)"
-                Challenge = (New-PodeAuthDigestChallenge)
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
                 Code      = 401
             }
         }
@@ -601,26 +906,31 @@ function Get-PodeAuthDigestType {
         # parse the other atoms of the header (after the scheme), return 400 if none
         $params = ConvertFrom-PodeAuthDigestHeader -Parts ($atoms[1..$($atoms.Length - 1)])
         if ($params.Count -eq 0) {
+            $message = 'Invalid Authorization header'
             return @{
-                Message = 'Invalid Authorization header'
-                Code    = 400
+                Message   = $message
+                Code      = 400
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
             }
         }
 
         # if no username then 401 and challenge
         if ([string]::IsNullOrWhiteSpace($params.username)) {
+            $message = 'Authorization header is missing username'
             return @{
-                Message   = 'Authorization header is missing username'
-                Challenge = (New-PodeAuthDigestChallenge)
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message  -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection)
                 Code      = 401
             }
         }
 
         # return 400 if domain doesnt match request domain
         if ($WebEvent.Path -ine $params.uri) {
+            $message = 'Invalid Authorization header'
             return @{
-                Message = 'Invalid Authorization header'
-                Code    = 400
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorDescription $message -Nonce $nonce -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection )
+                Code      = 400
             }
         }
 
@@ -630,41 +940,186 @@ function Get-PodeAuthDigestType {
 }
 
 function Get-PodeAuthDigestPostValidator {
+    <#
+.SYNOPSIS
+    Validates HTTP Digest authentication responses for incoming requests.
+
+.DESCRIPTION
+    The `Get-PodeAuthDigestPostValidator` function processes and validates HTTP Digest
+    authentication responses by computing and verifying the response hash against
+    the client's provided hash. It ensures authentication is performed securely by
+    supporting multiple hashing algorithms and optional integrity protection (`auth-int`).
+
+.PARAMETER username
+    The username extracted from the client's authentication request.
+
+.PARAMETER params
+    A hashtable containing Digest authentication parameters, including:
+    - `username`   : The username provided in the request.
+    - `realm`      : The authentication realm.
+    - `nonce`      : A unique server-generated nonce value.
+    - `uri`        : The requested resource URI.
+    - `nc`         : Nonce count (tracking the number of requests).
+    - `cnonce`     : Client-generated nonce value.
+    - `qop`        : Quality of Protection (`auth` or `auth-int`).
+    - `response`   : The client's computed response hash.
+    - `algorithm`  : The hashing algorithm used by the client.
+
+.PARAMETER result
+    A hashtable containing the user data retrieved from the authentication source.
+    This should include:
+    - `User`      : The username.
+    - `Password`  : The stored password or hash for verification.
+
+.PARAMETER options
+    A hashtable defining authentication options, including:
+    - `algorithm`           : The list of supported hashing algorithms (MD5, SHA-256, etc.).
+    - `QualityOfProtection` : The supported Quality of Protection values (`auth`, `auth-int`).
+
+.OUTPUTS
+    - Returns the user data (with the password removed) on successful authentication.
+    - Returns an error response with a Digest authentication challenge and HTTP status code
+      if authentication fails.
+
+.NOTES
+    This scriptblock ensures robust Digest authentication by:
+    - Supporting multiple hashing algorithms (MD5, SHA-1, SHA-256, SHA-512/256, etc.).
+    - Handling authentication with and without message integrity (`auth` vs `auth-int`).
+    - Verifying authentication by comparing the computed hash with the client's response.
+
+    **Behavior:**
+    - If the user is unknown or the password is missing, authentication fails with a `401 Unauthorized`.
+    - If the client selects an unsupported algorithm, authentication fails with `400 Bad Request`.
+    - If the computed response does not match the client’s hash, authentication fails with `401 Unauthorized`.
+
+    **Digest Authentication Elements:**
+    - `qop="auth"`: Standard authentication (default).
+    - `qop="auth-int"`: Authentication with message integrity (includes request body hashing).
+    - `algorithm="MD5, SHA-256, SHA-512/256"`: Server-supported algorithms.
+    - `nonce="<generated_nonce>"`: Unique server nonce for replay protection.
+
+#>
     return {
         param($username, $params, $result, $options)
 
-        # if there's no user or password, fail with challenge
+        # If no user data or password is found, authentication fails
         if (($null -eq $result) -or ($null -eq $result.User) -or [string]::IsNullOrWhiteSpace($result.Password)) {
+            $message = 'Invalid credentials'
             return @{
-                Message   = 'User not found'
-                Challenge = (New-PodeAuthDigestChallenge)
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce `
+                        -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection `
+                        -ErrorDescription $message)
                 Code      = 401
             }
         }
 
-        # generate the first hash
-        $hash1 = Invoke-PodeMD5Hash -Value "$($params.username):$($params.realm):$($result.Password)"
+        # Extract the client-provided algorithm
+        $algorithm = $params.algorithm
 
-        # generate the second hash
-        $hash2 = Invoke-PodeMD5Hash -Value "$($WebEvent.Method.ToUpperInvariant()):$($params.uri)"
+        # Ensure the selected algorithm is supported by the server
+        if (-not ($options.algorithm -contains $algorithm)) {
+            $message = "Unsupported algorithm: $algorithm"
+            return @{
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce `
+                        -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection `
+                        -ErrorDescription $message)
+                Code      = 400
+            }
+        }
 
-        # generate final hash
-        $final = Invoke-PodeMD5Hash -Value "$($hash1):$($params.nonce):$($params.nc):$($params.cnonce):$($params.qop):$($hash2)"
+        # Extract Quality of Protection (qop) value
+        $qop = $params.qop
 
-        # compare final hash to client response
+        # Retrieve the HTTP method (GET, POST, etc.) and the request URI
+        $method = $WebEvent.Method.ToUpperInvariant()
+        $uri = $params.uri
+
+        # Compute HA1: Hash of (username:realm:password)
+        $HA1 = ConvertTo-PodeDigestHash -Value "$($params.username):$($params.realm):$($result.Password)" -Algorithm $algorithm
+
+        # Compute HA2: Hash of request method and URI
+        if ($qop -eq 'auth-int') {
+            # If the request body is null, use an empty string (RFC 7616 compliance)
+            $entityBody = if ($null -eq $WebEvent.RawData) { [string]::Empty } else { $WebEvent.RawData }
+
+            # Compute H(entity-body): Hash of request body (to ensure message integrity)
+            $entityHash = ConvertTo-PodeDigestHash -Value $entityBody -Algorithm $algorithm
+
+            # Compute HA2 for `auth-int`: Hash of (method:uri:H(entity-body))
+            $HA2 = ConvertTo-PodeDigestHash -Value "$($method):$($uri):$($entityHash)" -Algorithm $algorithm
+        }
+        else {
+            # Standard HA2 computation for `auth`: Hash of (method:uri)
+            $HA2 = ConvertTo-PodeDigestHash -Value "$($method):$($uri)" -Algorithm $algorithm
+        }
+
+        # Compute the final digest response hash
+        $final = ConvertTo-PodeDigestHash -Value "$($HA1):$($params.nonce):$($params.nc):$($params.cnonce):$($qop):$($HA2)" -Algorithm $algorithm
+
+        # Compare the computed hash with the client's provided response
         if ($final -ne $params.response) {
+            $message = 'Invalid authentication response'
             return @{
-                Message   = 'Hashes failed to match'
-                Challenge = (New-PodeAuthDigestChallenge)
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -Nonce $params.nonce `
+                        -Algorithm ($options.algorithm -join ', ') -QualityOfProtection $options.QualityOfProtection `
+                        -ErrorDescription $message)
                 Code      = 401
             }
         }
 
-        # hashes are valid, remove password and return result
+        # If hashes match, authentication is successful
+        # Remove the stored password from the result before returning the authenticated user
         $null = $result.Remove('Password')
         return $result
     }
 }
+
+<#
+.SYNOPSIS
+    Parses a Digest Authentication header and extracts its key-value pairs.
+
+.DESCRIPTION
+    The `ConvertFrom-PodeAuthDigestHeader` function takes an array of Digest authentication
+    header parts and converts them into a hashtable. This is used to process the
+    `WWW-Authenticate` and `Authorization` headers in Digest authentication requests.
+
+.PARAMETER Parts
+    An array of strings representing parts of the Digest authentication header.
+    These parts are typically extracted from the `WWW-Authenticate` or `Authorization` headers.
+
+.OUTPUTS
+    A hashtable containing the parsed key-value pairs from the Digest authentication header.
+
+.EXAMPLE
+    $header = @('Digest username="morty", realm="PodeRealm", nonce="abc123", uri="/users", response="xyz456"')
+    ConvertFrom-PodeAuthDigestHeader -Parts $header
+
+    Returns:
+    @{
+        username = "morty"
+        realm    = "PodeRealm"
+        nonce    = "abc123"
+        uri      = "/users"
+        response = "xyz456"
+    }
+
+.EXAMPLE
+    # Handling empty or missing headers
+    ConvertFrom-PodeAuthDigestHeader -Parts @()
+
+    Returns:
+    @{ }
+
+.NOTES
+    - This function ensures proper parsing of Digest authentication headers by correctly
+      handling quoted values and splitting by commas only when appropriate.
+    - The regex pattern ensures that quoted values (e.g., `nonce="abc123"`) are correctly extracted.
+    - If the input is empty or null, an empty hashtable is returned.
+
+#>
 
 function ConvertFrom-PodeAuthDigestHeader {
     param(
@@ -673,28 +1128,83 @@ function ConvertFrom-PodeAuthDigestHeader {
         $Parts
     )
 
+    # Return an empty hashtable if no header parts are provided
     if (($null -eq $Parts) -or ($Parts.Length -eq 0)) {
         return @{}
     }
 
+    # Initialize a hashtable to store parsed key-value pairs
     $obj = @{}
+
+    # Join all parts into a single string to process as one header
     $value = ($Parts -join ' ')
 
+    # Split by commas, ensuring quoted values remain intact
     @($value -isplit ',(?=(?:[^"]|"[^"]*")*$)') | ForEach-Object {
+        # Match key-value pairs (handles both quoted and unquoted values)
         if ($_ -imatch '(?<name>\w+)=["]?(?<value>[^"]+)["]?$') {
             $obj[$Matches['name']] = $Matches['value']
         }
     }
 
+    # Return the parsed hashtable
     return $obj
 }
 
-function New-PodeAuthDigestChallenge {
-    $items = @('qop="auth"', 'algorithm="MD5"', "nonce=`"$(New-PodeGuid -Secure -NoDashes)`"")
-    return ($items -join ', ')
-}
 
 function Get-PodeAuthFormType {
+    <#
+.SYNOPSIS
+    Processes form-based authentication requests.
+
+.DESCRIPTION
+    The `Get-PodeAuthFormType` function extracts and validates user credentials from
+    an incoming HTTP form submission. It verifies the presence and format of the
+    provided username and password and optionally converts them to secure credentials.
+
+.PARAMETER $options
+    A hashtable containing configuration options for the authentication process.
+    Expected keys:
+    - `Fields.Username`: The key used to extract the username from the request data.
+    - `Fields.Password`: The key used to extract the password from the request data.
+    - `AsCredential`: (Boolean) If true, converts credentials into a [PSCredential] object.
+
+.OUTPUTS
+    [array]
+    Returns an array containing the validated username and password.
+    If `AsCredential` is set to `$true`, returns a `[PSCredential]` object.
+
+.EXAMPLE
+    $options = @{
+        Fields = @{ Username = 'user'; Password = 'pass' }
+        AsCredential = $false
+    }
+    $result = Get-PodeAuthFormType -options $options
+
+    Returns:
+    @('user123', 'securePassword')
+
+.EXAMPLE
+    $options = @{
+        Fields = @{ Username = 'user'; Password = 'pass' }
+        AsCredential = $true
+    }
+    $result = Get-PodeAuthFormType -options $options
+
+    Returns:
+    [PSCredential] object containing username and password.
+
+.NOTES
+    This function performs several checks, including:
+    - Ensuring both username and password are provided.
+    - Validating the username format (only alphanumeric, dot, underscore, and dash allowed).
+    - Returning HTTP status codes and error messages in case of validation failures.
+
+    Possible HTTP response codes:
+    - 401 Unauthorized: When credentials are missing or incomplete.
+    - 400 Bad Request: When the username format is invalid.
+
+#>
     return {
         param($options)
 
@@ -706,11 +1216,41 @@ function Get-PodeAuthFormType {
         $username = $WebEvent.Data.$userField
         $password = $WebEvent.Data.$passField
 
-        # if either are empty, fail auth
-        if ([string]::IsNullOrWhiteSpace($username) -or [string]::IsNullOrWhiteSpace($password)) {
+        # Handle cases where fields are missing or empty
+        if ([string]::IsNullOrWhiteSpace($username) -and [string]::IsNullOrWhiteSpace($password)) {
+            $message = 'Username and password must be provided'
             return @{
-                Message = 'Username or Password not supplied'
-                Code    = 401
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 401
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($username)) {
+            $message = 'Username is required'
+            return @{
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 401
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($password)) {
+            $message = 'Password is required'
+            return @{
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 401
+            }
+        }
+
+        # Validate username format
+        if ($username -notmatch '^[a-zA-Z0-9._-]{3,20}$') {
+            $message = 'Invalid username format'
+            return @{
+                Message   = $message
+                Challenge = (New-PodeAuthChallenge -ErrorType invalid_request -ErrorDescription $message)
+                Code      = 400
             }
         }
 
@@ -729,7 +1269,9 @@ function Get-PodeAuthFormType {
     }
 }
 
-<#
+
+function Get-PodeAuthUserFileMethod {
+    <#
 .SYNOPSIS
     Authenticates a user based on a username and password provided as parameters.
 
@@ -756,7 +1298,6 @@ function Get-PodeAuthFormType {
 
     This example authenticates a user with username "admin" and password "password123". It reads user data from the JSON file at "C:\Users.json", computes a HMAC-SHA256 hash of the password using "secret" as the secret key, and checks if the user is in the "admin" user or "Administrators" group. It also performs additional validation using a script block that checks if the user's name is "admin".
 #>
-function Get-PodeAuthUserFileMethod {
     return {
         param($username, $password, $options)
 
@@ -815,66 +1356,6 @@ function Get-PodeAuthUserFileMethod {
         }
 
         $result = @{ User = $user }
-
-        # call additional scriptblock if supplied
-        if ($null -ne $_options.ScriptBlock.Script) {
-            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $_options.ScriptBlock.Script -UsingVariables $_options.ScriptBlock.UsingVariables
-        }
-
-        # return final result, this could contain a user obj, or an error message from custom scriptblock
-        return $result
-    }
-}
-
-function Get-PodeAuthWindowsADMethod {
-    return {
-        param($username, $password, $options)
-
-        # using pscreds?
-        if (($null -eq $options) -and ($username -is [pscredential])) {
-            $_username = ([pscredential]$username).UserName
-            $_password = ([pscredential]$username).GetNetworkCredential().Password
-            $_options = [hashtable]$password
-        }
-        else {
-            $_username = $username
-            $_password = $password
-            $_options = $options
-        }
-
-        # parse username to remove domains
-        $_username = (($_username -split '@')[0] -split '\\')[-1]
-
-        # validate and retrieve the AD user
-        $noGroups = $_options.NoGroups
-        $directGroups = $_options.DirectGroups
-        $keepCredential = $_options.KeepCredential
-
-        $result = Get-PodeAuthADResult `
-            -Server $_options.Server `
-            -Domain $_options.Domain `
-            -SearchBase $_options.SearchBase `
-            -Username $_username `
-            -Password $_password `
-            -Provider $_options.Provider `
-            -NoGroups:$noGroups `
-            -DirectGroups:$directGroups `
-            -KeepCredential:$keepCredential
-
-        # if there's a message, fail and return the message
-        if (![string]::IsNullOrWhiteSpace($result.Message)) {
-            return $result
-        }
-
-        # if there's no user, then, err, oops
-        if (Test-PodeIsEmpty $result.User) {
-            return @{ Message = 'An unexpected error occured' }
-        }
-
-        # is the user valid for any users/groups - if not, error!
-        if (!(Test-PodeAuthUserGroup -User $result.User -Users $_options.Users -Groups $_options.Groups)) {
-            return @{ Message = 'You are not authorised to access this website' }
-        }
 
         # call additional scriptblock if supplied
         if ($null -ne $_options.ScriptBlock.Script) {
@@ -965,138 +1446,6 @@ function Get-PodeAuthWindowsLocalMethod {
         # call additional scriptblock if supplied
         if ($null -ne $_options.ScriptBlock.Script) {
             $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $_options.ScriptBlock.Script -UsingVariables $_options.ScriptBlock.UsingVariables
-        }
-
-        # return final result, this could contain a user obj, or an error message from custom scriptblock
-        return $result
-    }
-}
-
-function Get-PodeAuthWindowsADIISMethod {
-    return {
-        param($token, $options)
-
-        # get the close handler
-        $win32Handler = Add-Type -Name Win32CloseHandle -PassThru -MemberDefinition @'
-            [DllImport("kernel32.dll", SetLastError = true)]
-            public static extern bool CloseHandle(IntPtr handle);
-'@
-
-        try {
-            # parse the auth token and get the user
-            $winAuthToken = [System.IntPtr][Int]"0x$($token)"
-            $winIdentity = [System.Security.Principal.WindowsIdentity]::new($winAuthToken, 'Windows')
-
-            # get user and domain
-            $username = ($winIdentity.Name -split '\\')[-1]
-            $domain = ($winIdentity.Name -split '\\')[0]
-
-            # create base user object
-            $user = @{
-                UserType           = 'Domain'
-                Identity           = @{
-                    AccessToken = $winIdentity.AccessToken
-                }
-                AuthenticationType = $winIdentity.AuthenticationType
-                DistinguishedName  = [string]::Empty
-                Username           = $username
-                Name               = [string]::Empty
-                Email              = [string]::Empty
-                Fqdn               = [string]::Empty
-                Domain             = $domain
-                Groups             = @()
-            }
-
-            # if the domain isn't local, attempt AD user
-            if (![string]::IsNullOrWhiteSpace($domain) -and (@('.', $PodeContext.Server.ComputerName) -inotcontains $domain)) {
-                # get the server's fdqn (and name/email)
-                try {
-                    # Open ADSISearcher and change context to given domain
-                    $searcher = [adsisearcher]''
-                    $searcher.SearchRoot = [adsi]"LDAP://$($domain)"
-                    $searcher.Filter = "ObjectSid=$($winIdentity.User.Value.ToString())"
-
-                    # Query the ADSISearcher for the above defined SID
-                    $ad = $searcher.FindOne()
-
-                    # Save it to our existing array for later usage
-                    $user.DistinguishedName = @($ad.Properties.distinguishedname)[0]
-                    $user.Name = @($ad.Properties.name)[0]
-                    $user.Email = @($ad.Properties.mail)[0]
-                    $user.Fqdn = (Get-PodeADServerFromDistinguishedName -DistinguishedName $user.DistinguishedName)
-                }
-                finally {
-                    Close-PodeDisposable -Disposable $searcher
-                }
-
-                try {
-                    if (!$options.NoGroups) {
-
-                        # open a new connection
-                        $result = (Open-PodeAuthADConnection -Server $user.Fqdn -Domain $domain -Provider $options.Provider)
-                        if (!$result.Success) {
-                            return @{ Message = "Failed to connect to Domain Server '$($user.Fqdn)' of $domain for $($user.DistinguishedName)." }
-                        }
-
-                        # get the connection
-                        $connection = $result.Connection
-
-                        # get the users groups
-                        $directGroups = $options.DirectGroups
-                        $user.Groups = (Get-PodeAuthADGroup -Connection $connection -DistinguishedName $user.DistinguishedName -Username $user.Username -Direct:$directGroups -Provider $options.Provider)
-                    }
-                }
-                finally {
-                    if ($null -ne $connection) {
-                        Close-PodeDisposable -Disposable $connection.Searcher
-                        Close-PodeDisposable -Disposable $connection.Entry -Close
-                        $connection.Credential = $null
-                    }
-                }
-            }
-
-            # otherwise, get details of local user
-            else {
-                # get the user's name and groups
-                try {
-                    $user.UserType = 'Local'
-
-                    if (!$options.NoLocalCheck) {
-                        $localUser = $winIdentity.Name -replace '\\', '/'
-                        $ad = [adsi]"WinNT://$($localUser)"
-                        $user.Name = @($ad.FullName)[0]
-
-                        # dirty, i know :/ - since IIS runs using pwsh, the InvokeMember part fails
-                        # we can safely call windows powershell here, as IIS is only on windows.
-                        if (!$options.NoGroups) {
-                            $cmd = "`$ad = [adsi]'WinNT://$($localUser)'; @(`$ad.Groups() | Foreach-Object { `$_.GetType().InvokeMember('Name', 'GetProperty', `$null, `$_, `$null) })"
-                            $user.Groups = [string[]](powershell -c $cmd)
-                        }
-                    }
-                }
-                finally {
-                    Close-PodeDisposable -Disposable $ad -Close
-                }
-            }
-        }
-        catch {
-            $_ | Write-PodeErrorLog
-            return @{ Message = 'Failed to retrieve user using Authentication Token' }
-        }
-        finally {
-            $win32Handler::CloseHandle($winAuthToken)
-        }
-
-        # is the user valid for any users/groups - if not, error!
-        if (!(Test-PodeAuthUserGroup -User $user -Users $options.Users -Groups $options.Groups)) {
-            return @{ Message = 'You are not authorised to access this website' }
-        }
-
-        $result = @{ User = $user }
-
-        # call additional scriptblock if supplied
-        if ($null -ne $options.ScriptBlock.Script) {
-            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $options.ScriptBlock.Script -UsingVariables $options.ScriptBlock.UsingVariables
         }
 
         # return final result, this could contain a user obj, or an error message from custom scriptblock
@@ -1238,6 +1587,24 @@ function Invoke-PodeAuthValidation {
     return $result
 }
 
+<#
+.SYNOPSIS
+    Tests the authentication validation for a specified authentication method.
+
+.DESCRIPTION
+    The `Test-PodeAuthValidation` function processes an authentication method by its name,
+    running the associated scripts, middleware, and validations to determine authentication success or failure.
+
+.PARAMETER Name
+    The name of the authentication method to validate. This parameter is mandatory.
+
+.OUTPUTS
+    A hashtable containing the authentication validation result, including success status, user details,
+    headers, and redirection information if applicable.
+
+.NOTES
+    This is an internal function and is subject to change in future versions of Pode.
+#>
 function Test-PodeAuthValidation {
     param(
         [Parameter(Mandatory = $true)]
@@ -1246,13 +1613,13 @@ function Test-PodeAuthValidation {
     )
 
     try {
-        # get auth method
+        # Retrieve authentication method configuration from Pode context
         $auth = $PodeContext.Server.Authentications.Methods[$Name]
 
-        # auth result
+        # Initialize authentication result variable
         $result = $null
 
-        # run pre-auth middleware
+        # Run pre-authentication middleware if defined
         if ($null -ne $auth.Scheme.Middleware) {
             if (!(Invoke-PodeMiddleware -Middleware $auth.Scheme.Middleware)) {
                 return @{
@@ -1261,26 +1628,28 @@ function Test-PodeAuthValidation {
             }
         }
 
-        # run auth scheme script to parse request for data
+        # Prepare arguments for the authentication scheme script
         $_args = @(Merge-PodeScriptblockArguments -ArgumentList $auth.Scheme.Arguments -UsingVariables $auth.Scheme.ScriptBlock.UsingVariables)
 
-        # call inner schemes first
+        # Handle inner authentication schemes (if any)
         if ($null -ne $auth.Scheme.InnerScheme) {
             $schemes = @()
-
             $_scheme = $auth.Scheme
+
+            # Traverse through the inner schemes to collect them
             $_inner = @(while ($null -ne $_scheme.InnerScheme) {
                     $_scheme = $_scheme.InnerScheme
                     $_scheme
                 })
 
+            # Process inner schemes in reverse order
             for ($i = $_inner.Length - 1; $i -ge 0; $i--) {
                 $_tmp_args = @(Merge-PodeScriptblockArguments -ArgumentList $_inner[$i].Arguments -UsingVariables $_inner[$i].ScriptBlock.UsingVariables)
-
                 $_tmp_args += , $schemes
+
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $_inner[$i].ScriptBlock.Script -Arguments $_tmp_args -Return -Splat)
                 if ($result -is [hashtable]) {
-                    break
+                    break  # Exit if a valid result is returned
                 }
 
                 $schemes += , $result
@@ -1290,25 +1659,27 @@ function Test-PodeAuthValidation {
             $_args += , $schemes
         }
 
+        # Execute the primary authentication script if no result from inner schemes and not a route script
         if ($null -eq $result) {
             $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.ScriptBlock.Script -Arguments $_args -Return -Splat)
         }
 
-        # if data is a hashtable, then don't call validator (parser either failed, or forced a success)
+        # If authentication script returns a non-hashtable, perform further validation
         if ($result -isnot [hashtable]) {
             $original = $result
-
             $_args = @($result) + @($auth.Arguments)
+
+            # Run main authentication validation script
             $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -UsingVariables $auth.UsingVariables -Return -Splat)
 
-            # if we have user, then run post validator if present
+            # Run post-authentication validation if applicable
             if ([string]::IsNullOrEmpty($result.Code) -and ($null -ne $auth.Scheme.PostValidator.Script)) {
                 $_args = @($original) + @($result) + @($auth.Scheme.Arguments)
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables -Return -Splat)
             }
         }
 
-        # is the auth trying to redirect ie: oauth?
+        # Handle authentication redirection scenarios (e.g., OAuth)
         if ($result.IsRedirected) {
             return @{
                 Success    = $false
@@ -1316,11 +1687,12 @@ function Test-PodeAuthValidation {
             }
         }
 
-        # if there's no result, or no user, then the auth failed - but allow auth if anon enabled
+
+        # Authentication failure handling
         if (($null -eq $result) -or ($result.Count -eq 0) -or (Test-PodeIsEmpty $result.User)) {
             $code = (Protect-PodeValue -Value $result.Code -Default 401)
 
-            # set the www-auth header
+            # Set WWW-Authenticate header for appropriate HTTP response
             $validCode = (($code -eq 401) -or ![string]::IsNullOrEmpty($result.Challenge))
 
             if ($validCode) {
@@ -1332,6 +1704,7 @@ function Test-PodeAuthValidation {
                     $result.Headers = @{}
                 }
 
+                # Generate authentication challenge header
                 if (![string]::IsNullOrWhiteSpace($auth.Scheme.Name) -and !$result.Headers.ContainsKey('WWW-Authenticate')) {
                     $authHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Scheme.Name -Realm $auth.Scheme.Realm -Challenge $result.Challenge
                     $result.Headers['WWW-Authenticate'] = $authHeader
@@ -1347,7 +1720,7 @@ function Test-PodeAuthValidation {
             }
         }
 
-        # authentication was successful
+        # Authentication succeeded, return user and headers
         return @{
             Success = $true
             User    = $result.User
@@ -1356,6 +1729,8 @@ function Test-PodeAuthValidation {
     }
     catch {
         $_ | Write-PodeErrorLog
+
+        # Handle unexpected errors and log them
         return @{
             Success    = $false
             StatusCode = 500
@@ -1363,6 +1738,8 @@ function Test-PodeAuthValidation {
         }
     }
 }
+
+
 
 function Get-PodeAuthMiddlewareScript {
     return {
@@ -1730,518 +2107,6 @@ function Set-PodeAuthStatus {
     return $true
 }
 
-function Get-PodeADServerFromDistinguishedName {
-    param(
-        [Parameter()]
-        [string]
-        $DistinguishedName
-    )
-
-    if ([string]::IsNullOrWhiteSpace($DistinguishedName)) {
-        return [string]::Empty
-    }
-
-    $parts = @($DistinguishedName -split ',')
-    $name = @()
-
-    foreach ($part in $parts) {
-        if ($part -imatch '^DC=(?<name>.+)$') {
-            $name += $Matches['name']
-        }
-    }
-
-    return ($name -join '.')
-}
-
-function Get-PodeAuthADResult {
-    param(
-        [Parameter()]
-        [string]
-        $Server,
-
-        [Parameter()]
-        [string]
-        $Domain,
-
-        [Parameter()]
-        [string]
-        $SearchBase,
-
-        [Parameter()]
-        [string]
-        $Username,
-
-        [Parameter()]
-        [string]
-        $Password,
-
-        [Parameter()]
-        [ValidateSet('DirectoryServices', 'ActiveDirectory', 'OpenLDAP')]
-        [string]
-        $Provider,
-
-        [switch]
-        $NoGroups,
-
-        [switch]
-        $DirectGroups,
-
-        [switch]
-        $KeepCredential
-    )
-
-    try {
-        # validate the user's AD creds
-        $result = (Open-PodeAuthADConnection -Server $Server -Domain $Domain -Username $Username -Password $Password -Provider $Provider)
-        if (!$result.Success) {
-            return @{ Message = 'Invalid credentials supplied' }
-        }
-
-        # get the connection
-        $connection = $result.Connection
-
-        # get the user
-        $user = (Get-PodeAuthADUser -Connection $connection -Username $Username -Provider $Provider)
-        if ($null -eq $user) {
-            return @{ Message = 'User not found in Active Directory' }
-        }
-
-        # get the users groups
-        $groups = @()
-        if (!$NoGroups) {
-            $groups = (Get-PodeAuthADGroup -Connection $connection -DistinguishedName $user.DistinguishedName -Username $Username -Direct:$DirectGroups -Provider $Provider)
-        }
-
-        # check if we want to keep the credentials in the User object
-        if ($KeepCredential) {
-            $credential = [pscredential]::new($($Domain + '\' + $Username), (ConvertTo-SecureString -String $Password -AsPlainText -Force))
-        }
-        else {
-            $credential = $null
-        }
-
-        # return the user
-        return @{
-            User = @{
-                UserType           = 'Domain'
-                AuthenticationType = 'LDAP'
-                DistinguishedName  = $user.DistinguishedName
-                Username           = ($Username -split '\\')[-1]
-                Name               = $user.Name
-                Email              = $user.Email
-                Fqdn               = $Server
-                Domain             = $Domain
-                Groups             = $groups
-                Credential         = $credential
-            }
-        }
-    }
-    finally {
-        if ($null -ne $connection) {
-            switch ($Provider.ToLowerInvariant()) {
-                'openldap' {
-                    $connection.Username = $null
-                    $connection.Password = $null
-                }
-
-                'activedirectory' {
-                    $connection.Credential = $null
-                }
-
-                'directoryservices' {
-                    Close-PodeDisposable -Disposable $connection.Searcher
-                    Close-PodeDisposable -Disposable $connection.Entry -Close
-                }
-            }
-        }
-    }
-}
-
-function Open-PodeAuthADConnection {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Server,
-
-        [Parameter()]
-        [string]
-        $Domain,
-
-        [Parameter()]
-        [string]
-        $SearchBase,
-
-        [Parameter()]
-        [string]
-        $Username,
-
-        [Parameter()]
-        [string]
-        $Password,
-
-        [Parameter()]
-        [ValidateSet('LDAP', 'WinNT')]
-        [string]
-        $Protocol = 'LDAP',
-
-        [Parameter()]
-        [ValidateSet('DirectoryServices', 'ActiveDirectory', 'OpenLDAP')]
-        [string]
-        $Provider
-    )
-
-    $result = $true
-    $connection = $null
-
-    # validate the user's AD creds
-    switch ($Provider.ToLowerInvariant()) {
-        'openldap' {
-            if (![string]::IsNullOrWhiteSpace($SearchBase)) {
-                $baseDn = $SearchBase
-            }
-            else {
-                $baseDn = "DC=$(($Server -split '\.') -join ',DC=')"
-            }
-
-            $query = (Get-PodeAuthADQuery -Username $Username)
-            $hostname = "$($Protocol)://$($Server)"
-
-            $user = $Username
-            if (!$Username.StartsWith($Domain)) {
-                $user = "$($Domain)\$($Username)"
-            }
-
-            $null = (ldapsearch -x -LLL -H "$($hostname)" -D "$($user)" -w "$($Password)" -b "$($baseDn)" -o ldif-wrap=no "$($query)" dn)
-            if (!$? -or ($LASTEXITCODE -ne 0)) {
-                $result = $false
-            }
-            else {
-                $connection = @{
-                    Hostname = $hostname
-                    Username = $user
-                    BaseDN   = $baseDn
-                    Password = $Password
-                }
-            }
-        }
-
-        'activedirectory' {
-            try {
-                $creds = [pscredential]::new($Username, (ConvertTo-SecureString -String $Password -AsPlainText -Force))
-                $null = Get-ADUser -Identity $Username -Credential $creds -ErrorAction Stop
-                $connection = @{
-                    Credential = $creds
-                }
-            }
-            catch {
-                $result = $false
-            }
-        }
-
-        'directoryservices' {
-            if ([string]::IsNullOrWhiteSpace($Password)) {
-                $ad = [System.DirectoryServices.DirectoryEntry]::new("$($Protocol)://$($Server)")
-            }
-            else {
-                $ad = [System.DirectoryServices.DirectoryEntry]::new("$($Protocol)://$($Server)", "$($Username)", "$($Password)")
-            }
-
-            if (Test-PodeIsEmpty $ad.distinguishedName) {
-                $result = $false
-            }
-            else {
-                $connection = @{
-                    Entry = $ad
-                }
-            }
-        }
-    }
-
-    return @{
-        Success    = $result
-        Connection = $connection
-    }
-}
-
-function Get-PodeAuthADQuery {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Username
-    )
-
-    return "(&(objectCategory=person)(samaccountname=$($Username)))"
-}
-
-function Get-PodeAuthADUser {
-    param(
-        [Parameter(Mandatory = $true)]
-        $Connection,
-
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Username,
-
-        [Parameter()]
-        [ValidateSet('DirectoryServices', 'ActiveDirectory', 'OpenLDAP')]
-        [string]
-        $Provider
-    )
-
-    $query = (Get-PodeAuthADQuery -Username $Username)
-    $user = $null
-
-    # generate query to find user
-    switch ($Provider.ToLowerInvariant()) {
-        'openldap' {
-            $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.BaseDN)" -o ldif-wrap=no "$($query)" name mail)
-            if (!$? -or ($LASTEXITCODE -ne 0)) {
-                return $null
-            }
-
-            $user = @{
-                DistinguishedName = (Get-PodeOpenLdapValue -Lines $result -Property 'dn')
-                Name              = (Get-PodeOpenLdapValue -Lines $result -Property 'name')
-                Email             = (Get-PodeOpenLdapValue -Lines $result -Property 'mail')
-            }
-        }
-
-        'activedirectory' {
-            $result = Get-ADUser -LDAPFilter $query -Credential $Connection.Credential -Properties mail
-            $user = @{
-                DistinguishedName = $result.DistinguishedName
-                Name              = $result.Name
-                Email             = $result.mail
-            }
-        }
-
-        'directoryservices' {
-            $Connection.Searcher = [System.DirectoryServices.DirectorySearcher]::new($Connection.Entry)
-            $Connection.Searcher.filter = $query
-
-            $result = $Connection.Searcher.FindOne().Properties
-            if (Test-PodeIsEmpty $result) {
-                return $null
-            }
-
-            $user = @{
-                DistinguishedName = @($result.distinguishedname)[0]
-                Name              = @($result.name)[0]
-                Email             = @($result.mail)[0]
-            }
-        }
-    }
-
-    return $user
-}
-
-function Get-PodeOpenLdapValue {
-    param(
-        [Parameter()]
-        [string[]]
-        $Lines,
-
-        [Parameter()]
-        [string]
-        $Property,
-
-        [switch]
-        $All
-    )
-
-    foreach ($line in $Lines) {
-        if ($line -imatch "^$($Property)\:\s+(?<$($Property)>.+)$") {
-            # return the first found
-            if (!$All) {
-                return $Matches[$Property]
-            }
-
-            # return array of all
-            $Matches[$Property]
-        }
-    }
-}
-<#
-.SYNOPSIS
-    Retrieves Active Directory (AD) group information for a user.
-
-.DESCRIPTION
-    This function retrieves AD group information for a specified user. It supports two modes of operation:
-    1. Direct: Retrieves groups directly associated with the user.
-    2. All: Retrieves all groups within the specified distinguished name (DN).
-
-.PARAMETER Connection
-    The AD connection object or credentials for connecting to the AD server.
-
-.PARAMETER DistinguishedName
-    The distinguished name (DN) of the user or group. If not provided, the default DN is used.
-
-.PARAMETER Username
-    The username for which to retrieve group information.
-
-.PARAMETER Provider
-    The AD provider to use (e.g., 'DirectoryServices', 'ActiveDirectory', 'OpenLDAP').
-
-.PARAMETER Direct
-    Switch parameter. If specified, retrieves only direct group memberships for the user.
-
-.OUTPUTS
-    Returns AD group information as needed based on the mode of operation.
-
-.EXAMPLE
-    Get-PodeAuthADGroup -Connection $adConnection -Username "john.doe"
-    # Retrieves all AD groups for the user "john.doe".
-
-    Get-PodeAuthADGroup -Connection $adConnection -Username "jane.smith" -Direct
-    # Retrieves only direct group memberships for the user "jane.smith".
-#>
-function Get-PodeAuthADGroup {
-    param(
-        [Parameter(Mandatory = $true)]
-        $Connection,
-
-        [Parameter()]
-        [string]
-        $DistinguishedName,
-
-        [Parameter()]
-        [string]
-        $Username,
-
-        [Parameter()]
-        [ValidateSet('DirectoryServices', 'ActiveDirectory', 'OpenLDAP')]
-        [string]
-        $Provider,
-
-        [switch]
-        $Direct
-    )
-
-    if ($Direct) {
-        return (Get-PodeAuthADGroupDirect -Connection $Connection -Username $Username -Provider $Provider)
-    }
-
-    return (Get-PodeAuthADGroupAll -Connection $Connection -DistinguishedName $DistinguishedName -Provider $Provider)
-}
-
-function Get-PodeAuthADGroupDirect {
-    param(
-        [Parameter(Mandatory = $true)]
-        $Connection,
-
-        [Parameter()]
-        [string]
-        $Username,
-
-        [Parameter()]
-        [ValidateSet('DirectoryServices', 'ActiveDirectory', 'OpenLDAP')]
-        [string]
-        $Provider
-    )
-
-    # create the query
-    $query = "(&(objectCategory=person)(samaccountname=$($Username)))"
-    $groups = @()
-
-    # get the groups
-    switch ($Provider.ToLowerInvariant()) {
-        'openldap' {
-            $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.BaseDN)" -o ldif-wrap=no "$($query)" memberof)
-            $groups = (Get-PodeOpenLdapValue -Lines $result -Property 'memberof' -All)
-        }
-
-        'activedirectory' {
-            $groups = (Get-ADPrincipalGroupMembership -Identity $Username -Credential $Connection.Credential).distinguishedName
-        }
-
-        'directoryservices' {
-            if ($null -eq $Connection.Searcher) {
-                $Connection.Searcher = [System.DirectoryServices.DirectorySearcher]::new($Connection.Entry)
-            }
-
-            $Connection.Searcher.filter = $query
-            $groups = @($Connection.Searcher.FindOne().Properties.memberof)
-        }
-    }
-
-    $groups = @(foreach ($group in $groups) {
-            if ($group -imatch '^CN=(?<group>.+?),') {
-                $Matches['group']
-            }
-        })
-
-    return $groups
-}
-
-function Get-PodeAuthADGroupAll {
-    param(
-        [Parameter(Mandatory = $true)]
-        $Connection,
-
-        [Parameter()]
-        [string]
-        $DistinguishedName,
-
-        [Parameter()]
-        [ValidateSet('DirectoryServices', 'ActiveDirectory', 'OpenLDAP')]
-        [string]
-        $Provider
-    )
-
-    # create the query
-    $query = "(member:1.2.840.113556.1.4.1941:=$($DistinguishedName))"
-    $groups = @()
-
-    # get the groups
-    switch ($Provider.ToLowerInvariant()) {
-        'openldap' {
-            $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.BaseDN)" -o ldif-wrap=no "$($query)" samaccountname)
-            $groups = (Get-PodeOpenLdapValue -Lines $result -Property 'sAMAccountName' -All)
-        }
-
-        'activedirectory' {
-            $groups = (Get-ADObject -LDAPFilter $query -Credential $Connection.Credential).Name
-        }
-
-        'directoryservices' {
-            if ($null -eq $Connection.Searcher) {
-                $Connection.Searcher = [System.DirectoryServices.DirectorySearcher]::new($Connection.Entry)
-            }
-
-            $null = $Connection.Searcher.PropertiesToLoad.Add('samaccountname')
-            $Connection.Searcher.filter = $query
-            $groups = @($Connection.Searcher.FindAll().Properties.samaccountname)
-        }
-    }
-
-    return $groups
-}
-
-function Get-PodeAuthDomainName {
-    $domain = $null
-
-    if (Test-PodeIsMacOS) {
-        $domain = (scutil --dns | grep -m 1 'search domain\[0\]' | cut -d ':' -f 2)
-    }
-    elseif (Test-PodeIsUnix) {
-        $domain = (dnsdomainname)
-        if ([string]::IsNullOrWhiteSpace($domain)) {
-            $domain = (/usr/sbin/realm list --name-only)
-        }
-    }
-    else {
-        $domain = $env:USERDNSDOMAIN
-        if ([string]::IsNullOrWhiteSpace($domain)) {
-            $domain = (Get-CimInstance -Class Win32_ComputerSystem -Verbose:$false).Domain
-        }
-    }
-
-    if (![string]::IsNullOrEmpty($domain)) {
-        $domain = $domain.Trim()
-    }
-
-    return $domain
-}
 
 function Find-PodeAuth {
     param(
@@ -2310,44 +2175,6 @@ function Expand-PodeAuthMerge {
 }
 
 
-function Import-PodeAuthADModule {
-    if (!(Test-PodeIsWindows)) {
-        # Active Directory module only available on Windows
-        throw ($PodeLocale.adModuleWindowsOnlyExceptionMessage)
-    }
-
-    if (!(Test-PodeModuleInstalled -Name ActiveDirectory)) {
-        # Active Directory module is not installed
-        throw ($PodeLocale.adModuleNotInstalledExceptionMessage)
-    }
-
-    Import-Module -Name ActiveDirectory -Force -ErrorAction Stop
-    Export-PodeModule -Name ActiveDirectory
-}
-
-function Get-PodeAuthADProvider {
-    param(
-        [switch]
-        $OpenLDAP,
-
-        [switch]
-        $ADModule
-    )
-
-    # openldap (literal, or not windows)
-    if ($OpenLDAP -or !(Test-PodeIsWindows)) {
-        return 'OpenLDAP'
-    }
-
-    # ad module
-    if ($ADModule) {
-        return 'ActiveDirectory'
-    }
-
-    # ds
-    return 'DirectoryServices'
-}
-
 function Set-PodeAuthRedirectUrl {
     param(
         [switch]
@@ -2381,4 +2208,230 @@ function Get-PodeAuthRedirectUrl {
     }
 
     return $Url
+}
+
+
+<#
+.SYNOPSIS
+    Generates the WWW-Authenticate challenge header for failed authentication attempts.
+
+.DESCRIPTION
+    The `New-PodeAuthChallenge` function constructs a formatted authentication challenge
+    string to be included in HTTP responses when authentication fails.
+    It supports optional parameters such as scopes, error types, descriptions,
+    and digest authentication mechanisms.
+
+.PARAMETER Scopes
+    An array of required scopes to be included in the challenge response.
+    Scopes define the level of access required for the requested resource.
+
+.PARAMETER ErrorType
+    Specifies the type of error to include in the challenge response.
+    Accepted values are:
+      - 'invalid_request'     : The request is missing a required parameter.
+      - 'invalid_token'       : The provided token is expired, revoked, or invalid.
+      - 'insufficient_scope'  : The provided token lacks necessary privileges.
+
+.PARAMETER ErrorDescription
+    Provides a descriptive error message in the challenge response to explain
+    the reason for the authentication failure.
+
+.PARAMETER Digest
+    A switch parameter that, when specified, includes digest authentication elements
+    such as quality of protection (qop), algorithm, and a unique nonce value.
+
+.OUTPUTS
+    [string]
+    Returns a formatted challenge string to be used in the HTTP response header.
+
+.EXAMPLE
+    New-PodeAuthChallenge -Scopes @('read', 'write') -ErrorType 'invalid_token' -ErrorDescription 'Token has expired'
+
+    Returns:
+    scope="read write", error="invalid_token", error_description="Token has expired"
+
+.EXAMPLE
+    New-PodeAuthChallenge -Digest
+
+    Returns:
+    qop="auth", algorithm="MD5", nonce="generated_nonce"
+
+.EXAMPLE
+    New-PodeAuthChallenge -Scopes @('admin') -ErrorType 'insufficient_scope'
+
+    Returns:
+    scope="admin", error="insufficient_scope"
+
+.NOTES
+    This function is used to generate the `WWW-Authenticate` response header
+    when authentication attempts fail. It helps inform clients of the authentication
+    requirements and reasons for failure.
+#>
+
+function New-PodeAuthChallenge {
+    param(
+        [Parameter()]
+        [string[]]
+        $Scopes,
+
+        [Parameter()]
+        [ValidateSet('invalid_request', 'invalid_token', 'insufficient_scope')]
+        [string]
+        $ErrorType = 'invalid_request',
+
+        [Parameter()]
+        [string]
+        $ErrorDescription,
+
+        [Parameter()]
+        [string]
+        $Nonce,
+
+        [Parameter()]
+        [string[]]
+        $Algorithm = 'md5',
+
+        [Parameter()]
+        [string[]]
+        $QualityOfProtection = 'auth'
+
+    )
+
+    $items = @()
+
+    if (![string]::IsNullOrWhiteSpace($Nonce)) {
+        $items += "qop=`"$QualityOfProtection`"", "algorithm=$Algorithm" , "nonce=`"$Nonce`""
+    }
+
+    if (($null -ne $Scopes) -and ($Scopes.Length -gt 0)) {
+        $items += "scope=`"$($Scopes -join ' ')`""
+    }
+
+    if (![string]::IsNullOrWhiteSpace($ErrorType)) {
+        $items += "error=`"$($ErrorType)`""
+    }
+
+    if (![string]::IsNullOrWhiteSpace($ErrorDescription)) {
+        $items += "error_description=`"$($ErrorDescription)`""
+    }
+
+    return ($items -join ', ')
+}
+
+
+<#
+.SYNOPSIS
+    Validates that the HTTP method supports bearer token authentication in the body.
+
+.DESCRIPTION
+    This function checks if the provided HTTP method is one that typically supports request bodies (e.g., PUT, POST, PATCH) when bearer token authentication is expected in the body. Throws an error if the method is not supported.
+
+.PARAMETER Method
+    The HTTP method to validate (e.g., GET, POST, PUT, PATCH).
+
+.PARAMETER Authentication
+    The authentication scheme to validate against Pode's configured authentications.
+
+.EXAMPLE
+    Test-PodeBodyAuthMethod -Method 'POST' -Authentication 'Bearer'
+    # Validates successfully as POST supports body authentication.
+
+.EXAMPLE
+    Test-PodeBodyAuthMethod -Method 'GET' -Authentication 'Bearer'
+    # Throws an error as GET does not support body authentication.
+
+.NOTES
+    Internal Pode function for HTTP authentication validation. Subject to change.
+#>
+function Test-PodeBodyAuthMethod {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $Method,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Authentication
+    )
+
+    if (![string]::IsNullOrWhiteSpace($Authentication) -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
+        $uberAuth = $PodeContext.Server.Authentications.Methods[$Authentication]
+        if ($uberAuth.ContainsKey('Authentications')) {
+            $authentications = $uberAuth.Authentications
+        }
+        else {
+            $authentications = @($Authentication)
+        }
+        foreach ($auth in $authentications) {
+            switch ($PodeContext.Server.Authentications.Methods[$auth].Scheme.Name) {
+                'Digest' {
+                    $arguments = $PodeContext.Server.Authentications.Methods[$auth].Scheme.Arguments
+                    if (($null -ne $arguments ) -and ($arguments.QualityOfProtection -eq 'auth-int')) {
+                        $Method | Foreach-Object({ if ($_ -inotmatch '^(PUT|POST|PATCH)$') {
+                                    throw $PodeLocale.digestTokenAuthMethodNotSupportedExceptionMessage
+                                } })
+                    }
+                }
+                default {
+                    $arguments = $PodeContext.Server.Authentications.Methods[$auth].Scheme.Arguments
+                    if (($null -ne $arguments ) -and $arguments.ContainsKey('Location') -and $arguments['Location'] -eq 'body') {
+                        $Method | Foreach-Object({ if ($_ -inotmatch '^(PUT|POST|PATCH)$') {
+                                    throw $PodeLocale.bearerTokenAuthMethodNotSupportedExceptionMessage
+                                } })
+                    }
+                }
+            }
+        }
+
+    }
+}
+
+
+<#
+.SYNOPSIS
+  Retrieves the Bearer token from an HTTP request based on authentication configuration.
+
+.DESCRIPTION
+  The `Get-PodeBearerToken` function extracts the Bearer token from an HTTP request, depending on
+  the authentication method's configured token location. It supports retrieval from the request's
+  header, query parameters, or body.
+
+.PARAMETER Authentication
+  Specifies the authentication method configured in Pode. The function checks if the method exists
+  within the server's authentication methods.
+
+.OUTPUTS
+  [string]
+  Returns the extracted Bearer token as a string. If the authentication method does not exist,
+  the function throws an exception.
+
+.EXAMPLE
+  $token = Get-PodeBearerToken
+  # Retrieves the Bearer token from the request's headers, query parameters, or body.
+
+.NOTES
+  - This function depends on Pode's authentication context and must be used within a Pode route.
+  - The token location is determined based on the authentication method's configuration.
+  - If the authentication method does not exist, an exception is thrown.
+  - Supported token locations: `header`, `query`, `body`.
+#>
+function Get-PodeBearenToken {
+    if ($PodeContext -and $PodeContext.Server.Authentications.Methods.ContainsKey($Authentication)) {
+        $authOptions = $PodeContext.Server.Authentications.Methods[$Authentication].Scheme.Arguments
+        switch ($authOptions.Location.ToLowerInvariant()) {
+            'header' {
+                $atoms = $(Get-PodeHeader -Name 'Authorization') -isplit '\s+'
+                return $atoms[1]
+            }
+            'query' {
+                return $WebEvent.Query[$options.BearerTag]
+            }
+            'body' {
+                return $WebEvent.Data.($options.BearerTag)
+            }
+        }
+    }
+    else {
+        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage)
+    }
 }

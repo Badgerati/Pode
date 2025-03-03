@@ -259,7 +259,6 @@
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'بصمات الإبهام/الاسم للشهادة مدعومة فقط على Windows.'
     sseConnectionNameRequiredExceptionMessage                         = "مطلوب اسم اتصال SSE، إما من -Name أو `$WebEvent.Sse.Name"
     invalidMiddlewareTypeExceptionMessage                             = 'أحد مكونات Middleware المقدمة من نوع غير صالح. كان المتوقع إما ScriptBlock أو Hashtable، ولكن تم الحصول عليه: {0}'
-    noSecretForJwtSignatureExceptionMessage                           = 'لم يتم تقديم أي سر لتوقيع JWT.'
     modulePathDoesNotExistExceptionMessage                            = 'مسار الوحدة غير موجود: {0}'
     taskAlreadyDefinedExceptionMessage                                = '[المهمة] {0}: المهمة معرفة بالفعل.'
     verbAlreadyDefinedExceptionMessage                                = '[الفعل] {0}: تم التعريف بالفعل'
@@ -331,4 +330,36 @@
     invalidPodeStateDataExceptionMessage                              = 'البيانات المقدمة لا تمثل حالة Pode صالحة.'
     podeStateVersionMismatchExceptionMessage                          = 'بيانات الحالة المقدمة تأتي من إصدار أحدث من Pode: {0}.'
     podeStateApplicationMismatchExceptionMessage                      = 'بيانات الحالة المقدمة تنتمي إلى تطبيق آخر: {0}.'
+    missingKeyForAlgorithmExceptionMessage                            = 'مفتاح {0} مطلوب لخوارزميات {1} ({2}).'
+    jwtIssuedInFutureExceptionMessage                                 = "الطابع الزمني 'iat' (وقت الإصدار) لرمز JWT مضبوط في المستقبل. الرمز غير صالح بعد."
+    jwtInvalidIssuerExceptionMessage                                  = "الادعاء 'iss' (المصدر) في JWT غير صالح أو مفقود. المصدر المتوقع: '{0}'."
+    jwtMissingIssuerExceptionMessage                                  = "JWT يفتقد إلى الادعاء المطلوب 'iss' (المصدر). مطلوب مصدر صالح."
+    jwtInvalidAudienceExceptionMessage                                = "الادعاء 'aud' (الجمهور) في JWT غير صالح أو مفقود. الجمهور المتوقع: '{0}'."
+    jwtMissingAudienceExceptionMessage                                = "JWT يفتقد إلى الادعاء المطلوب 'aud' (الجمهور). مطلوب جمهور صالح."
+    jwtInvalidSubjectExceptionMessage                                 = "الادعاء 'sub' (الموضوع) في JWT غير صالح أو مفقود. مطلوب موضوع صالح."
+    jwtInvalidJtiExceptionMessage                                     = "الادعاء 'jti' (معرّف JWT) في JWT غير صالح أو مفقود. مطلوب معرّف فريد صالح."
+    jwtAlgorithmMismatchExceptionMessage                              = 'عدم تطابق خوارزمية JWT: المتوقع {0}، ولكن تم العثور على {1}.'
+    jwtMissingJtiExceptionMessage                                     = "JWT يفتقد إلى الادعاء المطلوب 'jti' (معرّف JWT)."
+    deprecatedFunctionWarningMessage                                  = "تحذير: الدالة '{0}' قديمة وسيتم إزالتها في الإصدارات المستقبلية. يرجى استخدام الدالة '{1}' بدلاً منها."
+    unknownAlgorithmOrInvalidPfxExceptionMessage                      = 'خوارزمية غير معروفة أو تنسيق PEM غير صالح.'
+    unknownAlgorithmWithKeySizeExceptionMessage                       = 'خوارزمية {0} غير معروفة (حجم المفتاح: {1} بت).'
+    jwtCertificateAuthNotSupportedExceptionMessage                    = 'مصادقة شهادة JWT مدعومة فقط في PowerShell 7.0 أو أحدث.'
+    jwtNoExpirationExceptionMessage                                   = "JWT يفتقد إلى الادعاء المطلوب 'exp' (انتهاء الصلاحية)."
+    bearerTokenAuthMethodNotSupportedExceptionMessage                 = 'مصادقة رمز Bearer باستخدام نص الطلب مدعومة فقط مع طرق HTTP PUT أو POST أو PATCH.'
+    certificateNotValidYetExceptionMessage                            = 'الشهادة {0} غير صالحة بعد. صالحة من: {1} (UTC)'
+    certificateNotValidForPurposeExceptionMessage                     = "الشهادة غير صالحة لغرض '{0}'. الأغراض المكتشفة: {1}"
+    certificateUnknownEkusStrictModeExceptionMessage                  = 'تحتوي الشهادة على EKUs غير معروفة. وضع التحقق الصارم يرفضها. المكتشف: {0}'
+    failedToCreateCertificateRequestExceptionMessage                  = 'فشل في إنشاء طلب الشهادة.'
+    unsupportedCertificateKeyLengthExceptionMessage                   = 'طول مفتاح الشهادة غير مدعوم: {0} بت. يُرجى استخدام طول مفتاح مدعوم.'
+    invalidTypeExceptionMessage                                       = 'خطأ: نوع غير صالح لـ {0}. المتوقع {1}، لكن تم استلام [{2}].'
+    certificateSignatureInvalidExceptionMessage                       = 'الشهادة {0} تحتوي على توقيع غير صالح. قد تم العبث بالشهادة أو لم يتم توقيعها من قبل جهة موثوقة.'
+    certificateUntrustedRootExceptionMessage                          = 'الشهادة {0} صادرة عن جهة جذر غير موثوقة. يرجى تثبيت شهادة الجذر CA أو استخدام شهادة من جهة موثوقة.'
+    certificateRevokedExceptionMessage                                = 'تم إبطال الشهادة {0}. السبب: {1}. يرجى الحصول على شهادة صالحة جديدة.'
+    certificateExpiredIntermediateExceptionMessage                    = 'الشهادة {0} موقعة من قبل شهادة وسيطة انتهت صلاحيتها في {1}. سلسلة الشهادات لم تعد صالحة.'
+    certificateValidationFailedExceptionMessage                       = 'فشلت عملية التحقق من الشهادة {0}. يرجى التحقق من سلسلة الشهادات وفترة الصلاحية.'
+    certificateWeakAlgorithmExceptionMessage                          = 'الشهادة {0} تستخدم خوارزمية تشفير ضعيفة: {1}. يُوصى باستخدام SHA-256 أو أقوى.'
+    selfSignedCertificatesNotAllowedExceptionMessage                  = 'لا يُسمح باستخدام الشهادات الموقعة ذاتيًا بسبب قيود الأمان.'
+    digestTokenAuthMethodNotSupportedExceptionMessage                 = "ميزة Digest Quality of Protection 'auth-int' مدعومة فقط لطرق HTTP PUT أو POST أو PATCH."
+    pemCertificateNotSupportedByPwshVersionExceptionMessage           = 'تنسيق شهادة PEM غير مدعوم في PowerShell {0}. يرجى استخدام تنسيق شهادة آخر أو الترقية إلى PowerShell 7.0 أو أحدث.'
 }
+

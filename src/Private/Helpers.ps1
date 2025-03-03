@@ -1516,11 +1516,15 @@ function ConvertFrom-PodeRequestContent {
                 $Content = $Request.Body
             }
         }
-
+        # Add raw body content
+        $Result.RawData = $Content
         # if there is no content then do nothing
         if ([string]::IsNullOrWhiteSpace($Content)) {
             return $Result
         }
+
+        # Add raw body content
+        $Result.RawData = $Content
 
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
@@ -1530,7 +1534,6 @@ function ConvertFrom-PodeRequestContent {
             return $Result
         }
     }
-
     # run action for the content type
     switch ($ContentType) {
         { $_ -ilike '*/json' } {
@@ -1944,31 +1947,145 @@ function Convert-PodePathPatternsToRegex {
 
 <#
 .SYNOPSIS
-    Gets the default SSL protocol(s) based on the operating system.
+	Determines the default allowed SSL/TLS protocols based on the operating system.
 
 .DESCRIPTION
-    This function determines the appropriate default SSL protocol(s) based on the operating system. On macOS, it returns TLS 1.2. On other platforms, it combines SSL 3.0 and TLS 1.2.
+	This function detects the operating system and determines the allowed SSL/TLS protocols
+	based on the system’s native support. The function returns an array of
+	[System.Security.Authentication.SslProtocols] enum values representing the supported protocols.
 
 .OUTPUTS
-    A [System.Security.Authentication.SslProtocols] enum value representing the default SSL protocol(s).
+	A [System.Security.Authentication.SslProtocols] enum array containing the allowed SSL/TLS protocols.
 
 .EXAMPLE
-    Get-PodeDefaultSslProtocol
-    # Returns [System.Security.Authentication.SslProtocols]::Ssl3, [System.Security.Authentication.SslProtocols]::Tls12 (on non-macOS systems)
-    # Returns [System.Security.Authentication.SslProtocols]::Tls12 (on macOS)
+	Get-PodeDefaultSslProtocol
+	[System.Security.Authentication.SslProtocols]::Tls12, [System.Security.Authentication.SslProtocols]::Tls13
 
 .NOTES
-    This is an internal function and may change in future releases of Pode.
+	This is an internal function and may change in future releases of Pode.
+	Overriding the default allowed protocols in configuration does not guarantee their availability.
+	If a protocol is not natively supported by the OS, additional OS-level configuration may be required.
 #>
 function Get-PodeDefaultSslProtocol {
     [CmdletBinding()]
     [OutputType([System.Security.Authentication.SslProtocols])]
     param()
-    if (Test-PodeIsMacOS) {
-        return (ConvertTo-PodeSslProtocol -Protocol Tls12)
+    # Cross-platform detection in PowerShell 7.x
+    $AllowedProtocols = @()
+
+    if (Test-PodeIsWindows) {
+        # Retrieve Windows OS info
+
+        $osInfo = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' `
+        | Select-Object ProductName, CurrentBuild, CurrentVersion
+        $osName = $osInfo.ProductName
+        $osVersion = [version]"$($osInfo.CurrentVersion).$($osInfo.CurrentBuild)"
+
+        Write-Verbose "Detected OS: $osName, Version: $osVersion"
+
+        # Determine allowed protocols based on Windows version/build
+        if ($osName -match 'Windows Vista') {
+            # Windows Vista / Server 2008
+            $AllowedProtocols = @('Ssl2', 'Ssl3')
+        }
+        elseif ($osName -match 'Windows 7') {
+            # Windows 7 / Server 2008 R2
+            $AllowedProtocols = @('Ssl2', 'Ssl3')
+        }
+        elseif ($osName -match 'Windows 8' -or $osName -match 'Server 2012') {
+            # Windows 8 / Server 2012
+            # Note: SSL2 is disabled by default and not recommended.
+            $AllowedProtocols = @('Ssl3', 'Tls', 'Tls11', 'Tls12')
+        }
+        elseif ($osName -match 'Windows 10') {
+            # Windows 10 may support TLS 1.3 on later builds
+            if ($osVersion.Build -ge 20170) {
+                $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
+            }
+            else {
+                $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
+            }
+        }
+        elseif ($osName -match 'Windows 11' -or $osVersion.Build -ge 22000) {
+            # Windows 11 / Server 2022: Older protocols disabled
+            $AllowedProtocols = @('Tls12', 'Tls13')
+        }
+        else {
+            Write-Warning 'Unknown Windows version. Defaulting to modern protocols.'
+            $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
+        }
+    }
+    elseif ($IsMacOS) {
+         # Use sw_vers to get macOS version info
+         $osName = $(sw_vers -productName)
+         $productVersion = $(sw_vers -productVersion).Trim()
+         Write-Verbose "Detected OS: $osName, Version: $productVersion"
+         $versionObj = [version]$productVersion
+
+         # Determine allowed protocols for macOS
+         if ($versionObj -lt [version]'10.11') {
+             # macOS 10.8 - 10.10: SSL3 allowed, TLS 1.0/1.1/1.2 allowed, TLS1.3 not supported
+             $AllowedProtocols = @('Ssl3', 'Tls', 'Tls11', 'Tls12')
+         }
+         elseif ($versionObj -ge [version]'10.11' -and $versionObj -lt [version]'10.13') {
+             # macOS 10.11 (and likely 10.12): SSL3 disabled, TLS 1.0/1.1/1.2 allowed
+             $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
+         }
+         else {
+             # macOS 10.13 and later: TLS 1.3 is supported in addition to TLS 1.0, 1.1, 1.2
+             $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
+         }
+    }
+    elseif ($IsLinux) {
+        # Read /etc/os-release for OS info if available
+        if (Test-Path '/etc/os-release') {
+            $osRelease = Get-Content '/etc/os-release' | ConvertFrom-StringData
+            $osName = $osRelease.NAME
+            $osVersion = $osRelease.VERSION_ID
+            Write-Verbose "Detected OS: $osName, Version: $osVersion"
+        }
+        else {
+            $osName = 'Linux'
+            Write-Verbose "Detected OS: $osName"
+        }
+
+        # Determine allowed protocols based on the installed OpenSSL version.
+        try {
+            $opensslOutput = openssl version 2>&1
+            if ($opensslOutput -match 'OpenSSL\s+([\d\.]+)') {
+                $opensslVersion = [version]$matches[1]
+                Write-Verbose "Detected OpenSSL version: $opensslVersion"
+                if ($opensslVersion -ge [version]'1.1.1') {
+                    # OpenSSL 1.1.1 and later support TLS 1.3
+                    $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
+                }
+                elseif ($opensslVersion -ge [version]'1.0.1g') {
+                    # OpenSSL 1.0.1g up to before 1.1.1 disable SSL3
+                    $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
+                }
+                else {
+                    # OpenSSL 1.0.1 to 1.0.1f: SSL3 is allowed along with TLS 1.0/1.1/1.2
+                    $AllowedProtocols = @('Ssl3', 'Tls', 'Tls11', 'Tls12')
+                }
+            }
+            else {
+                Write-Warning 'Could not parse OpenSSL version. Defaulting to TLS 1.2.'
+                $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
+            }
+        }
+        catch {
+            Write-Warning 'OpenSSL version check failed. Defaulting to TLS 1.2.'
+            $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
+        }
+    }
+    else {
+        Write-Warning 'Unknown platform. No allowed protocols determined.'
+        $AllowedProtocols = @('Ssl3', 'Tls12')
     }
 
-    return (ConvertTo-PodeSslProtocol -Protocol Ssl3, Tls12)
+    Write-Verbose "Allowed protocols: $($AllowedProtocols -join ', ')"
+
+    return (ConvertTo-PodeSslProtocol -Protocol $AllowedProtocols)
 }
 
 <#
@@ -3940,6 +4057,168 @@ function ConvertTo-PodeSleep {
 #>
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
+}
+
+
+<#
+.SYNOPSIS
+    Retrieves the name of the main Pode application script.
+
+.DESCRIPTION
+    The `Get-PodeApplicationName` function determines the name of the primary script (`.ps1`)
+    that started execution. It does this by examining the PowerShell call stack and
+    extracting the first script file that appears.
+
+    If no script file is found in the call stack, the function returns `"NoName"`.
+
+.OUTPUTS
+    [string]
+    Returns the filename of the main application script, or `"NoName"` if no script is found.
+
+.EXAMPLE
+    Get-PodeApplicationName
+
+    This retrieves the name of the main script that launched the Pode application.
+
+.EXAMPLE
+    $AppName = Get-PodeApplicationName
+    Write-Host "Application Name: $AppName"
+
+    This stores the retrieved application name in a variable and prints it.
+
+.NOTES
+    - This function relies on `Get-PSCallStack`, meaning it must be run within a script execution context.
+    - If called interactively or if no `.ps1` script is in the call stack, it will return `"NoName"`.
+    - This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeApplicationName {
+    $scriptFrame = (Get-PSCallStack | Where-Object { $_.Command -match '\.ps1$' } | Select-Object -First 1)
+    if ($scriptFrame) {
+        return [System.IO.Path]::GetFileNameWithoutExtension($scriptFrame.Command)
+
+    }
+    else {
+        return 'NoName'
+    }
+}
+
+<#
+    .SYNOPSIS
+      Displays a deprecation warning message for a function.
+
+    .DESCRIPTION
+      The Write-PodeDeprecationWarning function generates a warning message indicating that
+      a specified function is deprecated and suggests the new replacement function.
+
+    .PARAMETER OldFunction
+      The name of the deprecated function that is being replaced.
+
+    .PARAMETER NewFunction
+      The name of the new function that should be used instead.
+
+    .OUTPUTS
+      None.
+
+    .EXAMPLE
+      Write-PodeDeprecationWarning -OldFunction "New-PodeLoggingMethod" -NewFunction "New-PodeLogger"
+
+      This will display:
+      WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use 'New-PodeLogger' function instead.
+
+    .NOTES
+      Internal function for Pode.
+      Subject to change in future releases.
+#>
+function Write-PodeDeprecationWarning {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $OldFunction,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $NewFunction
+    )
+    # WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use '{0}' function instead.
+    Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f $OldFunction, $NewFunction) -ForegroundColor Yellow
+}
+
+<#
+.SYNOPSIS
+    Converts a SecureString to plain text.
+
+.DESCRIPTION
+    This function takes a SecureString input and converts it into a plain text string.
+    Supports pipeline input for seamless integration with other cmdlets.
+
+.PARAMETER SecureString
+    The SecureString that needs to be converted.
+
+.OUTPUTS
+    [string] Plain text representation of the SecureString.
+
+.NOTES
+    Internal Pode function - subject to change.
+#>
+function Convert-PodeSecureStringToPlainText {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline)]
+        [securestring]$SecureString
+    )
+
+    process {
+        $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
+        try {
+            [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+        }
+        finally {
+            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    Converts a SecureString to a UTF8 byte array.
+
+.DESCRIPTION
+    This function takes a SecureString input and converts it into a UTF8 encoded byte array.
+    Supports pipeline input for seamless integration with other cmdlets.
+
+.PARAMETER SecureString
+    The SecureString that needs to be converted.
+
+.OUTPUTS
+    [byte[]] A UTF8 encoded byte array representation of the SecureString.
+
+.NOTES
+    Internal Pode function - subject to change.
+#>
+function Convert-PodeSecureStringToByteArray {
+    [CmdletBinding()]
+    [OutputType([byte[]])]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline)]
+        [securestring]
+        $SecureString
+    )
+
+    process {
+        if ($null -ne $SecureString) {
+            $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
+            try {
+                [System.Text.Encoding]::UTF8.GetBytes([Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr))
+            }
+            finally {
+                [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+            }
+        }
+        else {
+            return [byte[]]::new(0)  # Return empty byte array instead of $null
+        }
+    }
 }
 
 <#
