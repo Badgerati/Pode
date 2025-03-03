@@ -1391,15 +1391,18 @@ function Get-PodeVersion {
     )
 
     if ($PodeManifest.ModuleVersion -ne '$version$') {
-        if ($Raw) {
-            return $PodeManifest.ModuleVersion
+        $prefix = if ($Raw) { '' } else { 'v' }
+        if ($PodeManifest.PrivateData.PSData.Prerelease) {
+            return "$prefix$($PodeManifest.ModuleVersion)-$($PodeManifest.PrivateData.PSData.Prerelease)"
         }
-        return "v$($PodeManifest.ModuleVersion)"
+        return "$prefix$($PodeManifest.ModuleVersion)"
+
     }
     else {
         return '[dev]'
     }
 }
+
 <#
 .SYNOPSIS
 Converts an XML node to a PowerShell hashtable.

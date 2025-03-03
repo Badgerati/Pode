@@ -87,6 +87,14 @@ try {
                 # An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new Powershell/pwsh session and retry.
                 throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion)
             }
+            $assemblyInformationalVersion = $podeDll.CustomAttributes.Where({ $_.AttributeType -eq [System.Reflection.AssemblyInformationalVersionAttribute] })
+            if ($null -ne $PodeManifest.PrivateData.PSData.Prerelease) {
+                if (! $assemblyInformationalVersion.ConstructorArguments.Value.Contains($PodeManifest.PrivateData.PSData.Prerelease)) {
+                    throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $assemblyInformationalVersion.ConstructorArguments.Value, "$moduleVersion-$($PodeManifest.PrivateData.PSData.Prerelease)")
+                }
+            }elseif($assemblyInformationalVersion.ConstructorArguments.Value.Contains('-')){
+                throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $assemblyInformationalVersion.ConstructorArguments.Value, $moduleVersion)
+            }
         }
     }
     else {
