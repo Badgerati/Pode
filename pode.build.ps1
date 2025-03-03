@@ -9,6 +9,10 @@
 .PARAMETER Version
     Specifies the project version for stamping, packaging, and documentation. Defaults to '0.0.0'.
 
+.PARAMETER Prerelease
+    Specifies the prerelease label to append to the module version, following semantic versioning conventions.
+    Examples include 'alpha.1', 'alpha.2', 'beta.1', etc. This label indicates the stability and iteration of the prerelease version.
+
 .PARAMETER PesterVerbosity
     Sets the verbosity level for Pester tests. Options: None, Normal, Detailed, Diagnostic.
 
@@ -89,6 +93,9 @@
 param(
     [string]
     $Version = '0.0.0',
+
+    [string]
+    $Prerelease,
 
     [string]
     [ValidateSet('None', 'Normal' , 'Detailed', 'Diagnostic')]
@@ -487,7 +494,15 @@ function Invoke-PodeBuildDotnetBuild {
     # Optionally set assembly version
     if ($Version) {
         Write-Output "Assembly Version: $Version"
-        $AssemblyVersion = "-p:Version=$Version"
+
+        if ($Prerelease) {
+            $AssemblyVersion = "-p:VersionPrefix=$Version"
+            $AssemblyPrerelease = "-p:VersionSuffix=$Prerelease"
+        }
+        else {
+            $AssemblyVersion = "-p:Version=$Version"
+            $AssemblyPrerelease = ''
+        }
     }
     else {
         $AssemblyVersion = ''
@@ -497,7 +512,7 @@ function Invoke-PodeBuildDotnetBuild {
     dotnet restore
 
     # Use dotnet publish for .NET Core and .NET 5+
-    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
+    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion $AssemblyPrerelease --output ../Libs/$target
 
     if (!$?) {
         throw "Build failed for target framework '$target'."
@@ -889,6 +904,38 @@ if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParamete
     return
 }
 
+# Import Version File if needed
+if ($Version -eq '0.0.0' -and (Test-Path './Version.json' -PathType Leaf)) {
+    $importedVersion = Get-Content -Path './Version.json' | ConvertFrom-Json
+    if ($importedVersion.Version) {
+        $Version = $importedVersion.Version
+    }
+    if ($importedVersion.Prerelease) {
+        $Prerelease = $importedVersion.Prerelease
+    }
+}
+
+Write-Host '---------------------------------------------------' -ForegroundColor DarkCyan
+
+# Display the Pode build version
+if ($Prerelease) {
+    Write-Host "Pode Build: v$Version-$Prerelease (Pre-release)" -ForegroundColor DarkCyan
+}
+else {
+    if ($Version -eq '0.0.0') {
+        Write-Host 'Pode Build: [Development Version]' -ForegroundColor DarkCyan
+    }
+    else {
+        Write-Host "Pode Build: v$Version" -ForegroundColor DarkCyan
+    }
+}
+
+# Display the current UTC time in a readable format
+$utcTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
+Write-Host "Start Time: $utcTime" -ForegroundColor DarkCyan
+
+Write-Host '---------------------------------------------------' -ForegroundColor DarkCyan
+
 
 Add-BuildTask Default {
     Write-Host 'Tasks in the Build Script:' -ForegroundColor DarkMagenta
@@ -940,7 +987,10 @@ Add-BuildTask Default {
 # Synopsis: Stamps the version onto the Module
 Add-BuildTask StampVersion {
     $pwshVersions = Get-PodeBuildPwshEOL
-    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) } | Set-Content ./pkg/Pode.psd1
+    if ($Prerelease) {
+        $prereleaseValue = "Prerelease = '$Prerelease'"
+    }
+    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) -replace '#\$Prerelease-Here\$', $prereleaseValue } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
