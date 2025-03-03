@@ -63,10 +63,10 @@ function Get-PodeLoggingFileMethod {
         $item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
 
         # if set, remove log files beyond days set (ensure this is only run once a day)
-        if (($options.MaxDays -gt 0) -and ($options.NextClearDown -lt [DateTime]::Now.Date)) {
+        if (($options.MaxDays -gt 0) -and ($options.NextClearDown -le [DateTime]::Now.Date)) {
             $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
 
-            $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
+            $null = Get-ChildItem -Path $options.Path -Filter "$($options.Name)_*.log" -Force |
                 Where-Object { $_.CreationTime -lt $date } |
                 Remove-Item -Force
 
