@@ -1,0 +1,40 @@
+git checkout develop
+git branch -D alpha.3
+
+git checkout -b alpha.3 origin/develop
+
+
+#Fix 2 issues of New-PodeLoggingMethod -File
+git fetch upstream pull/1507/head:pr-1507
+git merge --squash pr-1507
+git commit -m "Squashed changes from PR #1507"
+
+#Refactored Module Manifest Handling and Centralized Aliases
+git fetch upstream pull/1504/head:pr-1504
+git merge --squash pr-1504
+git commit -m "Squashed changes from PR #1504"
+
+#Support for Custom and default Favicons in Pode Endpoints
+git fetch upstream pull/1509/head:pr-1509
+git merge --squash pr-1509
+git commit -m "Squashed changes from PR #1509"
+
+#Add Functions for Handling Route WebEvent Data and Serialization in Pode
+git fetch upstream pull/1386/head:pr-1386
+git merge --squash pr-1386
+git commit -m "Squashed changes from PR #1386"
+
+#Enhance Pode Shared State with Thread-Safe Structures and Improved Concurrency Handling
+git fetch upstream pull/1473/head:pr-1473
+git merge --squash pr-1473
+git commit -m "Squashed changes from PR #1473"
+
+#Enhanced Digest Authentication, JWT Authentication, Certificate Management & RFC Compliance
+git fetch upstream pull/1470/head:pr-1470
+git merge --squash pr-1470
+git commit -m "Squashed changes from PR #1470"
+
+#Using Pode as a Service in Windows, MacOSX and Linux (Systemd)
+git fetch upstream pull/1421/head:pr-1421
+git merge --squash pr-1421
+git commit -m "Squashed changes from PR #1421"
