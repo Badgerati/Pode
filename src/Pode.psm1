@@ -126,7 +126,6 @@ try {
     # Ensure backward compatibility by creating aliases for legacy Pode OpenAPI function names.
     New-PodeFunctionAlias
 
-
     # get functions from memory and compare to existing to find new functions added
     $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
     $aliases = Get-ChildItem Alias: | Where-Object { $sysaliases -notcontains $_ }
