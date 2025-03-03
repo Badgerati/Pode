@@ -1079,6 +1079,7 @@ Describe 'Close-PodeServerInternal' {
         Mock Remove-PodePSDrive {}
         Mock Write-PodeHost {}
         Mock Close-PodeCancellationTokenRequest {}
+        Mock Disable-PodeLog { }
     }
 
 

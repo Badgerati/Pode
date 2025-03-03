@@ -570,6 +570,9 @@ function Close-PodeServerInternal {
     # PodeContext doesn't exist return
     if ($null -eq $PodeContext) { return }
     try {
+        #Disable Logging before closing
+        Disable-PodeLog
+        
         # ensure the token is cancelled
         Write-Verbose 'Cancelling main cancellation token'
         Close-PodeCancellationTokenRequest -Type Cancellation, Terminate

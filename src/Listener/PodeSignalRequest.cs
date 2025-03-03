@@ -134,11 +134,11 @@ namespace Pode
         protected override void Dispose(bool disposing)
         {
             if (IsDisposed) return;
-            
+
             if (disposing)
             {
                 // Send close frame
-                PodeHelpers.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
+                PodeLogger.LogMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
 
                 // Wait for the close frame to be sent
                 Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close).Wait();

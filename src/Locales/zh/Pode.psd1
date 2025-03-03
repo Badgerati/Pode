@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "请求中未提供名为 '{0}' 的参数或没有可用数据。"
     cacheStorageNotFoundForSetExceptionMessage                        = "尝试设置缓存项 '{1}' 时，找不到名为 '{0}' 的缓存存储。"
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: 已经定义。'
-    errorLoggingAlreadyEnabledExceptionMessage                        = '错误日志记录已启用。'
     valueForUsingVariableNotFoundExceptionMessage                     = "未找到 '`$using:{0}' 的值。"
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = '文档工具 RapidPdf 不支持 OpenAPI 3.1'
     oauth2ClientSecretRequiredExceptionMessage                        = '不使用 PKCE 时, OAuth2 需要一个客户端密钥。'
@@ -280,10 +279,12 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "提供的 '{0}' 方案用于 '{1}' 身份验证验证器，需要一个有效的 ScriptBlock。"
     sseFailedToBroadcastExceptionMessage                              = '由于为{0}定义的SSE广播级别, SSE广播失败: {1}'
     adModuleWindowsOnlyExceptionMessage                               = '仅支持 Windows 的 Active Directory 模块。'
-    requestLoggingAlreadyEnabledExceptionMessage                      = '请求日志记录已启用。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '提供的 Access-Control-Max-Age 时长无效：{0}。应大于 0。'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
+    loggingAlreadyEnabledExceptionMessage                             = "日志记录 '{0}' 已启用。"
+    invalidEncodingExceptionMessage                                   = '无效的编码: {0}'
+    syslogProtocolExceptionMessage                                    = 'Syslog 协议只能使用 RFC3164 或 RFC5424。'
     taskProcessDoesNotExistExceptionMessage                           = "任务进程 '{0}' 不存在。"
     scheduleProcessDoesNotExistExceptionMessage                       = "计划进程 '{0}' 不存在。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
@@ -291,6 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "函数 '{0}' 不接受数组作为管道输入。"
     unsupportedStreamCompressionEncodingExceptionMessage              = '不支持的流压缩编码: {0}'
     localEndpointConflictExceptionMessage                             = "'{0}' 和 '{1}' 都被定义为 OpenAPI 的本地端点，但每个 API 定义仅允许一个本地端点。"
+    deprecatedFunctionWarningMessage                                  = "警告：函数 '{0}' 已被弃用，并将在未来版本中移除。请改用 '{1}' 函数。"
     serviceAlreadyRegisteredException                                 = "服务 '{0}' 已经注册。"
     serviceIsNotRegisteredException                                   = "服务 '{0}' 未注册。"
     serviceCommandFailedException                                     = "服务命令 '{0}' 在服务 '{1}' 上失败。"
@@ -333,6 +335,7 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = '速率限制规则不存在: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = '访问限制规则已存在: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = '访问限制规则不存在: {0}'
+    loggerDoesNotExistExceptionMessage                                = "日志记录器 '{0}' 不存在。"
     missingKeyForAlgorithmExceptionMessage                            = 'Uma chave {0} é necessária para os algoritmos {1} ({2}).'
     jwtIssuedInFutureExceptionMessage                                 = "JWT 的 'iat' (签发时间) 时间戳设置在未来。该令牌尚未生效。"
     jwtInvalidIssuerExceptionMessage                                  = "JWT 的 'iss' (发行者) 声明无效或缺失。预期发行者: '{0}'。"

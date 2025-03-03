@@ -22,11 +22,20 @@
     License: MIT License
 #>
 
+
+param(
+    [ValidateSet('Terminal', 'File', 'mylog', 'Syslog', 'EventViewer', 'Custom')]
+    [string[]]
+    $LoggingType = @(  'file', 'Custom', 'Syslog'),
+
+    [switch]
+    $Raw
+)
+
 try {
-    # Determine the script path and Pode module path
+    #Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
     $podePath = Split-Path -Parent -Path $ScriptPath
-
     # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
@@ -36,44 +45,86 @@ try {
     }
 }
 catch { throw }
-
 # or just:
 # Import-Module Pode
 
-$LOGGING_TYPE = 'terminal' # Terminal, File, Custom
-
 # create a server, and start listening on port 8081
-Start-PodeServer {
+Start-PodeServer -browse {
 
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     Set-PodeViewEngine -Type Pode
+    $logging = @()
 
-    switch ($LOGGING_TYPE.ToLowerInvariant()) {
-        'terminal' {
-            New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+    if ( $LoggingType -icontains 'terminal') {
+        $logging += New-PodeLoggingMethod -Terminal
+    }
+
+    if ( $LoggingType -icontains 'file') {
+        $logging += New-PodeFileLoggingMethod   -Name 'file' -MaxDays 4 -Format Simple -ISO8601
+        $requestLogging = New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
+    }
+
+    if ( $LoggingType -icontains 'custom') {
+        $logging += New-PodeLoggingMethod -Custom -ArgumentList 'arg1', 'arg2', 'arg3'  -ScriptBlock {
+            param($item, $arg1 , $arg2, $arg3, $rawItem)
+            $item | Out-File './examples/logs/customLegacy.log' -Append
+            $arg1 , $arg2, $arg3 -join ',' | Out-File './examples/logs/customLegacy_argumentList.log' -Append
+            $rawItem | Out-File './examples/logs/customLegacy_rawItem.log' -Append
         }
 
-        'file' {
-            New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4 | Enable-PodeRequestLogging
-        }
-
-        'custom' {
-            $type = New-PodeLoggingMethod -Custom -ScriptBlock {
-                param($item)
-                # send request row to S3
-            }
-
-            $type | Enable-PodeRequestLogging
+        $logging += New-PodeCustomLoggingMethod  -CustomOptions @{ 'opt1' = 'something'; 'opt2' = 'else' } -ScriptBlock {
+            $item | Out-File './examples/logs/customWithRunspace.log' -Append
+            $options | Out-File './examples/logs/customWithRunspace_options.log' -Append
+            $rawItem | Out-File './examples/logs/customWithRunspace_rawItem.log' -Append
         }
     }
 
+    if ( $LoggingType -icontains 'eventviewer') {
+        $logging += New-PodeLoggingMethod -EventViewer
+    }
+
+    if ( $LoggingType -icontains 'syslog') {
+        $logging += New-PodeSyslogLoggingMethod -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -FailureAction Report
+    }
+
+    if ($logging.Count -eq 0) {
+        throw 'No logging selected'
+    }
+    if ( $requestLogging) {
+        $requestLogging | Enable-PodeRequestLogging -LogFormat Extended
+    }
+
+    New-PodeFileLoggingMethod -Name 'error' -MaxDays 4 -Format RFC5424 -ISO8601 | Enable-PodeErrorLogging -Raw -Levels Error
+    @(
+        (New-PodeFileLoggingMethod -Name 'default' -MaxDays 4 -Format Simple -ISO8601 -DefaultTag 'filetest')
+        (New-PodeFileLoggingMethod -Name 'defaultRFC5424' -MaxDays 4 -Format RFC5424 -ISO8601 -DefaultTag 'filetestRFC5424')
+        (New-PodeSyslogLoggingMethod -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -SyslogProtocol RFC3164 -FailureAction Report -DefaultTag 'test')
+    ) | Enable-PodeDefaultLogging -Raw
+    $logging | Add-PodeLoggingMethod -Name 'mylog' -Raw:$Raw
+
+    Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeLog -Name  'mylog' -Message 'My custom log' -Level 'Info'
+        Write-PodeLog -Message 'This is for the deafult log.'
+        Start-Sleep -Seconds 2
+        Write-PodeLog -Message 'An allert with a new tag.' -Tag 'newTag' -Level Alert
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
+        Disable-PodeRequestLogging
+        Set-PodeResponseStatus -Code 500
+    }
+
+    Add-PodeRoute -Method Get -Path '/exception' -ScriptBlock {
+        try {
+            throw 'something happened'
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
         Set-PodeResponseStatus -Code 500
     }
 

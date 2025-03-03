@@ -40,6 +40,7 @@
                     '(?<keep_before>AppleWebKit\/)\d+\.\d+(?(<keep_after)\s+\(KHTML)'
                 )
                 Mask     = '--MASKED--'
+                QueueLimit = 100
             }
         }
         AutoImport     = @{

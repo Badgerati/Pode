@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "Um parâmetro chamado '{0}' não foi fornecido na solicitação ou não há dados disponíveis."
     cacheStorageNotFoundForSetExceptionMessage                        = "Armazenamento em cache com o nome '{0}' não encontrado ao tentar definir o item em cache '{1}'."
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: Já definido.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'O registro de erros já está habilitado.'
     valueForUsingVariableNotFoundExceptionMessage                     = "Valor para '`$using:{0}' não pôde ser encontrado."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = 'A ferramenta de documentos RapidPdf não suporta OpenAPI 3.1'
     oauth2ClientSecretRequiredExceptionMessage                        = 'OAuth2 requer um Client Secret quando não se usa PKCE.'
@@ -280,10 +279,12 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "O esquema '{0}' fornecido para o validador de autenticação '{1}' requer um ScriptBlock válido."
     sseFailedToBroadcastExceptionMessage                              = 'SSE falhou em transmitir devido ao nível de transmissão SSE definido para {0}: {1}.'
     adModuleWindowsOnlyExceptionMessage                               = 'O módulo Active Directory está disponível apenas no Windows.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'O registro de solicitações já está habilitado.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duração inválida fornecida para Access-Control-Max-Age: {0}. Deve ser maior que 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'A definição OpenAPI com o nome {0} já existe.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag não pode ser usado dentro de um 'ScriptBlock' Select-PodeOADefinition."
+    loggingAlreadyEnabledExceptionMessage                             = "O registro '{0}' já foi habilitado."
+    invalidEncodingExceptionMessage                                   = 'Codificação inválida: {0}'
+    syslogProtocolExceptionMessage                                    = 'O protocolo Syslog só pode usar RFC3164 ou RFC5424.'
     taskProcessDoesNotExistExceptionMessage                           = "O processo da tarefa '{0}' não existe."
     scheduleProcessDoesNotExistExceptionMessage                       = "O processo do cronograma '{0}' não existe."
     definitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
@@ -291,6 +292,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'
     localEndpointConflictExceptionMessage                             = "Tanto '{0}' quanto '{1}' estão definidos como endpoints locais do OpenAPI, mas apenas um endpoint local é permitido por definição de API."
+    deprecatedFunctionWarningMessage                                  = "AVISO: A função '{0}' está obsoleta e será removida em versões futuras. Por favor, use a função '{1}' em seu lugar."
     serviceAlreadyRegisteredException                                 = "O serviço '{0}' já está registrado."
     serviceIsNotRegisteredException                                   = "O serviço '{0}' não está registrado."
     serviceCommandFailedException                                     = "O comando do serviço '{0}' falhou no serviço '{1}'."
@@ -333,6 +335,7 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "A regra de limite de taxa com o nome '{0}' não existe."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "A regra de limite de acesso com o nome '{0}' já existe."
     accessLimitRuleDoesNotExistExceptionMessage                       = "A regra de limite de acesso com o nome '{0}' não existe."
+    loggerDoesNotExistExceptionMessage                                = "O logger '{0}' não existe."
     missingKeyForAlgorithmExceptionMessage                            = 'Uma chave {0} é necessária para os algoritmos {1} ({2}).'
     jwtIssuedInFutureExceptionMessage                                 = "O carimbo de data/hora 'iat' (Emitido em) do JWT está definido para o futuro. O token ainda não é válido."
     jwtInvalidIssuerExceptionMessage                                  = "A reivindicação 'iss' (Issuer) do JWT é inválida ou está ausente. Emissor esperado: '{0}'."

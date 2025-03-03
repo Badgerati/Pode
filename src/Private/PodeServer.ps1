@@ -88,7 +88,7 @@ function Start-PodeWebServer {
     # Create the listener
     $listener = & $("New-Pode$($PodeContext.Server.ListenerType)Listener") -CancellationToken $PodeContext.Tokens.Cancellation.Token
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
+    $listener.ErrorLoggingLevels = If ( $listener.ErrorLoggingEnabled) { @(Get-PodeErrorLoggingLevel) } else { @() }
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
     $listener.ShowServerDetails = [bool]$PodeContext.Server.Security.ServerDetails

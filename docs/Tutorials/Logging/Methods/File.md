@@ -39,3 +39,42 @@ By default Pode puts all logs in the `./logs` directory. You can use a custom pa
 ```powershell
 New-PodeLoggingMethod -File -Name 'requests' -Path 'E:/logs' | Enable-PodeRequestLogging
 ```
+
+### Format
+
+The Format parameter allows you to specify the format of the log entries. Available options are:
+
+- RFC3164
+- RFC5424
+- Simple
+- Default (default option)
+
+The Simple format uses the following structure: timestamp level source message. The Default format uses the legacy Pode format.
+
+```powershell
+New-PodeLoggingMethod -File -Name 'requests' -Format 'Simple' | Enable-PodeRequestLogging
+```
+A log entry using the Simple format might look like this:
+
+```arduino
+2024-08-01T12:00:00Z INFO MyApp "Request received"
+```
+
+### Custom Separator
+When using the Simple format, you can specify a custom separator for log entries:
+
+```powershell
+New-PodeLoggingMethod -File -Name 'requests' -Format 'Simple' -Separator ',' | Enable-PodeRequestLogging
+```
+
+A log entry using the Simple format with a comma separator might look like this:
+```arduino
+2024-08-01T12:00:00Z,INFO,MyApp,"Request received"
+```
+
+### Maximum Log Entry Length
+The MaxLength parameter sets the maximum length of log entries. The default value is -1, which means no limit.
+
+```powershell
+New-PodeLoggingMethod -File -Name 'requests' -MaxLength 500 | Enable-PodeRequestLogging
+```

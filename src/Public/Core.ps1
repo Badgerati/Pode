@@ -308,6 +308,7 @@ function Start-PodeServer {
                 EnableBreakpoints    = $EnableBreakpoints
                 IgnoreServerConfig   = $IgnoreServerConfig
                 ConfigFile           = $ConfigFile
+                Daemon               = $Daemon
                 Service              = $monitorService
                 ApplicationName      = $ApplicationName
             }
@@ -330,6 +331,10 @@ function Start-PodeServer {
 
             # Call the function using splatting
             Set-PodeConsoleOverrideConfiguration @ConfigParameters
+
+            if ($PodeContext.Server.Logging.Enabled) {
+                Enable-PodeLog
+            }
 
             # start the file monitor for interally restarting
             Start-PodeFileMonitor
