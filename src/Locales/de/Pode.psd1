@@ -292,7 +292,6 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Die Stream-Komprimierungskodierung wird nicht unterstützt: {0}'
     localEndpointConflictExceptionMessage                             = "Sowohl '{0}' als auch '{1}' sind als lokale OpenAPI-Endpunkte definiert, aber es ist nur ein lokaler Endpunkt pro API-Definition erlaubt."
-    deprecatedFunctionWarningMessage                                  = "WARNUNG: Die Funktion '{0}' ist veraltet und wird in zukünftigen Versionen entfernt. Bitte verwenden Sie stattdessen die Funktion '{1}'."
     serviceAlreadyRegisteredException                                 = "Der Dienst '{0}' ist bereits registriert."
     serviceIsNotRegisteredException                                   = "Der Dienst '{0}' ist nicht registriert."
     serviceCommandFailedException                                     = "Der Dienstbefehl '{0}' ist bei dem Dienst '{1}' fehlgeschlagen."

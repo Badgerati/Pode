@@ -292,7 +292,6 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La función '{0}' no acepta una matriz como entrada de canalización."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La codificación de compresión de transmisión no es compatible: {0}'
     localEndpointConflictExceptionMessage                             = "Tanto '{0}' como '{1}' están definidos como puntos finales locales de OpenAPI, pero solo se permite un punto final local por definición de API."
-    deprecatedFunctionWarningMessage                                  = "ADVERTENCIA: La función '{0}' está obsoleta y será eliminada en futuras versiones. Por favor, use la función '{1}' en su lugar."
     serviceAlreadyRegisteredException                                 = "El servicio '{0}' ya está registrado."
     serviceIsNotRegisteredException                                   = "El servicio '{0}' no está registrado."
     serviceCommandFailedException                                     = "El comando del servicio '{0}' falló en el servicio '{1}'."

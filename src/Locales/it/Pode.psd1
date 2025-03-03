@@ -292,7 +292,6 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La funzione '{0}' non accetta una matrice come input della pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La compressione dello stream non è supportata per la codifica {0}'
     localEndpointConflictExceptionMessage                             = "Sia '{0}' che '{1}' sono definiti come endpoint locali OpenAPI, ma è consentito solo un endpoint locale per definizione API."
-    deprecatedFunctionWarningMessage                                  = "AVVISO: La funzione '{0}' è obsoleta e verrà rimossa nelle versioni future. Si prega di utilizzare la funzione '{1}' al suo posto."
     serviceAlreadyRegisteredException                                 = "Il servizio '{0}' è già registrato."
     serviceIsNotRegisteredException                                   = "Il servizio '{0}' non è registrato."
     serviceCommandFailedException                                     = "Il comando  '{0}' è fallito sul servizio '{1}'."

@@ -292,7 +292,6 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
     localEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
-    deprecatedFunctionWarningMessage                                  = "تحذير: الدالة '{0}' مهملة وستتم إزالتها في الإصدارات المستقبلية. يُرجى استخدام الدالة '{1}' بدلاً منها."
     serviceAlreadyRegisteredException                                 = "الخدمة '{0}' مسجلة بالفعل."
     serviceIsNotRegisteredException                                   = "الخدمة '{0}' غير مسجلة."
     serviceCommandFailedException                                     = "فشل الأمر '{0}' في الخدمة '{1}'."

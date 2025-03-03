@@ -292,7 +292,6 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'
     localEndpointConflictExceptionMessage                             = "Tanto '{0}' quanto '{1}' estão definidos como endpoints locais do OpenAPI, mas apenas um endpoint local é permitido por definição de API."
-    deprecatedFunctionWarningMessage                                  = "AVISO: A função '{0}' está obsoleta e será removida em versões futuras. Por favor, use a função '{1}' em seu lugar."
     serviceAlreadyRegisteredException                                 = "O serviço '{0}' já está registrado."
     serviceIsNotRegisteredException                                   = "O serviço '{0}' não está registrado."
     serviceCommandFailedException                                     = "O comando do serviço '{0}' falhou no serviço '{1}'."
@@ -346,7 +345,7 @@
     jwtInvalidJtiExceptionMessage                                     = "A reivindicação 'jti' (JWT ID) do JWT é inválida ou está ausente. Um identificador único válido é necessário."
     jwtAlgorithmMismatchExceptionMessage                              = 'Incompatibilidade de algoritmo JWT: Esperado {0}, encontrado {1}.'
     jwtMissingJtiExceptionMessage                                     = "O JWT está sem a reivindicação obrigatória 'jti' (JWT ID)."
-    deprecatedFunctionWarningMessage                                  = "警告: 函数 '{0}' 已被弃用，并将在未来版本中移除。请改用函数 '{1}'。"
+    deprecatedFunctionWarningMessage                                  = "AVISO: A função '{0}' está obsoleta e será removida em versões futuras. Por favor, use a função '{1}' em seu lugar."
     unknownAlgorithmOrInvalidPfxExceptionMessage                      = 'Algoritmo desconhecido ou formato PEM inválido.'
     unknownAlgorithmWithKeySizeExceptionMessage                       = 'Algoritmo {0} desconhecido (Tamanho da chave: {1} bits).'
     jwtCertificateAuthNotSupportedExceptionMessage                    = 'A autenticação de certificado JWT é suportada apenas no PowerShell 7.0 ou superior.'

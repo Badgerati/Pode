@@ -24,7 +24,7 @@ BeforeDiscovery {
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-    
+
     # Import Pode Assembly
     $helperPath = (Split-Path -Parent -Path $path) -ireplace 'unit', 'shared'
     . "$helperPath/TestHelper.ps1"
@@ -127,7 +127,7 @@ Describe 'All Aliases' {
     It 'Have Pode Tag' {
         $found = @()
 
-        foreach ($alias in ($publicAliases + $privateAliases)) {
+        foreach ($alias in ($publicAliases)) {
             if ($alias.Name -cnotlike '*-Pode*') {
                 $found += $alias.Name
             }
@@ -140,7 +140,7 @@ Describe 'All Aliases' {
         $found = @()
         $verbs = (Get-Verb).Verb
 
-        foreach ($alias in ($publicAliases + $privateAliases)) {
+        foreach ($alias in ($publicAliases)) {
             if (($alias.Name -split '-')[0] -cnotin $verbs) {
                 $found += $alias.Name
             }

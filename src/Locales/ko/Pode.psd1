@@ -292,7 +292,6 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "함수 '{0}'은(는) 배열을 파이프라인 입력으로 받지 않습니다."
     unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
     localEndpointConflictExceptionMessage                             = "'{0}' 와 '{1}' 는 OpenAPI 로컬 엔드포인트로 정의되었지만, API 정의당 하나의 로컬 엔드포인트만 허용됩니다."
-    deprecatedFunctionWarningMessage                                  = "경고: 함수 '{0}'는 더 이상 지원되지 않으며, 향후 릴리스에서 제거될 예정입니다. 대신 '{1}' 함수를 사용하세요."
     serviceAlreadyRegisteredException                                 = "서비스 '{0}'가 이미 등록되었습니다."
     serviceIsNotRegisteredException                                   = "서비스 '{0}'가 등록되지 않았습니다."
     serviceCommandFailedException                                     = "서비스 명령 '{0}' 이(가) 서비스 '{1}' 에서 실패했습니다."

@@ -70,17 +70,17 @@ function Import-PodeAssembly {
   Returns `$true` if both strings are equal after normalization; otherwise, returns `$false`.
 
 .EXAMPLE
-  Compare-StringRnLn -InputString1 "Hello`r`nWorld" -InputString2 "Hello`nWorld"
+  Compare-PodeStringRnLn -InputString1 "Hello`r`nWorld" -InputString2 "Hello`nWorld"
   # Returns: $true
 
 .EXAMPLE
-  Compare-StringRnLn -InputString1 "Line1`r`nLine2" -InputString2 "Line1`rLine2"
+  Compare-PodeStringRnLn -InputString1 "Line1`r`nLine2" -InputString2 "Line1`rLine2"
   # Returns: $true
 
 .NOTES
   This function ensures that strings with different line-ending formats are treated as equal if their content is otherwise identical.
 #>
-function Compare-StringRnLn {
+function Compare-PodeStringRnLn {
     param (
         [string]$InputString1,
         [string]$InputString2
@@ -105,18 +105,18 @@ function Compare-StringRnLn {
 
 .EXAMPLE
   $object = [PSCustomObject]@{ Name = "Pode"; Version = "2.0"; Config = [PSCustomObject]@{ Debug = $true } }
-  Convert-PsCustomObjectToOrderedHashtable -InputObject $object
+  Convert-PodePsCustomObjectToOrderedHashtable -InputObject $object
   # Returns: An ordered hashtable representation of $object.
 
 .EXAMPLE
   $object = [PSCustomObject]@{ Users = @([PSCustomObject]@{ Name = "Alice" }, [PSCustomObject]@{ Name = "Bob" }) }
-  Convert-PsCustomObjectToOrderedHashtable -InputObject $object
+  Convert-PodePsCustomObjectToOrderedHashtable -InputObject $object
   # Returns: An ordered hashtable where 'Users' is an array of ordered hashtables.
 
 .NOTES
   This function preserves key order and supports recursive conversion of nested objects and collections.
 #>
-function Convert-PsCustomObjectToOrderedHashtable {
+function Convert-PodePsCustomObjectToOrderedHashtable {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -191,17 +191,17 @@ function Convert-PsCustomObjectToOrderedHashtable {
 .EXAMPLE
   $hash1 = @{ Name = "Pode"; Version = "2.0"; Config = @{ Debug = $true } }
   $hash2 = @{ Name = "Pode"; Version = "2.0"; Config = @{ Debug = $true } }
-  Compare-Hashtable -Hashtable1 $hash1 -Hashtable2 $hash2
+  Compare-PodeHashtable -Hashtable1 $hash1 -Hashtable2 $hash2
   # Returns: $true
 
 .EXAMPLE
   $hash1 = @{ Name = "Pode"; Version = "2.0" }
   $hash2 = @{ Name = "Pode"; Version = "2.1" }
-  Compare-Hashtable -Hashtable1 $hash1 -Hashtable2 $hash2
+  Compare-PodeHashtable -Hashtable1 $hash1 -Hashtable2 $hash2
   # Returns: $false
 
 #>
-function Compare-Hashtable {
+function Compare-PodeHashtable {
     param (
         [object]$Hashtable1,
         [object]$Hashtable2
@@ -212,7 +212,7 @@ function Compare-Hashtable {
         # Check if both values are hashtables
         if ((($value1 -is [hashtable] -or $value1 -is [System.Collections.Specialized.OrderedDictionary]) -and
     ($value2 -is [hashtable] -or $value2 -is [System.Collections.Specialized.OrderedDictionary]))) {
-            return Compare-Hashtable -Hashtable1 $value1 -Hashtable2 $value2
+            return Compare-PodeHashtable -Hashtable1 $value1 -Hashtable2 $value2
         }
         # Check if both values are arrays
         elseif (($value1 -is [Object[]]) -and ($value2 -is [Object[]])) {
@@ -234,7 +234,7 @@ function Compare-Hashtable {
         }
         else {
             if ($value1 -is [string] -and $value2 -is [string]) {
-                return  Compare-StringRnLn $value1 $value2
+                return  Compare-PodeStringRnLn $value1 $value2
             }
             # Check if the values are equal
             return $value1 -eq $value2
@@ -255,7 +255,7 @@ function Compare-Hashtable {
         }
 
         if ($Hashtable2[$key] -is [hashtable] -or $Hashtable2[$key] -is [System.Collections.Specialized.OrderedDictionary]) {
-            if (! (Compare-Hashtable -Hashtable1 $Hashtable1[$key] -Hashtable2 $Hashtable2[$key])) {
+            if (! (Compare-PodeHashtable -Hashtable1 $Hashtable1[$key] -Hashtable2 $Hashtable2[$key])) {
                 return $false
             }
         }
@@ -292,12 +292,12 @@ function Compare-Hashtable {
   Boolean - Returns $true if the server is online, otherwise $false.
 
 .EXAMPLE
-  Wait-ForWebServer -Port 8080 -Timeout 30 -Interval 2
+  Wait-PodeForWebServer -Port 8080 -Timeout 30 -Interval 2
 
   Waits up to 30 seconds for the web server on port 8080 to come online.
 
 .EXAMPLE
-  Wait-ForWebServer -Uri "http://127.0.0.1:5000" -Timeout 45
+  Wait-PodeForWebServer -Uri "http://127.0.0.1:5000" -Timeout 45
 
   Waits up to 45 seconds for the web server at "http://127.0.0.1:5000" to respond.
 
@@ -305,7 +305,7 @@ function Compare-Hashtable {
   Author: ChatGPT
   This function ensures that the web server is fully responding, not just that the port is open.
 #>
-function Wait-ForWebServer {
+function Wait-PodeForWebServer {
     [CmdletBinding()]
     [OutputType([bool])]
     param (
@@ -339,7 +339,7 @@ function Wait-ForWebServer {
         try {
             # Send a request but ignore status codes (any response means the server is online)
             $null = Invoke-WebRequest -Uri $Uri -UseBasicParsing -TimeoutSec 3
-             Write-Host "Webserver is online at $Uri"
+            Write-Host "Webserver is online at $Uri"
             return $true
         }
         catch {
@@ -361,7 +361,7 @@ function Wait-ForWebServer {
 
 
 
-function Compare-Hashtable {
+function Compare-PodeHashtable {
     param (
         [object]$Hashtable1,
         [object]$Hashtable2
@@ -372,7 +372,7 @@ function Compare-Hashtable {
         # Check if both values are hashtables
         if ((($value1 -is [hashtable] -or $value1 -is [System.Collections.Specialized.OrderedDictionary]) -and
     ($value2 -is [hashtable] -or $value2 -is [System.Collections.Specialized.OrderedDictionary]))) {
-            return Compare-Hashtable -Hashtable1 $value1 -Hashtable2 $value2
+            return Compare-PodeHashtable -Hashtable1 $value1 -Hashtable2 $value2
         }
         # Check if both values are arrays
         elseif (($value1 -is [Object[]]) -and ($value2 -is [Object[]])) {
@@ -394,7 +394,7 @@ function Compare-Hashtable {
         }
         else {
             if ($value1 -is [string] -and $value2 -is [string]) {
-                return  Compare-StringRnLn $value1 $value2
+                return  Compare-PodeStringRnLn $value1 $value2
             }
             # Check if the values are equal
             return $value1 -eq $value2
@@ -415,7 +415,7 @@ function Compare-Hashtable {
         }
 
         if ($Hashtable2[$key] -is [hashtable] -or $Hashtable2[$key] -is [System.Collections.Specialized.OrderedDictionary]) {
-            if (! (Compare-Hashtable -Hashtable1 $Hashtable1[$key] -Hashtable2 $Hashtable2[$key])) {
+            if (! (Compare-PodeHashtable -Hashtable1 $Hashtable1[$key] -Hashtable2 $Hashtable2[$key])) {
                 return $false
             }
         }
@@ -426,69 +426,7 @@ function Compare-Hashtable {
 
     return $true
 }
-
-
-function Compare-StringRnLn {
-    param (
-        [string]$InputString1,
-        [string]$InputString2
-    )
-    return ($InputString1.Trim() -replace "`r`n|`n|`r", "`n") -eq ($InputString2.Trim() -replace "`r`n|`n|`r", "`n")
-}
-
-function Convert-PsCustomObjectToOrderedHashtable {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [PSCustomObject]$InputObject
-    )
-    begin {
-        # Define a recursive function within the process block
-        function Convert-ObjectRecursively {
-            param (
-                [Parameter(Mandatory = $true)]
-                [System.Object]
-                $InputObject
-            )
-
-            # Initialize an ordered dictionary
-            $orderedHashtable = [ordered]@{}
-
-            # Loop through each property of the PSCustomObject
-            foreach ($property in $InputObject.PSObject.Properties) {
-                # Check if the property value is a PSCustomObject
-                if ($property.Value -is [PSCustomObject]) {
-                    # Recursively convert the nested PSCustomObject
-                    $orderedHashtable[$property.Name] = Convert-ObjectRecursively -InputObject $property.Value
-                }
-                elseif ($property.Value -is [System.Collections.IEnumerable] -and -not ($property.Value -is [string])) {
-                    # If the value is a collection, check each element
-                    $convertedCollection = @()
-                    foreach ($item in $property.Value) {
-                        if ($item -is [PSCustomObject]) {
-                            $convertedCollection += Convert-ObjectRecursively -InputObject $item
-                        }
-                        else {
-                            $convertedCollection += $item
-                        }
-                    }
-                    $orderedHashtable[$property.Name] = $convertedCollection
-                }
-                else {
-                    # Add the property name and value to the ordered hashtable
-                    $orderedHashtable[$property.Name] = $property.Value
-                }
-            }
-
-            # Return the resulting ordered hashtable
-            return $orderedHashtable
-        }
-    }
-    process {
-        # Call the recursive helper function for each input object
-        Convert-ObjectRecursively -InputObject $InputObject
-    }
-}
+ 
 
 function Get-PodeModuleManifest {
     param(

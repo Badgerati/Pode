@@ -44,7 +44,7 @@ Describe 'Session Requests' {
             }
         }
 
-        Wait-ForWebServer -Port $Port
+        Wait-PodeForWebServer -Port $Port
     }
 
     AfterAll {

@@ -334,7 +334,6 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "A rate limit rule with the name '{0}' does not exist."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "An access limit rule with the name '{0}' already exists."
     accessLimitRuleDoesNotExistExceptionMessage                       = "An access limit rule with the name '{0}' does not exist."
-    deprecatedFunctionWarningMessage                                  = "WARNING: The function '{0}' is deprecated and will be removed in future releases. Please use the '{1}' function instead."
     loggerDoesNotExistExceptionMessage                                = "Logger '{0}' does not exist."
     missingKeyForAlgorithmExceptionMessage                            = 'A {0} key is required for {1} algorithms ({2}).'
     jwtIssuedInFutureExceptionMessage                                 = "The JWT's 'iat' (Issued At) timestamp is set in the future. The token is not valid yet."

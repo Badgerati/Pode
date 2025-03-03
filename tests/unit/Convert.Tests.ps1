@@ -7,7 +7,7 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
- 
+
     $helperPath = (Split-Path -Parent -Path $path) -ireplace 'unit', 'shared'
     . "$helperPath/TestHelper.ps1"
 
@@ -84,28 +84,28 @@ Describe 'ConvertTo-PodeCustomDictionaryJson' {
     }
     It 'Should correctly serialize a recursively nested dictionary' {
         $dictionary = @{ 'Level1' = @{ 'Level2' = @{ 'Final' = 'Reached' } } }
-        $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $dictionary | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
+        $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $dictionary | ConvertFrom-Json | Convert-PodePsCustomObjectToOrderedHashtable
         $expected = '{"Metadata":{"Product":"Pode","Version":"[dev]","Timestamp":"2025-02-04T01:54:30.6400033Z","Application":"Pester"},"Data":{"Type":"Hashtable","Items":[{"Key":"Level1","Value":{"Type":"Hashtable","Items":[{"Key":"Level2","Value":{"Type":"Hashtable","Items":[{"Key":"Final","Value":"Reached"}]}}]}}]}}' |
-            ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
-        Compare-Hashtable $json $expected | Should -BeTrue
+            ConvertFrom-Json | Convert-PodePsCustomObjectToOrderedHashtable
+        Compare-PodeHashtable $json $expected | Should -BeTrue
     }
 
     It 'Should correctly serialize a dictionary with multiple types' {
         $dictionary = @{ 'String' = 'Test'; 'Number' = 123; 'Boolean' = $true; 'Array' = @(1, 2, 3) }
-        $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $dictionary | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
+        $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $dictionary | ConvertFrom-Json | Convert-PodePsCustomObjectToOrderedHashtable
         $expected = '{"Metadata":{"Product":"Pode","Version":"[dev]","Timestamp":"2025-02-04T01:54:30.6400033Z","Application":"Pester"},"Data":{"Type":"Hashtable","Items":[{"Key":"Array","Value":[1,2,3]},{"Key":"Boolean","Value":true},{"Key":"Number","Value":123},{"Key":"String","Value":"Test"}]}}' |
-            ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
+            ConvertFrom-Json | Convert-PodePsCustomObjectToOrderedHashtable
 
-        Compare-Hashtable $json $expected | Should -BeTrue
+        Compare-PodeHashtable $json $expected | Should -BeTrue
     }
 
     It 'Should correctly serialize nested dictionaries and collections' {
         $dictionary = @{ 'Dict' = @{ 'SubDict' = @{ 'Key' = 'Value' } }; 'List' = @(1, 2, @{ 'Nested' = 'Yes' }) }
-        $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $dictionary | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
+        $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $dictionary | ConvertFrom-Json | Convert-PodePsCustomObjectToOrderedHashtable
         $expected = '{"Metadata":{"Product":"Pode","Version":"[dev]","Timestamp":"2025-02-04T01:54:30.6400033Z","Application":"Pester"},"Data":{"Type":"Hashtable","Items":[{"Key":"List","Value":[1,2,{"Type":"Hashtable","Items":[{"Key":"Nested","Value":"Yes"}]}]},{"Key":"Dict","Value":{"Type":"Hashtable","Items":[{"Key":"SubDict","Value":{"Type":"Hashtable","Items":[{"Key":"Key","Value":"Value"}]}}]}}]}}' |
-            ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
+            ConvertFrom-Json | Convert-PodePsCustomObjectToOrderedHashtable
 
-        Compare-Hashtable $json $expected | Should -BeTrue
+        Compare-PodeHashtable $json $expected | Should -BeTrue
     }
 
     It 'Should correctly serialize thread-safe collections' {
@@ -118,11 +118,11 @@ Describe 'ConvertTo-PodeCustomDictionaryJson' {
         $concurrentBag.Add('Item2')
 
         $dictionary = @{ 'ConcurrentDict' = $concurrentDictionary; 'ConcurrentBag' = $concurrentBag }
-        $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $dictionary | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
+        $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $dictionary | ConvertFrom-Json | Convert-PodePsCustomObjectToOrderedHashtable
         $expected = '{"Metadata":{"Product":"Pode","Version":"[dev]","Timestamp":"2025-02-04T01:54:30.6400033Z","Application":"Pester"},"Data":{"Type":"Hashtable","Items":[{"Key":"ConcurrentBag","Value":{"Type":"ConcurrentBag","Items":["Item2","Item1"]}},{"Key":"ConcurrentDict","Value":{"Type":"ConcurrentDictionary","Items":[{"Key":"Key1","Value":"Value1"},{"Key":"Key2","Value":42}]}}]}}' |
-            ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
+            ConvertFrom-Json | Convert-PodePsCustomObjectToOrderedHashtable
 
-        Compare-Hashtable $json $expected | Should -BeTrue
+        Compare-PodeHashtable $json $expected | Should -BeTrue
     }
 }
 

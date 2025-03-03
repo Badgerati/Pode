@@ -292,7 +292,6 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
     localEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
-    deprecatedFunctionWarningMessage                                  = "警告: 関数 '{0}' は廃止され、将来のリリースで削除されます。代わりに '{1}' 関数を使用してください。"
     serviceAlreadyRegisteredException                                 = "サービス '{0}' はすでに登録されています。"
     serviceIsNotRegisteredException                                   = "サービス '{0}' は登録されていません。"
     serviceCommandFailedException                                     = "サービスコマンド '{0}' はサービス '{1}' で失敗しました。"

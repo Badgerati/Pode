@@ -492,19 +492,19 @@ Describe 'ConvertFrom-PodeSerializedString' {
                 }
             }
             # Recursive comparison function
-            function Compare-Hashtable($expected, $actual) {
+            function Compare-PodeHashtable($expected, $actual) {
                 $expected.Keys.Count | Should -Be $actual.Keys.Count
                 foreach ($key in $expected.Keys) {
                     $actual.ContainsKey($key) | Should -BeTrue -Because "Key '$key' is missing."
                     if ($expected[$key] -is [hashtable]) {
-                        Compare-Hashtable  $expected[$key] $actual[$key]
+                        Compare-PodeHashtable  $expected[$key] $actual[$key]
                     }
                     else {
                         $actual[$key] | Should -Be $expected[$key]
                     }
                 }
             }
-            Compare-Hashtable  $expected $result
+            Compare-PodeHashtable  $expected $result
         }
 
 
