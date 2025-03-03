@@ -915,6 +915,27 @@ if ($Version -eq '0.0.0' -and (Test-Path './Version.json' -PathType Leaf)) {
     }
 }
 
+Write-Host '---------------------------------------------------' -ForegroundColor DarkCyan
+
+# Display the Pode build version
+if ($Prerelease) {
+    Write-Host "Pode Build: v$Version-$Prerelease (Pre-release)" -ForegroundColor DarkCyan
+}
+else {
+    if ($Version -eq '0.0.0') {
+        Write-Host 'Pode Build: [Development Version]' -ForegroundColor DarkCyan
+    }
+    else {
+        Write-Host "Pode Build: v$Version" -ForegroundColor DarkCyan
+    }
+}
+
+# Display the current UTC time in a readable format
+$utcTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
+Write-Host "Start Time: $utcTime" -ForegroundColor DarkCyan
+
+Write-Host '---------------------------------------------------' -ForegroundColor DarkCyan
+
 
 Add-BuildTask Default {
     Write-Host 'Tasks in the Build Script:' -ForegroundColor DarkMagenta
