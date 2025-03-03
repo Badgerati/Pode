@@ -72,7 +72,18 @@ jobs:
     - name: Run Pester Tests
       shell: pwsh
       run: |
-        Invoke-Build Test
+        # Check if the runner is in debug mode
+        if ($env:RUNNER_DEBUG -eq '1') {
+            $debug = $true
+        } else {
+            $debug = $false
+        }
+
+        if ($debug) {
+            Invoke-Build Test -PesterVerbosity Diagnostic
+        } else {
+            Invoke-Build Test
+        }
 
     - name: Build Packages
       shell: pwsh

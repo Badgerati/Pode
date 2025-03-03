@@ -146,6 +146,15 @@ try {
             Export-ModuleMember -Function ($funcs.Name)
         }
     }
+
+    # Define Properties Display
+    if (!(Get-TypeData -TypeName 'PodeService')) {
+        $TypeData = @{
+            TypeName                  = 'PodeService'
+            DefaultDisplayPropertySet = 'Name', 'Status', 'Pid'
+        }
+        Update-TypeData @TypeData
+    }
 }
 catch {
     throw ("Failed to load the Pode module. $_")
