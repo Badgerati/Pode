@@ -188,3 +188,39 @@ To set this property, include it in `server.psd1` configuration file as shown be
     }
 }
 ```
+
+## Favicons
+
+Pode allows you to customize or disable the favicon for HTTP/HTTPS endpoints. By default, Pode serves a built-in `favicon.ico`, but you can override this behavior using the `-Favicon` and `-NoFavicon` parameters.
+
+- **`-Favicon` (byte[])**: Allows you to specify a custom favicon as a byte array.
+- **`-NoFavicon` (switch)**: Disables the favicon, preventing browsers from requesting it.
+
+### **Favicon Format and Specifications**
+
+Favicons are typically stored in the `.ico` format, which is a container that can hold multiple image sizes and color depths. This ensures compatibility with different browsers and devices. Some modern browsers also support `.png` and `.svg` favicons.
+
+For more details on favicon formats and specifications, refer to the [Favicon specification](https://en.wikipedia.org/wiki/Favicon) and [RFC 5988](https://datatracker.ietf.org/doc/html/rfc5988).
+
+### **Favicon Size Recommendations**
+
+Favicons should include multiple resolutions for optimal display across different devices. Recommended sizes include:
+
+- **16x16** → Used in browser tabs, bookmarks, and address bars.
+- **32x32** → Used in browser tabs on higher-resolution displays.
+- **48x48** → Used by some older browsers and web applications.
+- **64x64+** → Generally not used by browsers but can be helpful for scalability in web apps.
+- **256x256** → Mainly for **Windows app icons** (not typically used as a favicon in browsers).
+
+### **Usage Example**
+
+```powershell
+# Load a custom favicon from file
+$iconBytes = [System.IO.File]::ReadAllBytes("C:\path\to\custom.ico")
+Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Favicon $iconBytes
+
+# Disable favicon for an endpoint
+Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -NoFavicon
+```
+
+Using a favicon enhances the user experience by providing a recognizable site icon in browser tabs and bookmarks.
