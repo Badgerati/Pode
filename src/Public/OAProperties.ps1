@@ -2073,8 +2073,3 @@ function New-PodeOAComponentSchemaProperty {
         }
     }
 }
-
-
-if (!(Test-Path Alias:New-PodeOASchemaProperty)) {
-    New-Alias New-PodeOASchemaProperty -Value New-PodeOAComponentSchemaProperty
-}

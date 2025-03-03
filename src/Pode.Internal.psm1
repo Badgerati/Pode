@@ -15,3 +15,6 @@ $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
 
 # export the module's public functions
 Export-ModuleMember -Function ($funcs.Name)
+
+# Ensure backward compatibility by creating aliases for legacy Pode OpenAPI function names.
+New-PodeFunctionAlias

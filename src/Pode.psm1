@@ -75,17 +75,25 @@ try {
     $moduleManifestPath = Join-Path -Path $root -ChildPath 'Pode.psd1'
 
     # Import the module manifest to access its properties
-    $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
+    $PodeManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
 
 
     $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
 
     if ($podeDll) {
-        if ( $moduleManifest.ModuleVersion -ne '$version$') {
-            $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
+        if ( $PodeManifest.ModuleVersion -ne '$version$') {
+            $moduleVersion = ([version]::new($PodeManifest.ModuleVersion + '.0'))
             if ($podeDll.GetName().Version -ne $moduleVersion) {
                 # An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new Powershell/pwsh session and retry.
                 throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion)
+            }
+            $assemblyInformationalVersion = $podeDll.CustomAttributes.Where({ $_.AttributeType -eq [System.Reflection.AssemblyInformationalVersionAttribute] })
+            if ($null -ne $PodeManifest.PrivateData.PSData.Prerelease) {
+                if (! $assemblyInformationalVersion.ConstructorArguments.Value.Contains($PodeManifest.PrivateData.PSData.Prerelease)) {
+                    throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $assemblyInformationalVersion.ConstructorArguments.Value, "$moduleVersion-$($PodeManifest.PrivateData.PSData.Prerelease)")
+                }
+            }elseif($assemblyInformationalVersion.ConstructorArguments.Value.Contains('-')){
+                throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $assemblyInformationalVersion.ConstructorArguments.Value, $moduleVersion)
             }
         }
     }
@@ -123,6 +131,9 @@ try {
     # load public functions
     Get-ChildItem "$($root)/Public/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
 
+    # Ensure backward compatibility by creating aliases for legacy Pode OpenAPI function names.
+    New-PodeFunctionAlias
+
     # get functions from memory and compare to existing to find new functions added
     $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
     $aliases = Get-ChildItem Alias: | Where-Object { $sysaliases -notcontains $_ }
@@ -141,6 +152,5 @@ catch {
 }
 finally {
     # Cleanup temporary variables
-    Remove-Variable -Name 'tmpPodeLocale', 'localesPath', 'moduleManifest', 'root', 'version', 'libsPath', 'netFolder', 'podeDll', 'sysfuncs', 'sysaliases', 'funcs', 'aliases', 'moduleManifestPath', 'moduleVersion' -ErrorAction SilentlyContinue
+    Remove-Variable -Name 'tmpPodeLocale', 'localesPath', 'root', 'version', 'libsPath', 'netFolder', 'podeDll', 'sysfuncs', 'sysaliases', 'funcs', 'aliases', 'moduleManifestPath', 'moduleVersion' -ErrorAction SilentlyContinue
 }
-
