@@ -49,6 +49,32 @@ if ([string]::IsNullOrEmpty($UICulture)) {
     $UICulture = $PsUICulture
 }
 
+
+function Test-PodeAssembly {
+    $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
+
+    if ($podeDll) {
+        if ( $PodeManifest.ModuleVersion -ne '$version$') {
+            $moduleVersion = ([version]::new($PodeManifest.ModuleVersion + '.0'))
+            if ($podeDll.GetName().Version -ne $moduleVersion) {
+                # An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new Powershell/pwsh session and retry.
+                throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion)
+            }
+            $assemblyInformationalVersion = $podeDll.CustomAttributes.Where({ $_.AttributeType -eq [System.Reflection.AssemblyInformationalVersionAttribute] })
+            if ($null -ne $PodeManifest.PrivateData.PSData.Prerelease) {
+                if (! $assemblyInformationalVersion.ConstructorArguments.Value.Contains($PodeManifest.PrivateData.PSData.Prerelease)) {
+                    throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $assemblyInformationalVersion.ConstructorArguments.Value, "$moduleVersion-$($PodeManifest.PrivateData.PSData.Prerelease)")
+                }
+            }
+            elseif ($assemblyInformationalVersion.ConstructorArguments.Value.Contains('-')) {
+                throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $assemblyInformationalVersion.ConstructorArguments.Value, $moduleVersion)
+            }
+        }
+        return $true
+    }
+    return $false
+}
+
 try {
     try {
         #The list of all available supported culture is available here https://azuliadesigns.com/c-sharp-tutorials/list-net-culture-country-codes/
@@ -75,21 +101,9 @@ try {
     $moduleManifestPath = Join-Path -Path $root -ChildPath 'Pode.psd1'
 
     # Import the module manifest to access its properties
-    $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
+    $PodeManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
 
-
-    $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
-
-    if ($podeDll) {
-        if ( $moduleManifest.ModuleVersion -ne '$version$') {
-            $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
-            if ($podeDll.GetName().Version -ne $moduleVersion) {
-                # An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new Powershell/pwsh session and retry.
-                throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion)
-            }
-        }
-    }
-    else {
+    if (! (Test-PodeAssembly)) {
         # fetch the .net version and the libs path
         $version = [System.Environment]::Version.Major
         $libsPath = "$($root)/Libs"
@@ -109,6 +123,7 @@ try {
 
         # append Pode.dll and mount
         Add-Type -LiteralPath "$($netFolder)/Pode.dll" -ErrorAction Stop
+        $null = Test-PodeAssembly
     }
 
     # load private functions
@@ -141,6 +156,5 @@ catch {
 }
 finally {
     # Cleanup temporary variables
-    Remove-Variable -Name 'tmpPodeLocale', 'localesPath', 'moduleManifest', 'root', 'version', 'libsPath', 'netFolder', 'podeDll', 'sysfuncs', 'sysaliases', 'funcs', 'aliases', 'moduleManifestPath', 'moduleVersion' -ErrorAction SilentlyContinue
+    Remove-Variable -Name 'tmpPodeLocale', 'localesPath', 'root', 'version', 'libsPath', 'netFolder', 'podeDll', 'sysfuncs', 'sysaliases', 'funcs', 'aliases', 'moduleManifestPath', 'moduleVersion' -ErrorAction SilentlyContinue
 }
-
