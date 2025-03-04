@@ -13,6 +13,10 @@
     Specifies the prerelease label to append to the module version, following semantic versioning conventions.
     Examples include 'alpha.1', 'alpha.2', 'beta.1', etc. This label indicates the stability and iteration of the prerelease version.
 
+.PARAMETER PersistVersion
+  If specified, the provided version and prerelease label will be saved to `Version.json`.
+  This ensures future builds use the same versioning information unless explicitly overridden.
+
 .PARAMETER PesterVerbosity
     Sets the verbosity level for Pester tests. Options: None, Normal, Detailed, Diagnostic.
 
@@ -80,6 +84,9 @@
     Invoke-Build -Task Docs
         # Builds and serves the documentation locally.
 
+    Invoke-Build -Task Build -Version '2.13.0' -Prerelease 'beta.1' -PersistVersion
+        # Saves "2.13.0-beta.1" to Version.json for future builds.
+
 .LINK
     For more information, visit https://github.com/Badgerati/Pode
 #>
@@ -92,10 +99,13 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUSeDeclaredVarsMoreThanAssignments', '')]
 param(
     [string]
-    $Version = '0.0.0',
+    $Version,
 
     [string]
     $Prerelease,
+
+    [switch]
+    $PersistVersion,
 
     [string]
     [ValidateSet('None', 'Normal' , 'Detailed', 'Diagnostic')]
@@ -906,13 +916,30 @@ if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParamete
 }
 
 # Import Version File if needed
-if ($Version -eq '0.0.0' -and (Test-Path './Version.json' -PathType Leaf)) {
-    $importedVersion = Get-Content -Path './Version.json' | ConvertFrom-Json
-    if ($importedVersion.Version) {
-        $Version = $importedVersion.Version
+if ([string]::IsNullOrEmpty($Version)) {
+    if (Test-Path './Version.json' -PathType Leaf) {
+        $importedVersion = Get-Content -Path './Version.json' | ConvertFrom-Json
+        if ($importedVersion.Version) {
+            $Version = $importedVersion.Version
+        }
+        if ($importedVersion.Prerelease) {
+            $Prerelease = $importedVersion.Prerelease
+        }
     }
-    if ($importedVersion.Prerelease) {
-        $Prerelease = $importedVersion.Prerelease
+    else {
+        $Version = '0.0.0'
+        if($PersistVersion){
+            Write-Error "The -PersistVersion parameter requires the -Version parameter to be specified."
+            return
+        }
+    }
+}
+elseif ($PersistVersion) {
+    if ($Prerelease) {
+        [ordered]@{Version = $Version; Prerelease = $Prerelease } | ConvertTo-Json | Out-File './Version.json'
+    }
+    else {
+        [ordered]@{Version = $Version } | ConvertTo-Json | Out-File './Version.json'
     }
 }
 
