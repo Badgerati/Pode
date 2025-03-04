@@ -87,8 +87,8 @@ If supplied, this endpoint will be the default one used for internally generatin
 .PARAMETER Favicon
 A byte array representing a custom favicon for HTTP/HTTPS endpoints.
 
-.PARAMETER NoFavicon
-If supplied, disables the default favicon for HTTP/HTTPS endpoints.
+.PARAMETER DefaultFavicon
+If supplied, enable the default Pode favicon for HTTP/HTTPS endpoints.
 
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
@@ -219,7 +219,7 @@ function Add-PodeEndpoint {
         $Favicon,
 
         [switch]
-        $NoFavicon
+        $DefaultFavicon
     )
 
     # error if serverless
@@ -303,19 +303,29 @@ function Add-PodeEndpoint {
         throw ($PodeLocale.crlfMessageEndCheckOnlySupportedOnTcpEndpointsExceptionMessage)
     }
 
-    if (! $NoFavicon ) {
-        $Favicon = $null
+    # Check if both -Favicon and -DefaultFavicon are provided, which is not allowed.
+    # If both are set, throw an exception with a relevant message.
+    if (($null -ne $Favicon) -and $DefaultFavicon) {
+        throw ($Podelocale.parametersMutuallyExclusiveExceptionMessage -f '-Favicon', '-DefaultFavicon')
     }
-    # Load the default favicon
-    elseif ( ($null -eq $Favicon) -and (@('Http', 'Https') -icontains $Protocol)) {
+
+    # If no -Favicon is provided, the protocol is either HTTP or HTTPS, and -DefaultFavicon is enabled,
+    # set the default favicon from the Pode module's miscellaneous path.
+    if ( ($null -eq $Favicon) -and (@('Http', 'Https') -icontains $Protocol) -and $DefaultFavicon) {
+        # Retrieve the root path of the Pode module.
         $podeRoot = Get-PodeModuleMiscPath
+
+        # Check if running in PowerShell Core to determine the correct method for reading binary data.
         if (Test-PodeIsPSCore) {
+            # In PowerShell Core, use -AsByteStream to read the file as a byte array.
             $Favicon = (Get-Content -Path ([System.IO.Path]::Combine($podeRoot, 'favicon.ico')) -Raw -AsByteStream)
         }
         else {
+            # In Windows PowerShell, use -Encoding byte to read the file as a byte array.
             $Favicon = (Get-Content -Path ([System.IO.Path]::Combine($podeRoot, 'favicon.ico')) -Raw -Encoding byte)
         }
     }
+
 
     # new endpoint object
     $obj = @{
