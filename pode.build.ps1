@@ -928,8 +928,8 @@ if ([string]::IsNullOrEmpty($Version)) {
     }
     else {
         $Version = '0.0.0'
-        if($PersistVersion){
-            Write-Error "The -PersistVersion parameter requires the -Version parameter to be specified."
+        if ($PersistVersion) {
+            Write-Error 'The -PersistVersion parameter requires the -Version parameter to be specified.'
             return
         }
     }
@@ -1315,9 +1315,10 @@ Add-BuildTask TestNoBuild TestDeps, {
     $configuration = [PesterConfiguration]::Default
     $configuration.run.path = @('./tests/unit', './tests/integration')
     $configuration.run.PassThru = $true
-    $configuration.TestResult.OutputFormat = 'NUnitXml'
     $configuration.Output.Verbosity = $PesterVerbosity
     $configuration.TestResult.OutputPath = $Script:TestResultFile
+    $configuration.TestResult.OutputFormat = 'NUnitXml'
+    $configuration.TestResult.Enabled = $true
 
     # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {
