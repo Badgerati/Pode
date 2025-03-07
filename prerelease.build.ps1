@@ -169,7 +169,7 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
 }
 
 
-Add-BuildTask task Sort-LanguageFiles {
+Add-BuildTask Sort-LanguageFiles {
     $localePath = './src/Locales'
     $files = Get-ChildItem -Path $localePath -Filter 'Pode.psd1' -Recurse
 
