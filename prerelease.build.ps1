@@ -61,7 +61,7 @@ Add-BuildTask Commit-VersionJson Create-VersionJson, {
 
 Add-BuildTask ProcessPRs Commit-VersionJson, {
     $prs = gh pr list --repo Badgerati/Pode --search 'draft:false' --json 'number,title,url,mergeStateStatus' | ConvertFrom-Json
-    $mainPr = @($prs.Where({ $_.number -eq '1513' }))
+    $mainPr = @((gh pr view 1513  --repo Badgerati/Pode --json 'number,title,url,mergeStateStatus' | ConvertFrom-Json))
     if ($ExcludePRs) {
         $prs = $prs | Where-Object { $_.number -notin $ExcludePRs }
     }
