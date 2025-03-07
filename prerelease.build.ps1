@@ -65,8 +65,11 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
     if ($ExcludePRs) {
         $prs = $prs | Where-Object { $_.number -notin $ExcludePRs }
     }
-    $mainPr += $prs
-    $prs = $mainPr
+    if ($mainPr) {
+        Write-Output "Set 1513 Ahead"
+        $mainPr += $prs
+        $prs = $mainPr
+    }
     foreach ($pr in $prs) {
         if ($pr.mergeStateStatus -ne 'CLEAN') {
             Write-Output "Skipping PR #$($pr.number): Merge state $($pr.mergeStateStatus)"
