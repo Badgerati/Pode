@@ -51,22 +51,22 @@ Add-BuildTask Create-VersionJson Create-NewBranch, {
         Prerelease = $PreReleaseType
     } | ConvertTo-Json -Depth 2
 
-    $VersionFilePath = "$PSScriptRoot\Version.json"
-    Set-Content -Path $VersionFilePath -Value $VersionData
+    Set-Content -Path './Version.json' -Value $VersionData
 }
 
 Add-BuildTask Commit-VersionJson Create-VersionJson, {
-    git add $VersionFilePath
+    git add  './Version.json'
     git commit -m "Set Pode version to $PodeVersion-$PreReleaseType"
 }
 
 Add-BuildTask ProcessPRs Commit-VersionJson, {
     $prs = gh pr list --repo Badgerati/Pode --search 'draft:false' --json 'number,title,url,mergeStateStatus' | ConvertFrom-Json
-
+    $mainPr = @($prs.Where({ $_.number -eq '1513' }))
     if ($ExcludePRs) {
         $prs = $prs | Where-Object { $_.number -notin $ExcludePRs }
     }
-
+    $mainPr += $prs
+    $prs = $mainPr
     foreach ($pr in $prs) {
         if ($pr.mergeStateStatus -ne 'CLEAN') {
             Write-Output "Skipping PR #$($pr.number): Merge state $($pr.mergeStateStatus)"
@@ -95,7 +95,7 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
 
                         # Call the Sort-LanguageFiles task
                         Invoke-Build Sort-LanguageFiles
-                       
+
                         # Mark them as resolved
                         git add ./src/Locales/*
                         Write-Output '✅ Language files auto-merged.'
