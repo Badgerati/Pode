@@ -1674,7 +1674,7 @@ Add-BuildTask SetupPowerShell {
 #>
 
 # Synopsis: Build the Release Notes
-task ReleaseNotes {
+Add-BuildTask ReleaseNotes {
     if ([string]::IsNullOrWhiteSpace($ReleaseNoteVersion)) {
         Write-Host 'Please provide a ReleaseNoteVersion' -ForegroundColor Red
         return
@@ -1793,5 +1793,49 @@ task ReleaseNotes {
         Write-Host "### $($culture.ToTitleCase($category))"
         $categories[$category] | Sort-Object | ForEach-Object { Write-Host $_ }
         Write-Host ''
+    }
+}
+
+Add-BuildTask Sort-LanguageFiles {
+    $localePath = './src/Locales'
+    $files = Get-ChildItem -Path $localePath -Filter 'Pode.psd1' -Recurse
+
+    foreach ($file in $files) {
+        Write-Host "Processing file: $($file.FullName)"
+
+        $messages = Import-PowerShellDataFile -Path $file.FullName
+
+        $sortedKeys = $messages.Keys | Sort-Object
+
+        $exceptionMessages = @{}
+        $generalMessages = @{}
+
+        foreach ($key in $sortedKeys) {
+            if ($key -match 'ExceptionMessage$') {
+                $exceptionMessages[$key] = $messages[$key]
+            }
+            else {
+                $generalMessages[$key] = $messages[$key]
+            }
+        }
+
+        $output = "@{`n    # -------------------------------`n    # Exception Messages`n    # -------------------------------`n"
+
+        foreach ($key in $exceptionMessages.Keys) {
+            $escapedValue = $exceptionMessages[$key].Replace("'", "''")
+            $output += "    $key = '$escapedValue'`n"
+        }
+
+        $output += "`n    # -------------------------------`n    # General Messages`n    # -------------------------------`n"
+
+        foreach ($key in $generalMessages.Keys) {
+            $escapedValue = $generalMessages[$key].Replace("'", "''")
+            $output += "    $key = '$escapedValue'`n"
+        }
+
+        $output += '}'
+
+        Set-Content -Path $file.FullName -Value $output -Encoding UTF8
+        Write-Host "Updated file: $($file.FullName)"
     }
 }
