@@ -1807,8 +1807,8 @@ Add-BuildTask Sort-LanguageFiles {
 
         $sortedKeys = $messages.Keys | Sort-Object
 
-        $exceptionMessages = @{}
-        $generalMessages = @{}
+        $exceptionMessages = [ordered]@{}
+        $generalMessages = [ordered]@{}
 
         foreach ($key in $sortedKeys) {
             if ($key -match 'ExceptionMessage$') {
@@ -1819,18 +1819,22 @@ Add-BuildTask Sort-LanguageFiles {
             }
         }
 
+        $maxLength = ($sortedKeys | Measure-Object -Property Length -Maximum).Maximum + 1
+
         $output = "@{`n    # -------------------------------`n    # Exception Messages`n    # -------------------------------`n"
 
         foreach ($key in $exceptionMessages.Keys) {
+            $padding = ' ' * ($maxLength - $key.Length)
             $escapedValue = $exceptionMessages[$key].Replace("'", "''")
-            $output += "    $key = '$escapedValue'`n"
+            $output += "    $key$padding= '$escapedValue'`n"
         }
 
         $output += "`n    # -------------------------------`n    # General Messages`n    # -------------------------------`n"
 
         foreach ($key in $generalMessages.Keys) {
+            $padding = ' ' * ($maxLength - $key.Length)
             $escapedValue = $generalMessages[$key].Replace("'", "''")
-            $output += "    $key = '$escapedValue'`n"
+            $output += "    $key$padding= '$escapedValue'`n"
         }
 
         $output += '}'
@@ -1839,3 +1843,4 @@ Add-BuildTask Sort-LanguageFiles {
         Write-Host "Updated file: $($file.FullName)"
     }
 }
+
