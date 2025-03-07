@@ -80,11 +80,26 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
             Write-Output $mergeResult
             $mergeExitCode = $LASTEXITCODE
             if ($mergeExitCode -ne 0) {
-                Write-Output "❌ Merge failed for PR #$($pr.number). Choose an option: (R)etry after fixing, (M)anually resolve, or (Q)uit the process."
+                Write-Output "❌ Merge failed for PR #$($pr.number). Choose an option: (R)etry after fixing, (M)anually resolve,(A)utomerge PodeLocale or (Q)uit the process."
                 do {
                     $choice = Read-Host
                     if ($choice -eq 'q') { exit 1 }
-                    if ($choice -eq 'm') { Read-Host "🛠️ Resolve the issue manually, then press Enter to retry the merge."; $mergeExitCode = 0 }
+                    if ($choice -eq 'm') { Read-Host '🛠️ Resolve the issue manually, then press Enter to retry the merge.'; $mergeExitCode = 0 }
+                    if ($choice -eq 'a') {
+                        Write-Output "❌ Merge failed for PR #$($pr.number). Attempting auto-merge for language files..."
+
+                        # Auto-merge conflicts for language files in ./src/Locales/*
+                        git diff --name-only --diff-filter=U ./src/Locales/ | ForEach-Object {
+                        (Get-Content $_) -replace '<<<<<<< HEAD', '' -replace '=======', '' -replace ">>>>>>> pr-$($pr.number)" | Set-Content $_
+                        }
+
+                        # Call the Sort-LanguageFiles task
+                        Invoke-Build Sort-LanguageFiles
+                       
+                        # Mark them as resolved
+                        git add ./src/Locales/*
+                        Write-Output '✅ Language files auto-merged.'
+                    }
                 } until ('q', 'm', 'r' -contains $choice)
             }
         }
@@ -117,7 +132,7 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
                 do {
                     $choice = Read-Host
                     if ($choice -eq 'q') { exit 1 }
-                    if ($choice -eq 'r') { Read-Host "🔄 Tests failed. Resolve the issue and press Enter to retry." }
+                    if ($choice -eq 'r') { Read-Host '🔄 Tests failed. Resolve the issue and press Enter to retry.' }
                 } until ('q' , 'r' -contains $choice)
             }
         } until ($testProcess.ExitCode -eq 0)
@@ -138,7 +153,7 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
                 Write-Output "Commit failed for PR #$($pr.number). (R)etry/(Q)uit?"
                 $choice = Read-Host
                 if ($choice -eq 'q') { exit 1 }
-                else { Read-Host "🛠️ Fix the commit issue manually, then press Enter to retry the commit." }
+                else { Read-Host '🛠️ Fix the commit issue manually, then press Enter to retry the commit.' }
             }
             else {
                 Write-Output "✅ Commit successful for PR #$prNumber"
@@ -150,5 +165,62 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
     Write-Output '✅ All PRs processed successfully!'
 }
 
+
+Add-BuildTask Sort-LanguageFiles {
+    $localePath = './src/Locales'
+    $files = Get-ChildItem -Path $localePath -Filter 'Pode.psd1' -Recurse
+
+    foreach ($file in $files) {
+        Write-Host "Processing file: $($file.FullName)"
+
+        $messages = Import-PowerShellDataFile -Path $file.FullName
+
+        $sortedKeys = $messages.Keys | Sort-Object
+
+        $exceptionMessages = [ordered]@{}
+        $generalMessages = [ordered]@{}
+
+        foreach ($key in $sortedKeys) {
+            if ($key -match 'ExceptionMessage$') {
+                $exceptionMessages[$key] = $messages[$key]
+            }
+            else {
+                $generalMessages[$key] = $messages[$key]
+            }
+        }
+
+        $maxLength = ($sortedKeys | Measure-Object -Property Length -Maximum).Maximum + 1
+
+        $lines = @()
+        $lines += '@{'
+        $lines += '    # -------------------------------'
+        $lines += '    # Exception Messages'
+        $lines += '    # -------------------------------'
+
+        foreach ($key in $exceptionMessages.Keys) {
+            $padding = ' ' * ($maxLength - $key.Length)
+            $escapedValue = $exceptionMessages[$key].Replace("'", "''")
+            $lines += "    $key$padding= '$escapedValue'"
+        }
+
+        $lines += ''
+        $lines += '    # -------------------------------'
+        $lines += '    # General Messages'
+        $lines += '    # -------------------------------'
+
+        foreach ($key in $generalMessages.Keys) {
+            $padding = ' ' * ($maxLength - $key.Length)
+            $escapedValue = $generalMessages[$key].Replace("'", "''")
+            $lines += "    $key$padding= '$escapedValue'"
+        }
+
+        $lines += '}'
+
+        # Explicitly write CRLF endings
+        [System.IO.File]::WriteAllText($file.FullName, ($lines -join "`r`n") + "`r`n", [System.Text.UTF8Encoding]::new($false))
+
+        Write-Host "Updated file: $($file.FullName)"
+    }
+}
 # Default task
 Add-BuildTask Default ProcessPRs
