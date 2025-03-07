@@ -1796,59 +1796,76 @@ Add-BuildTask ReleaseNotes {
     }
 }
 
-Add-BuildTask Sort-LanguageFiles {
+
+Add-BuildTask task Sort-LanguageFiles {
     $localePath = './src/Locales'
     $files = Get-ChildItem -Path $localePath -Filter 'Pode.psd1' -Recurse
 
     foreach ($file in $files) {
         Write-Host "Processing file: $($file.FullName)"
 
-        $messages = Import-PowerShellDataFile -Path $file.FullName
+        $rawContent = Get-Content -Path $file.FullName -Raw
+        $messages = Invoke-Expression $rawContent
 
-        $sortedKeys = $messages.Keys | Sort-Object
+        $uniqueMessages = [ordered]@{}
+        $duplicates = @{}
+
+        foreach ($key in $messages.Keys) {
+            if ($uniqueMessages.Contains($key)) {
+                if ($uniqueMessages[$key] -ne $messages[$key]) {
+                    $duplicates[$key] = @($uniqueMessages[$key], $messages[$key])
+                }
+                # Same key-value pair; do nothing (effectively removing duplicates)
+            }
+            else {
+                $uniqueMessages[$key] = $messages[$key]
+            }
+        }
+
+        if ($duplicates.Count -gt 0) {
+            $duplicateInfo = $duplicates.Keys | ForEach-Object {
+                "$($_): '$($duplicates[$_][0])' and '$($duplicates[$_][1])'"
+            } | Out-String
+
+            write-host  "Duplicate keys with different values found in file '$($file.FullName)':`n$duplicateInfo"
+            continue
+        }
+
+        $sortedKeys = $uniqueMessages.Keys | Sort-Object
 
         $exceptionMessages = [ordered]@{}
         $generalMessages = [ordered]@{}
 
         foreach ($key in $sortedKeys) {
             if ($key -match 'ExceptionMessage$') {
-                $exceptionMessages[$key] = $messages[$key]
+                $exceptionMessages[$key] = $uniqueMessages[$key]
             }
             else {
-                $generalMessages[$key] = $messages[$key]
+                $generalMessages[$key] = $uniqueMessages[$key]
             }
         }
 
         $maxLength = ($sortedKeys | Measure-Object -Property Length -Maximum).Maximum + 1
 
-        $lines = @()
-        $lines += '@{'
-        $lines += '    # -------------------------------'
-        $lines += '    # Exception Messages'
-        $lines += '    # -------------------------------'
+        $output = "@{`n    # -------------------------------`n    # Exception Messages`n    # -------------------------------`n"
 
         foreach ($key in $exceptionMessages.Keys) {
             $padding = ' ' * ($maxLength - $key.Length)
             $escapedValue = $exceptionMessages[$key].Replace("'", "''")
-            $lines += "    $key$padding= '$escapedValue'"
+            $output += "    $key$padding= '$escapedValue'`n"
         }
 
-        $lines += ''
-        $lines += '    # -------------------------------'
-        $lines += '    # General Messages'
-        $lines += '    # -------------------------------'
+        $output += "`n    # -------------------------------`n    # General Messages`n    # -------------------------------`n"
 
         foreach ($key in $generalMessages.Keys) {
             $padding = ' ' * ($maxLength - $key.Length)
             $escapedValue = $generalMessages[$key].Replace("'", "''")
-            $lines += "    $key$padding= '$escapedValue'"
+            $output += "    $key$padding= '$escapedValue'`n"
         }
 
-        $lines += '}'
+        $output += '}'
 
-        # Explicitly write CRLF endings
-        [System.IO.File]::WriteAllText($file.FullName, ($lines -join "`r`n") + "`r`n", [System.Text.UTF8Encoding]::new($false))
-
+        Set-Content -Path $file.FullName -Value $output -Encoding UTF8
         Write-Host "Updated file: $($file.FullName)"
     }
 }
