@@ -70,6 +70,7 @@
     - Remove-Module: Removes the Pode module from the local registry.
     - SetupPowerShell: Sets up the PowerShell environment for the build.
     - ReleaseNotes: Generates release notes based on merged pull requests.
+    - Sort-LanguageFiles: Sort Language resource files
 
 .EXAMPLE
     Invoke-Build -Task Default
@@ -1005,6 +1006,7 @@ Add-BuildTask Default {
     Write-Host '- CleanDocs: Cleans up generated documentation files.'
     Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
     Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
+    Write-Host '- Sort-LanguageFiles: Sort Language resource files.'
 }
 
 
@@ -1797,7 +1799,7 @@ Add-BuildTask ReleaseNotes {
 }
 
 
-Add-BuildTask task Sort-LanguageFiles {
+Add-BuildTask Sort-LanguageFiles {
     $localePath = './src/Locales'
     $files = Get-ChildItem -Path $localePath -Filter 'Pode.psd1' -Recurse
 
