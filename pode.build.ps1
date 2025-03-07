@@ -1821,25 +1821,34 @@ Add-BuildTask Sort-LanguageFiles {
 
         $maxLength = ($sortedKeys | Measure-Object -Property Length -Maximum).Maximum + 1
 
-        $output = "@{`n    # -------------------------------`n    # Exception Messages`n    # -------------------------------`n"
+        $lines = @()
+        $lines += '@{'
+        $lines += '    # -------------------------------'
+        $lines += '    # Exception Messages'
+        $lines += '    # -------------------------------'
 
         foreach ($key in $exceptionMessages.Keys) {
             $padding = ' ' * ($maxLength - $key.Length)
             $escapedValue = $exceptionMessages[$key].Replace("'", "''")
-            $output += "    $key$padding= '$escapedValue'`n"
+            $lines += "    $key$padding= '$escapedValue'"
         }
 
-        $output += "`n    # -------------------------------`n    # General Messages`n    # -------------------------------`n"
+        $lines += ''
+        $lines += '    # -------------------------------'
+        $lines += '    # General Messages'
+        $lines += '    # -------------------------------'
 
         foreach ($key in $generalMessages.Keys) {
             $padding = ' ' * ($maxLength - $key.Length)
             $escapedValue = $generalMessages[$key].Replace("'", "''")
-            $output += "    $key$padding= '$escapedValue'`n"
+            $lines += "    $key$padding= '$escapedValue'"
         }
 
-        $output += '}'
+        $lines += '}'
 
-        Set-Content -Path $file.FullName -Value $output -Encoding UTF8
+        # Explicitly write CRLF endings
+        [System.IO.File]::WriteAllText($file.FullName, ($lines -join "`r`n") + "`r`n", [System.Text.UTF8Encoding]::new($false))
+
         Write-Host "Updated file: $($file.FullName)"
     }
 }
