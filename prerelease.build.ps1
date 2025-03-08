@@ -24,8 +24,8 @@ function Group-LanguageResource {
         # Read raw content
         $content = Get-Content $file.FullName -Raw
 
-        # Extract keys and values using regex
-        $matches = [regex]::Matches($content, '(?m)^\s*(\w+)\s*=\s*''(.*)''\s*$')
+        # Extract keys and values using improved regex to support accented characters
+        $matches = [regex]::Matches($content, "(?m)^\s*([^=\s]+)\s*=\s*'(.*?)'\s*$")
 
         # Use a hashtable to track unique keys and remove duplicates
         $uniqueMessages = [ordered]@{}
