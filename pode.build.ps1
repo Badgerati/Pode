@@ -1806,35 +1806,30 @@ Add-BuildTask Sort-LanguageFiles {
     foreach ($file in $files) {
         Write-Host "Processing file: $($file.FullName)"
 
-        $rawContent = Get-Content -Path $file.FullName -Raw
-        $messages = Invoke-Expression $rawContent
+        # Read raw content
+        $content = Get-Content $file.FullName -Raw
 
+        # Extract keys and values using regex
+        $matches = [regex]::Matches($content, '(?m)^\s*(\w+)\s*=\s*''(.*)''\s*$')
+
+        # Use a hashtable to track unique keys and remove duplicates
         $uniqueMessages = [ordered]@{}
-        $duplicates = @{}
+        foreach ($match in $matches) {
+            $key = $match.Groups[1].Value
+            $value = $match.Groups[2].Value
 
-        foreach ($key in $messages.Keys) {
-            if ($uniqueMessages.Contains($key)) {
-                if ($uniqueMessages[$key] -ne $messages[$key]) {
-                    $duplicates[$key] = @($uniqueMessages[$key], $messages[$key])
-                }
-                # Same key-value pair; do nothing (effectively removing duplicates)
+            if (-not $uniqueMessages.Contains($key)) {
+                $uniqueMessages[$key] = $value
             }
             else {
-                $uniqueMessages[$key] = $messages[$key]
+                Write-Warning "Duplicate key '$key' found in $($file.Name). Keeping only the first occurrence."
             }
         }
 
-        if ($duplicates.Count -gt 0) {
-            $duplicateInfo = $duplicates.Keys | ForEach-Object {
-                "$($_): '$($duplicates[$_][0])' and '$($duplicates[$_][1])'"
-            } | Out-String
-
-            write-host  "Duplicate keys with different values found in file '$($file.FullName)':`n$duplicateInfo"
-            continue
-        }
-
+        # Sort keys
         $sortedKeys = $uniqueMessages.Keys | Sort-Object
 
+        # Split into Exception and General Messages
         $exceptionMessages = [ordered]@{}
         $generalMessages = [ordered]@{}
 
@@ -1849,26 +1844,39 @@ Add-BuildTask Sort-LanguageFiles {
 
         $maxLength = ($sortedKeys | Measure-Object -Property Length -Maximum).Maximum + 1
 
-        $output = "@{`n    # -------------------------------`n    # Exception Messages`n    # -------------------------------`n"
+        # Build the file content
+        $lines = @()
+        $lines += '@{'
+        $lines += '    # -------------------------------'
+        $lines += '    # Exception Messages'
+        $lines += '    # -------------------------------'
 
         foreach ($key in $exceptionMessages.Keys) {
             $padding = ' ' * ($maxLength - $key.Length)
-            $escapedValue = $exceptionMessages[$key].Replace("'", "''")
-            $output += "    $key$padding= '$escapedValue'`n"
+            $escapedValue = $exceptionMessages[$key] -replace "'", "''"
+            $lines += "    $key$padding= '$escapedValue'"
         }
 
-        $output += "`n    # -------------------------------`n    # General Messages`n    # -------------------------------`n"
+        $lines += ''
+        $lines += '    # -------------------------------'
+        $lines += '    # General Messages'
+        $lines += '    # -------------------------------'
 
         foreach ($key in $generalMessages.Keys) {
             $padding = ' ' * ($maxLength - $key.Length)
-            $escapedValue = $generalMessages[$key].Replace("'", "''")
-            $output += "    $key$padding= '$escapedValue'`n"
+            $escapedValue = $generalMessages[$key] -replace "'", "''"
+            $lines += "    $key$padding= '$escapedValue'"
         }
 
-        $output += '}'
+        $lines += '}'
 
-        Set-Content -Path $file.FullName -Value $output -Encoding UTF8
+        # Write the updated content back to the file
+        [System.IO.File]::WriteAllText(
+            $file.FullName,
+            ($lines -join "`r`n") + "`r`n",
+            [System.Text.UTF8Encoding]::new($false)
+        )
+
         Write-Host "Updated file: $($file.FullName)"
     }
 }
-
