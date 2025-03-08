@@ -224,7 +224,8 @@ Add-BuildTask Sort-LanguageFiles {
 
         foreach ($key in $exceptionMessages.Keys) {
             $padding = ' ' * ($maxLength - $key.Length)
-            $escapedValue = $exceptionMessages[$key] -replace "'", "''"
+            # Replace single quotes only if they're not already escaped
+            $escapedValue = [regex]::Replace($exceptionMessages[$key], "(?<!')'(?!')", "''")
             $lines += "    $key$padding= '$escapedValue'"
         }
 
@@ -235,7 +236,8 @@ Add-BuildTask Sort-LanguageFiles {
 
         foreach ($key in $generalMessages.Keys) {
             $padding = ' ' * ($maxLength - $key.Length)
-            $escapedValue = $generalMessages[$key] -replace "'", "''"
+            # Replace single quotes only if they're not already escaped
+            $escapedValue = [regex]::Replace($generalMessages[$key], "(?<!')'(?!')", "''")
             $lines += "    $key$padding= '$escapedValue'"
         }
 
