@@ -13,7 +13,32 @@ param (
     [switch]$Force
 )
 
+<#
+.SYNOPSIS
+  Processes language resource files and standardizes their formatting.
 
+.DESCRIPTION
+  This function scans for `Pode.psd1` language resource files within the specified `Locales` directory.
+  It normalizes key-value pairs, removes duplicate keys while preserving the first occurrence, and
+  organizes messages into Exception Messages and General Messages. The cleaned and formatted content
+  is then written back to the respective files.
+
+.PARAMETER None
+  This function does not accept parameters. It operates on files found within `./src/Locales`.
+
+.OUTPUTS
+  None. The function modifies `Pode.psd1` files directly by updating their content.
+
+.EXAMPLE
+  Group-LanguageResource
+  Processes all `Pode.psd1` files in `./src/Locales`, normalizes their format, and removes duplicates.
+
+.NOTES
+  - This function ensures that all messages are consistently formatted and sorted.
+  - Duplicate keys are detected, with only the first occurrence being retained.
+  - Exception messages are grouped separately from general messages.
+  - The function enforces single-quoted values while escaping any existing single quotes.
+#>
 function Group-LanguageResource {
     $localePath = './src/Locales'
     $files = Get-ChildItem -Path $localePath -Filter 'Pode.psd1' -Recurse
@@ -24,8 +49,22 @@ function Group-LanguageResource {
         # Read raw content
         $content = Get-Content $file.FullName -Raw
 
+        $normalized = [regex]::Replace(
+            $content,
+            '(?m)^(?<key>\s*[^=\s]+)\s*=\s*(")(?<value>.*?)(")\s*$',
+            {
+                param($match)
+                # Get the value and double any single quotes within it
+                $value = $match.Groups['value'].Value -replace "'", "''"
+                # Build the new line using single quotes
+                return "$($match.Groups['key'].Value) = '$value'"
+            }
+        )
+
+
         # Extract keys and values using improved regex to support accented characters
-        $matches = [regex]::Matches($content, "(?m)^\s*([^=\s]+)\s*=\s*'(.*?)'\s*$")
+        $matches = [regex]::Matches($normalized, "(?m)^\s*([^=\s]+)\s*=\s*'(.*?)'\s*$")
+
 
         # Use a hashtable to track unique keys and remove duplicates
         $uniqueMessages = [ordered]@{}
@@ -96,7 +135,7 @@ function Group-LanguageResource {
 
         Write-Host "Updated file: $($file.FullName)"
     }
-}
+}   
 
 #################
 # Tasks
