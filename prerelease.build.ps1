@@ -135,7 +135,7 @@ function Group-LanguageResource {
 
         Write-Host "Updated file: $($file.FullName)"
     }
-}   
+}
 
 #################
 # Tasks
@@ -260,7 +260,7 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
             # Abort if tests fail
             if ($testProcess.ExitCode -ne 0) {
                 do {
-                    Write-Output "❌ Pester tests failed for PR #$prNumber (Exit Code: $($testProcess.ExitCode)). (R)etry running tests or (Q)uit the process?"
+                    Write-Output "❌ Pester tests failed for PR #$($pr.number) (Exit Code: $($testProcess.ExitCode)). (R)etry running tests or (Q)uit the process?"
                     $choice = Read-Host
                     if ($choice -eq 'q') { exit 1 }
                     if ($choice -eq 'r') { Read-Host '🔄 Tests failed. Resolve the issue and press Enter to retry.' }
@@ -276,9 +276,9 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
         }
 
         # Commit the PR merge with a formatted message and check for errors
-        Write-Output "Committing merge for PR #$prNumber..."
+        Write-Output "Committing merge for PR #$($pr.number)..."
         do {
-            git commit -m "PR $prNumber $prTitle $prUrl"
+            git commit -m "PR $($pr.number) $prTitle $prUrl"
             $commitExitCode = $LASTEXITCODE
             if ($commitExitCode -ne 0) {
                 Write-Output "Commit failed for PR #$($pr.number). (R)etry/(Q)uit?"
@@ -287,7 +287,7 @@ Add-BuildTask ProcessPRs Commit-VersionJson, {
                 else { Read-Host '🛠️ Fix the commit issue manually, then press Enter to retry the commit.' }
             }
             else {
-                Write-Output "✅ Commit successful for PR #$prNumber"
+                Write-Output "✅ Commit successful for PR #$($pr.number)"
             }
         }
         while ($commitExitCode -ne 0)

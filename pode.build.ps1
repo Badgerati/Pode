@@ -71,6 +71,7 @@
     - SetupPowerShell: Sets up the PowerShell environment for the build.
     - ReleaseNotes: Generates release notes based on merged pull requests.
     - Sort-LanguageFiles: Sort Language resource files
+    - AutoMerge-LanguageFiles: Automerge Language Resource files.
 
 .EXAMPLE
     Invoke-Build -Task Default
@@ -1131,6 +1132,7 @@ Add-BuildTask Default {
     Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
     Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
     Write-Host '- Sort-LanguageFiles: Sort Language resource files.'
+    Write-Host '- AutoMerge-LanguageFiles: Automerge Language Resource files.'
 }
 
 
@@ -1926,3 +1928,34 @@ Add-BuildTask ReleaseNotes {
 Add-BuildTask Sort-LanguageFiles {
     Group-LanguageResource
 }
+
+
+# Adds a build task to automatically merge conflicting language files.
+# This task identifies unresolved merge conflicts in the 'src/Locales/' directory and attempts to resolve them by:
+# 1. Detecting files with merge conflicts using `git diff --name-only --diff-filter=U`.
+# 2. Removing Git conflict markers (`<<<<<<< HEAD`, `=======`, and `>>>>>>> pr-<number>`),
+#    dynamically detecting the PR number from the conflict markers.
+# 3. Running `Group-LanguageResource` to ensure language resources are correctly formatted.
+# 4. Staging the resolved files (`git add ./src/Locales/*`).
+# 5. Printing status messages for visibility during execution.
+Add-BuildTask AutoMerge-LanguageFiles {
+    Write-Output 'Attempting auto-merge for language files...'
+
+    # Identify files with unresolved merge conflicts in 'src/Locales/'.
+    git diff --name-only --diff-filter=U ./src/Locales/ | ForEach-Object {
+        $content = Get-Content $_ -Raw
+        if ($content -match '>>>>>>> pr-(\d+)') {
+            # Remove Git conflict markers, dynamically resolving PR numbers
+            $content -replace '<<<<<<< HEAD', '' -replace '=======', '' -replace ">>>>>>> pr-$($matches[1])", '' | Set-Content $_
+        }
+    }
+
+    # Ensure language resources are formatted and grouped correctly.
+    Group-LanguageResource
+
+    # Stage the resolved files.
+    git add ./src/Locales/*
+
+    Write-Output 'Language files auto-merged.'
+}
+
