@@ -848,7 +848,7 @@ function Write-PodeErrorLog {
         $name = [Pode.PodeLogger]::ErrorLogName
         if (Test-PodeLoggerEnabled -Name $name) {
             Write-PodeLog @PSBoundParameters -name $name -SuppressErrorLog
-            if ($PodeContext.Server.Logging.Type[$name].DuplicateToDefaultLog -and ! $SuppressDefaultLog) {
+            if ((Test-PodeLoggerEnabled -Type Default) -and ($PodeContext.Server.Logging.Type[$name].DuplicateToDefaultLog) -and (! $SuppressDefaultLog) ) {
                 Write-PodeLog @PSBoundParameters -name ([Pode.PodeLogger]::DefaultLogName) -SuppressErrorLog
             }
         }
@@ -986,7 +986,7 @@ function Write-PodeLog {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'inputobject' {
                 if (!$Level) { $Level = 'Informational' } # Default to Informational.
-                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the level is not configured, use the
+                if ( @(Get-PodeLoggerLevel -Name $Name) -inotcontains $Level) { return } # If the level is not configured, use the
 
                 $logItem = @{
                     Name  = $Name
@@ -997,7 +997,7 @@ function Write-PodeLog {
             }
             'message' {
                 if (!$Level) { $Level = 'Informational' } # Default to Informational.
-                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the log level is not configured, return.
+                if ( @(Get-PodeLoggerLevel -Name $Name) -inotcontains $Level) { return } # If the log level is not configured, return.
 
                 $logItem = @{
                     Name = $Name
@@ -1012,7 +1012,7 @@ function Write-PodeLog {
             }
             'exception' {
                 if (!$Level) { $Level = 'Error' } # Default to Error.
-                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the level is not supported, return.
+                if ( @(Get-PodeLoggerLevel -Name $Name) -inotcontains $Level) { return } # If the level is not supported, return.
 
                 $logItem = @{
                     Name = $Name
@@ -1026,7 +1026,7 @@ function Write-PodeLog {
             }
             'errorrecord' {
                 if (!$Level) { $Level = 'Error' } # Default to Error.
-                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the level is not supported, return.
+                if ( @(Get-PodeLoggerLevel -Name $Name) -inotcontains $Level) { return } # If the level is not supported, return.
 
                 $logItem = @{
                     Name = $Name
@@ -1050,7 +1050,7 @@ function Write-PodeLog {
             $logItem.Item.ThreadId = if ($ThreadId) { $ThreadId } else { [System.Threading.Thread]::CurrentThread.ManagedThreadId }
 
             # If error logging is not suppressed, log errors or exceptions.
-            if ((! $SuppressErrorLog.IsPresent) -and (Test-PodeErrorLoggingEnabled)) {
+            if ((! $SuppressErrorLog.IsPresent) -and (Test-PodeLoggerEnabled -Type Error)) {
                 if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'exception') {
                     [Pode.PodeLogger]::Enqueue( @{
                             Name = [Pode.PodeLogger]::ErrorLogName
@@ -1246,33 +1246,128 @@ function Clear-PodeLogging {
     [pode.PodeLogger]::Clear()
 }
 
+ 
 <#
 .SYNOPSIS
-    Retrieves the logging levels for a specified Pode logger.
+Determines if a specified logger or a predefined log type is enabled.
 
 .DESCRIPTION
-    The `Get-PodeLoggingLevel` function takes the name of a logger and returns its associated logging levels. This function verifies whether the logger exists before attempting to retrieve its levels.
+This function checks if logging is enabled in Pode and verifies if the specified logger or a predefined log type
+(Error, Default, Request) exists within the logging configuration.
 
 .PARAMETER Name
-    The name of the logger for which to retrieve the logging levels. This parameter is mandatory.
+The name of the logger to check. If not specified, it checks if logging is generally enabled.
 
-.OUTPUTS
-    An array of strings representing the logging levels of the specified Pode logger. If the logger does not exist, an empty array is returned.
+.PARAMETER Type
+The type of predefined logging to check. Accepted values: 'Error', 'Default', 'Request'.
 
 .EXAMPLE
-    Get-PodeLoggingLevel -Name 'FileLogger'
+Test-PodeLoggerEnabled -Name 'MyCustomLogger'
+# Checks if the custom logger 'MyCustomLogger' is enabled.
 
-    This command retrieves the logging levels for the logger named 'FileLogger'.
+.EXAMPLE
+Test-PodeLoggerEnabled -Type Error
+# Checks if error logging is enabled.
+
+.EXAMPLE
+Test-PodeLoggerEnabled -Type Default
+# Checks if default logging is enabled.
+
+.EXAMPLE
+Test-PodeLoggerEnabled -Type Request
+# Checks if request logging is enabled.
 #>
-function Get-PodeLoggingLevel {
+function Test-PodeLoggerEnabled {
     param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'ByName')]
+        [string]$Name,
+
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName = 'ByType')]
+        [ValidateSet('Error', 'Default', 'Request')]
+        [string]$Type
     )
 
-    if (Test-PodeLoggerEnabled -Name $Name) {
-        return (Get-PodeLogger -Name $Name).Arguments.Levels
+    # Ensure logging is enabled in Pode before checking specific loggers
+    if (![pode.PodeLogger]::Enabled -or ($null -eq $PodeContext)) {
+        return $false
     }
-    return @()
+
+    # Determine the logger name if using a predefined log type
+    if ($Type) {
+        $Name = switch ($Type) {
+            'Error' { [Pode.PodeLogger]::ErrorLogName }
+            'Default' { [Pode.PodeLogger]::DefaultLogName }
+            'Request' { [Pode.PodeLogger]::RequestLogName }
+        }
+    }
+
+    # If no name is provided, return whether logging is generally enabled
+    if ([string]::IsNullOrEmpty($Name)) {
+        return $true
+    }
+
+    # Check if the specified logger exists in Pode's logging configuration
+    return $PodeContext.Server.Logging.Type.ContainsKey($Name)
+}
+
+<#
+.SYNOPSIS
+    Retrieves the logging levels for a specified logger or predefined log type in Pode.
+
+.DESCRIPTION
+    This function retrieves the logging levels configured for a specified Pode logger.
+    It supports both predefined log types ('Error', 'Default', 'Request') and custom logger names.
+
+.PARAMETER Name
+    The name of the logger to retrieve.
+
+.PARAMETER Type
+    The type of predefined logging to retrieve levels for. Accepted values: 'Error', 'Default', 'Request'.
+
+.OUTPUTS
+    An array of logging levels.
+
+.EXAMPLE
+    Get-PodeLoggerLevel -Type Error
+    # Retrieves the logging levels for error logging.
+
+.EXAMPLE
+    Get-PodeLoggerLevel -Type Default
+    # Retrieves the logging levels for default logging.
+
+.EXAMPLE
+    Get-PodeLoggerLevel -Type Request
+    # Retrieves the logging levels for request logging.
+
+.EXAMPLE
+    Get-PodeLoggerLevel -Name 'MyCustomLogger'
+    # Retrieves the logging levels for a custom logger named 'MyCustomLogger'.
+#>
+function Get-PodeLoggerLevel {
+    param(
+        [Parameter(Position = 0, Mandatory = $true, ParameterSetName = 'ByName')]
+        [string]$Name,
+
+        [Parameter(Position = 0, Mandatory = $true, ParameterSetName = 'ByType')]
+        [ValidateSet('Error', 'Default', 'Request')]
+        [string]$Type
+    )
+
+    # Determine the logger name if using a predefined log type
+    if ($Type) {
+        $Name = switch ($Type) {
+            'Error' { [Pode.PodeLogger]::ErrorLogName }
+            'Default' { [Pode.PodeLogger]::DefaultLogName }
+            'Request' { [Pode.PodeLogger]::RequestLogName }
+        }
+    }
+
+    # Ensure the logger is enabled before retrieving levels
+    if (!(Test-PodeLoggerEnabled -Name $Name)) {
+        return @()
+    }
+
+    # Retrieve the logger and return its levels
+    $Logger = Get-PodeLogger -Name $Name
+    return $Logger.Arguments.Levels
 }

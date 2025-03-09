@@ -112,7 +112,9 @@ Start-PodeServer -Threads 1 -ScriptBlock {
     }
 
     # Enable error logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeFileLoggingMethod   -Name 'error' -MaxDays 4 -Format RFC5424 -ISO8601 | Enable-PodeErrorLogging
+    New-PodeFileLoggingMethod   -Name 'petstore' -MaxDays 4 -Format RFC5424 -ISO8601 | Enable-PodeDefaultLogging -Levels Alert,Critical,Emergency,Error,Informational,Warning
+    New-PodeFileLoggingMethod   -Name 'access' -MaxDays 4  -ISO8601 | Enable-PodeRequestLogging -LogFormat Extended
 
     # Configure CORS
     Set-PodeSecurityAccessControl -Origin '*' -Duration 7200 -WithOptions -AuthorizationHeader -autoMethods -AutoHeader -Credentials -CrossDomainXhrRequests
