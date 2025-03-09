@@ -1975,39 +1975,40 @@ function Get-PodeDefaultSslProtocol {
 
     if (Test-PodeIsWindows) {
         # Retrieve Windows OS info
-
         $osInfo = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' `
-        | Select-Object ProductName, CurrentBuild, CurrentVersion
-        $osName = $osInfo.ProductName
-        $osVersion = [version]"$($osInfo.CurrentVersion).$($osInfo.CurrentBuild)"
+        | Select-Object CurrentBuild, CurrentMajorVersionNumber, CurrentMinorVersionNumber
 
-        Write-Verbose "Detected OS: $osName, Version: $osVersion"
+        $osVersion = [version]"$($osInfo.CurrentMajorVersionNumber).$($osInfo.CurrentMinorVersionNumber).$($osInfo.CurrentBuild)"
 
-        # Determine allowed protocols based on Windows version/build
-        if ($osName -match 'Windows Vista') {
+        Write-Verbose "Detected OS Version: $osVersion"
+
+        # Determine allowed protocols based on Windows version
+        if ($osVersion.Major -eq 6 -and $osVersion.Minor -eq 0) {
             # Windows Vista / Server 2008
             $AllowedProtocols = @('Ssl2', 'Ssl3')
         }
-        elseif ($osName -match 'Windows 7') {
+        elseif ($osVersion.Major -eq 6 -and $osVersion.Minor -eq 1) {
             # Windows 7 / Server 2008 R2
             $AllowedProtocols = @('Ssl2', 'Ssl3')
         }
-        elseif ($osName -match 'Windows 8' -or $osName -match 'Server 2012') {
+        elseif ($osVersion.Major -eq 6 -and $osVersion.Minor -eq 2) {
             # Windows 8 / Server 2012
-            # Note: SSL2 is disabled by default and not recommended.
             $AllowedProtocols = @('Ssl3', 'Tls', 'Tls11', 'Tls12')
         }
-        elseif ($osName -match 'Windows 10') {
-            # Windows 10 may support TLS 1.3 on later builds
-            if ($osVersion.Build -ge 20170) {
-                $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
-            }
-            else {
-                $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
-            }
+        elseif ($osVersion.Major -eq 6 -and $osVersion.Minor -eq 3) {
+            # Windows 8.1 / Server 2012 R2
+            $AllowedProtocols = @('Ssl3', 'Tls', 'Tls11', 'Tls12')
         }
-        elseif ($osName -match 'Windows 11' -or $osVersion.Build -ge 22000) {
-            # Windows 11 / Server 2022: Older protocols disabled
+        elseif ($osVersion.Major -eq 10 -and $osVersion.Build -lt 20170) {
+            # Windows 10 (Older builds)
+            $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
+        }
+        elseif ($osVersion.Major -eq 10 -and $osVersion.Build -ge 20170) {
+            # Windows 10 (Newer builds with potential TLS 1.3 support)
+            $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
+        }
+        elseif ($osVersion.Major -ge 10 -and $osVersion.Build -ge 22000) {
+            # Windows 11 / Server 2022 (Modern protocol set)
             $AllowedProtocols = @('Tls12', 'Tls13')
         }
         else {
@@ -2016,25 +2017,25 @@ function Get-PodeDefaultSslProtocol {
         }
     }
     elseif ($IsMacOS) {
-         # Use sw_vers to get macOS version info
-         $osName = $(sw_vers -productName)
-         $productVersion = $(sw_vers -productVersion).Trim()
-         Write-Verbose "Detected OS: $osName, Version: $productVersion"
-         $versionObj = [version]$productVersion
+        # Use sw_vers to get macOS version info
+        $osName = $(sw_vers -productName)
+        $productVersion = $(sw_vers -productVersion).Trim()
+        Write-Verbose "Detected OS: $osName, Version: $productVersion"
+        $versionObj = [version]$productVersion
 
-         # Determine allowed protocols for macOS
-         if ($versionObj -lt [version]'10.11') {
-             # macOS 10.8 - 10.10: SSL3 allowed, TLS 1.0/1.1/1.2 allowed, TLS1.3 not supported
-             $AllowedProtocols = @('Ssl3', 'Tls', 'Tls11', 'Tls12')
-         }
-         elseif ($versionObj -ge [version]'10.11' -and $versionObj -lt [version]'10.13') {
-             # macOS 10.11 (and likely 10.12): SSL3 disabled, TLS 1.0/1.1/1.2 allowed
-             $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
-         }
-         else {
-             # macOS 10.13 and later: TLS 1.3 is supported in addition to TLS 1.0, 1.1, 1.2
-             $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
-         }
+        # Determine allowed protocols for macOS
+        if ($versionObj -lt [version]'10.11') {
+            # macOS 10.8 - 10.10: SSL3 allowed, TLS 1.0/1.1/1.2 allowed, TLS1.3 not supported
+            $AllowedProtocols = @('Ssl3', 'Tls', 'Tls11', 'Tls12')
+        }
+        elseif ($versionObj -ge [version]'10.11' -and $versionObj -lt [version]'10.13') {
+            # macOS 10.11 (and likely 10.12): SSL3 disabled, TLS 1.0/1.1/1.2 allowed
+            $AllowedProtocols = @('Tls', 'Tls11', 'Tls12')
+        }
+        else {
+            # macOS 10.13 and later: TLS 1.3 is supported in addition to TLS 1.0, 1.1, 1.2
+            $AllowedProtocols = @('Tls', 'Tls11', 'Tls12', 'Tls13')
+        }
     }
     elseif ($IsLinux) {
         # Read /etc/os-release for OS info if available
