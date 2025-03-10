@@ -459,7 +459,7 @@ function Write-PodeHostDivider {
         }
         # Determine the divider style based on PowerShell version and encoding support
         $dividerChar = if ( $IsLinux -or $IsMacOS -or ( $PSVersionTable.PSVersion.Major -ge 7 -and
-        ((Test-PodeIsWindows -and [Environment]::OSVersion.Version.Major -ge 10)))) {
+        (((Test-PodeIsWindows) -and ([Environment]::OSVersion.Version.Major -ge 10))))) {
             '━' * $PodeContext.Server.Console.DividerLength  # Repeat the UTF-8 '━' (heavy horizontal line) character
         }
         else {
