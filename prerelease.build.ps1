@@ -61,7 +61,7 @@ Add-BuildTask Create-VersionJson {
     Set-Content -Path './Version.json' -Value $VersionData
 }
 
-Add-BuildTask Commit-VersionJson Create-VersionJson {
+Add-BuildTask Commit-VersionJson Create-VersionJson, {
     git add  './Version.json'
     git commit -m "Set Pode version to $PodeVersion-$PreReleaseType"
 }
