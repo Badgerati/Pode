@@ -66,7 +66,7 @@ Add-BuildTask Commit-VersionJson Create-VersionJson, {
     git commit -m "Set Pode version to $PodeVersion-$PreReleaseType"
 }
 
-Add-BuildTask ProcessPRs UpdateDevelop, Create-NewBranch , Commit-VersionJson {
+Add-BuildTask ProcessPRs UpdateDevelop, Create-NewBranch , Commit-VersionJson, {
     $prs = gh pr list --repo Badgerati/Pode --search 'draft:false' --json 'number,title,url,mergeStateStatus' | ConvertFrom-Json
     $mainPr = @((gh pr view 1513  --repo Badgerati/Pode --json 'number,title,url,mergeStateStatus' | ConvertFrom-Json))
     if ($ExcludePRs) {
