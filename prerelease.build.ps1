@@ -42,7 +42,7 @@ Add-BuildTask UpdateDevelop {
 Add-BuildTask CleanBranch Delete-ExistingBranch, Create-NewBranch, Create-VersionJson, Commit-VersionJson, {}
 
 
-Add-BuildTask Delete-ExistingBranch UpdateDevelop, {
+Add-BuildTask Delete-ExistingBranch {
     if (git branch --list $PreReleaseType) {
         git branch -D $PreReleaseType
     }
@@ -52,7 +52,7 @@ Add-BuildTask Create-NewBranch Delete-ExistingBranch, {
     git checkout -b $PreReleaseType origin/develop
 }
 
-Add-BuildTask Create-VersionJson Create-NewBranch, {
+Add-BuildTask Create-VersionJson {
     $VersionData = @{
         Version    = $PodeVersion
         Prerelease = $PreReleaseType
@@ -61,12 +61,12 @@ Add-BuildTask Create-VersionJson Create-NewBranch, {
     Set-Content -Path './Version.json' -Value $VersionData
 }
 
-Add-BuildTask Commit-VersionJson Create-VersionJson, {
+Add-BuildTask Commit-VersionJson Create-VersionJson {
     git add  './Version.json'
     git commit -m "Set Pode version to $PodeVersion-$PreReleaseType"
 }
 
-Add-BuildTask ProcessPRs Commit-VersionJson, {
+Add-BuildTask ProcessPRs Commit-VersionJson, Create-NewBranch, UpdateDevelop, {
     $prs = gh pr list --repo Badgerati/Pode --search 'draft:false' --json 'number,title,url,mergeStateStatus' | ConvertFrom-Json
     $mainPr = @((gh pr view 1513  --repo Badgerati/Pode --json 'number,title,url,mergeStateStatus' | ConvertFrom-Json))
     if ($ExcludePRs) {
