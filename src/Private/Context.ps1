@@ -294,7 +294,7 @@ function New-PodeContext {
     $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-PodeIsEmpty $env:PORT)) -and (!(Test-PodeIsEmpty $env:DYNO)))
 
     # Check if the current session is running in a console-like environment and it's not marked as Daemon
-    if (Test-PodeHasConsole -and ! $Daemon) {
+    if ((Test-PodeHasConsole) -and ! $Daemon) {
         try {
             if (! (Test-PodeIsISEHost)) {
                 # If the session is not configured for quiet mode, modify console behavior
