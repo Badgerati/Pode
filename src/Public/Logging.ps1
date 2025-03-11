@@ -990,8 +990,13 @@ function Write-PodeLog {
 
                 $logItem = @{
                     Name  = $Name
-                    Item  = $InputObject
-                    Level = $Level
+                    Level = $Levelf
+                }
+                $logItem.Item = if ($InputObject -is [PSCustomObject]) {
+                    Convert-PsCustomObjectToOrderedHashtable -InputObject $InputObject
+                }
+                else {
+                    $InputObject
                 }
                 break
             }
@@ -1246,7 +1251,7 @@ function Clear-PodeLogging {
     [pode.PodeLogger]::Clear()
 }
 
- 
+
 <#
 .SYNOPSIS
 Determines if a specified logger or a predefined log type is enabled.
