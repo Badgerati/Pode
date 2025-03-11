@@ -992,7 +992,7 @@ function Write-PodeLog {
                     Name  = $Name
                     Level = $Levelf
                 }
-                $logItem.Item = if ($InputObject -is [PSCustomObject]) {
+                $logItem.Item = if ( $InputObject.PSObject.TypeNames -contains 'System.Management.Automation.PSCustomObject') {
                     Convert-PsCustomObjectToOrderedHashtable -InputObject $InputObject
                 }
                 else {
