@@ -98,6 +98,8 @@ function New-PodeContext {
     $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
 
+    $ctx.Server.Version = Set-PodeVersion
+
     # list of created listeners/receivers
     $ctx.Listeners = @()
     $ctx.Receivers = @()

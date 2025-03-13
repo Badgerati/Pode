@@ -3939,3 +3939,43 @@ function ConvertTo-PodeSleep {
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }
+
+<#
+.SYNOPSIS
+  Retrieves and formats the Pode module version.
+
+.DESCRIPTION
+  The `Set-PodeVersion` function extracts the version from the Pode module manifest.
+  If the module version is **not** the placeholder value (`'$version$'`), it returns the actual version.
+  If the module includes a prerelease tag, the version is formatted as `'X.Y.Z-PreRelease'`.
+  If the module version **is** the placeholder value or the manifest is unavailable, it returns `"[dev]"`.
+
+.OUTPUTS
+  System.String
+  Returns a string representing the Pode module version in one of the following formats:
+  - `"X.Y.Z"` for a stable release.
+  - `"X.Y.Z-PreRelease"` for a prerelease version.
+  - `"[dev]"` if the version is unknown or in development mode.
+
+.EXAMPLE
+  PS> Set-PodeVersion
+  Returns the Pode module version, e.g., `'1.2.3'` for release versions, `'1.2.3-beta'` for prerelease versions, or `"[dev]"` if in development mode.
+
+.NOTES
+  - If the module version is a placeholder (`'$version$'`), the function assumes it's running from the development branch.
+  - This is an internal function and may change in future releases of Pode.
+#>
+
+function Set-PodeVersion {
+    if ($null -ne $PodeManifest) {
+        if ($PodeManifest.ModuleVersion -ne '$version$') {
+            if ($PodeManifest.PrivateData.PSData.Prerelease) {
+                return "$($PodeManifest.ModuleVersion)-$($PodeManifest.PrivateData.PSData.Prerelease)"
+            }
+            else {
+                return "$($PodeManifest.ModuleVersion)"
+            }
+        }
+    }
+    return '[dev]'
+}

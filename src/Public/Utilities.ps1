@@ -1388,16 +1388,15 @@ function Get-PodeVersion {
         $Raw
     )
 
-    if ($PodeManifest.ModuleVersion -ne '$version$') {
-        $prefix = if ($Raw) { '' } else { 'v' }
-        if ($PodeManifest.PrivateData.PSData.Prerelease) {
-            return "$prefix$($PodeManifest.ModuleVersion)-$($PodeManifest.PrivateData.PSData.Prerelease)"
-        }
-        return "$prefix$($PodeManifest.ModuleVersion)"
+    if ($PodeContext.Server.Version -eq '[dev]' -or ! $Raw) {
+        return $PodeContext.Server.Version
+    }
 
+    if ($Raw) {
+        return $PodeContext.Server.Version
     }
     else {
-        return '[dev]'
+        return  "$prefix$($PodeContext.Server.Version)"
     }
 }
 
