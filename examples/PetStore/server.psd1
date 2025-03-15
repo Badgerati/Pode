@@ -15,5 +15,8 @@
         OpenApi = @{
             DefaultDefinitionTag = 'v3.0.3'
         }
+        Static  = @{
+            ContentDeliveryNetwork = 'https://cdn.jsdelivr.net/npm'
+        }
     }
 }

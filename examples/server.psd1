@@ -1,17 +1,18 @@
 @{
     Web    = @{
         Static      = @{
-            Defaults = @(
+            Defaults               = @(
                 'index.html',
                 'default.html'
             )
-            Cache    = @{
+            Cache                  = @{
                 Enable  = $true
                 MaxAge  = 15
                 Include = @(
                     '*.jpg'
                 )
             }
+            ContentDeliveryNetwork = 'https://cdn.jsdelivr.net/npm'
         }
         ErrorPages  = @{
             ShowExceptions      = $true
@@ -35,7 +36,7 @@
         }
         Logging        = @{
             Masking = @{
-                Patterns = @(
+                Patterns   = @(
                     '(?<keep_before>Password=)\w+',
                     '(?<keep_before>AppleWebKit\/)\d+\.\d+(?(<keep_after)\s+\(KHTML)'
                 )

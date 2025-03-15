@@ -3,11 +3,11 @@
 
 <head>
     <title>OpenAPI Documentation Bookmarks</title>
-    <link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/styles/monokai-sublime.min.css">
-    <script src="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="$($data.ContentDeliveryNetwork)/@highlightjs/cdn-assets@11.11.1/styles/monokai-sublime.min.css">
+    <script src="$($data.ContentDeliveryNetwork)/@highlightjs/cdn-assets@11.11.1/highlight.min.js"></script>
 
     <!-- and it's easy to individually load additional languages -->
-    <script src="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/languages/go.min.js"></script>
+    <script src="$($data.ContentDeliveryNetwork)/@highlightjs/cdn-assets@11.11.1/languages/go.min.js"></script>
 
     <script>hljs.highlightAll();</script>
     <style>

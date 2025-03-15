@@ -1919,11 +1919,11 @@ function Enable-PodeOAViewer {
         }
         # setup meta info
         $meta = @{
-            Title             = $Title
-            OpenApi           = "$($OpenApiUrl)?format=yaml"
-            DarkMode          = $DarkMode
-            DefinitionTag     = $DefinitionTag
-            SwaggerEditorDist = 'https://unpkg.com/swagger-editor-dist@4'
+            Title                  = $Title
+            OpenApi                = "$($OpenApiUrl)?format=yaml"
+            DarkMode               = $DarkMode
+            DefinitionTag          = $DefinitionTag
+            ContentDeliveryNetwork = $Podecontext.Server.Web.Static.ContentDeliveryNetwork
         }
         Add-PodeRoute -Method Get -Path $Path `
             -Middleware $Middleware -ArgumentList $meta `
@@ -1932,9 +1932,9 @@ function Enable-PodeOAViewer {
             -ScriptBlock {
             param($meta)
             $Data = @{
-                Title             = $meta.Title
-                OpenApi           = $meta.OpenApi
-                SwaggerEditorDist = $meta.SwaggerEditorDist
+                Title                  = $meta.Title
+                OpenApi                = $meta.OpenApi
+                ContentDeliveryNetwork = $meta.ContentDeliveryNetwork
             }
 
             $podeRoot = Get-PodeModuleMiscPath
@@ -1952,10 +1952,11 @@ function Enable-PodeOAViewer {
         }
         # setup meta info
         $meta = @{
-            Title         = $Title
-            OpenApi       = $OpenApiUrl
-            DarkMode      = $DarkMode
-            DefinitionTag = $DefinitionTag
+            Title                  = $Title
+            OpenApi                = $OpenApiUrl
+            DarkMode               = $DarkMode
+            DefinitionTag          = $DefinitionTag
+            ContentDeliveryNetwork = $Podecontext.Server.Web.Static.ContentDeliveryNetwork
         }
 
         $route = Add-PodeRoute -Method Get -Path $Path `
@@ -1965,8 +1966,9 @@ function Enable-PodeOAViewer {
             -PassThru -ScriptBlock {
             param($meta)
             $Data = @{
-                Title   = $meta.Title
-                OpenApi = $meta.OpenApi
+                Title                  = $meta.Title
+                OpenApi                = $meta.OpenApi
+                ContentDeliveryNetwork = $meta.ContentDeliveryNetwork
             }
             $DefinitionTag = $meta.DefinitionTag
             foreach ($type in $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer.Keys) {
@@ -2000,10 +2002,11 @@ function Enable-PodeOAViewer {
         }
         # setup meta info
         $meta = @{
-            Type     = $Type.ToLowerInvariant()
-            Title    = $Title
-            OpenApi  = $OpenApiUrl
-            DarkMode = $DarkMode
+            Type                   = $Type.ToLowerInvariant()
+            Title                  = $Title
+            OpenApi                = $OpenApiUrl
+            DarkMode               = $DarkMode
+            ContentDeliveryNetwork = $Podecontext.Server.Web.Static.ContentDeliveryNetwork
         }
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer[$($meta.Type)] = $Path
         # add the viewer route
@@ -2015,10 +2018,11 @@ function Enable-PodeOAViewer {
             $podeRoot = Get-PodeModuleMiscPath
             if ( $meta.DarkMode) { $Theme = 'dark' } else { $Theme = 'light' }
             Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
-                Title    = $meta.Title
-                OpenApi  = $meta.OpenApi
-                DarkMode = $meta.DarkMode
-                Theme    = $Theme
+                Title                  = $meta.Title
+                OpenApi                = $meta.OpenApi
+                DarkMode               = $meta.DarkMode
+                Theme                  = $Theme
+                ContentDeliveryNetwork = $meta.ContentDeliveryNetwork
             }
         }
     }

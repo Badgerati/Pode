@@ -16,7 +16,7 @@
 
 <body>
     <redoc spec-url='$($data.OpenApi)'></redoc>
-    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js" theme="$($data.Theme)"></script>
+    <script src="$($data.ContentDeliveryNetwork)/redoc@next/bundles/redoc.standalone.js" theme="$($data.Theme)"></script>
 </body>
 
 </html>

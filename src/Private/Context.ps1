@@ -1082,6 +1082,29 @@ function Set-PodeServerConfiguration {
 
 }
 
+<#
+.SYNOPSIS
+    Configures the web server settings for a Pode-based application.
+
+.DESCRIPTION
+    This function initializes and configures various web-related settings for a Pode server,
+    including static content handling, caching, error pages, content types, transfer encoding,
+    compression, and OpenAPI settings.
+
+.PARAMETER Configuration
+    A hashtable containing the configuration settings for the web server.
+
+.PARAMETER Context
+    The Pode server context that will be modified with the new configuration settings.
+
+.NOTES
+    - The ContentDeliveryNetwork (CDN) setting supports the following values:
+        * 'https://unpkg.com'
+        * 'https://cdn.jsdelivr.net/npm'
+        * 'https://cdnjs.cloudflare.com/ajax/libs' (requires some URL changes to work correctly)
+    - Protect-PodeValue is used to handle secure default values.
+    - Convert-PodePathPatternToRegex ensures path patterns are correctly formatted.
+#>
 function Set-PodeWebConfiguration {
     param(
         [Parameter()]
@@ -1092,18 +1115,22 @@ function Set-PodeWebConfiguration {
         $Context
     )
 
-    # setup the main web config
+    # Setup the main web configuration settings
     $Context.Server.Web = @{
         Static           = @{
-            Defaults          = $Configuration.Static.Defaults
-            RedirectToDefault = [bool]$Configuration.Static.RedirectToDefault
-            Cache             = @{
+            Defaults               = $Configuration.Static.Defaults
+            RedirectToDefault      = [bool]$Configuration.Static.RedirectToDefault
+            Cache                  = @{
                 Enabled = [bool]$Configuration.Static.Cache.Enable
                 MaxAge  = [int](Protect-PodeValue -Value $Configuration.Static.Cache.MaxAge -Default 3600)
                 Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.Static.Cache.Include) -NotSlashes)
                 Exclude = (Convert-PodePathPatternsToRegex -Paths @($Configuration.Static.Cache.Exclude) -NotSlashes)
             }
-            ValidateLast      = [bool]$Configuration.Static.ValidateLast
+            ValidateLast           = [bool]$Configuration.Static.ValidateLast
+
+            # Content Delivery Network (CDN) settings
+            # Possible values: 'https://unpkg.com', 'https://cdn.jsdelivr.net/npm', 'https://cdnjs.cloudflare.com/ajax/libs' (requires some URL changes)
+            ContentDeliveryNetwork = (Protect-PodeValue -Value $Configuration.Static.ContentDeliveryNetwork -Default 'https://cdn.jsdelivr.net/npm')
         }
         ErrorPages       = @{
             ShowExceptions      = [bool]$Configuration.ErrorPages.ShowExceptions
@@ -1127,32 +1154,32 @@ function Set-PodeWebConfiguration {
         }
     }
 
+    # Enable internal Pode YAML processing for OpenAPI if configured
     if ($Configuration.OpenApi -and $Configuration.OpenApi.ContainsKey('UsePodeYamlInternal')) {
         $Context.Server.Web.OpenApi.UsePodeYamlInternal = $Configuration.OpenApi.UsePodeYamlInternal
     }
 
-    # setup content type route patterns for forced content types
+    # Configure forced content types for specific route patterns
     $Configuration.ContentType.Routes.Keys | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
         $_type = $Configuration.ContentType.Routes[$_]
         $_pattern = (Convert-PodePathPatternToRegex -Path $_ -NotSlashes)
         $Context.Server.Web.ContentType.Routes[$_pattern] = $_type
     }
 
-    # setup transfer encoding route patterns for forced transfer encodings
+    # Configure forced transfer encoding for specific route patterns
     $Configuration.TransferEncoding.Routes.Keys | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
         $_type = $Configuration.TransferEncoding.Routes[$_]
         $_pattern = (Convert-PodePathPatternToRegex -Path $_ -NotSlashes)
         $Context.Server.Web.TransferEncoding.Routes[$_pattern] = $_type
     }
 
-    # setup content type route patterns for error pages
+    # Configure error page routes
     $Configuration.ErrorPages.Routes.Keys | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
         $_type = $Configuration.ErrorPages.Routes[$_]
         $_pattern = (Convert-PodePathPatternToRegex -Path $_ -NotSlashes)
         $Context.Server.Web.ErrorPages.Routes[$_pattern] = $_type
     }
 }
-
 function New-PodeAutoRestartServer {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
     [CmdletBinding()]
