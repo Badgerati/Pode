@@ -326,4 +326,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Reguła limitu szybkości o nazwie '{0}' nie istnieje."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Reguła limitu dostępu o nazwie '{0}' już istnieje."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Reguła limitu dostępu o nazwie '{0}' nie istnieje."
+    invalidFaviconTypeExceptionMessage                                = 'Podano nieprawidłowy typ favikony: {0}'
 }

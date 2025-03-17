@@ -200,12 +200,7 @@ function Write-PodeFileResponseInternal {
         # this is a static file
         else {
             try {
-                if (Test-PodeIsPSCore) {
-                    $content = (Get-Content -Path $Path -Raw -AsByteStream)
-                }
-                else {
-                    $content = (Get-Content -Path $Path -Raw -Encoding byte)
-                }
+                $content = [System.IO.File]::ReadAllBytes($Path)
                 # Determine and set the content type for static files
                 $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
                 # Write the file content as the HTTP response
@@ -453,13 +448,7 @@ function Write-PodeAttachmentResponseInternal {
 
         # if serverless, get the content raw and return
         if (!$WebEvent.Streamed) {
-            if (Test-PodeIsPSCore) {
-                $content = (Get-Content -Path $Path -Raw -AsByteStream)
-            }
-            else {
-                $content = (Get-Content -Path $Path -Raw -Encoding byte)
-            }
-
+            $content = [System.IO.File]::ReadAllBytes($Path)
             $WebEvent.Response.Body = $content
         }
 

@@ -326,4 +326,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "A rate limit rule with the name '{0}' does not exist."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "An access limit rule with the name '{0}' already exists."
     accessLimitRuleDoesNotExistExceptionMessage                       = "An access limit rule with the name '{0}' does not exist."
+    invalidFaviconTypeExceptionMessage                                = 'Invalid favicon type supplied: {0}'
 }

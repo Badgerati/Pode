@@ -210,65 +210,64 @@ function Start-PodeWebServer {
                                 if ($Request.IsAborted) {
                                     throw $Request.Error
                                 }
-                                
+
                                 # deal with favicon if available
-                                if ($WebEvent.Path -eq '/favicon.ico' -and ($null -ne $PodeContext.Server.Endpoints[$context.EndpointName].Favicon)) {
+                                if (($WebEvent.Path -eq '/favicon.ico') -and ($WebEvent.Method -eq 'GET') -and ($null -ne $PodeContext.Server.Endpoints[$context.EndpointName].Favicon)) {
                                     # Write the file content as the HTTP response
-                                    Write-PodeTextResponse -Bytes $PodeContext.Server.Endpoints[$context.EndpointName].Favicon -ContentType 'image/png' -StatusCode 200
+                                    Write-PodeTextResponse -Bytes $PodeContext.Server.Endpoints[$context.EndpointName].Favicon.Bytes -ContentType $PodeContext.Server.Endpoints[$context.EndpointName].Favicon.ContentType -StatusCode 200
+                                    continue
                                 }
-                                else {
-                                    # if we have an sse clientId, verify it and then set details in WebEvent
-                                    if ($WebEvent.Request.HasSseClientId) {
-                                        if (!(Test-PodeSseClientIdValid)) {
-                                            throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
-                                        }
-
-                                        if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
-                                            throw [Pode.PodeRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)", 404)
-                                        }
-
-                                        $WebEvent.Sse = @{
-                                            Name        = $WebEvent.Request.SseClientName
-                                            Group       = $WebEvent.Request.SseClientGroup
-                                            ClientId    = $WebEvent.Request.SseClientId
-                                            LastEventId = $null
-                                            IsLocal     = $false
-                                        }
+                                # if we have an sse clientId, verify it and then set details in WebEvent
+                                if ($WebEvent.Request.HasSseClientId) {
+                                    if (!(Test-PodeSseClientIdValid)) {
+                                        throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
                                     }
 
-                                    # invoke global and route middleware
-                                    if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
+                                    if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
+                                        throw [Pode.PodeRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)", 404)
+                                    }
+
+                                    $WebEvent.Sse = @{
+                                        Name        = $WebEvent.Request.SseClientName
+                                        Group       = $WebEvent.Request.SseClientGroup
+                                        ClientId    = $WebEvent.Request.SseClientId
+                                        LastEventId = $null
+                                        IsLocal     = $false
+                                    }
+                                }
+
+                                # invoke global and route middleware
+                                if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
+                                    # has the request been aborted
+                                    if ($Request.IsAborted) {
+                                        throw $Request.Error
+                                    }
+
+                                    if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                                         # has the request been aborted
                                         if ($Request.IsAborted) {
                                             throw $Request.Error
                                         }
 
-                                        if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
-                                            # has the request been aborted
-                                            if ($Request.IsAborted) {
-                                                throw $Request.Error
+                                        # invoke the route
+                                        if ($null -ne $WebEvent.StaticContent) {
+                                            $fileBrowser = $WebEvent.Route.FileBrowser
+                                            if ($WebEvent.StaticContent.IsDownload) {
+                                                Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
                                             }
-
-                                            # invoke the route
-                                            if ($null -ne $WebEvent.StaticContent) {
-                                                $fileBrowser = $WebEvent.Route.FileBrowser
-                                                if ($WebEvent.StaticContent.IsDownload) {
-                                                    Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
-                                                }
-                                                elseif ($WebEvent.StaticContent.RedirectToDefault) {
-                                                    $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
-                                                    Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
-                                                }
-                                                else {
-                                                    $cachable = $WebEvent.StaticContent.IsCachable
-                                                    Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
-                                                        -Cache:$cachable -FileBrowser:$fileBrowser
-                                                }
+                                            elseif ($WebEvent.StaticContent.RedirectToDefault) {
+                                                $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
+                                                Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
                                             }
-                                            elseif ($null -ne $WebEvent.Route.Logic) {
-                                                $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments `
-                                                    -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
+                                            else {
+                                                $cachable = $WebEvent.StaticContent.IsCachable
+                                                Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
+                                                    -Cache:$cachable -FileBrowser:$fileBrowser
                                             }
+                                        }
+                                        elseif ($null -ne $WebEvent.Route.Logic) {
+                                            $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments `
+                                                -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                                         }
                                     }
                                 }

@@ -326,4 +326,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Rate Limit-regel met de naam '{0}' bestaat niet."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Toegangslimietregel met de naam '{0}' bestaat al."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Toegangslimietregel met de naam '{0}' bestaat niet."
+    invalidFaviconTypeExceptionMessage                                = 'Ongeldig favicon-type opgegeven: {0}'
 }

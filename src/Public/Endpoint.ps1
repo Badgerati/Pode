@@ -85,7 +85,7 @@ For IPv6, this will only work if the IPv6 address can convert to a valid IPv4 ad
 If supplied, this endpoint will be the default one used for internally generating URLs.
 
 .PARAMETER Favicon
-A byte array representing a custom favicon for HTTP/HTTPS endpoints.
+Specifies a custom favicon for HTTP/HTTPS endpoints. This parameter accepts either a byte array containing the favicon image data or a file path pointing to the favicon file.
 
 .PARAMETER DefaultFavicon
 If supplied, enable the default Pode favicon for HTTP/HTTPS endpoints.
@@ -215,7 +215,7 @@ function Add-PodeEndpoint {
         [switch]
         $Default,
 
-        [byte[]]
+        [object]
         $Favicon,
 
         [switch]
@@ -309,23 +309,50 @@ function Add-PodeEndpoint {
         throw ($Podelocale.parametersMutuallyExclusiveExceptionMessage -f '-Favicon', '-DefaultFavicon')
     }
 
-    # If no -Favicon is provided, the protocol is either HTTP or HTTPS, and -DefaultFavicon is enabled,
-    # set the default favicon from the Pode module's miscellaneous path.
-    if ( ($null -eq $Favicon) -and (@('Http', 'Https') -icontains $Protocol) -and $DefaultFavicon) {
-        # Retrieve the root path of the Pode module.
-        $podeRoot = Get-PodeModuleMiscPath
+    # If the protocol is either HTTP or HTTPS, proceed with favicon processing.
+    if (@('Http', 'Https') -icontains $Protocol) {
+        # If no custom -Favicon is provided and -DefaultFavicon is enabled,
+        # set the default favicon from Pode's miscellaneous path.
+        if ($DefaultFavicon) {
+            # Retrieve the Pode module's miscellaneous path.
+            $podeRoot = Get-PodeModuleMiscPath
 
-        # Check if running in PowerShell Core to determine the correct method for reading binary data.
-        if (Test-PodeIsPSCore) {
-            # In PowerShell Core, use -AsByteStream to read the file as a byte array.
-            $Favicon = (Get-Content -Path ([System.IO.Path]::Combine($podeRoot, 'favicon.ico')) -Raw -AsByteStream)
+            # Load the default favicon.ico file from the Pode module directory.
+            $FaviconData = @{
+                Bytes       = [System.IO.File]::ReadAllBytes([System.IO.Path]::Combine($podeRoot, 'favicon.ico'))
+                ContentType = 'image/x-icon'
+            }
         }
-        else {
-            # In Windows PowerShell, use -Encoding byte to read the file as a byte array.
-            $Favicon = (Get-Content -Path ([System.IO.Path]::Combine($podeRoot, 'favicon.ico')) -Raw -Encoding byte)
+        # If a custom -Favicon is provided, process it accordingly.
+        elseif ($null -ne $Favicon) {
+            if ($Favicon -is [string]) {
+                # If the favicon is provided as a string (file path), verify its existence.
+                if (Test-Path -Path $Favicon -PathType Leaf) {
+                    # Load the favicon from the specified file path.
+                    $FaviconData = @{
+                        Bytes = [System.IO.File]::ReadAllBytes($Favicon)
+                    }
+                }
+                else {
+                    # Throw an exception if the specified file path does not exist.
+                    throw ($PodeLocale.pathNotExistExceptionMessage -f $Favicon)
+                }
+            }
+            elseif ($Favicon -is [byte[]]) {
+                # If the favicon is provided as a byte array, store it directly.
+                $FaviconData = @{
+                    Bytes = $Favicon
+                }
+            }
+            else {
+                # Throw an exception if the favicon is of an unsupported type.
+                throw ($PodeLocale.invalidFaviconTypeExceptionMessage -f $Favicon.GetType().Name)
+            }
+
+            # Determine the content type of the favicon based on its byte data.
+            $FaviconData.ContentType = Get-PodeImageContentType Image $FaviconData.Bytes
         }
     }
-
 
     # new endpoint object
     $obj = @{
@@ -359,7 +386,7 @@ function Add-PodeEndpoint {
             Acknowledge    = $Acknowledge
             CRLFMessageEnd = $CRLFMessageEnd
         }
-        Favicon      = $Favicon
+        Favicon      = $FaviconData
     }
 
 

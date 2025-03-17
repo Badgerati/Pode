@@ -99,16 +99,16 @@ Start-PodeServer -Threads 1 -ScriptBlock {
     # Configure Pode server endpoints
     if ((Get-PodeConfig).Protocol -eq 'Https') {
         if ((Get-PodeConfig).SelfSignedCertificate) {
-            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -SelfSigned -Default
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -SelfSigned -Default -DefaultFavicon
         }
         else {
             $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
             $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
-            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default -DefaultFavicon
         }
     }
     else {
-        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default
+        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default -DefaultFavicon
     }
 
     # Enable error logging

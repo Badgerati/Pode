@@ -189,28 +189,41 @@ To set this property, include it in `server.psd1` configuration file as shown be
 }
 ```
 
+Below is an updated version of the documentation with additional details about the favicon format:
+
+---
+
 ## Favicons
 
-Pode allows you to customize or disable the favicon for HTTP/HTTPS endpoints. By default, Pode serves a built-in `favicon.ico`, but you can override this behavior using the `-Favicon` and `-NoFavicon` parameters.
+Pode allows you to customize or disable the favicon for HTTP/HTTPS endpoints. By default, Pode serves a built-in `favicon.ico`, but you can override this behavior using the `-Favicon` and `-DefaultFavicon` parameters.
 
-- **`-Favicon` (byte[])**: Allows you to specify a custom favicon as a byte array.
-- **`-NoFavicon` (switch)**: Disables the favicon, preventing browsers from requesting it.
+- **`-Favicon` (byte[])**: Allows you to specify a custom favicon. This parameter accepts either a byte array containing the favicon image data or a file path pointing to the favicon file.
+- **`-DefaultFavicon` (switch)**: Enable the default Pode favicon for HTTP/HTTPS endpoints.
 
-### **Favicon Format and Specifications**
+### Favicon Format and Specifications
 
-Favicons are typically stored in the `.ico` format, which is a container that can hold multiple image sizes and color depths. This ensures compatibility with different browsers and devices. Some modern browsers also support `.png` and `.svg` favicons.
+Favicons are typically stored in the `.ico` format, a special container format that can hold multiple images at different resolutions and color depths within a single file. This flexibility ensures that the best-suited icon is used depending on the context—be it browser tabs, bookmarks, or high-DPI displays.
 
-For more details on favicon formats and specifications, refer to the [Favicon specification](https://en.wikipedia.org/wiki/Favicon) and [RFC 5988](https://datatracker.ietf.org/doc/html/rfc5988).
+#### Key Points about the ICO Format
 
-### **Favicon Size Recommendations**
+- **Multi-Resolution Support:** An ICO file can include multiple images (e.g., 16x16, 32x32, 48x48, 64x64, 256x256) in one file. Browsers will automatically select the optimal image size based on the display context.
+- **Color Depth and Transparency:** ICO files support various color depths, including true color (24-bit or 32-bit), which allows for alpha transparency. This is essential for displaying smooth edges and realistic icons.
+- **Legacy and Modern Use:** While `.ico` is the traditional format, some modern browsers also support other formats like **PNG** and **SVG** for favicons.
+  - **PNG:** A lossless image format with widespread browser support. Favicons in PNG format are often used for their simplicity and quality.
+  - **SVG:** A vector format that scales perfectly at any resolution. SVG favicons are ideal for high-resolution displays and responsive design, although support in older browsers may be limited.
+- **Other Formats:** Formats such as **GIF** or **JPEG** can be used, but they are less common due to limitations like lack of transparency support (in the case of JPEG) or limited color palettes (in the case of GIF).
+
+For further details on favicon formats and specifications, refer to the [Favicon specification](https://en.wikipedia.org/wiki/Favicon) and [RFC 5988](https://datatracker.ietf.org/doc/html/rfc5988).
+
+### Favicon Size Recommendations
 
 Favicons should include multiple resolutions for optimal display across different devices. Recommended sizes include:
 
-- **16x16** → Used in browser tabs, bookmarks, and address bars.
-- **32x32** → Used in browser tabs on higher-resolution displays.
-- **48x48** → Used by some older browsers and web applications.
-- **64x64+** → Generally not used by browsers but can be helpful for scalability in web apps.
-- **256x256** → Mainly for **Windows app icons** (not typically used as a favicon in browsers).
+- **16x16** : Used in browser tabs, bookmarks, and address bars.
+- **32x32** : Used in browser tabs on higher-resolution displays.
+- **48x48** : Used by some older browsers and web applications.
+- **64x64** : Generally not used by browsers but can be helpful for scalability in web apps.
+- **256x256** : Mainly for **Windows app icons** (not typically used as a favicon in browsers).
 
 ### **Usage Example**
 
@@ -219,8 +232,6 @@ Favicons should include multiple resolutions for optimal display across differen
 $iconBytes = [System.IO.File]::ReadAllBytes("C:\path\to\custom.ico")
 Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Favicon $iconBytes
 
-# Disable favicon for an endpoint
-Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -NoFavicon
+# Use the default Pode favicon for the endpoint
+Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -DefaultFavicon
 ```
-
-Using a favicon enhances the user experience by providing a recognizable site icon in browser tabs and bookmarks.

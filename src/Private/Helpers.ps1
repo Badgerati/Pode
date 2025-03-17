@@ -3966,3 +3966,65 @@ function ConvertTo-PodeSleep {
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }
+
+<#
+.SYNOPSIS
+    Determines the MIME type of an image from its binary header.
+
+.DESCRIPTION
+    This function accepts a byte array representing an image and analyzes the first few bytes
+    (converted to hexadecimal strings) to determine its file format. It supports PNG, JPEG, GIF
+    (both GIF87a and GIF89a), ICO, WebP, and SVG formats. If the image format cannot be determined,
+    it returns a generic MIME type of 'application/octet-stream'.
+
+.PARAMETER Image
+    A byte array containing the image data.
+
+.OUTPUTS
+    A string representing the MIME type of the image.
+
+.EXAMPLE
+    $bytes = [System.IO.File]::ReadAllBytes("C:\path\to\image.gif")
+    $mimeType = Get-PodeImageContentType -Image $bytes
+    # $mimeType will be 'image/gif' if the image is a GIF.
+    
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeImageContentType {
+    param (
+        [byte[]]$Image
+    )
+
+    if ($null -eq $Image -or $Image.Count -lt 12) {
+        return 'application/octet-stream'
+    }
+
+    # Convert bytes to a hex string (2-digit uppercase per byte)
+    $hex8 = ($Image[0..7] | ForEach-Object { "{0:X2}" -f $_ }) -join ' '
+    $hex6 = ($Image[0..5] | ForEach-Object { "{0:X2}" -f $_ }) -join ' '
+    $hex4 = ($Image[0..3] | ForEach-Object { "{0:X2}" -f $_ }) -join ' '
+    $hex12 = ($Image[0..11] | ForEach-Object { "{0:X2}" -f $_ }) -join ' '
+
+    switch -regex ($hex8) {
+        '^89 50 4E 47 0D 0A 1A 0A' { return 'image/png' }
+    }
+    switch -regex ($hex4) {
+        '^FF D8 FF'    { return 'image/jpeg' }
+        '^00 00 01 00' { return 'image/x-icon' }
+    }
+    switch -regex ($hex6) {
+        '^47 49 46 38 37 61' { return 'image/gif' } # GIF87a
+        '^47 49 46 38 39 61' { return 'image/gif' } # GIF89a
+    }
+    switch -regex ($hex12) {
+        '^52 49 46 46 .* 57 45 42 50' { return 'image/webp' }
+    }
+    # Check for SVG by converting to a string and looking for "<svg"
+    if ([System.Text.Encoding]::UTF8.GetString($Image[0..4]) -match '<svg') {
+        return 'image/svg+xml'
+    }
+
+    return 'application/octet-stream'
+}
+

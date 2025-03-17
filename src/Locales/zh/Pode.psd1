@@ -326,4 +326,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = '速率限制规则不存在: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = '访问限制规则已存在: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = '访问限制规则不存在: {0}'
+    invalidFaviconTypeExceptionMessage                                = '提供的 favicon 类型无效: {0}'
 }
