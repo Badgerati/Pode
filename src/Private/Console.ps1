@@ -411,35 +411,39 @@ function Write-PodeKeyBinding {
     Write-PodeHost "$("Ctrl-$k".PadRight(8)): " -ForegroundColor $ForegroundColor -NoNewLine -Force:$Force
 }
 
-
 <#
 .SYNOPSIS
-Writes a visual divider line to the console.
+    Writes a visual divider line to the console.
 
 .DESCRIPTION
-The `Write-PodeHostDivider` function outputs a horizontal divider line to the console.
-For modern environments (PowerShell 6 and above or UTF-8 capable consoles),
-it uses the `━` character repeated to form the divider. For older environments
-like PowerShell 5.1, it falls back to the `-` character for compatibility.
+    The `Write-PodeHostDivider` function outputs a horizontal divider line to the console
+    to enhance readability. It dynamically selects the appropriate divider character based
+    on the operating system, PowerShell version, and console encoding capabilities.
+
+    For modern environments (Linux, macOS, or PowerShell 7+ on Windows 10+), it uses the
+    UTF-8 heavy horizontal line (`━`) for a visually enhanced appearance. For older
+    environments, such as PowerShell 5.1 or Windows versions without proper UTF-8 support,
+    it falls back to using the ASCII dash (`-`) to ensure compatibility.
 
 .PARAMETER Force
-Forces the output to display the divider even if certain conditions are not met.
-
-.PARAMETER ForegroundColor
-Specifies the foreground color of the divider.
+    Forces the output to display the divider even if the default console settings do not
+    require it.
 
 .EXAMPLE
-Write-PodeHostDivider
+    Write-PodeHostDivider
 
-Writes a divider to the console using the appropriate characters for the environment.
+    Writes a divider to the console using the appropriate character set based on the
+    current environment.
 
 .EXAMPLE
-Write-PodeHostDivider -Force $true
+    Write-PodeHostDivider -Force $true
 
-Writes a divider to the console even if conditions for displaying it are not met.
+    Forces the divider to be displayed, regardless of console settings.
 
 .NOTES
-This function dynamically adapts to the PowerShell version and console encoding, ensuring compatibility across different environments.
+    - This function automatically adapts to different platforms and versions.
+    - UTF-8 support varies by PowerShell version and Windows OS version.
+    - The ASCII fallback ensures compatibility with legacy environments.
 #>
 function Write-PodeHostDivider {
     param (
@@ -454,11 +458,12 @@ function Write-PodeHostDivider {
             $dividerColor = [System.ConsoleColor]::Yellow
         }
         # Determine the divider style based on PowerShell version and encoding support
-        $dividerChar = if ($PSVersionTable.PSVersion.Major -ge 6 ) {
-            '━' * $PodeContext.Server.Console.DividerLength  # Repeat the '━' character
+        $dividerChar = if ( $IsLinux -or $IsMacOS -or ( $PSVersionTable.PSVersion.Major -ge 7 -and
+        (((Test-PodeIsWindows) -and ([Environment]::OSVersion.Version.Major -ge 10))))) {
+            '━' * $PodeContext.Server.Console.DividerLength  # Repeat the UTF-8 '━' (heavy horizontal line) character
         }
         else {
-            '-' * $PodeContext.Server.Console.DividerLength # Repeat the '-' as a fallback
+            '-' * $PodeContext.Server.Console.DividerLength # Repeat the ASCII '-' as a fallback
         }
 
         # Write the divider with the chosen style

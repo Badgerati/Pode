@@ -348,8 +348,8 @@ function New-PodeContext {
     # is the server running under Heroku?
     $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-PodeIsEmpty $env:PORT)) -and (!(Test-PodeIsEmpty $env:DYNO)))
 
-    # Check if the current session is running in a console-like environment
-    if (Test-PodeHasConsole -and ! $Daemon) {
+    # Check if the current session is running in a console-like environment and it's not marked as Daemon
+    if ((Test-PodeHasConsole) -and ! $Daemon) {
         try {
             if (! (Test-PodeIsISEHost)) {
                 # If the session is not configured for quiet mode, modify console behavior
@@ -375,7 +375,6 @@ function New-PodeContext {
             $ctx.Server.Console.Quiet = $true               # Silence the console
             $ctx.Server.Console.ShowDivider = $false        # Disable divider display
         }
-
     }
     else {
         # If not running in a console-like environment, configure the context for non-console behavior
