@@ -280,6 +280,7 @@ function Start-PodeServer {
                 IgnoreServerConfig   = $IgnoreServerConfig
                 ConfigFile           = $ConfigFile
                 ApplicationName      = $ApplicationName
+                Daemon               = $Daemon
             }
 
 
