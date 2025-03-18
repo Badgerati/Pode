@@ -200,7 +200,12 @@ function Write-PodeFileResponseInternal {
         # this is a static file
         else {
             try {
-                $content = [System.IO.File]::ReadAllBytes($Path)
+                if (Test-PodeIsPSCore) {
+                    $content = (Get-Content -Path $Path -Raw -AsByteStream)
+                }
+                else {
+                    $content = (Get-Content -Path $Path -Raw -Encoding byte)
+                }
                 # Determine and set the content type for static files
                 $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
                 # Write the file content as the HTTP response
