@@ -448,7 +448,12 @@ function Write-PodeAttachmentResponseInternal {
 
         # if serverless, get the content raw and return
         if (!$WebEvent.Streamed) {
-            $content = [System.IO.File]::ReadAllBytes($Path)
+            if (Test-PodeIsPSCore) {
+                $content = (Get-Content -Path $Path -Raw -AsByteStream)
+            }
+            else {
+                $content = (Get-Content -Path $Path -Raw -Encoding byte)
+            }
             $WebEvent.Response.Body = $content
         }
 
