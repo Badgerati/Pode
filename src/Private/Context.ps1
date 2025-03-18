@@ -53,7 +53,10 @@ function New-PodeContext {
         $IgnoreServerConfig,
 
         [string]
-        $ConfigFile
+        $ConfigFile,
+
+        [switch]
+        $Daemon
     )
 
     # set a random server name if one not supplied
@@ -292,8 +295,8 @@ function New-PodeContext {
     # is the server running under Heroku?
     $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-PodeIsEmpty $env:PORT)) -and (!(Test-PodeIsEmpty $env:DYNO)))
 
-    # Check if the current session is running in a console-like environment
-    if (Test-PodeHasConsole) {
+    # Check if the current session is running in a console-like environment and it's not marked as Daemon
+    if ((Test-PodeHasConsole) -and ! $Daemon) {
         try {
             if (! (Test-PodeIsISEHost)) {
                 # If the session is not configured for quiet mode, modify console behavior
@@ -313,14 +316,12 @@ function New-PodeContext {
             }
         }
         catch {
-            $_ | Write-PodeErrorLog
             # Console support is partial , configure the context for non-console behavior
             $ctx.Server.Console.DisableTermination = $true  # Prevent termination
             $ctx.Server.Console.DisableConsoleInput = $true # Disable console input
             $ctx.Server.Console.Quiet = $true               # Silence the console
             $ctx.Server.Console.ShowDivider = $false        # Disable divider display
         }
-
     }
     else {
         # If not running in a console-like environment, configure the context for non-console behavior
