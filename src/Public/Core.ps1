@@ -298,6 +298,7 @@ function Start-PodeServer {
                 IgnoreServerConfig   = $IgnoreServerConfig
                 ConfigFile           = $ConfigFile
                 Service              = $monitorService
+                Daemon               = $Daemon
             }
 
 
