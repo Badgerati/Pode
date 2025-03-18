@@ -291,6 +291,7 @@ function Start-PodeServer {
                 IgnoreServerConfig   = $IgnoreServerConfig
                 ConfigFile           = $ConfigFile
                 Watchdog             = $watchdogClient
+                Daemon               = $Daemon
             }
 
 
