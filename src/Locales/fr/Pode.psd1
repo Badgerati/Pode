@@ -334,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "La règle de limite de taux '{0}' n'existe pas."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Une règle de limite d'accès nommée '{0}' existe déjà."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La règle de limite d'accès '{0}' n'existe pas."
+    cannotBindPortInUseExceptionMessage                               = 'Impossible de se lier à {0}:{1} — le port est déjà utilisé par un autre processus.'
 }

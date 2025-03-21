@@ -334,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = '速率限制规则不存在: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = '访问限制规则已存在: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = '访问限制规则不存在: {0}'
+    cannotBindPortInUseExceptionMessage                               = '无法绑定到 {0}:{1} — 该端口已被其他进程占用。'
 }

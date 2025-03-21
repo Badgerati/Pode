@@ -334,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Die Rate-Limit-Regel mit dem Namen '{0}' existiert nicht."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert bereits."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert nicht."
+    cannotBindPortInUseExceptionMessage                               = 'Kann nicht an {0}:{1} binden — der Port wird bereits von einem anderen Prozess verwendet.'
 }

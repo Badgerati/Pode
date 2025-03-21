@@ -365,10 +365,8 @@ function Add-PodeEndpoint {
         $obj.Url = "$($obj.Protocol)://$($obj.FriendlyName):$($obj.Port)"
     }
     # if the address is non-local, then check admin privileges
-    if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeAdminPrivilege -Console)) {
-        # Must be running with administrator privileges to listen on non-localhost addresses
-        throw ($PodeLocale.mustBeRunningWithAdminPrivilegesExceptionMessage)
-    }
+    #if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !
+    $null = Test-PodeBindToPrivilegedPort -IP $obj.Address -Port $obj.Port -ThrowError -CheckAdmin:(!$Force.IsPresent)
 
     # has this endpoint been added before? (for http/https we can just not add it again)
     $exists = ($PodeContext.Server.Endpoints.Values | Where-Object {

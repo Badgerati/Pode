@@ -334,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "名前が '{0}' のレート制限ルールは存在しません。"
     accessLimitRuleAlreadyExistsExceptionMessage                      = "名前が '{0}' のアクセス制限ルールは既に存在します。"
     accessLimitRuleDoesNotExistExceptionMessage                       = "名前が '{0}' のアクセス制限ルールは存在しません。"
+    cannotBindPortInUseExceptionMessage                               = '{0}:{1} にバインドできません — そのポートは他のプロセスによって使用されています。'
 }

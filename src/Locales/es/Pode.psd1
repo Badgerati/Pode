@@ -334,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "La regla de límite de velocidad con el nombre '{0}' no existe."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "La regla de límite de acceso con el nombre '{0}' ya existe."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La regla de límite de acceso con el nombre '{0}' no existe."
+    cannotBindPortInUseExceptionMessage                               = 'No se puede enlazar a {0}:{1} — el puerto ya está siendo utilizado por otro proceso.'
 }

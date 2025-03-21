@@ -334,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = 'قاعدة الحد الأقصى للمعدل غير موجودة: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = 'تم تعريف قاعدة الحد الأقصى للوصول بالفعل: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = 'قاعدة الحد الأقصى للوصول غير موجودة: {0}'
+    cannotBindPortInUseExceptionMessage                               = 'لا يمكن الربط مع {0}:{1} — المنفذ مستخدم بالفعل من قبل عملية أخرى.'
 }

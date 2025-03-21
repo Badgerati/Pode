@@ -3992,7 +3992,6 @@ function Test-PodeIsISEHost {
         if the -Elevate switch is used.
     - This is an internal function and may change in future releases of Pode.
 #>
-
 function Test-PodeAdminPrivilege {
     param(
         [switch]
@@ -4200,4 +4199,119 @@ function Get-PodeOSPwshArchitecture {
 
     # Return the final architecture string
     return $arch
+}
+
+<#
+.SYNOPSIS
+    Tests whether the current session can bind to one or more privileged ports.
+
+.DESCRIPTION
+    Attempts to bind to each port in the specified list using the provided IP address.
+
+    Behavior:
+      - Returns $true if any port can be successfully bound.
+      - Returns $false if a privilege error (AccessDenied) occurs and $CheckAdmin is enabled.
+      - Returns $false if all test ports are in use but no privilege error occurs.
+      - If -ThrowError is used:
+        • Throws a localized exception if a privilege error is detected and -CheckAdmin is also set.
+        • Throws a custom SocketException with a descriptive message when the port is already in use.
+        • Throws the raw exception for all other socket or unexpected errors.
+
+.PARAMETER IP
+    The IP address to bind to. Defaults to the loopback address (127.0.0.1).
+
+.PARAMETER Port
+    A single port number or an array of ports to test. Defaults to a set of typically unused privileged ports.
+
+.PARAMETER ThrowError
+    If specified, exceptions will be thrown instead of returning values for error conditions.
+
+.PARAMETER CheckAdmin
+    If specified, only privilege-related binding failures will result in a return value of $false;
+    otherwise, AccessDenied will return $true (to allow non-admin flows to continue).
+
+.OUTPUTS
+    [bool] $true  — Binding was successful on at least one port.
+    [bool] $false — Privilege error occurred (with CheckAdmin), or a single port is in use.
+    [bool] $false — All ports were in use, but no privilege issue was detected.
+
+.EXAMPLE
+    Test-PodeBindToPrivilegedPort
+
+.EXAMPLE
+    Test-PodeBindToPrivilegedPort -IP '0.0.0.0' -Port 80
+
+.EXAMPLE
+    Test-PodeBindToPrivilegedPort -ThrowError -CheckAdmin
+#>
+
+function Test-PodeBindToPrivilegedPort {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [string]$IP = '127.0.0.1',
+
+        [Parameter()]
+        [int[]]$Port = @(1, 7, 9, 13, 19, 37, 79, 100),
+
+        [switch]
+        $ThrowError,
+
+        [switch]
+        $CheckAdmin
+    )
+
+    foreach ($p in $Port) {
+        try {
+            $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse($IP), $p)
+            $listener.Start()
+            $listener.Stop()
+            Write-Verbose "Successfully bound to $($IP):$p"
+            return $true
+        }
+        catch [System.Net.Sockets.SocketException] {
+            switch ($_.Exception.SocketErrorCode) {
+                'AccessDenied' {
+                    Write-Verbose "Access denied on $($IP):$p"
+                    if ($ThrowError) {
+                        if (!$CheckAdmin) { return }
+                        throw ($PodeLocale.mustBeRunningWithAdminPrivilegesExceptionMessage)
+                    }
+                    if ($CheckAdmin) {
+                        return $false
+                    }
+                    return $true
+
+                }
+                'AddressAlreadyInUse' {
+                    Write-Verbose "Port $p is already in use on $IP"
+
+                    if ($Port.Count -gt 1) {
+                        continue
+                    }
+                    if ($ThrowError) {
+                        throw  ($PodeLocale.cannotBindPortInUseExceptionMessage -f $IP,$p)
+                    }
+                    return $false
+                }
+                default {
+                    Write-Verbose "Unhandled socket error on $($IP):$p — $($_.Exception.SocketErrorCode)"
+                    if ($ThrowError) {
+                        throw  $_
+                    }
+                    return $false
+                }
+            }
+        }
+        catch {
+            Write-Verbose "Unexpected error on $($IP):$p — $($_.Exception.Message)"
+            if ($ThrowError) {
+                throw  $_
+            }
+            return $false
+        }
+    }
+
+    Write-Verbose "All test ports on $IP were in use, but no privilege error detected"
+    return $false
 }

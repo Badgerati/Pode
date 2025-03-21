@@ -334,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "A regra de limite de taxa com o nome '{0}' não existe."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "A regra de limite de acesso com o nome '{0}' já existe."
     accessLimitRuleDoesNotExistExceptionMessage                       = "A regra de limite de acesso com o nome '{0}' não existe."
+    cannotBindPortInUseExceptionMessage                               = 'Não é possível vincular a {0}:{1} — a porta já está em uso por outro processo.'
 }

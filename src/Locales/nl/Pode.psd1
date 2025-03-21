@@ -334,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Rate Limit-regel met de naam '{0}' bestaat niet."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Toegangslimietregel met de naam '{0}' bestaat al."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Toegangslimietregel met de naam '{0}' bestaat niet."
+    cannotBindPortInUseExceptionMessage                               = 'Kan geen verbinding maken met {0}:{1} — de poort wordt al gebruikt door een ander proces.'
 }

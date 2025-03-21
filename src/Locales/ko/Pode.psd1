@@ -334,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "이름이 '{0}'인 비율 제한 규칙이 존재하지 않습니다."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "이름이 '{0}'인 액세스 제한 규칙이 이미 존재합니다."
     accessLimitRuleDoesNotExistExceptionMessage                       = "이름이 '{0}'인 액세스 제한 규칙이 존재하지 않습니다."
+    cannotBindPortInUseExceptionMessage                               = '{0}:{1}에 바인딩할 수 없습니다 — 해당 포트는 다른 프로세스에서 이미 사용 중입니다.'
 }
