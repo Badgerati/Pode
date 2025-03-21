@@ -326,17 +326,12 @@ function Add-PodeEndpoint {
         # If a custom -Favicon is provided, process it accordingly.
         elseif ($null -ne $Favicon) {
             if ($Favicon -is [string]) {
-                # If the favicon is provided as a string (file path), verify its existence.
-                if (Test-Path -Path $Favicon -PathType Leaf) {
-                    # Load the favicon from the specified file path.
-                    $FaviconData = @{
-                        Bytes = [System.IO.File]::ReadAllBytes($Favicon)
-                    }
+                $Favicon = Get-PodeRelativePath -Path $Favicon -JoinRoot -Resolve -TestPath
+                # Load the favicon from the specified file path.
+                $FaviconData = @{
+                    Bytes = [System.IO.File]::ReadAllBytes($Favicon)
                 }
-                else {
-                    # Throw an exception if the specified file path does not exist.
-                    throw ($PodeLocale.pathNotExistExceptionMessage -f $Favicon)
-                }
+
             }
             elseif ($Favicon -is [byte[]]) {
                 # If the favicon is provided as a byte array, store it directly.
@@ -350,7 +345,7 @@ function Add-PodeEndpoint {
             }
 
             # Determine the content type of the favicon based on its byte data.
-            $FaviconData.ContentType = Get-PodeImageContentType Image $FaviconData.Bytes
+            $FaviconData.ContentType = Get-PodeImageContentType -Image $FaviconData.Bytes
         }
     }
 

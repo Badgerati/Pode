@@ -108,7 +108,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         }
     }
     else {
-        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default -DefaultFavicon
+        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default -Favicon "..\..\src\Misc\favicon.ico" ##-DefaultFavicon
     }
 
     # Enable error logging
