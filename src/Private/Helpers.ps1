@@ -4012,3 +4012,78 @@ function Get-PodeUtcNow {
         return [System.DateTime]::UtcNow
     }
 }
+
+
+function Compare-PodeVersion {
+    param (
+        [string]$CurrentVersion,
+        [string]$StateVersion
+    )
+
+    # [dev] always passes.
+    if ($CurrentVersion -eq '[dev]') {
+        return $true
+    }
+
+    # Determine if versions have pre-release parts.
+    $currentHasPre = $CurrentVersion -match '-'
+    $stateHasPre   = $StateVersion -match '-'
+
+    # Rule: Production (no pre-release) should never accept a pre-release state.
+    if (-not $currentHasPre -and $stateHasPre) {
+        return $false
+    }
+
+    # Split each version into base and pre-release components.
+    $currentSplit = $CurrentVersion -split '-', 2
+    $stateSplit   = $StateVersion -split '-', 2
+
+    try {
+        $currentBase = [System.Version]::Parse($currentSplit[0])
+        $stateBase   = [System.Version]::Parse($stateSplit[0])
+    }
+    catch {
+        throw "Invalid version format in '$CurrentVersion' or '$StateVersion'"
+    }
+
+    # Compare base versions.
+    if ($stateBase -lt $currentBase) {
+        return $true
+    }
+    elseif ($stateBase -gt $currentBase) {
+        return $false
+    }
+
+    # Base versions are equal.
+    $currentPre = if ($currentSplit.Length -gt 1) { $currentSplit[1] } else { $null }
+    $statePre   = if ($stateSplit.Length -gt 1) { $stateSplit[1] } else { $null }
+
+    # If current is production (no pre-release) and state is not, allow it.
+    if ($null -eq $currentPre -and $null -eq $statePre) {
+        return $true
+    }
+    # If current has a pre-release but state is production, that's not allowed.
+    if ($null -ne $currentPre -and $null -eq $statePre) {
+        return $false
+    }
+
+    # Both have pre-release parts: split on the period.
+    $currentParts = $currentPre -split '\.'
+    $stateParts   = $statePre -split '\.'
+
+    # Compare pre-release channels (e.g. alpha vs beta)
+    $currentTag = $currentParts[0]
+    $stateTag   = $stateParts[0]
+
+    if ($currentTag -ne $stateTag) {
+        # Different channels are not allowed.
+        return $false
+    }
+
+    # Compare numeric identifiers if available.
+    $currentNum = if ($currentParts.Length -gt 1) { [int]$currentParts[1] } else { 0 }
+    $stateNum   = if ($stateParts.Length -gt 1) { [int]$stateParts[1] } else { 0 }
+
+    # Allow state only if its numeric part is less than or equal to current.
+    return ($stateNum -le $currentNum)
+}

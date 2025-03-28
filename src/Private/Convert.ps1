@@ -12,6 +12,10 @@
 .PARAMETER Json
     A JSON string containing "Type" and "Items" at each dictionary/collection level.
 
+.PARAMETER Depth
+    Defines the maximum depth for JSON deserialization.
+    This value is passed to `ConvertFrom-PodeCustomDictionaryJson`. Default is **20**.
+
 .OUTPUTS
     - [Hashtable]
     - [System.Collections.Concurrent.ConcurrentDictionary[string, object]]
@@ -30,7 +34,11 @@ function ConvertFrom-PodeCustomDictionaryJson {
     [OutputType([hashtable])]
     param(
         [Parameter(Mandatory)]
-        [string]$Json
+        [string]
+        $Json,
+
+        [int16]
+        $Depth = 20
     )
 
     function Construct {
@@ -132,16 +140,16 @@ function ConvertFrom-PodeCustomDictionaryJson {
 
 
     # Parse the top-level JSON into a PSObject/Array
-    $parsed = $Json | ConvertFrom-Json
+    $parsed = $Json | ConvertFrom-Json -Depth $Depth
     if ($parsed.Metadata) {
         if ($parsed.Metadata.Product -ne 'Pode') {
             # 'The provided data does not represent a valid Pode state.'
             throw $PodeLocale.invalidPodeStateDataExceptionMessage
         }
         $podeVersion = (Get-PodeVersion -Raw)
-        if (!($podeVersion -eq '[dev]' -or ( ([System.Version]$parsed.Metadata) -le ([System.Version]$podeVersion))) ) {
+       if (!(Compare-PodeVersion -CurrentVersion $podeVersion -StateVersion $parsed.Metadata.Version)){ # if (!($podeVersion -eq '[dev]' -or ( ([System.Version]$parsed.Metadata) -le ([System.Version]$podeVersion))) ) {
             # The provided state data originates from a newer Pode version:
-            throw ($PodeLocale.podeStateVersionMismatchExceptionMessage -f $parsed.Metadata)
+            throw ($PodeLocale.podeStateVersionMismatchExceptionMessage -f $parsed.Metadata.Version)
         }
         if ($parsed.Metadata.Application -ne ($PodeContext.Server.ApplicationName)) {
             # The provided state data belongs to a different application

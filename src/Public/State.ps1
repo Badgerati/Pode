@@ -481,7 +481,7 @@ function Restore-PodeState {
     $json = Get-Content -Path $Path -Raw -Force
     if (![string]::IsNullOrWhiteSpace($json)) {
         # Deserialize the JSON, preserving dictionary structures
-        $state = ConvertFrom-PodeCustomDictionaryJson -Json $json
+        $state = ConvertFrom-PodeCustomDictionaryJson -Json $json -Depth $Depth
     }
     else {
         return  # Exit if the file is empty
