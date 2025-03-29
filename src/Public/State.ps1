@@ -113,19 +113,19 @@ function Set-PodeState {
 
 <#
 .SYNOPSIS
-Retrieves some state object from the shared state.
+    Retrieves some state object from the shared state.
 
 .DESCRIPTION
-Retrieves some state object from the shared state.
+    Retrieves some state object from the shared state.
 
 .PARAMETER Name
-The name of the state object.
+    The name of the state object.
 
 .PARAMETER WithScope
-If supplied, the state's value and scope will be returned as a hashtable.
+    If supplied, the state's value and scope will be returned as a hashtable.
 
 .EXAMPLE
-Get-PodeState -Name 'Data'
+    Get-PodeState -Name 'Data'
 #>
 function Get-PodeState {
     [CmdletBinding()]
@@ -153,22 +153,22 @@ function Get-PodeState {
 
 <#
 .SYNOPSIS
-Returns the current names of state variables.
+    Returns the current names of state variables.
 
 .DESCRIPTION
-Returns the current names of state variables that have been set. You can filter the result using Scope or a Pattern.
+    Returns the current names of state variables that have been set. You can filter the result using Scope or a Pattern.
 
 .PARAMETER Pattern
-An optional regex Pattern to filter the state names.
+    An optional regex Pattern to filter the state names.
 
 .PARAMETER Scope
-An optional Scope to filter the state names.
+    An optional Scope to filter the state names.
 
 .EXAMPLE
-$names = Get-PodeStateNames -Scope '<scope>'
+    $names = Get-PodeStateNames -Scope '<scope>'
 
 .EXAMPLE
-$names = Get-PodeStateNames -Pattern '^\w+[0-9]{0,2}$'
+    $names = Get-PodeStateNames -Pattern '^\w+[0-9]{0,2}$'
 #>
 function Get-PodeStateNames {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
@@ -303,10 +303,6 @@ function Remove-PodeState {
 
 .OUTPUTS
     [System.Void] - This function does not return an output. The state is saved to a file.
-
-.NOTES
-    - This function is intended for internal Pode usage and may be subject to changes.
-    - For more information, refer to: https://github.com/Badgerati/Pode/tree/develop
 #>
 function Save-PodeState {
     [CmdletBinding()]
@@ -334,8 +330,6 @@ function Save-PodeState {
         [switch]
         $Compress
     )
-
-
     # Validate Pode Server Context
 
     if ($null -eq $PodeContext -or
@@ -347,6 +341,93 @@ function Save-PodeState {
     # Convert relative path to absolute
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
+    $params = @{
+        Scope    = $Scope
+        Exclude  = $Exclude
+        Include  = $Include
+        Depth    = $Depth
+        Compress = $Compress
+    }
+    $json = ConvertFrom-PodeState  @params
+
+    # Save the JSON to the specified file path
+    $json | Out-File -FilePath $Path -Force
+}
+
+<#
+.SYNOPSIS
+	Serializes the current Pode server state into a JSON string.
+
+.DESCRIPTION
+	This function extracts and serializes the in-memory Pode state into a JSON-formatted string. It supports filtering by state scopes,
+	as well as selective inclusion or exclusion of state keys. The output can be formatted for readability or compressed for minimal size.
+	Dictionaries such as `ConcurrentDictionary`, `Hashtable`, and `OrderedDictionary` are preserved during serialization.
+
+.PARAMETER Scope
+	Filters the state entries based on their defined scope values.
+	Only state entries that match one or more of the specified scopes will be retained.
+	This filter has lower precedence than Exclude and Include.
+
+.PARAMETER Exclude
+	A list of state keys to be excluded from the serialized output.
+	This filter takes precedence over both Scope and Include.
+
+.PARAMETER Include
+	A list of specific state keys to include in the output.
+	This filter has higher precedence than Scope, but lower than Exclude.
+
+.PARAMETER Depth
+	Specifies the maximum object depth used during JSON serialization.
+	Passed directly to `ConvertTo-PodeCustomDictionaryJson`. Default is 20.
+
+.PARAMETER Compress
+	If set, the resulting JSON string will be minified (compact format without extra whitespace).
+
+.OUTPUTS
+	System.String
+
+.EXAMPLE
+	$state = ConvertFrom-PodeState
+	# Returns a JSON string representing the full current Pode state.
+
+.EXAMPLE
+	$state = ConvertFrom-PodeState -Exclude 'SessionData', 'Cache'
+	# Returns the state excluding the specified keys.
+
+.EXAMPLE
+	$state = ConvertFrom-PodeState -Scope 'Users'
+	# Returns only state entries that belong to the "Users" scope.
+#>
+function ConvertFrom-PodeState {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string[]]
+        $Exclude,
+
+        [Parameter()]
+        [string[]]
+        $Include,
+
+        [Parameter()]
+        [int16]
+        $Depth = 20,
+
+        [switch]
+        $Compress
+    )
+
+    # Validate Pode Server Context
+
+    if ($null -eq $PodeContext -or
+        $null -eq $PodeContext.Server -or
+        $null -eq $PodeContext.Server.State) {
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
+    }
 
     # Create a Shallow Copy of the Current State
 
@@ -357,9 +438,7 @@ function Save-PodeState {
         $null = $state.TryAdd($kvp.Key, $kvp.Value)
     }
 
-
     # Filter State by Scope
-
     if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
         $keys = $state.Keys
         foreach ($key in $keys) {
@@ -411,8 +490,90 @@ function Save-PodeState {
 
     # The state is converted to JSON while preserving dictionary types (Hashtable,
     # OrderedDictionary, ConcurrentDictionary). The Compress flag minifies output.
-    $json = ConvertTo-PodeCustomDictionaryJson -Dictionary $state -Depth $Depth -Compress:$Compress
-    $json | Out-File -FilePath $Path -Force
+    return ConvertTo-PodeCustomDictionaryJson -Dictionary $state -Depth $Depth -Compress:$Compress
+}
+
+<#
+.SYNOPSIS
+	Restores the Pode shared state from a JSON string.
+
+.DESCRIPTION
+	This function restores the in-memory Pode server state from a JSON string, ensuring compatibility
+	with dictionary-based structures such as `ConcurrentDictionary`, `Hashtable`, and `OrderedDictionary`.
+	If the JSON string is empty or null, the function exits silently without making changes.
+
+	The restored state can either **overwrite** the current Pode state or **merge** with it,
+	depending on the `-Merge` switch.
+
+.PARAMETER Json
+	The JSON string containing the previously saved Pode state.
+	This must be a valid dictionary structure compatible with Pode's state format.
+
+.PARAMETER Merge
+	If specified, the loaded state will be merged with the existing Pode state.
+	Otherwise, the current state will be fully replaced with the new data.
+
+.OUTPUTS
+	None
+
+.EXAMPLE
+	ConvertTo-PodeState -Json '{"Key1": "Value1", "Key2": "Value2"}'
+	# Restores the Pode state, replacing all existing state values.
+
+.EXAMPLE
+	ConvertTo-PodeState -Json '{"Key1": "Value1", "Key2": "Value2"}' -Merge
+	# Merges the restored state with the current Pode state, keeping existing keys.
+#>
+function ConvertTo-PodeState {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [string]$Json,
+
+        [switch]$Merge
+    )
+
+    <# Validate Pode Server Context #>
+    if ($null -eq $PodeContext -or
+        $null -eq $PodeContext.Server -or
+        $null -eq $PodeContext.Server.State) {
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Json)) {
+        # Deserialize the JSON, preserving dictionary structures
+        $state = ConvertFrom-PodeCustomDictionaryJson -Json $Json
+    }
+    else {
+        return  # Exit if the file is empty
+    }
+
+    <# Ensure Backward Compatibility for Missing Scopes #>
+    # Older versions of Pode may not include scope properties in state objects.
+    foreach ($_key in $state.Keys) {
+        if ($_key) {
+            if ($null -eq $state[$_key].Scope) {
+                $state[$_key].Scope = @()
+
+            }
+        }
+    }
+
+    <# Validate and Apply the Restored State #>
+    if ($state -is [System.Collections.IDictionary]) {
+        if (! $Merge) {
+            # If not merging, clear the existing state before applying the restored data
+            $PodeContext.Server.State.Clear()
+        }
+        # Merge or replace each key in the state
+        foreach ($key in $state.Keys) {
+            $null = $PodeContext.Server.State.TryAdd($key, $state[$key])
+        }
+    }
+    else {
+        # Raise an error if the file format is invalid
+        throw ($PodeLocale.invalidPodeStateFormatExceptionMessage -f $Path, $state.GetType().FullName)
+    }
 }
 
 <#
@@ -434,10 +595,6 @@ function Save-PodeState {
     If specified, the loaded state will be merged with the existing Pode state instead
     of replacing it.
 
-.PARAMETER Depth
-    Defines the maximum depth for JSON deserialization.
-    This value is passed to `ConvertFrom-PodeCustomDictionaryJson`. Default is **20**.
-
 .EXAMPLE
     Restore-PodeState -Path './state.json'
     Restores the Pode state from `state.json`, replacing the current state.
@@ -445,13 +602,6 @@ function Save-PodeState {
 .EXAMPLE
     Restore-PodeState -Path './state.json' -Merge
     Merges the loaded state with the existing Pode state.
-
-.OUTPUTS
-    [System.Void] - The function updates `$PodeContext.Server.State` but does not return a value.
-
-.NOTES
-    - This function is intended for internal Pode usage and may be subject to changes.
-    - For more details, refer to: https://github.com/Badgerati/Pode/tree/develop
 #>
 function Restore-PodeState {
     [CmdletBinding()]
@@ -459,9 +609,7 @@ function Restore-PodeState {
         [Parameter(Mandatory = $true)]
         [string]$Path,
 
-        [switch]$Merge,
-
-        [int16]$Depth = 20
+        [switch]$Merge
     )
 
     <# Validate Pode Server Context #>
@@ -476,44 +624,13 @@ function Restore-PodeState {
     if (!(Test-Path $Path)) {
         return  # Exit silently if the file does not exist
     }
-
     <# Read and Deserialize JSON #>
     $json = Get-Content -Path $Path -Raw -Force
-    if (![string]::IsNullOrWhiteSpace($json)) {
-        # Deserialize the JSON, preserving dictionary structures
-        $state = ConvertFrom-PodeCustomDictionaryJson -Json $json -Depth $Depth
-    }
-    else {
+    if ([string]::IsNullOrWhiteSpace($json)) {
         return  # Exit if the file is empty
     }
 
-    <# Ensure Backward Compatibility for Missing Scopes #>
-    # Older versions of Pode may not include scope properties in state objects.
-    foreach ($_key in $state.Keys) {
-        if ($_key) {
-            if ($null -eq $state[$_key].Scope) {
-                $state[$_key].Scope = @()
-
-            }
-        }
-    }
-
-
-    <# Validate and Apply the Restored State #>
-    if ($state -is [System.Collections.IDictionary]) {
-        if (! $Merge) {
-            # If not merging, clear the existing state before applying the restored data
-            $PodeContext.Server.State.Clear()
-        }
-        # Merge or replace each key in the state
-        foreach ($key in $state.Keys) {
-            $null = $PodeContext.Server.State.TryAdd($key, $state[$key])
-        }
-    }
-    else {
-        # Raise an error if the file format is invalid
-        throw ($PodeLocale.invalidPodeStateFormatExceptionMessage -f $Path, $state.GetType().FullName)
-    }
+    ConvertTo-PodeState -Json $json -Merge:$Merge
 }
 
 <#

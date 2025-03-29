@@ -12,10 +12,6 @@
 .PARAMETER Json
     A JSON string containing "Type" and "Items" at each dictionary/collection level.
 
-.PARAMETER Depth
-    Defines the maximum depth for JSON deserialization.
-    This value is passed to `ConvertFrom-PodeCustomDictionaryJson`. Default is **20**.
-
 .OUTPUTS
     - [Hashtable]
     - [System.Collections.Concurrent.ConcurrentDictionary[string, object]]
@@ -35,10 +31,7 @@ function ConvertFrom-PodeCustomDictionaryJson {
     param(
         [Parameter(Mandatory)]
         [string]
-        $Json,
-
-        [int16]
-        $Depth = 20
+        $Json
     )
 
     function Construct {
@@ -140,7 +133,7 @@ function ConvertFrom-PodeCustomDictionaryJson {
 
 
     # Parse the top-level JSON into a PSObject/Array
-    $parsed = $Json | ConvertFrom-Json -Depth $Depth
+    $parsed = $Json | ConvertFrom-Json
     if ($parsed.Metadata) {
         if ($parsed.Metadata.Product -ne 'Pode') {
             # 'The provided data does not represent a valid Pode state.'

@@ -17,7 +17,9 @@ Pode supports various structures for shared state, some of which are thread-safe
 
 - `OrderedDictionary`
 - `Hashtable`
-- `PSCustomObject`When using a thread-safe object, `Lock-PodeObject` is no longer required.
+- `PSCustomObject`
+
+When using a thread-safe object, `Lock-PodeObject` is no longer required.
 
 !!! tip
 It's wise to use the State in conjunction with [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject) when dealing with non-thread-safe objects to ensure thread safety between runspaces.
@@ -137,25 +139,100 @@ Start-PodeServer {
 
 ### Save
 
-The [`Save-PodeState`](../../Functions/State/Save-PodeState) function will save the current state, as JSON, to the specified file. The file path can either be relative or literal. When saving the state, it's recommended to wrap the function within [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject) if dealing with non-thread-safe objects.
+The [`Save-PodeState`](../../Functions/State/Save-PodeState) function will save the current shared state, as JSON, to a specified file path. The file can be relative or absolute.
+
+This function supports optional filtering by state scope, as well as inclusion or exclusion of specific state keys. It also supports setting the maximum object depth and compressing the output for smaller file sizes.
+
+When saving non-thread-safe objects like `Hashtable`, `OrderedDictionary`, or `PSCustomObject`, it's recommended to wrap the function in [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject) for thread safety.
 
 ```powershell
 Start-PodeServer {
     Add-PodeSchedule -Name 'save-state' -Cron '@hourly' -ScriptBlock {
-        Save-PodeState -Path './state.json'
+        Lock-PodeObject -ScriptBlock {
+            Save-PodeState -Path './state.json' -Exclude 'SensitiveData' -Compress
+        }
     }
 }
 ```
 
+**Parameters:**
+
+- `-Path`: File path to save the state to
+- `-Scope`: Only include state items with matching scope(s)
+- `-Include`: Include only specified keys (lower precedence than `-Exclude`)
+- `-Exclude`: Exclude specific keys (takes precedence over `-Include`)
+- `-Depth`: Max object depth for serialization (default: 20)
+- `-Compress`: If specified, produces compact/minified JSON output
+
+---
+
 ### Restore
 
-The [`Restore-PodeState`](../../Functions/State/Restore-PodeState) function will restore the current state from the specified file. The file path can either be relative or a literal path. If you're restoring the state immediately on server start, you don't need to use [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject).
+The [`Restore-PodeState`](../../Functions/State/Restore-PodeState) function will restore the shared state from a JSON file. The file path can be relative or absolute.
+
+By default, the current state is fully replaced by the restored contents. To merge the loaded state with the existing one instead, use the `-Merge` switch.
+
+If the file does not exist, the function will exit silently without making changes.
 
 ```powershell
 Start-PodeServer {
-    Restore-PodeState './state.json'
+    Restore-PodeState -Path './state.json' -Merge
 }
 ```
+
+**Parameters:**
+
+- `-Path`: File path of the saved state JSON
+- `-Merge`: If specified, merges with the existing state instead of replacing it
+
+### Export to String
+
+The [`ConvertFrom-PodeState`](../../Functions/State/ConvertFrom-PodeState) function will export the current shared state as a JSON string. This is useful when you want to persist the state outside of a file — such as storing in a database, sending over an API, or caching in memory.
+
+You can filter which keys are included, control serialization depth, and choose between a compact or pretty-printed format.
+
+```powershell
+Start-PodeServer {
+    Add-PodeSchedule -Name 'dump-state' -Cron '@hourly' -ScriptBlock {
+        $json = ConvertFrom-PodeState -Exclude 'Sensitive' -Compress
+
+        # send $json to remote service or log for recovery
+    }
+}
+```
+
+**Parameters:**
+
+- `-Scope`: Only include state items with matching scope(s)
+- `-Include`: Include only specific keys
+- `-Exclude`: Exclude specific keys (takes precedence over `-Include` and `-Scope`)
+- `-Depth`: Max object depth for serialization (default: 20)
+- `-Compress`: If specified, outputs compact/minified JSON
+
+---
+
+### Import from String
+
+The [`ConvertTo-PodeState`](../../Functions/State/ConvertTo-PodeState) function will import shared state from a JSON string. This allows restoring state from memory, a database, or API payloads — instead of reading from a file.
+
+By default, it replaces the existing state. To **merge** with the existing state instead, use the `-Merge` switch.
+
+```powershell
+Start-PodeServer {
+    Add-PodeRoute -Method Post -Path '/state/import' -ScriptBlock {
+        $body = Read-PodeJsonBody
+        ConvertTo-PodeState -Json $body.Json -Merge
+    }
+}
+```
+
+**Parameters:**
+
+- `-Json`: A valid JSON string containing state data
+- `-Merge`: If specified, merges with existing state instead of replacing it
+
+!!! tip
+If the JSON string is `$null` or empty, the function will silently do nothing.
 
 ## Full Example
 

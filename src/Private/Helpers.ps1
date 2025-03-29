@@ -4013,7 +4013,39 @@ function Get-PodeUtcNow {
     }
 }
 
+<#
+.SYNOPSIS
+	Evaluates if a given state version is valid against the current Pode version.
 
+.DESCRIPTION
+	This internal function compares two Pode version strings to determine if the state version is acceptable for use with the current version.
+	It accounts for semantic versioning rules and special handling for pre-release identifiers (e.g., alpha, beta).
+	If the current version is set to '[dev]', it always returns true to permit development overrides.
+
+.PARAMETER CurrentVersion
+	The currently executing Pode version string. This may include pre-release identifiers or be '[dev]'.
+
+.PARAMETER StateVersion
+	The version string from state data that should be validated against the current Pode version.
+
+.OUTPUTS
+	System.Boolean
+
+.EXAMPLE
+	Compare-PodeVersion -CurrentVersion '2.5.0' -StateVersion '2.4.3'
+	# Returns $true since the state version is less than the current version.
+
+.EXAMPLE
+	Compare-PodeVersion -CurrentVersion '2.5.0-beta.2' -StateVersion '2.5.0-beta.1'
+	# Returns $true since the state version is a lower pre-release of the same channel.
+
+.EXAMPLE
+	Compare-PodeVersion -CurrentVersion '2.5.0' -StateVersion '2.5.0-beta.1'
+	# Returns $false since a production version cannot accept a pre-release state.
+
+.NOTES
+	This is an internal Pode function and is subject to change.
+#>
 function Compare-PodeVersion {
     param (
         [string]$CurrentVersion,
@@ -4027,7 +4059,7 @@ function Compare-PodeVersion {
 
     # Determine if versions have pre-release parts.
     $currentHasPre = $CurrentVersion -match '-'
-    $stateHasPre   = $StateVersion -match '-'
+    $stateHasPre = $StateVersion -match '-'
 
     # Rule: Production (no pre-release) should never accept a pre-release state.
     if (-not $currentHasPre -and $stateHasPre) {
@@ -4036,15 +4068,11 @@ function Compare-PodeVersion {
 
     # Split each version into base and pre-release components.
     $currentSplit = $CurrentVersion -split '-', 2
-    $stateSplit   = $StateVersion -split '-', 2
+    $stateSplit = $StateVersion -split '-', 2
 
-    try {
-        $currentBase = [System.Version]::Parse($currentSplit[0])
-        $stateBase   = [System.Version]::Parse($stateSplit[0])
-    }
-    catch {
-        throw "Invalid version format in '$CurrentVersion' or '$StateVersion'"
-    }
+    $currentBase = [System.Version]::Parse($currentSplit[0])
+    $stateBase = [System.Version]::Parse($stateSplit[0])
+
 
     # Compare base versions.
     if ($stateBase -lt $currentBase) {
@@ -4056,7 +4084,7 @@ function Compare-PodeVersion {
 
     # Base versions are equal.
     $currentPre = if ($currentSplit.Length -gt 1) { $currentSplit[1] } else { $null }
-    $statePre   = if ($stateSplit.Length -gt 1) { $stateSplit[1] } else { $null }
+    $statePre = if ($stateSplit.Length -gt 1) { $stateSplit[1] } else { $null }
 
     # If current is production (no pre-release) and state is not, allow it.
     if ($null -eq $currentPre -and $null -eq $statePre) {
@@ -4069,11 +4097,11 @@ function Compare-PodeVersion {
 
     # Both have pre-release parts: split on the period.
     $currentParts = $currentPre -split '\.'
-    $stateParts   = $statePre -split '\.'
+    $stateParts = $statePre -split '\.'
 
     # Compare pre-release channels (e.g. alpha vs beta)
     $currentTag = $currentParts[0]
-    $stateTag   = $stateParts[0]
+    $stateTag = $stateParts[0]
 
     if ($currentTag -ne $stateTag) {
         # Different channels are not allowed.
@@ -4082,7 +4110,7 @@ function Compare-PodeVersion {
 
     # Compare numeric identifiers if available.
     $currentNum = if ($currentParts.Length -gt 1) { [int]$currentParts[1] } else { 0 }
-    $stateNum   = if ($stateParts.Length -gt 1) { [int]$stateParts[1] } else { 0 }
+    $stateNum = if ($stateParts.Length -gt 1) { [int]$stateParts[1] } else { 0 }
 
     # Allow state only if its numeric part is less than or equal to current.
     return ($stateNum -le $currentNum)
