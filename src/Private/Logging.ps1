@@ -535,13 +535,16 @@ function Write-PodeRequestLog {
         RfcUserIdentity = '-'
         User            = '-'
         Date            = $date
+        UtcDate         = [DateTime]::UtcNow
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
+            Hostname = $Request.Host.ToLowerInvariant()
+            Scheme   = $Request.Scheme.ToLowerInvariant()
             Resource = $Path
+            Query = (Protect-PodeValue -Value $Request.Url.Query -Default '-').TrimStart('?')
             Protocol = "HTTP/$($Request.ProtocolVersion)"
             Referrer = $Request.UrlReferrer
-            Agent    = $Request.UserAgent
-            Query    = ($Request.url -split '\?')[1]
+            Agent    = $Request.UserAgent 
         }
         Response        = @{
             StatusCode        = $Response.StatusCode
