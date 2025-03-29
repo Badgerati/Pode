@@ -63,10 +63,10 @@ function Get-PodeLoggingFileMethod {
         $item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
 
         # if set, remove log files beyond days set (ensure this is only run once a day)
-        if (($options.MaxDays -gt 0) -and ($options.NextClearDown -lt [DateTime]::Now.Date)) {
+        if (($options.MaxDays -gt 0) -and ($options.NextClearDown -le [DateTime]::Now.Date)) {
             $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
 
-            $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
+            $null = Get-ChildItem -Path $options.Path -Filter "$($options.Name)_*.log" -Force |
                 Where-Object { $_.CreationTime -lt $date } |
                 Remove-Item -Force
 
@@ -327,9 +327,13 @@ function Write-PodeRequestLog {
         RfcUserIdentity = '-'
         User            = '-'
         Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
+        UtcDate         = [DateTime]::UtcNow
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
+            Hostname = $Request.Host.ToLowerInvariant()
+            Scheme   = $Request.Scheme.ToLowerInvariant()
             Resource = $Path
+            Query = (Protect-PodeValue -Value $Request.Url.Query -Default '-').TrimStart('?')
             Protocol = "HTTP/$($Request.ProtocolVersion)"
             Referrer = $Request.UrlReferrer
             Agent    = $Request.UserAgent
@@ -340,7 +344,7 @@ function Write-PodeRequestLog {
             Size              = '-'
         }
     }
-
+    
     # set size if >0
     if ($Response.ContentLength64 -gt 0) {
         $item.Response.Size = $Response.ContentLength64
