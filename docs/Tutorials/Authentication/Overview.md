@@ -16,7 +16,7 @@ The [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme)
 The following schemes are supported:
 
 * [API Key](../Methods/ApiKey)
-* [Azure AD](../Methods/AzureAD)
+* [Azure AD](../Inbuilt/AzureAD)
 * [Basic](../Methods/Basic)
 * [Bearer](../Methods/Bearer)
 * [Client Certificate](../Methods/ClientCertificate)
