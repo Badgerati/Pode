@@ -61,6 +61,24 @@ Set-PodeState -Name 'Cache' -NewCollectionType 'ConcurrentDictionary'
 Set-PodeState -Name 'Tasks' -NewCollectionType 'ConcurrentQueue'
 ```
 
+!!! warning
+When using `.NET` concurrent collections, only certain generic types are supported for JSON serialization.
+
+✅ **Supported forms:**
+
+- `[System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)`
+- `[System.Collections.Concurrent.ConcurrentStack[object]]`
+- `[System.Collections.Concurrent.ConcurrentQueue[object]]`
+- `[System.Collections.Concurrent.ConcurrentBag[object]]`
+
+❌ **Unsupported forms (may cause JSON conversion errors):**
+
+- `[System.Collections.Concurrent.ConcurrentDictionary[string, string]]::new(...)`
+- `[System.Collections.Concurrent.ConcurrentBag[int]]`
+- Any other strongly typed generic versions
+
+To ensure compatibility with `ConvertFrom-PodeState`, `Save-PodeState`, or similar serialization functions, always use `object` as the generic type and apply a case-insensitive comparer where applicable.
+
 The [`Set-PodeState`](../../Functions/State/Set-PodeState) function will create/update a variable in the state. You need to supply a name and a value to set on the state, and there's also an optional scope that can be supplied - which lets you save specific state objects with a certain scope.
 
 !!! tip
