@@ -20,7 +20,7 @@ Describe 'Add-PodeFavicon' {
 
     Context 'Using -Default parameter' {
         It 'adds the default favicon to all HTTP endpoints' {
-            Mock Get-PodeModuleMiscPath { return "$($src)misc" }
+            Mock Get-PodeModuleMiscPath { return "$($src)Misc" }
             Mock Get-PodeImageContentType { return 'image/x-icon' }
 
 
@@ -37,7 +37,7 @@ Describe 'Add-PodeFavicon' {
 
     Context 'Using -Path parameter' {
         It 'adds a custom favicon from file' {
-            Mock Get-PodeRelativePath { return "$($src)misc/favicon.ico" }
+            Mock Get-PodeRelativePath { return "$($src)Misc/favicon.ico" }
             Mock Get-PodeImageContentType { return 'image/x-icon' }
 
 
@@ -67,7 +67,7 @@ Describe 'Add-PodeFavicon' {
     Context 'Using -DefaultEndpoint switch' {
 
         It 'adds favicon only to endpoints marked as default' {
-            Mock Get-PodeModuleMiscPath { return "$($src)misc" }
+            Mock Get-PodeModuleMiscPath { return "$($src)Misc" }
             Mock Get-PodeImageContentType { return 'image/x-icon' }
 
             Add-PodeFavicon -Default -DefaultEndpoint
@@ -80,7 +80,7 @@ Describe 'Add-PodeFavicon' {
             $PodeContext.Server.Endpoints['default'].Default = $false
             $PodeContext.Server.Endpoints['api'].Default = $false
 
-            Mock Get-PodeModuleMiscPath { return "$($src)misc" }
+            Mock Get-PodeModuleMiscPath { return "$($src)Misc" }
             Mock Get-PodeImageContentType { return 'image/x-icon' }
 
             Add-PodeFavicon -Default -DefaultEndpoint
@@ -300,7 +300,7 @@ Describe 'Remove-PodeFavicon' {
             }
         }
     }
-    
+
     Context 'Invalid endpoint name' {
         It 'throws if the endpoint does not exist' {
             { Remove-PodeFavicon -EndpointName 'invalid' } | Should -Throw  ($Podelocale.endpointNameNotExistExceptionMessage -f 'invalid')
