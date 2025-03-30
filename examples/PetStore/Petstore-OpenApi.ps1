@@ -99,7 +99,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
     # Configure Pode server endpoints
     if ((Get-PodeConfig).Protocol -eq 'Https') {
         if ((Get-PodeConfig).SelfSignedCertificate) {
-            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -SelfSigned -Default -DefaultFavicon
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -SelfSigned -Default
         }
         else {
             $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
@@ -108,8 +108,11 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         }
     }
     else {
-        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default -Favicon "..\..\src\Misc\favicon.ico" ##-DefaultFavicon
+        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default
     }
+
+    # Set the default endpoint to use the PodeFavicon icon
+    Add-PodeFavicon -Default
 
     # Enable error logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

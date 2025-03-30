@@ -1,3 +1,4 @@
+
 <#
 .SYNOPSIS
 Bind an endpoint to listen for incoming Requests.
@@ -18,13 +19,13 @@ An optional hostname for the endpoint, specifying a hostname restricts access to
 The protocol of the supplied endpoint.
 
 .PARAMETER Certificate
-The path to a certificate that can be used to enable HTTPS.
+The path to a certificate that can be use to enable HTTPS
 
 .PARAMETER CertificatePassword
-The password for the certificate file referenced in Certificate.
+The password for the certificate file referenced in Certificate
 
 .PARAMETER CertificateKey
-A key file to be paired with a PEM certificate file referenced in Certificate.
+A key file to be paired with a PEM certificate file referenced in Certificate
 
 .PARAMETER CertificateThumbprint
 A certificate thumbprint to bind onto HTTPS endpoints (Windows).
@@ -33,13 +34,13 @@ A certificate thumbprint to bind onto HTTPS endpoints (Windows).
 A certificate subject name to bind onto HTTPS endpoints (Windows).
 
 .PARAMETER CertificateStoreName
-The name of a certificate store where a certificate can be found (Default: My) (Windows).
+The name of a certifcate store where a certificate can be found (Default: My) (Windows).
 
 .PARAMETER CertificateStoreLocation
-The location of a certificate store where a certificate can be found (Default: CurrentUser) (Windows).
+The location of a certifcate store where a certificate can be found (Default: CurrentUser) (Windows).
 
 .PARAMETER X509Certificate
-The raw X509 certificate that can be used to enable HTTPS.
+The raw X509 certificate that can be use to enable HTTPS
 
 .PARAMETER TlsMode
 The TLS mode to use on secure connections, options are Implicit or Explicit (SMTP only) (Default: Implicit).
@@ -57,16 +58,16 @@ A quick description of the Endpoint - normally used in OpenAPI.
 An optional Acknowledge message to send to clients when they first connect, for TCP and SMTP endpoints only.
 
 .PARAMETER SslProtocol
-One or more optional SSL Protocols this endpoint supports. (Default: SSL3/TLS12 - Just TLS12 on MacOS).
+One or more optional SSL Protocols this endpoints supports. (Default: SSL3/TLS12 - Just TLS12 on MacOS).
 
 .PARAMETER CRLFMessageEnd
 If supplied, TCP endpoints will expect incoming data to end with CRLF.
 
 .PARAMETER Force
-Ignore Administrator checks for non-localhost endpoints.
+Ignore Adminstrator checks for non-localhost endpoints.
 
 .PARAMETER SelfSigned
-Create and bind a self-signed certificate for HTTPS endpoints.
+Create and bind a self-signed certifcate for HTTPS endpoints.
 
 .PARAMETER AllowClientCertificate
 Allow for client certificates to be sent on requests.
@@ -83,12 +84,6 @@ For IPv6, this will only work if the IPv6 address can convert to a valid IPv4 ad
 
 .PARAMETER Default
 If supplied, this endpoint will be the default one used for internally generating URLs.
-
-.PARAMETER Favicon
-Specifies a custom favicon for HTTP/HTTPS endpoints. This parameter accepts either a byte array containing the favicon image data or a file path pointing to the favicon file.
-
-.PARAMETER DefaultFavicon
-If supplied, enable the default Pode favicon for HTTP/HTTPS endpoints.
 
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
@@ -213,13 +208,7 @@ function Add-PodeEndpoint {
         $DualMode,
 
         [switch]
-        $Default,
-
-        [object]
-        $Favicon,
-
-        [switch]
-        $DefaultFavicon
+        $Default
     )
 
     # error if serverless
@@ -303,52 +292,6 @@ function Add-PodeEndpoint {
         throw ($PodeLocale.crlfMessageEndCheckOnlySupportedOnTcpEndpointsExceptionMessage)
     }
 
-    # Check if both -Favicon and -DefaultFavicon are provided, which is not allowed.
-    # If both are set, throw an exception with a relevant message.
-    if (($null -ne $Favicon) -and $DefaultFavicon) {
-        throw ($Podelocale.parametersMutuallyExclusiveExceptionMessage -f '-Favicon', '-DefaultFavicon')
-    }
-
-    # If the protocol is either HTTP or HTTPS, proceed with favicon processing.
-    if (@('Http', 'Https') -icontains $Protocol) {
-        # If no custom -Favicon is provided and -DefaultFavicon is enabled,
-        # set the default favicon from Pode's miscellaneous path.
-        if ($DefaultFavicon) {
-            # Retrieve the Pode module's miscellaneous path.
-            $podeRoot = Get-PodeModuleMiscPath
-
-            # Load the default favicon.ico file from the Pode module directory.
-            $FaviconData = @{
-                Bytes       = [System.IO.File]::ReadAllBytes([System.IO.Path]::Combine($podeRoot, 'favicon.ico'))
-                ContentType = 'image/x-icon'
-            }
-        }
-        # If a custom -Favicon is provided, process it accordingly.
-        elseif ($null -ne $Favicon) {
-            if ($Favicon -is [string]) {
-                $Favicon = Get-PodeRelativePath -Path $Favicon -JoinRoot -Resolve -TestPath
-                # Load the favicon from the specified file path.
-                $FaviconData = @{
-                    Bytes = [System.IO.File]::ReadAllBytes($Favicon)
-                }
-
-            }
-            elseif ($Favicon -is [byte[]]) {
-                # If the favicon is provided as a byte array, store it directly.
-                $FaviconData = @{
-                    Bytes = $Favicon
-                }
-            }
-            else {
-                # Throw an exception if the favicon is of an unsupported type.
-                throw ($PodeLocale.invalidFaviconTypeExceptionMessage -f $Favicon.GetType().Name)
-            }
-
-            # Determine the content type of the favicon based on its byte data.
-            $FaviconData.ContentType = Get-PodeImageContentType -Image $FaviconData.Bytes
-        }
-    }
-
     # new endpoint object
     $obj = @{
         Name         = $Name
@@ -381,9 +324,8 @@ function Add-PodeEndpoint {
             Acknowledge    = $Acknowledge
             CRLFMessageEnd = $CRLFMessageEnd
         }
-        Favicon      = $FaviconData
+        Favicon      = $null
     }
-
 
     # set ssl protocols
     if (!(Test-PodeIsEmpty $SslProtocol)) {

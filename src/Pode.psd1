@@ -357,6 +357,10 @@
         'Add-PodeOAExternalRoute',
         'New-PodeOAServerEndpoint',
         'Test-PodeOAVersion',
+        'Add-PodeFavicon',
+        'Test-PodeFavicon',
+        'Get-PodeFavicon',
+        'Remove-PodeFavicon',
 
         # Components
         'Add-PodeOAComponentResponse',
