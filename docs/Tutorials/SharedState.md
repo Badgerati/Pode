@@ -202,6 +202,7 @@ Start-PodeServer {
 
 - `-Path`: File path of the saved state JSON
 - `-Merge`: If specified, merges with the existing state instead of replacing it
+- `-Force`: If specified, forces the conversion even if the Pode version is older than the state data
 
 ### Export to String
 
@@ -248,6 +249,7 @@ Start-PodeServer {
 
 - `-Json`: A valid JSON string containing state data
 - `-Merge`: If specified, merges with existing state instead of replacing it
+- `-Force`: If specified, forces the conversion even if the Pode version is older than the state data
 
 !!! tip
 If the JSON string is `$null` or empty, the function will silently do nothing.

@@ -12,6 +12,9 @@
 .PARAMETER Json
     A JSON string containing "Type" and "Items" at each dictionary/collection level.
 
+.PARAMETER Force
+    If supplied, forces the conversion even if the Pode version is older than the state data.
+
 .OUTPUTS
     - [Hashtable]
     - [System.Collections.Concurrent.ConcurrentDictionary[string, object]]
@@ -31,7 +34,10 @@ function ConvertFrom-PodeCustomDictionaryJson {
     param(
         [Parameter(Mandatory)]
         [string]
-        $Json
+        $Json,
+
+        [switch]
+        $Force
     )
 
     function Construct {
@@ -140,10 +146,11 @@ function ConvertFrom-PodeCustomDictionaryJson {
             throw $PodeLocale.invalidPodeStateDataExceptionMessage
         }
         $podeVersion = (Get-PodeVersion -Raw)
-       if (!(Compare-PodeVersion -CurrentVersion $podeVersion -StateVersion $parsed.Metadata.Version)){ # if (!($podeVersion -eq '[dev]' -or ( ([System.Version]$parsed.Metadata) -le ([System.Version]$podeVersion))) ) {
+        if (!$Force -and !(Compare-PodeVersion -CurrentVersion $podeVersion -StateVersion $parsed.Metadata.Version)) {
             # The provided state data originates from a newer Pode version:
             throw ($PodeLocale.podeStateVersionMismatchExceptionMessage -f $parsed.Metadata.Version)
         }
+
         if ($parsed.Metadata.Application -ne ($PodeContext.Server.ApplicationName)) {
             # The provided state data belongs to a different application
             throw ($PodeLocale.podeStateApplicationMismatchExceptionMessage -f $parsed.Metadata.Application)

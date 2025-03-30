@@ -513,6 +513,9 @@ function ConvertFrom-PodeState {
 	If specified, the loaded state will be merged with the existing Pode state.
 	Otherwise, the current state will be fully replaced with the new data.
 
+.PARAMETER Force
+    If supplied, forces the conversion even if the Pode version is older than the state data.
+
 .OUTPUTS
 	None
 
@@ -528,9 +531,14 @@ function ConvertTo-PodeState {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string]$Json,
+        [string]
+        $Json,
 
-        [switch]$Merge
+        [switch]
+        $Merge,
+
+        [switch]
+        $Force
     )
 
     <# Validate Pode Server Context #>
@@ -542,7 +550,7 @@ function ConvertTo-PodeState {
 
     if (![string]::IsNullOrWhiteSpace($Json)) {
         # Deserialize the JSON, preserving dictionary structures
-        $state = ConvertFrom-PodeCustomDictionaryJson -Json $Json
+        $state = ConvertFrom-PodeCustomDictionaryJson -Json $Json -Force:$Force
     }
     else {
         return  # Exit if the file is empty
@@ -595,6 +603,9 @@ function ConvertTo-PodeState {
     If specified, the loaded state will be merged with the existing Pode state instead
     of replacing it.
 
+.PARAMETER Force
+    If supplied, forces the conversion even if the Pode version is older than the state data.
+
 .EXAMPLE
     Restore-PodeState -Path './state.json'
     Restores the Pode state from `state.json`, replacing the current state.
@@ -607,9 +618,14 @@ function Restore-PodeState {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Path,
+        [string]
+        $Path,
 
-        [switch]$Merge
+        [switch]
+        $Merge,
+
+        [switch]
+        $Force
     )
 
     <# Validate Pode Server Context #>
@@ -630,7 +646,7 @@ function Restore-PodeState {
         return  # Exit if the file is empty
     }
 
-    ConvertTo-PodeState -Json $json -Merge:$Merge
+    ConvertTo-PodeState -Json $json -Merge:$Merge -Force:$Force
 }
 
 <#
