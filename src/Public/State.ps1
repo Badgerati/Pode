@@ -575,7 +575,7 @@ function ConvertTo-PodeState {
         }
         # Merge or replace each key in the state
         foreach ($key in $state.Keys) {
-            $null = $PodeContext.Server.State.TryAdd($key, $state[$key])
+            $null = $PodeContext.Server.State[$key]= $state[$key]
         }
     }
     else {
