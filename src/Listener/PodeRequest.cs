@@ -232,7 +232,7 @@ namespace Pode
         /// Provides access to a buffer. The buffer is allocated only when first requested,
         /// saving memory if it is never needed.
         /// </summary>
-        protected virtual byte[] Buffer
+        protected byte[] Buffer
         {
             get
             {
