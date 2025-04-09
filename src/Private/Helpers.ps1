@@ -118,8 +118,15 @@ function Get-PodeFileContent {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        $NoEscape
     )
+
+    if (!$NoEscape) {
+        $Path = [WildcardPattern]::Escape($Path)
+    }
 
     return (Get-Content -Path $Path -Raw -Encoding utf8)
 }
@@ -1799,7 +1806,6 @@ function Test-PodePath {
         catch {
             $statusCode = 400
         }
-
     }
 
     if ($statusCode -eq 200) {
@@ -2497,7 +2503,6 @@ function Get-PodeRelativePath {
 
         [switch]
         $TestPath
-
     )
 
     # if the path is relative, join to root if flagged
@@ -2517,7 +2522,8 @@ function Get-PodeRelativePath {
 
     # if flagged, test the path and throw error if it doesn't exist
     if ($TestPath -and !(Test-PodePath $Path -NoStatus)) {
-        throw ($PodeLocale.pathNotExistExceptionMessage -f (Protect-PodeValue -Value $Path -Default $_rawPath))#"The path does not exist: $(Protect-PodeValue -Value $Path -Default $_rawPath)"
+        # "The path does not exist: $(Protect-PodeValue -Value $Path -Default $_rawPath)"
+        throw ($PodeLocale.pathNotExistExceptionMessage -f (Protect-PodeValue -Value $Path -Default $_rawPath))
     }
 
     return $Path

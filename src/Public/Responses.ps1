@@ -23,6 +23,9 @@ Optional EndpointName that the static route was creating under.
 .PARAMETER FileBrowser
 If the path is a folder, instead of returning 404, will return A browsable content of the directory.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'downloads/installer.exe'
 
@@ -37,6 +40,12 @@ Set-PodeResponseAttachment -Path './data.txt' -ContentType 'application/json'
 
 .EXAMPLE
 Set-PodeResponseAttachment -Path '/assets/data.txt' -EndpointName 'Example'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './[metadata].json'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './`[metadata`].json' -NoEscape
 #>
 
 function Set-PodeResponseAttachment {
@@ -55,8 +64,10 @@ function Set-PodeResponseAttachment {
         $EndpointName,
 
         [switch]
-        $FileBrowser
+        $FileBrowser,
 
+        [switch]
+        $NoEscape
     )
     begin {
         $pipelineItemCount = 0
@@ -76,8 +87,13 @@ function Set-PodeResponseAttachment {
             return
         }
 
+        # escape the path if needed
+        if (!$NoEscape) {
+            $Path = [WildcardPattern]::Escape($Path)
+        }
+
         # only attach files from public/static-route directories when path is relative
-        $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
+        $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName -NoEscape)
         if ($route) {
             $_path = $route.Content.Source
         }
@@ -86,7 +102,7 @@ function Set-PodeResponseAttachment {
         }
 
         #call internal Attachment function
-        Write-PodeAttachmentResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser
+        Write-PodeAttachmentResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser -NoEscape
     }
 }
 
@@ -187,7 +203,7 @@ function Write-PodeTextResponse {
             return
         }
 
-        # if the response stream isn't writable or already sent, return
+        # if the response stream isn't writeable or already sent, return
         $res = $WebEvent.Response
         if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite -or $res.Sent))) {
             return
@@ -339,6 +355,9 @@ Should the file's content be cached by browsers, or not?
 .PARAMETER FileBrowser
 If the path is a folder, instead of returning 404, will return A browsable content of the directory.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Files/Stuff.txt'
 
@@ -356,6 +375,12 @@ Write-PodeFileResponse -Path 'C:/Files/Stuff.txt' -StatusCode 201
 
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Files/' -FileBrowser
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './[metadata].json'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './`[metadata`].json' -NoEscape
 #>
 function Write-PodeFileResponse {
     [CmdletBinding()]
@@ -384,8 +409,12 @@ function Write-PodeFileResponse {
         $Cache,
 
         [switch]
-        $FileBrowser
+        $FileBrowser,
+
+        [switch]
+        $NoEscape
     )
+
     begin {
         $pipelineItemCount = 0
     }
@@ -398,11 +427,25 @@ function Write-PodeFileResponse {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
+        # escape the path if needed
+        if (!$NoEscape) {
+            $Path = [WildcardPattern]::Escape($Path)
+        }
+
         # resolve for relative path
         $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
 
-        Write-PodeFileResponseInternal -Path $RelativePath -Data $Data -ContentType $ContentType -MaxAge $MaxAge `
-            -StatusCode $StatusCode -Cache:$Cache -FileBrowser:$FileBrowser
+        # call internal File function
+        Write-PodeFileResponseInternal `
+            -Path $RelativePath `
+            -Data $Data `
+            -ContentType $ContentType `
+            -MaxAge $MaxAge `
+            -StatusCode $StatusCode `
+            -Cache:$Cache `
+            -FileBrowser:$FileBrowser `
+            -NoEscape
     }
 }
 
@@ -419,6 +462,9 @@ serves the file directly.
 .PARAMETER Path
 The path to the directory that should be displayed. This path is resolved and used to generate a list of contents.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeDirectoryResponse -Path './static'
 
@@ -430,7 +476,10 @@ function Write-PodeDirectoryResponse {
         [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [ValidateNotNull()]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        $NoEscape
     )
 
     begin {
@@ -446,11 +495,16 @@ function Write-PodeDirectoryResponse {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
 
+        # escape the path if needed
+        if (!$NoEscape) {
+            $Path = [WildcardPattern]::Escape($Path)
+        }
+
         # resolve for relative path
         $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
 
         if (Test-Path -Path $RelativePath -PathType Container) {
-            Write-PodeDirectoryResponseInternal -Path $RelativePath
+            Write-PodeDirectoryResponseInternal -Path $RelativePath -NoEscape
         }
         else {
             Set-PodeResponseStatus -Code 404
@@ -474,6 +528,9 @@ The path to a CSV file.
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeCsvResponse -Value "Name`nRick"
 
@@ -482,6 +539,12 @@ Write-PodeCsvResponse -Value @{ Name = 'Rick' }
 
 .EXAMPLE
 Write-PodeCsvResponse -Path 'E:/Files/Names.csv'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './[metadata].csv'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './`[metadata`].csv' -NoEscape
 #>
 function Write-PodeCsvResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
@@ -495,7 +558,11 @@ function Write-PodeCsvResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200
+        $StatusCode = 200,
+
+        [Parameter(ParameterSetName = 'File')]
+        [switch]
+        $NoEscape
     )
 
     begin {
@@ -512,7 +579,7 @@ function Write-PodeCsvResponse {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
-                    $Value = Get-PodeFileContent -Path $Path
+                    $Value = Get-PodeFileContent -Path $Path -NoEscape:$NoEscape
                 }
             }
 
@@ -560,6 +627,9 @@ The path to a HTML file.
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeHtmlResponse -Value "Raw HTML can be placed here"
 
@@ -568,6 +638,12 @@ Write-PodeHtmlResponse -Value @{ Message = 'Hello, all!' }
 
 .EXAMPLE
 Write-PodeHtmlResponse -Path 'E:/Site/About.html'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './[metadata].html'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './`[metadata`].html' -NoEscape
 #>
 function Write-PodeHtmlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
@@ -581,7 +657,11 @@ function Write-PodeHtmlResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200
+        $StatusCode = 200,
+
+        [Parameter(ParameterSetName = 'File')]
+        [switch]
+        $NoEscape
     )
 
     begin {
@@ -598,7 +678,7 @@ function Write-PodeHtmlResponse {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
-                    $Value = Get-PodeFileContent -Path $Path
+                    $Value = Get-PodeFileContent -Path $Path -NoEscape:$NoEscape
                 }
             }
 
@@ -641,11 +721,20 @@ The status code to set against the response.
 .PARAMETER AsHtml
 If supplied, the Markdown will be converted to HTML. (This is only supported in PS7+)
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeMarkdownResponse -Value '# Hello, world!' -AsHtml
 
 .EXAMPLE
 Write-PodeMarkdownResponse -Path 'E:/Site/About.md'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './[metadata].md'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './`[metadata`].md' -NoEscape
 #>
 function Write-PodeMarkdownResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
@@ -662,7 +751,11 @@ function Write-PodeMarkdownResponse {
         $StatusCode = 200,
 
         [switch]
-        $AsHtml
+        $AsHtml,
+
+        [Parameter(ParameterSetName = 'File')]
+        [switch]
+        $NoEscape
     )
     begin {
         $pipelineItemCount = 0
@@ -679,7 +772,7 @@ function Write-PodeMarkdownResponse {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
-                    $Value = Get-PodeFileContent -Path $Path
+                    $Value = Get-PodeFileContent -Path $Path -NoEscape:$NoEscape
                 }
             }
         }
@@ -727,6 +820,9 @@ The status code to set against the response.
 .PARAMETER NoCompress
 The JSON document is not compressed (Human readable form)
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeJsonResponse -Value '{"name": "Rick"}'
 
@@ -735,6 +831,12 @@ Write-PodeJsonResponse -Value @{ Name = 'Rick' } -StatusCode 201
 
 .EXAMPLE
 Write-PodeJsonResponse -Path 'E:/Files/Names.json'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './[metadata].json'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './`[metadata`].json' -NoEscape
 #>
 function Write-PodeJsonResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
@@ -764,9 +866,13 @@ function Write-PodeJsonResponse {
 
         [Parameter(ParameterSetName = 'Value')]
         [switch]
-        $NoCompress
+        $NoCompress,
 
+        [Parameter(ParameterSetName = 'File')]
+        [switch]
+        $NoEscape
     )
+
     begin {
         $pipelineValue = @()
     }
@@ -781,7 +887,7 @@ function Write-PodeJsonResponse {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
-                    $Value = Get-PodeFileContent -Path $Path
+                    $Value = Get-PodeFileContent -Path $Path -NoEscape:$NoEscape
                 }
                 if ([string]::IsNullOrWhiteSpace($Value)) {
                     $Value = '{}'
@@ -830,6 +936,9 @@ The Depth to generate the XML document - the larger this value the worse perform
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
 
@@ -859,6 +968,11 @@ Write-PodeXmlResponse -Value $users
 .EXAMPLE
 Write-PodeXmlResponse -Path 'E:/Files/Names.xml'
 
+.EXAMPLE
+Set-PodeResponseAttachment -Path './[metadata].xml'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './`[metadata`].xml' -NoEscape
 #>
 function Write-PodeXmlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
@@ -884,8 +998,13 @@ function Write-PodeXmlResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200
+        $StatusCode = 200,
+
+        [Parameter(ParameterSetName = 'File')]
+        [switch]
+        $NoEscape
     )
+
     begin {
         $pipelineValue = @()
     }
@@ -901,7 +1020,7 @@ function Write-PodeXmlResponse {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
-                    $Value = Get-PodeFileContent -Path $Path
+                    $Value = Get-PodeFileContent -Path $Path -NoEscape:$NoEscape
                 }
             }
 
@@ -947,6 +1066,9 @@ The Depth to generate the YAML document - the larger this value the worse perfor
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeYamlResponse -Value 'name: "Rick"'
 
@@ -955,6 +1077,12 @@ Write-PodeYamlResponse -Value @{ Name = 'Rick' } -StatusCode 201
 
 .EXAMPLE
 Write-PodeYamlResponse -Path 'E:/Files/Names.yaml'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './[metadata].yaml'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './`[metadata`].yaml' -NoEscape
 #>
 function Write-PodeYamlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
@@ -981,7 +1109,11 @@ function Write-PodeYamlResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200
+        $StatusCode = 200,
+
+        [Parameter(ParameterSetName = 'File')]
+        [switch]
+        $NoEscape
     )
 
     begin {
@@ -999,7 +1131,7 @@ function Write-PodeYamlResponse {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
-                    $Value = Get-PodeFileContent -Path $Path
+                    $Value = Get-PodeFileContent -Path $Path -NoEscape:$NoEscape
                 }
             }
 
@@ -1046,6 +1178,9 @@ If supplied, a custom views folder will be used.
 .PARAMETER FlashMessages
 Automatically supply all Flash messages in the current session to the View.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeViewResponse -Path 'index'
 
@@ -1075,8 +1210,13 @@ function Write-PodeViewResponse {
         $Folder,
 
         [switch]
-        $FlashMessages
+        $FlashMessages,
+
+        [Parameter(ParameterSetName = 'File')]
+        [switch]
+        $NoEscape
     )
+
     begin {
         $pipelineItemCount = 0
     }
@@ -1124,6 +1264,11 @@ function Write-PodeViewResponse {
         }
 
         $Path = [System.IO.Path]::Combine($viewFolder, $Path)
+
+        # escape the path if needed
+        if (!$NoEscape) {
+            $Path = [WildcardPattern]::Escape($Path)
+        }
 
         # test the file path, and set status accordingly
         if (!(Test-PodePath $Path)) {
@@ -1656,6 +1801,9 @@ Any dynamic data to supply to a dynamic partial View.
 .PARAMETER Folder
 If supplied, a custom views folder will be used.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Use-PodePartialView -Path 'shared/footer'
 #>
@@ -1672,8 +1820,13 @@ function Use-PodePartialView {
 
         [Parameter()]
         [string]
-        $Folder
+        $Folder,
+
+        [Parameter(ParameterSetName = 'File')]
+        [switch]
+        $NoEscape
     )
+
     begin {
         $pipelineItemCount = 0
     }
@@ -1703,6 +1856,11 @@ function Use-PodePartialView {
         }
 
         $Path = [System.IO.Path]::Combine($viewFolder, $Path)
+
+        # escape the path if needed
+        if (!$NoEscape) {
+            $Path = [WildcardPattern]::Escape($Path)
+        }
 
         # test the file path, and set status accordingly
         if (!(Test-PodePath $Path -NoStatus)) {
