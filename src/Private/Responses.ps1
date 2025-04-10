@@ -166,9 +166,7 @@ function Write-PodeFileResponseInternal {
     )
 
     # escape the path
-    if (!$NoEscape) {
-        $Path = [WildcardPattern]::Escape($Path)
-    }
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
     # Attempt to retrieve information about the path
     $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
@@ -274,9 +272,7 @@ function Write-PodeDirectoryResponseInternal {
     )
 
     # escape the path
-    if (!$NoEscape) {
-        $Path = [WildcardPattern]::Escape($Path)
-    }
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
     # Attempt to retrieve information about the path
     if ($WebEvent.Path -eq '/') {
@@ -452,9 +448,7 @@ function Write-PodeAttachmentResponseInternal {
     )
 
     # escape the path
-    if (!$NoEscape) {
-        $Path = [WildcardPattern]::Escape($Path)
-    }
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
     # Attempt to retrieve information about the path
     $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)

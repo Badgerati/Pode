@@ -88,9 +88,7 @@ function Set-PodeResponseAttachment {
         }
 
         # escape the path if needed
-        if (!$NoEscape) {
-            $Path = [WildcardPattern]::Escape($Path)
-        }
+        $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
         # only attach files from public/static-route directories when path is relative
         $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName -NoEscape)
@@ -429,9 +427,7 @@ function Write-PodeFileResponse {
         }
 
         # escape the path if needed
-        if (!$NoEscape) {
-            $Path = [WildcardPattern]::Escape($Path)
-        }
+        $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
         # resolve for relative path
         $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
@@ -496,9 +492,7 @@ function Write-PodeDirectoryResponse {
         }
 
         # escape the path if needed
-        if (!$NoEscape) {
-            $Path = [WildcardPattern]::Escape($Path)
-        }
+        $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
         # resolve for relative path
         $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
@@ -1266,9 +1260,7 @@ function Write-PodeViewResponse {
         $Path = [System.IO.Path]::Combine($viewFolder, $Path)
 
         # escape the path if needed
-        if (!$NoEscape) {
-            $Path = [WildcardPattern]::Escape($Path)
-        }
+        $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
         # test the file path, and set status accordingly
         if (!(Test-PodePath $Path)) {
@@ -1858,9 +1850,7 @@ function Use-PodePartialView {
         $Path = [System.IO.Path]::Combine($viewFolder, $Path)
 
         # escape the path if needed
-        if (!$NoEscape) {
-            $Path = [WildcardPattern]::Escape($Path)
-        }
+        $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
         # test the file path, and set status accordingly
         if (!(Test-PodePath $Path -NoStatus)) {

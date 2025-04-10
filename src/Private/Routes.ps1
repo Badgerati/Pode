@@ -113,9 +113,7 @@ function Find-PodePublicRoute {
     }
 
     # escape characters in the path
-    if (!$NoEscape) {
-        $Path = [WildcardPattern]::Escape($Path)
-    }
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
     # use the public static directory (but only if path is a file, and a public dir is present)
     if (Test-PodePathIsFile $Path) {
@@ -185,9 +183,7 @@ function Find-PodeStaticRoute {
     )
 
     # escape characters in the path
-    if (!$NoEscape) {
-        $Path = [WildcardPattern]::Escape($Path)
-    }
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
     # attempt to get a static route for the path
     $found = Find-PodeRoute -Method 'static' -Path $Path -EndpointName $EndpointName

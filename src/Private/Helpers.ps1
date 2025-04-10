@@ -124,11 +124,25 @@ function Get-PodeFileContent {
         $NoEscape
     )
 
-    if (!$NoEscape) {
-        $Path = [WildcardPattern]::Escape($Path)
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+    return (Get-Content -Path $Path -Raw -Encoding utf8)
+}
+
+function Protect-PodePath {
+    param(
+        [Parameter()]
+        [string]
+        $Path,
+
+        [switch]
+        $NoEscape
+    )
+
+    if ($NoEscape -or [string]::IsNullOrEmpty($Path)) {
+        return $Path
     }
 
-    return (Get-Content -Path $Path -Raw -Encoding utf8)
+    return [WildcardPattern]::Escape($Path)
 }
 
 function Get-PodeType {
