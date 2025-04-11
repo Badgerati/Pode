@@ -231,8 +231,9 @@ namespace Pode
         /// <summary>
         /// Provides access to a buffer. The buffer is allocated only when first requested,
         /// saving memory if it is never needed.
+        /// This property is virtual to allow derived classes to override the buffer allocation behavior.
         /// </summary>
-        protected byte[] Buffer
+        protected virtual byte[] Buffer
         {
             get
             {
@@ -243,13 +244,6 @@ namespace Pode
                 return _buffer;
             }
         }
-
-        /// <summary>
-        /// This virtual method returns a buffer to be used during the receive operation.
-        /// Derived classes can override this to customize buffer allocation behavior.
-        /// By default, it returns the lazily allocated Buffer property.
-        /// </summary>
-        protected virtual byte[] GetBuffer() => Buffer;
 
         /// <summary>
         /// Receives data from the input stream and processes it.
@@ -266,7 +260,7 @@ namespace Pode
                 }
 
                 Error = null;
-                var localBuffer = GetBuffer();
+                var localBuffer = Buffer;
                 using (BufferStream = new MemoryStream())
                 {
                     var close = true;
@@ -364,7 +358,7 @@ namespace Pode
             }
 
             // Read data from the input stream until the check bytes are found
-             var localBuffer = GetBuffer();
+             var localBuffer = Buffer;
             using (var bufferStream = new MemoryStream())
             {
                 while (true)

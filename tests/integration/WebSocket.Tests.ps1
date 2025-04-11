@@ -83,10 +83,74 @@ Describe 'WebSocket' {
         $response = $receivedText | ConvertFrom-Json
 
         # Cleanly close the WebSocket connection
-        $client.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, "Closing", [Threading.CancellationToken]::None).Wait()
+        $client.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, 'Closing', [Threading.CancellationToken]::None).Wait()
 
         # Verify that the returned message appears to be a date (for example, by matching a date pattern).
         # Adjust the regex as needed based on your date format.
         $response.message | Should -Match '\d{1,2}\/\d{1,2}\/\d{4}'
     }
+
+    It 'handles sending and receiving Max default size (32KB)' {
+        $client = [System.Net.WebSockets.ClientWebSocket]::new()
+        $wsUri = "ws://localhost:$Port/"
+
+        $client.ConnectAsync([uri]$wsUri, [Threading.CancellationToken]::None).Wait()
+        $client.State | Should -Be 'Open'
+
+        # Generate a large message (~3MB)
+        $largeMessage = ('a' * ((32KB) - 16))
+        $jsonMessage = ('{"message": "' + $largeMessage + '"}')
+        $sendBuffer = [System.Text.Encoding]::UTF8.GetBytes($jsonMessage)
+        $sendSegment = [System.ArraySegment[byte]]::new($sendBuffer)
+
+        $client.SendAsync($sendSegment, [System.Net.WebSockets.WebSocketMessageType]::Text, $true, [Threading.CancellationToken]::None).Wait()
+
+        Start-Sleep -Seconds 2
+
+        $receiveBuffer = [byte[]]::new(4MB)
+        $receiveSegment = [System.ArraySegment[byte]]::new($receiveBuffer, 0, $receiveBuffer.Length)
+
+        $receiveResult = $client.ReceiveAsync($receiveSegment, [Threading.CancellationToken]::None).Result
+        $receivedText = [System.Text.Encoding]::UTF8.GetString($receiveBuffer, 0, $receiveResult.Count)
+
+        $response = $receivedText | ConvertFrom-Json
+
+        $client.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, 'Closing', [Threading.CancellationToken]::None).Wait()
+
+        $response.message.Length | Should -Be $largeMessage.Length
+        $response.message | Should -BeExactly $largeMessage
+    }
+
+    <# This test fails because the default max message size is 32KB.
+   It 'handles sending and receiving large messages (>3MB)' {
+        $client = [System.Net.WebSockets.ClientWebSocket]::new()
+        $wsUri = "ws://localhost:$Port/"
+
+        $client.ConnectAsync([uri]$wsUri, [Threading.CancellationToken]::None).Wait()
+        $client.State | Should -Be 'Open'
+
+        # Generate a large message (~3MB)
+        $largeMessage = ('a' * ((3MB)-16))
+        $jsonMessage = ('{"message": "' + $largeMessage + '"}')
+        $sendBuffer = [System.Text.Encoding]::UTF8.GetBytes($jsonMessage)
+        $sendSegment = [System.ArraySegment[byte]]::new($sendBuffer)
+
+        $client.SendAsync($sendSegment, [System.Net.WebSockets.WebSocketMessageType]::Text, $true, [Threading.CancellationToken]::None).Wait()
+
+        Start-Sleep -Seconds 2
+
+        $receiveBuffer = [byte[]]::new(4MB)
+        $receiveSegment = [System.ArraySegment[byte]]::new($receiveBuffer, 0, $receiveBuffer.Length)
+
+        $receiveResult = $client.ReceiveAsync($receiveSegment, [Threading.CancellationToken]::None).Result
+        $receivedText = [System.Text.Encoding]::UTF8.GetString($receiveBuffer, 0, $receiveResult.Count)
+
+        $response = $receivedText | ConvertFrom-Json
+
+        $client.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, 'Closing', [Threading.CancellationToken]::None).Wait()
+
+        $response.message.Length | Should -Be $largeMessage.Length
+        $response.message | Should -BeExactly $largeMessage
+    }
+        #>
 }

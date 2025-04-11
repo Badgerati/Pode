@@ -94,7 +94,7 @@ namespace Pode
         {
             return new PodeClientSignal(Signal, Body, Context.Listener);
         }
-
+        
         /// <summary>
         /// Overrides the base GetBuffer() method to always return a new buffer.
         /// This ensures that every time a buffer is needed for parsing a WebSocket frame,
@@ -102,8 +102,14 @@ namespace Pode
         /// Although this introduces a small allocation overhead, it ensures data integrity
         /// for WebSocket communication.
         /// </summary>
-        protected override byte[] GetBuffer() => new byte[BufferSize];
-
+        // protected override byte[] GetBuffer() => new byte[BufferSize];
+        protected override byte[] Buffer
+        {
+            get
+            {
+                return new byte[BufferSize];
+            }
+        }
         /// <summary>
         /// Parses the raw WebSocket frame bytes.
         /// This method extracts the frame's operation code, decodes the payload using the masking key,
