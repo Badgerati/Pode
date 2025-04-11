@@ -3,7 +3,12 @@
 Pode has support for creating WebSocket endpoints, for server-to-client and/or client-to-server communications. WebSockets allow you to broadcast messages directly from your server to connected clients. This allows you to get real-time continuous updates on the frontend without having to constantly refresh the page, or by using async javascript.
 
 !!! note
-    The maximum size for WebSocket payloads in Pode is **32KB**. If a message exceeds this size, the connection may be closed or the message may not be delivered correctly.
+    The maximum size for WebSocket payloads in Pode depends on the version of PowerShell being used:
+
+    - For **PowerShell ≤ 6.0**, the maximum payload size is **32KB**.
+    - For **PowerShell ≥ 7.0**, the maximum payload size is **16KB**.
+
+    If a message exceeds these limits, the connection may be closed or the message may not be delivered correctly.
 
 ## Server Side
 

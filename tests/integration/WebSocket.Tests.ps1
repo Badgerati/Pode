@@ -90,7 +90,7 @@ Describe 'WebSocket' {
         $response.message | Should -Match '\d{1,2}\/\d{1,2}\/\d{4}'
     }
 
-    It 'handles sending and receiving Max default size (32KB)' {
+    It 'handles sending and receiving Max default size (16KB for 5.1 and 32KB for 7.0 or greater)' {
         $client = [System.Net.WebSockets.ClientWebSocket]::new()
         $wsUri = "ws://localhost:$Port/"
 
@@ -98,7 +98,7 @@ Describe 'WebSocket' {
         $client.State | Should -Be 'Open'
 
         # Generate a large message (~3MB)
-        $largeMessage = ('a' * ((32KB) - 16))
+        $largeMessage = if($PSVersionTable.PSEdition -eq 'Desktop') { ('a' * ((16KB) - 32))} else { ('a' * ((32KB) - 16)) }
         $jsonMessage = ('{"message": "' + $largeMessage + '"}')
         $sendBuffer = [System.Text.Encoding]::UTF8.GetBytes($jsonMessage)
         $sendSegment = [System.ArraySegment[byte]]::new($sendBuffer)
