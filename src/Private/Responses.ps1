@@ -113,6 +113,9 @@ The HTTP status code to accompany the response. Defaults to 200 (OK).
 .PARAMETER Cache
 A switch to indicate whether the response should include HTTP caching headers. Applies only to static content.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 Write-PodeFileResponseInternal -Path 'index.pode' -Data @{ Title = 'Home Page' } -ContentType 'text/html'
 
@@ -129,7 +132,6 @@ None. The function writes directly to the HTTP response stream.
 .NOTES
 This is an internal function and may change in future releases of Pode.
 #>
-
 function Write-PodeFileResponseInternal {
     [CmdletBinding()]
     param (
@@ -157,8 +159,14 @@ function Write-PodeFileResponseInternal {
         $Cache,
 
         [switch]
-        $FileBrowser
+        $FileBrowser,
+
+        [switch]
+        $NoEscape
     )
+
+    # escape the path
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
     # Attempt to retrieve information about the path
     $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
@@ -238,6 +246,8 @@ serves the file directly.
 .PARAMETER Path
 The relative path to the directory that should be displayed. This path is resolved and used to generate a list of contents.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
 
 .EXAMPLE
 # resolve for relative path
@@ -255,9 +265,16 @@ function Write-PodeDirectoryResponseInternal {
         [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        $NoEscape
     )
 
+    # escape the path
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+
+    # Attempt to retrieve information about the path
     if ($WebEvent.Path -eq '/') {
         $leaf = '/'
         $rootPath = '/'
@@ -268,9 +285,9 @@ function Write-PodeDirectoryResponseInternal {
         $rootPath = $WebEvent.Path -ireplace "$($leaf)$", ''
     }
 
-    # Determine if the server is running in Windows mode or is running a varsion that support Linux
+    # Determine if the server is running in Windows mode or is running a version that support Linux
     # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.4#example-10-output-for-non-windows-operating-systems
-    $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
+    $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0'))
 
     # Construct the HTML content for the file browser view
     $htmlContent = [System.Text.StringBuilder]::new()
@@ -281,6 +298,7 @@ function Write-PodeDirectoryResponseInternal {
                 [uri]::EscapeDataString($atom)
             }
         })
+
     if ([string]::IsNullOrWhiteSpace($atoms)) {
         $baseLink = ''
     }
@@ -320,6 +338,7 @@ function Write-PodeDirectoryResponseInternal {
         $htmlContent.Append($ParentLink)
         $htmlContent.AppendLine("'>..</a></td> </tr>")
     }
+
     # Retrieve the child items of the specified directory
     $child = Get-ChildItem -Path $Path -Force
     foreach ($item in $child) {
@@ -369,9 +388,9 @@ function Write-PodeDirectoryResponseInternal {
     }
 
     $podeRoot = Get-PodeModuleMiscPath
-    # Write the response
-    Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
 
+    # Write the response
+    Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data -NoEscape
 }
 
 
@@ -391,6 +410,9 @@ The MIME type of the file being served. This is validated against a pattern to e
 
 .PARAMETER FileBrowser
 A switch parameter that, when present, enables directory browsing. If the path points to a directory and this parameter is enabled, the function will list the directory's contents instead of returning a 404 error.
+
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
 
 .EXAMPLE
 Write-PodeAttachmentResponseInternal -Path './files/document.pdf' -ContentType 'application/pdf'
@@ -419,9 +441,14 @@ function Write-PodeAttachmentResponseInternal {
 
         [Parameter()]
         [switch]
-        $FileBrowser
+        $FileBrowser,
 
+        [switch]
+        $NoEscape
     )
+
+    # escape the path
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
     # Attempt to retrieve information about the path
     $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
