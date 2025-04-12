@@ -98,16 +98,22 @@ function Find-PodePublicRoute {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        $NoEscape
     )
 
     $source = $null
     $publicPath = $PodeContext.Server.InbuiltDrives['public']
 
-    # reutrn null if there is no public directory
+    # return null if there is no public directory
     if ([string]::IsNullOrWhiteSpace($publicPath)) {
         return $source
     }
+
+    # escape characters in the path
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
     # use the public static directory (but only if path is a file, and a public dir is present)
     if (Test-PodePathIsFile $Path) {
@@ -138,6 +144,9 @@ Optional. Specifies the name of the endpoint to which the route may belong. If n
 .PARAMETER CheckPublic
 A switch parameter. If specified, the function also checks for the route in public routes as a fallback option.
 
+.PARAMETER NoEscape
+If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
 .EXAMPLE
 $staticRoute = Find-PodeStaticRoute -Path '/images/logo.png' -CheckPublic
 
@@ -167,33 +176,34 @@ function Find-PodeStaticRoute {
         $EndpointName,
 
         [switch]
-        $CheckPublic
+        $CheckPublic,
+
+        [switch]
+        $NoEscape
     )
+
+    # escape characters in the path
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
     # attempt to get a static route for the path
     $found = Find-PodeRoute -Method 'static' -Path $Path -EndpointName $EndpointName
-    $download = ([bool]$found.Download)
+    $download = [bool]$found.Download
     $source = $null
     $isDefault = $false
-    $redirectToDefault = ([bool]$found.RedirectToDefault)
+    $redirectToDefault = [bool]$found.RedirectToDefault
 
     # if we have a defined static route, use that
     if ($null -ne $found) {
         # see if we have a file
         $file = [string]::Empty
+        $matchingPath = "$($found.Path.Replace('*', '.+?'))$"
 
-        if ($found.KleeneStar) {
-            $matchingPath = "$($found.Path -ireplace '.\*', '.+?')$"
-        }
-        else {
-            $matchingPath = "$($found.Path)$"
-        }
         if ($Path -imatch $matchingPath) {
             $file = (Protect-PodeValue -Value $Matches['file'] -Default ([string]::Empty))
         }
 
+        # if $file doesn't exist return $null
         $fileInfo = Get-Item -Path ([System.IO.Path]::Combine($found.Source, $file)) -Force -ErrorAction Ignore
-        #if $file doesn't exist return $null
         if ($null -eq $fileInfo) {
             return $null
         }
@@ -209,8 +219,8 @@ function Find-PodeStaticRoute {
                 }
             }
         }
-        $source = [System.IO.Path]::Combine($found.Source, $file)
 
+        $source = [System.IO.Path]::Combine($found.Source, $file)
     }
 
     # check public, if flagged
@@ -228,12 +238,7 @@ function Find-PodeStaticRoute {
     }
 
     # return the route details
-    if ($redirectToDefault -and $isDefault) {
-        $redirectToDefault = $true
-    }
-    else {
-        $redirectToDefault = $false
-    }
+    $redirectToDefault = $redirectToDefault -and $isDefault
 
     return @{
         Content = @{
@@ -368,7 +373,7 @@ function Get-PodeRouteByUrl {
     return $null
 }
 
- 
+
 <#
 .SYNOPSIS
     Updates a Pode route path to ensure proper formatting.
