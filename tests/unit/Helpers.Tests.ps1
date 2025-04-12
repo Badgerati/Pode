@@ -1588,9 +1588,6 @@ Describe 'New-PodeCron' {
     }
 }
 
-
-
-
 Describe 'ConvertTo-PodeYaml Tests' {
     BeforeAll {
         $PodeContext = @{
@@ -1744,5 +1741,15 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
             $result = ConvertTo-PodeYamlInternal -InputObject $null
             $result | Should -Be ''
         }
+    }
+}
+
+Describe 'Protect-PodePath' {
+    It 'Escapes a path' {
+        Protect-PodePath -Path '/assets/[brackets].txt' | Should -Be '/assets/`[brackets`].txt'
+    }
+
+    It "Doesn't escape a path" {
+        Protect-PodePath -Path '/assets/[brackets].txt' -NoEscape | Should -Be '/assets/[brackets].txt'
     }
 }
