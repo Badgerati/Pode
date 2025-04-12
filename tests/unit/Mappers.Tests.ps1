@@ -307,6 +307,7 @@ Describe 'Get-PodeContentType' {
                 '.mid'                    = 'audio/mid'
                 '.midi'                   = 'audio/mid'
                 '.mix'                    = 'application/octet-stream'
+                '.mjs'                    = 'application/javascript'
                 '.mk'                     = 'text/plain'
                 '.mk3d'                   = 'video/x-matroska-3d'
                 '.mka'                    = 'audio/x-matroska'
