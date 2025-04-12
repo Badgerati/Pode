@@ -288,6 +288,7 @@ function Restart-PodeInternalServer {
 
         # clear openapi
         $PodeContext.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $PodeContext.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
+
         # clear the sockets
         $PodeContext.Server.Signals.Enabled = $false
         $PodeContext.Server.Signals.Listener = $null
@@ -335,6 +336,12 @@ function Restart-PodeInternalServer {
         # clear up output
         $PodeContext.Server.Output.Variables.Clear()
 
+        # clear up limit rules
+        $PodeContext.Server.Limits.Rate.Rules.Clear()
+        $PodeContext.Server.Limits.Rate.RuleOrder = @()
+        $PodeContext.Server.Limits.Access.Rules.Clear()
+        $PodeContext.Server.Limits.Access.RuleOrder = @()
+
         # reset type if smtp/tcp
         $PodeContext.Server.Types = @()
 
@@ -342,7 +349,7 @@ function Restart-PodeInternalServer {
         Reset-PodeCancellationToken -Type Cancellation, Restart, Suspend, Resume, Terminate, Disable
 
         # if the configuration is enable reload it
-        if ( $PodeContext.Server.Configuration.Enabled) {
+        if ($PodeContext.Server.Configuration.Enabled) {
             # reload the configuration
             $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext -ConfigFile $PodeContext.Server.Configuration.ConfigFile
         }
