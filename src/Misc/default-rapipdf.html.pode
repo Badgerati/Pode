@@ -122,7 +122,7 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/rapipdf/dist/rapipdf-min.js"></script>
+    <script src="dist/rapipdf/rapipdf-min.js"></script>
     <script>
         // Get all form elements
         const formElements = document.querySelectorAll("#rapipdf-form input, #rapipdf-form textarea");

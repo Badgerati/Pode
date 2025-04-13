@@ -4,6 +4,7 @@
 # Pode files and directories
 pode_modules/
 ps_modules/
+src/Misc/third_party/
 docs/[Ff]unctions/
 examples/state.json
 examples/issue-*

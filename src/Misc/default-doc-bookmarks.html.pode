@@ -3,11 +3,15 @@
 
 <head>
     <title>OpenAPI Documentation Bookmarks</title>
-    <link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/styles/monokai-sublime.min.css">
-    <script src="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/highlight.min.js"></script>
+    <base href="/docs/">
+    <!-- Highlight.js local styles -->
+    <link rel="stylesheet" href="dist/highlightjs/styles/monokai-sublime.min.css">
 
-    <!-- and it's easy to individually load additional languages -->
-    <script src="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/languages/go.min.js"></script>
+    <!-- Highlight.js local core script -->
+    <script src="dist/highlightjs/highlight.min.js"></script>
+
+    <!-- Highlight.js local language support -->
+    <script src="dist/highlightjs/languages/go.min.js"></script>
 
     <script>hljs.highlightAll();</script>
     <style>
@@ -217,7 +221,7 @@
             loadOAContent('json');
             // Add a click event listener to the copy button
             document.getElementById("copyButton").addEventListener("click", copyToClipboard);
-            openTab(event, 'JSON',false)
+            openTab(event, 'JSON', false)
         })
 
 

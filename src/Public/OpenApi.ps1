@@ -1884,6 +1884,11 @@ function Enable-PodeOAViewer {
         [string]
         $DefinitionTag
     )
+
+    if (! $Path.EndsWith('/')) {
+        $Path = "$Path/"
+    }
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     # If no EndpointName try to reetrieve the EndpointName from the DefinitionTag if exist
@@ -1905,10 +1910,14 @@ function Enable-PodeOAViewer {
         # No title supplied for $Type page
         throw ($PodeLocale.noTitleSuppliedForPageExceptionMessage -f $Type)
     }
+    
+    if (! (Test-PodeStaticRoute -Path "$($Path)dist" -EndpointName $EndpointName)) {
+        Add-PodeStaticRoute -Path "$($Path)dist" -Source "$(Get-PodeModuleMiscPath)/third_party" -Middleware $Middleware -EndpointName $EndpointName -Authentication $Authentication
+    }
 
     if ($Editor.IsPresent) {
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default '/editor'
+        $Path = Protect-PodeValue -Value $Path -Default '/editor/'
         if ([string]::IsNullOrWhiteSpace($Title)) {
             # No route path supplied for $Type page
             throw ($PodeLocale.noRoutePathSuppliedForPageExceptionMessage -f $Type)
@@ -1945,7 +1954,7 @@ function Enable-PodeOAViewer {
     }
     elseif ($Bookmarks.IsPresent) {
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default '/bookmarks'
+        $Path = Protect-PodeValue -Value $Path -Default '/bookmarks/'
         if ([string]::IsNullOrWhiteSpace($Title)) {
             # No route path supplied for $Type page
             throw ($PodeLocale.noRoutePathSuppliedForPageExceptionMessage -f $Type)
@@ -1993,7 +2002,7 @@ function Enable-PodeOAViewer {
             throw ($PodeLocale.rapidPdfDoesNotSupportOpenApi31ExceptionMessage)
         }
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())"
+        $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())/"
         if ([string]::IsNullOrWhiteSpace($Title)) {
             # No route path supplied for $Type page
             throw ($PodeLocale.noRoutePathSuppliedForPageExceptionMessage -f $Type)
