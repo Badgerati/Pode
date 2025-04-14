@@ -385,12 +385,14 @@ function Add-PodeEndpoint {
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'certfile' {
-                if ($CertificatePassword -is [string]) {
-                    $securePassword = ConvertTo-SecureString -String $CertificatePassword -AsPlainText -Force
-                }
-                elseif ($CertificatePassword -is [securestring]) { $securePassword = $CertificatePassword }else {
-                    #  'Error: Invalid type for {0}. Expected {1}, but received [{2}].
-                    throw  ($PodeLocale.invalidTypeExceptionMessage -f '-CertificatePassword', '[string] or [SecureString]', $CertificatePassword.GetType().Name)
+                if (! [string]::IsNullOrEmpty($CertificatePassword )) {
+                    if ($CertificatePassword -is [string]) {
+                        $securePassword = ConvertTo-SecureString -String $CertificatePassword -AsPlainText -Force
+                    }
+                    elseif ($CertificatePassword -is [securestring]) { $securePassword = $CertificatePassword }else {
+                        #  'Error: Invalid type for {0}. Expected {1}, but received [{2}].
+                        throw  ($PodeLocale.invalidTypeExceptionMessage -f '-CertificatePassword', '[string] or [SecureString]', $CertificatePassword.GetType().Name)
+                    }
                 }
 
                 $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate  -SecurePassword $securePassword  -PrivateKeyPath $CertificateKey
