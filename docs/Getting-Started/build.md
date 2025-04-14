@@ -3,6 +3,10 @@
 
 If you have Pode's source code checked out locally on your machine, you can follow these steps to build Pode:
 
+!!! note
+    Pode requires [Yarn](https://yarnpkg.com/getting-started/install) to build.
+    Please ensure Yarn is installed before proceeding.
+
 ## Windows
 
 1. Install InvokeBuild Module
