@@ -12,6 +12,7 @@ examples/issues/
 pkg/
 deliverable/
 .vs/
+yarn.lock
 
 # Code Runner
 tempCodeRunnerFile.ps1
