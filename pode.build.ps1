@@ -1247,8 +1247,8 @@ Add-BuildTask MoveLibs {
 
     # Create subfolders and copy only needed files
     $CopyList = @(
-        @{ From = "$NodeModules/swagger-ui-dist/swagger-ui.css"; To = "$Target/swagger-ui/" },
-        @{ From = "$NodeModules/swagger-ui-dist/swagger-ui-bundle.js"; To = "$Target/swagger-ui/" },
+        @{ From = "$NodeModules/swagger-ui-dist/swagger-ui.css"; To = "$Target/swagger/" },
+        @{ From = "$NodeModules/swagger-ui-dist/swagger-ui-bundle.js"; To = "$Target/swagger/" },
 
         @{ From = "$NodeModules/swagger-editor-dist/swagger-editor.css"; To = "$Target/swagger-editor/" },
         @{ From = "$NodeModules/swagger-editor-dist/swagger-editor-bundle.js"; To = "$Target/swagger-editor/" },
@@ -1261,18 +1261,15 @@ Add-BuildTask MoveLibs {
 
         @{ From = "$NodeModules/@highlightjs/cdn-assets/styles/monokai-sublime.min.css"; To = "$Target/highlightjs/styles/" },
         @{ From = "$NodeModules/@highlightjs/cdn-assets/highlight.min.js"; To = "$Target/highlightjs/" },
-        @{ From = "$NodeModules/@highlightjs/cdn-assets/languages/go.min.js"; To = "$Target/highlightjs/languages/" },
-
-        @{ From = "$NodeModules/bootstrap/dist/css/bootstrap.min.css"; To = "$Target/bootstrap/css/" },
-
 
         @{ From = "$NodeModules/rapipdf/dist/rapipdf-min.js"; To = "$Target/rapipdf/" },
 
         @{ From = "$NodeModules/rapidoc/dist/rapidoc-min.js"; To = "$Target/rapidoc/" },
 
-        @{ From = "$NodeModules/openapi-explorer/dist/browser/openapi-explorer.min.js"; To = "$Target/openapi-explorer/browser/" }
-        @{ From = "$NodeModules/bootstrap/dist/css/bootstrap.min.css"; To = "$Target/bootstrap/css/bootstrap.min.css" }
+        @{ From = "$NodeModules/openapi-explorer/dist/browser/openapi-explorer.min.js"; To = "$Target/explorer/browser/" }
+        @{ From = "$NodeModules/bootstrap/dist/css/bootstrap.min.css"; To = "$Target/explorer/css/" },
 
+        @{ From = "$NodeModules/bootstrap/dist/css/bootstrap.min.css"; To = "$Target/bootstrap/css/bootstrap.min.css" }
     )
 
     foreach ($Item in $CopyList) {

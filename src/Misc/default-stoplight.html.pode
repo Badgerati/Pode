@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>$($data.Title)</title>
 
-    <script src="dist/stoplight/elements/web-components.min.js"></script>
-    <link rel="stylesheet" href="dist/stoplight/elements/styles.min.css">
+    <script src="dist/elements/web-components.min.js"></script>
+    <link rel="stylesheet" href="dist/elements/styles.min.css">
 </head>
 
 <body>

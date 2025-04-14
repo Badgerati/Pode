@@ -1910,14 +1910,12 @@ function Enable-PodeOAViewer {
         # No title supplied for $Type page
         throw ($PodeLocale.noTitleSuppliedForPageExceptionMessage -f $Type)
     }
-    
-    if (! (Test-PodeStaticRoute -Path "$($Path)dist" -EndpointName $EndpointName)) {
-        Add-PodeStaticRoute -Path "$($Path)dist" -Source "$(Get-PodeModuleMiscPath)/third_party" -Middleware $Middleware -EndpointName $EndpointName -Authentication $Authentication
-    }
 
     if ($Editor.IsPresent) {
         # set a default path
         $Path = Protect-PodeValue -Value $Path -Default '/editor/'
+
+
         if ([string]::IsNullOrWhiteSpace($Title)) {
             # No route path supplied for $Type page
             throw ($PodeLocale.noRoutePathSuppliedForPageExceptionMessage -f $Type)
@@ -1926,6 +1924,10 @@ function Enable-PodeOAViewer {
             # This version on Swagger-Editor doesn't support OpenAPI 3.1
             throw ($PodeLocale.swaggerEditorDoesNotSupportOpenApi31ExceptionMessage)
         }
+
+        # Add the static route for the viewer third party library
+        Add-PodeStaticRoute -Path "$($Path)dist" -Source "$(Get-PodeModuleMiscPath)/third_party/swagger-editor" -Middleware $Middleware -EndpointName $EndpointName -Authentication $Authentication
+
         # setup meta info
         $meta = @{
             Title             = $Title
@@ -1959,6 +1961,10 @@ function Enable-PodeOAViewer {
             # No route path supplied for $Type page
             throw ($PodeLocale.noRoutePathSuppliedForPageExceptionMessage -f $Type)
         }
+
+        # Add the static route for the viewer third party library
+        Add-PodeStaticRoute -Path "$($Path)dist" -Source "$(Get-PodeModuleMiscPath)/third_party/highlightjs" -Middleware $Middleware -EndpointName $EndpointName -Authentication $Authentication
+
         # setup meta info
         $meta = @{
             Title         = $Title
@@ -2007,6 +2013,10 @@ function Enable-PodeOAViewer {
             # No route path supplied for $Type page
             throw ($PodeLocale.noRoutePathSuppliedForPageExceptionMessage -f $Type)
         }
+
+        # Add the static route for the viewer third party library
+        Add-PodeStaticRoute -Path "$($Path)dist" -Source "$(Get-PodeModuleMiscPath)/third_party/$($Type.ToLowerInvariant())" -Middleware $Middleware -EndpointName $EndpointName -Authentication $Authentication
+
         # setup meta info
         $meta = @{
             Type     = $Type.ToLowerInvariant()

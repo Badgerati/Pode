@@ -5,8 +5,8 @@
     <title>$($data.Title)</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href=dist/swagger-ui/swagger-ui.css>
-    <script src="dist/swagger-ui/swagger-ui-bundle.js" crossorigin></script>
+    <link rel="stylesheet" type="text/css" href=dist/swagger-ui.css>
+    <script src="dist/swagger-ui-bundle.js" crossorigin></script>
     <script type="text/javascript">
         window.onload = function() {
             SwaggerUIBundle({
