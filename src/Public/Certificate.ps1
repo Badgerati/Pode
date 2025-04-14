@@ -31,10 +31,6 @@
 .PARAMETER KeyLength
   The key length for RSA (2048, 3072, 4096) or ECDSA (256, 384, 521). Defaults to 2048.
 
-.PARAMETER CertificatePurpose
-  The intended purpose of the certificate, which automatically sets the EKU.
-  Supported values: 'ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity', 'Custom'.
-
 .PARAMETER EnhancedKeyUsages
   A list of OID strings for Enhanced Key Usage (EKU) if 'Custom' is selected as CertificatePurpose.
 
@@ -70,113 +66,124 @@
   - Ensure the private key is stored securely.
 #>
 function New-PodeCertificateRequest {
-    [CmdletBinding(DefaultParameterSetName = 'CommonName')]
-    [OutputType([PSCustomObject])]
-    param (
-        # Required: one or more DNS names (or IP addresses)
-        [Parameter()]
-        [string[]]
-        $DnsName,
+  [CmdletBinding(DefaultParameterSetName = 'CommonName')]
+  [OutputType([PSCustomObject])]
+  param (
+    # Required: one or more DNS names (or IP addresses)
+    [Parameter()]
+    [string[]]
+    $DnsName,
 
-        # Subject parts
-        [Parameter()]
-        [string]
-        $CommonName,
+    # Subject parts
+    [Parameter()]
+    [string]
+    $CommonName,
 
-        [Parameter()]
-        [string]
-        $Organization,
+    [Parameter()]
+    [string]
+    $Organization,
 
-        [Parameter()]
-        [string]
-        $Locality,
+    [Parameter()]
+    [string]
+    $Locality,
 
-        [Parameter()]
-        [string]
-        $State,
+    [Parameter()]
+    [string]
+    $State,
 
-        [Parameter()]
-        [string]
-        $Country = 'XX',
+    [Parameter()]
+    [string]
+    $Country = 'XX',
 
-        # Key type and size
-        [Parameter()]
-        [ValidateSet('RSA', 'ECDSA')]
-        [string]$KeyType = 'RSA',
+    # Key type and size
+    [Parameter()]
+    [ValidateSet('RSA', 'ECDSA')]
+    [string]
+    $KeyType = 'RSA',
 
-        [Parameter()]
-        [ValidateSet(2048, 3072, 4096, 256, 384, 521)]
-        [int]$KeyLength = 2048,
+    [Parameter()]
+    [ValidateSet(2048, 3072, 4096, 256, 384, 521)]
+    [int]
+    $KeyLength = 2048,
 
-        #Automatically set EKUs based on intended purpose
-        [Parameter()]
-        [ValidateSet('ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity', 'Custom')]
-        [string]
-        $CertificatePurpose,
+    # Enhanced Key Usages (EKU) - supply one or more OID strings if desired.
+    [Parameter()]
+    [string[]]
+    $EnhancedKeyUsages,
 
-        # Enhanced Key Usages (EKU) - supply one or more OID strings if desired.
-        [Parameter()]
-        [string[]]$EnhancedKeyUsages,
+    # Additional custom extensions (as an array of certificate extension objects).
+    [Parameter()]
+    [object[]]
+    $CustomExtensions,
 
-        # Optional NotBefore date for the certificate request.
-        [Parameter()]
-        [DateTime]$NotBefore = ([datetime]::UtcNow),
+    # Optional friendly name for display in certificate stores.
+    [Parameter()]
+    [string]
+    $FriendlyName,
 
-        # Additional custom extensions (as an array of certificate extension objects).
-        [Parameter()]
-        [object[]]$CustomExtensions,
+    [Parameter()]
+    [string]
+    $OutputPath = $PWD
+  )
+  # Call the certificate request function to generate the CSR and key pair.
+  $csrParams = @{
+    DnsName           = $DnsName
+    CommonName        = $CommonName
+    Organization      = $Organization
+    Locality          = $Locality
+    State             = $State
+    Country           = $Country
+    KeyType           = $KeyType
+    KeyLength         = $KeyLength
+    EnhancedKeyUsages = $EnhancedKeyUsages
+    CustomExtensions  = $CustomExtensions
+  }
 
-        # Optional friendly name for display in certificate stores.
-        [Parameter()]
-        [string]$FriendlyName,
-
-        [Parameter()]
-        [string]$OutputPath = $PWD
-    )
-    # Call the certificate request function to generate the CSR and key pair.
-    $csrParams = @{
-        DnsName           = $DnsName
-        CommonName        = $CommonName
-        Organization      = $Organization
-        Locality          = $Locality
-        State             = $State
-        Country           = $Country
-        KeyType           = $KeyType
-        KeyLength         = $KeyLength
-        EnhancedKeyUsages = $EnhancedKeyUsages
-        NotBefore         = $NotBefore
-        CustomExtensions  = $CustomExtensions
-        FriendlyName      = $FriendlyName
+  if ($FriendlyName -and (Test-PodeIsWindows)) {
+    $csrParams.FriendlyName = $FriendlyName
+    $fileBaseName = $FriendlyName
+  }
+  else {
+    if ([string]::IsNullOrEmpty($CommonName)) {
+      $fileBaseName = $CommonName
     }
-
-    # Define the encoding based on the powershell edition
-    $encoding = if ($PSVersionTable.PSEdition -eq 'Core') {
-        'utf8NoBOM'
+    elseif ($DnsName.Count -gt 0) {
+      $fileBaseName = $DnsName[0]
     }
     else {
-        'utf8'
+      $fileBaseName = 'request'
     }
+  }
 
-    $csrObject = New-PodeCertificateRequestInternal @csrParams
+  # Define the encoding based on the powershell edition
+  $encoding = if ($PSVersionTable.PSEdition -eq 'Core') {
+    'utf8NoBOM'
+  }
+  else {
+    'utf8'
+  }
 
+  $csrObject = New-PodeCertificateRequestInternal @csrParams
 
-    $csrPath = Join-Path -Path $OutputPath -ChildPath "$CommonName.csr"
-    $keyPath = Join-Path -Path $OutputPath -ChildPath "$CommonName.key"
+  $csrPath = Join-Path -Path $OutputPath -ChildPath "$fileBaseName.csr"
+  $keyPath = Join-Path -Path $OutputPath -ChildPath "$fileBaseName.key"
+  # Split $csrObject.Request into 64-char lines
+  $csrFormatted = ($csrObject.Request -split "(.{1,64})" | Where-Object { $_ -ne "" }) -join "`n"
 
-    $csrObject.Request | Out-File -FilePath $csrPath -Encoding $encoding
-    $privateKeyBytes = $csrObject.PrivateKey.ExportPkcs8PrivateKey()
-    $privateKeyBase64 = [Convert]::ToBase64String($privateKeyBytes)
+  "-----BEGIN CERTIFICATE REQUEST-----`n$csrFormatted`n-----END CERTIFICATE REQUEST-----" | Out-File -FilePath $csrPath -Encoding $encoding
 
-    "-----BEGIN PRIVATE KEY-----`n$privateKeyBase64`n-----END PRIVATE KEY-----" | Out-File -FilePath $keyPath -Encoding $encoding
+  $privateKeyBytes = $csrObject.PrivateKey.ExportPkcs8PrivateKey()
+  $privateKeyBase64 = [System.Convert]::ToBase64String($privateKeyBytes, [System.Base64FormattingOptions]::InsertLineBreaks)
 
-    Write-Verbose "CSR saved to: $csrPath"
-    Write-Verbose "Private Key saved to: $keyPath"
+  "-----BEGIN PRIVATE KEY-----`n$privateKeyBase64`n-----END PRIVATE KEY-----" | Out-File -FilePath $keyPath -Encoding $encoding
+  Write-Verbose "CSR saved to: $csrPath"
+  Write-Verbose "Private Key saved to: $keyPath"
 
-    return [PSCustomObject]@{
-        PsTypeName     = 'PodeCertificateRequestResult'
-        CsrPath        = $csrPath
-        PrivateKeyPath = $keyPath
-    }
+  return [PSCustomObject]@{
+    PsTypeName     = 'PodeCertificateRequestResult'
+    CsrPath        = $csrPath
+    PrivateKeyPath = $keyPath
+  }
 
 }
 
@@ -283,170 +290,170 @@ function New-PodeCertificateRequest {
   - The `-Loopback` parameter is useful for local development, ensuring the certificate includes local identifiers.
 #>
 function New-PodeSelfSignedCertificate {
-    [CmdletBinding(DefaultParameterSetName = 'CommonName')]
-    [OutputType([System.Security.Cryptography.X509Certificates.X509Certificate2])]
-    param (
-        # Required: one or more DNS names (or IP addresses)
-        [Parameter(Mandatory = $false, ParameterSetName = 'DnsName')]
-        [string[]]
-        $DnsName,
+  [CmdletBinding(DefaultParameterSetName = 'CommonName')]
+  [OutputType([System.Security.Cryptography.X509Certificates.X509Certificate2])]
+  param (
+    # Required: one or more DNS names (or IP addresses)
+    [Parameter(Mandatory = $false, ParameterSetName = 'DnsName')]
+    [string[]]
+    $DnsName,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'DnsName')]
-        [switch]
-        $Loopback,
+    [Parameter(Mandatory = $false, ParameterSetName = 'DnsName')]
+    [switch]
+    $Loopback,
 
-        # Subject parts
-        [Parameter(Mandatory = $false, ParameterSetName = 'CommonName')]
-        [string]
-        $CommonName = 'SelfSigned',
+    # Subject parts
+    [Parameter(Mandatory = $false, ParameterSetName = 'CommonName')]
+    [string]
+    $CommonName = 'SelfSigned',
 
-        [Parameter()]
-        [securestring]
-        $Password = $null,
+    [Parameter()]
+    [securestring]
+    $Password = $null,
 
-        [Parameter()]
-        [string]$Organization,
-        [Parameter()]
-        [string]$Locality,
-        [Parameter()]
-        [string]$State,
-        [Parameter()]
-        [string]$Country = 'XX',
+    [Parameter()]
+    [string]$Organization,
+    [Parameter()]
+    [string]$Locality,
+    [Parameter()]
+    [string]$State,
+    [Parameter()]
+    [string]$Country = 'XX',
 
-        # Key type and size
-        [Parameter()]
-        [ValidateSet('RSA', 'ECDSA')]
-        [string]
-        $KeyType = 'RSA',
+    # Key type and size
+    [Parameter()]
+    [ValidateSet('RSA', 'ECDSA')]
+    [string]
+    $KeyType = 'RSA',
 
-        [Parameter()]
-        [ValidateSet(2048, 3072, 4096, 256, 384, 521)]
-        [int]
-        $KeyLength = 2048,
+    [Parameter()]
+    [ValidateSet(2048, 3072, 4096, 256, 384, 521)]
+    [int]
+    $KeyLength = 2048,
 
-        # Enhanced Key Usages (EKU) - e.g., '1.3.6.1.5.5.7.3.1' for server auth
-        [Parameter()]
-        [string[]]$EnhancedKeyUsages,
+    # Enhanced Key Usages (EKU) - e.g., '1.3.6.1.5.5.7.3.1' for server auth
+    [Parameter()]
+    [string[]]$EnhancedKeyUsages,
 
-        [Parameter()]
-        [ValidateSet('ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity', 'Custom')]
-        [string]
-        $CertificatePurpose = 'ServerAuth',
+    [Parameter()]
+    [ValidateSet('ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity', 'Custom')]
+    [string]
+    $CertificatePurpose = 'ServerAuth',
 
-        # Optional NotBefore date for certificate validity start
-        [Parameter()]
-        [DateTime]
-        $NotBefore,
+    # Optional NotBefore date for certificate validity start
+    [Parameter()]
+    [DateTime]
+    $NotBefore,
 
-        # Additional custom extensions (as an array of extension objects)
-        [Parameter()]
-        [object[]]
-        $CustomExtensions,
+    # Additional custom extensions (as an array of extension objects)
+    [Parameter()]
+    [object[]]
+    $CustomExtensions,
 
-        # Friendly name for display in certificate stores
-        [Parameter()]
-        [string]
-        $FriendlyName = 'MyCertificate',
+    # Friendly name for display in certificate stores
+    [Parameter()]
+    [string]
+    $FriendlyName = 'MyCertificate',
 
-        # Validity period (in days)
-        [Parameter()]
-        [int]
-        $ValidityDays = 365,
+    # Validity period (in days)
+    [Parameter()]
+    [int]
+    $ValidityDays = 365,
 
-        [Parameter()]
-        [switch]
-        $Ephemeral,
+    [Parameter()]
+    [switch]
+    $Ephemeral,
 
-        [Parameter()]
-        [switch]
-        $Exportable
+    [Parameter()]
+    [switch]
+    $Exportable
 
+  )
+
+  # Handle Loopback Parameter
+  if ($Loopback) {
+    if ($null -eq $DnsName) {
+      $DnsName = @()
+    }
+    if ($DnsName -notcontains '127.0.0.1') {
+      $DnsName += '127.0.0.1'
+    }
+    if ($DnsName -notcontains '::1') {
+      $DnsName += '::1'
+    }
+    if ($DnsName -notcontains 'localhost') {
+      $DnsName += 'localhost'
+    }
+
+    # Add machine-specific names if available
+    if ((![string]::IsNullOrWhiteSpace($PodeContext.Server.ComputerName) ) -and ($DnsName -notcontains $PodeContext.Server.ComputerName)) {
+      $DnsName += $PodeContext.Server.ComputerName
+    }
+    # Add machine-specific fqdn if available
+    if ((![string]::IsNullOrWhiteSpace($PodeContext.Server.Fqdn)) -and
+            ($PodeContext.Server.Fqdn -ne $PodeContext.Server.ComputerName) -and ($DnsName -notcontains $PodeContext.Server.Fqdn)) {
+      $DnsName += $PodeContext.Server.Fqdn
+    }
+  }
+
+  # Call the certificate request function to generate the CSR and key pair.
+  $csrParams = @{
+    DnsName            = $DnsName
+    CommonName         = $CommonName
+    Organization       = $Organization
+    Locality           = $Locality
+    State              = $State
+    Country            = $Country
+    KeyType            = $KeyType
+    KeyLength          = $KeyLength
+    CertificatePurpose = $CertificatePurpose
+    EnhancedKeyUsages  = $EnhancedKeyUsages
+    CustomExtensions   = $CustomExtensions
+  }
+
+  $csrObject = New-PodeCertificateRequestInternal @csrParams
+
+  # Determine certificate validity dates.
+  if ($null -eq $NotBefore) { $NotBefore = ([datetime]::UtcNow) }
+  $startDate = $NotBefore
+  $endDate = $NotBefore.AddDays($ValidityDays)
+
+  try {
+    # Create the self-signed certificate from the CSR.
+    $cert = $csrObject.CertificateRequest.CreateSelfSigned(
+      [System.DateTimeOffset]::new($startDate),
+      [System.DateTimeOffset]::new($endDate)
     )
 
-    # Handle Loopback Parameter
-    if ($Loopback) {
-        if ($null -eq $DnsName) {
-            $DnsName = @()
-        }
-        if ($DnsName -notcontains '127.0.0.1') {
-            $DnsName += '127.0.0.1'
-        }
-        if ($DnsName -notcontains '::1') {
-            $DnsName += '::1'
-        }
-        if ($DnsName -notcontains 'localhost') {
-            $DnsName += 'localhost'
-        }
-
-        # Add machine-specific names if available
-        if ((![string]::IsNullOrWhiteSpace($PodeContext.Server.ComputerName) ) -and ($DnsName -notcontains $PodeContext.Server.ComputerName)) {
-            $DnsName += $PodeContext.Server.ComputerName
-        }
-        # Add machine-specific fqdn if available
-        if ((![string]::IsNullOrWhiteSpace($PodeContext.Server.Fqdn)) -and
-            ($PodeContext.Server.Fqdn -ne $PodeContext.Server.ComputerName) -and ($DnsName -notcontains $PodeContext.Server.Fqdn)) {
-            $DnsName += $PodeContext.Server.Fqdn
-        }
+    # Set the friendly name if provided.
+    if (![string]::IsNullOrEmpty($FriendlyName) -and (Test-PodeIsWindows)) {
+      $cert.FriendlyName = $FriendlyName
     }
 
-    # Call the certificate request function to generate the CSR and key pair.
-    $csrParams = @{
-        DnsName            = $DnsName
-        CommonName         = $CommonName
-        Organization       = $Organization
-        Locality           = $Locality
-        State              = $State
-        Country            = $Country
-        KeyType            = $KeyType
-        KeyLength          = $KeyLength
-        CertificatePurpose = $CertificatePurpose
-        EnhancedKeyUsages  = $EnhancedKeyUsages
-        CustomExtensions   = $CustomExtensions
+    # Export the certificate as a PFX (with a default password; adjust as needed).
+    $pfxBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx , $Password)
+
+    if ($Ephemeral -and !$IsMacOS) {
+      $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+    }
+    else {
+      $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
     }
 
-    $csrObject = New-PodeCertificateRequestInternal @csrParams
-
-    # Determine certificate validity dates.
-    if ($null -eq $NotBefore) { $NotBefore = ([datetime]::UtcNow) }
-    $startDate = $NotBefore
-    $endDate = $NotBefore.AddDays($ValidityDays)
-
-    try {
-        # Create the self-signed certificate from the CSR.
-        $cert = $csrObject.CertificateRequest.CreateSelfSigned(
-            [System.DateTimeOffset]::new($startDate),
-            [System.DateTimeOffset]::new($endDate)
-        )
-
-        # Set the friendly name if provided.
-        if (![string]::IsNullOrEmpty($FriendlyName) -and (Test-PodeIsWindows)) {
-            $cert.FriendlyName = $FriendlyName
-        }
-
-        # Export the certificate as a PFX (with a default password; adjust as needed).
-        $pfxBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx , $Password)
-
-        if ($Ephemeral -and !$IsMacOS) {
-            $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
-        }
-        else {
-            $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
-        }
-
-        if ($Exportable) {
-            $storageFlags = $storageFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
-        }
-        $finalCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
-            $pfxBytes,
-            $Password,
-            $storageFlags
-        )
-        return $finalCert
+    if ($Exportable) {
+      $storageFlags = $storageFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
     }
-    catch {
-        $_ | Write-PodeErrorLog
-        throw
-    }
+    $finalCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+      $pfxBytes,
+      $Password,
+      $storageFlags
+    )
+    return $finalCert
+  }
+  catch {
+    $_ | Write-PodeErrorLog
+    throw
+  }
 }
 
 <#
@@ -527,68 +534,68 @@ function New-PodeSelfSignedCertificate {
   - The improrted Certificate is not validated and returned as is.
 #>
 function Import-PodeCertificate {
-    param (
-        # Certificate-based parameters for RSA/ECDSA
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
-        [string]
-        $Path,
+  param (
+    # Certificate-based parameters for RSA/ECDSA
+    [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
+    [string]
+    $Path,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
-        [string]
-        $PrivateKeyPath = $null,
+    [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+    [string]
+    $PrivateKeyPath = $null,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
-        [SecureString]
-        $CertificatePassword,
+    [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+    [SecureString]
+    $CertificatePassword,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
-        [Parameter()]
-        [switch]$Exportable,
+    [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+    [Parameter()]
+    [switch]$Exportable,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
-        [string]
-        $CertificateThumbprint,
+    [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
+    [string]
+    $CertificateThumbprint,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
-        [string]
-        $CertificateName,
+    [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
+    [string]
+    $CertificateName,
 
-        [Parameter(ParameterSetName = 'CertName')]
-        [Parameter(ParameterSetName = 'CertThumb')]
-        [System.Security.Cryptography.X509Certificates.StoreName]
-        $CertificateStoreName = 'My',
+    [Parameter(ParameterSetName = 'CertName')]
+    [Parameter(ParameterSetName = 'CertThumb')]
+    [System.Security.Cryptography.X509Certificates.StoreName]
+    $CertificateStoreName = 'My',
 
-        [Parameter(ParameterSetName = 'CertName')]
-        [Parameter(ParameterSetName = 'CertThumb')]
-        [System.Security.Cryptography.X509Certificates.StoreLocation]
-        $CertificateStoreLocation = 'CurrentUser'
-    )
+    [Parameter(ParameterSetName = 'CertName')]
+    [Parameter(ParameterSetName = 'CertThumb')]
+    [System.Security.Cryptography.X509Certificates.StoreLocation]
+    $CertificateStoreLocation = 'CurrentUser'
+  )
 
-    switch ($PSCmdlet.ParameterSetName) {
-        'CertFile' {
-            # If using a file-based certificate, ensure it exists, then load it
-            if (!(Test-Path -Path $Path -PathType Leaf)) {
-                throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
-            }
-            if (![string]::IsNullOrEmpty($PrivateKeyPath) -and !(Test-Path -Path $PrivateKeyPath -PathType Leaf)) {
-                throw ($PodeLocale.pathNotExistExceptionMessage -f $PrivateKeyPath)
-            }
-            $X509Certificate = Get-PodeCertificateByFile -Certificate $Path -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath -Exportable:$Exportable
-            break
-        }
-
-        'certthumb' {
-            # Retrieve a certificate from the local store by thumbprint
-            $X509Certificate = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
-        }
-
-        'certname' {
-            # Retrieve a certificate from the local store by name
-            $X509Certificate = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
-        }
+  switch ($PSCmdlet.ParameterSetName) {
+    'CertFile' {
+      # If using a file-based certificate, ensure it exists, then load it
+      if (!(Test-Path -Path $Path -PathType Leaf)) {
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
+      }
+      if (![string]::IsNullOrEmpty($PrivateKeyPath) -and !(Test-Path -Path $PrivateKeyPath -PathType Leaf)) {
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $PrivateKeyPath)
+      }
+      $X509Certificate = Get-PodeCertificateByFile -Certificate $Path -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath -Exportable:$Exportable
+      break
     }
 
-    return $X509Certificate
+    'certthumb' {
+      # Retrieve a certificate from the local store by thumbprint
+      $X509Certificate = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+    }
+
+    'certname' {
+      # Retrieve a certificate from the local store by name
+      $X509Certificate = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+    }
+  }
+
+  return $X509Certificate
 }
 
 
@@ -654,134 +661,134 @@ function Import-PodeCertificate {
   - PEM format supports exporting the private key separately, which can be encrypted with a password.
 #>
 function Export-PodeCertificate {
-    [CmdletBinding(DefaultParameterSetName = 'File')]
-    param (
-        # The X509 Certificate object to export
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]
-        $Certificate,
+  [CmdletBinding(DefaultParameterSetName = 'File')]
+  param (
+    # The X509 Certificate object to export
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    [System.Security.Cryptography.X509Certificates.X509Certificate2]
+    $Certificate,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'File')]
-        [string]
-        $Path,
+    [Parameter(Mandatory = $false, ParameterSetName = 'File')]
+    [string]
+    $Path,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'File')]
-        [ValidateSet('PFX', 'PEM', 'CER')]
-        [string]
-        $Format = 'PFX',
+    [Parameter(Mandatory = $false, ParameterSetName = 'File')]
+    [ValidateSet('PFX', 'PEM', 'CER')]
+    [string]
+    $Format = 'PFX',
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'File')]
-        [SecureString]
-        $CertificatePassword,
+    [Parameter(Mandatory = $false, ParameterSetName = 'File')]
+    [SecureString]
+    $CertificatePassword,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'File')]
-        [switch]$IncludePrivateKey,
+    [Parameter(Mandatory = $false, ParameterSetName = 'File')]
+    [switch]$IncludePrivateKey,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'WindowsStore')]
-        [System.Security.Cryptography.X509Certificates.StoreName]
-        $CertificateStoreName,
+    [Parameter(Mandatory = $true, ParameterSetName = 'WindowsStore')]
+    [System.Security.Cryptography.X509Certificates.StoreName]
+    $CertificateStoreName,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'WindowsStore')]
-        [System.Security.Cryptography.X509Certificates.StoreLocation]
-        $CertificateStoreLocation = 'CurrentUser'
-    )
+    [Parameter(Mandatory = $true, ParameterSetName = 'WindowsStore')]
+    [System.Security.Cryptography.X509Certificates.StoreLocation]
+    $CertificateStoreLocation = 'CurrentUser'
+  )
 
-    process {
+  process {
 
 
-        switch ($PSCmdlet.ParameterSetName) {
-            'File' {
-                if (Test-Path -Path $Path -PathType Container) {
-                    # Extract CN (Common Name) from Subject (ensures it only grabs CN=XX)
-                    if ($Certificate.Subject -match 'CN=([^,]+)') {
-                        $baseName = $matches[1]
-                    }
-                    else {
-                        $baseName = $Certificate.Thumbprint  # Fallback to thumbprint
-                    }
+    switch ($PSCmdlet.ParameterSetName) {
+      'File' {
+        if (Test-Path -Path $Path -PathType Container) {
+          # Extract CN (Common Name) from Subject (ensures it only grabs CN=XX)
+          if ($Certificate.Subject -match 'CN=([^,]+)') {
+            $baseName = $matches[1]
+          }
+          else {
+            $baseName = $Certificate.Thumbprint  # Fallback to thumbprint
+          }
 
-                    # Replace invalid filename characters and normalize spaces
-                    $baseName = $baseName -replace '[\\/:*?"<>|]', '_' -replace '\s+', '_'
+          # Replace invalid filename characters and normalize spaces
+          $baseName = $baseName -replace '[\\/:*?"<>|]', '_' -replace '\s+', '_'
 
-                    $filePath = Join-Path -Path $($PodeContext.Server.Root) -ChildPath $baseName
-                }
-                else {
-                    $filePath = $Path
-                }
-
-                switch ($Format) {
-                    'PFX' {
-                        $pfxBytes = if ($CertificatePassword) {
-                            $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $CertificatePassword)
-                        }
-                        else {
-                            $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
-                        }
-
-                        $filePathWithExt = [PSCustomObject]@{ CertificateFile = "$FilePath.pfx" }
-                        [System.IO.File]::WriteAllBytes($filePathWithExt.CertificateFile, $pfxBytes)
-                        break
-                    }
-                    'CER' {
-                        $cerBytes = $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
-
-                        $filePathWithExt = [PSCustomObject]@{ CertificateFile = "$FilePath.cer" }
-                        [System.IO.File]::WriteAllBytes($filePathWithExt.CertificateFile, $cerBytes)
-                        break
-                    }
-                    'PEM' {
-                        if ($PSVersionTable.PSVersion.Major -lt 7) {
-                            throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
-                        }
-                        # Export the certificate in PEM format
-                        $pemCert = "-----BEGIN CERTIFICATE-----`n"
-                        $pemCert += [Convert]::ToBase64String($Certificate.RawData, 'InsertLineBreaks')
-                        $pemCert += "`n-----END CERTIFICATE-----"
-                        $certFilePath = "$FilePath.pem"
-                        $pemCert | Out-File -FilePath $certFilePath -Encoding utf8NoBOM
-
-                        Write-Verbose "Certificate exported successfully: $certFilePath"
-
-                        # If requested, export the private key to a separate file
-                        if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
-                            $pemKey = Export-PodePrivateKeyPem -Key $Certificate.PrivateKey -Password $CertificatePassword
-                            $keyFilePath = "$FilePath.key"
-                            $pemKey | Out-File -FilePath $keyFilePath -Encoding utf8NoBOM
-
-                            Write-Verbose "Private key exported successfully: $keyFilePath"
-                        }
-
-                        # Return the certificate file path (and key file path if applicable)
-                        $filePathWithExt = if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
-                            [PSCustomObject]@{ CertificateFile = $certFilePath; PrivateKeyFile = $keyFilePath }
-                        }
-                        else {
-                            [PSCustomObject]@{ CertificateFile = $certFilePath }
-                        }
-                        break
-                    }
-                }
-
-                if ($Format -ne 'PEM') {
-                    Write-Verbose "Certificate exported successfully: $($filePathWithExt.CertificateFile)"
-                }
-                return  $filePathWithExt
-            }
-
-            'WindowsStore' {
-                if (Test-PodeIsWindows) {
-                    $store = [System.Security.Cryptography.X509Certificates.X509Store]::new($CertificateStoreName, $CertificateStoreLocation)
-                    $store.Open('ReadWrite')
-                    $store.Add($Certificate)
-                    $store.Close()
-
-                    Write-Verbose "Certificate successfully stored in: $CertificateStoreLocation\$CertificateStoreName"
-                    return  [PSCustomObject]@{CertificateStore = "$CertificateStoreLocation\$CertificateStoreName" }
-                }
-                return $null
-            }
+          $filePath = Join-Path -Path $($PodeContext.Server.Root) -ChildPath $baseName
         }
+        else {
+          $filePath = $Path
+        }
+
+        switch ($Format) {
+          'PFX' {
+            $pfxBytes = if ($CertificatePassword) {
+              $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $CertificatePassword)
+            }
+            else {
+              $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
+            }
+
+            $filePathWithExt = [PSCustomObject]@{ CertificateFile = "$FilePath.pfx" }
+            [System.IO.File]::WriteAllBytes($filePathWithExt.CertificateFile, $pfxBytes)
+            break
+          }
+          'CER' {
+            $cerBytes = $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+
+            $filePathWithExt = [PSCustomObject]@{ CertificateFile = "$FilePath.cer" }
+            [System.IO.File]::WriteAllBytes($filePathWithExt.CertificateFile, $cerBytes)
+            break
+          }
+          'PEM' {
+            if ($PSVersionTable.PSVersion.Major -lt 7) {
+              throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
+            }
+            # Export the certificate in PEM format
+            $pemCert = "-----BEGIN CERTIFICATE-----`n"
+            $pemCert += [Convert]::ToBase64String($Certificate.RawData, 'InsertLineBreaks')
+            $pemCert += "`n-----END CERTIFICATE-----"
+            $certFilePath = "$FilePath.pem"
+            $pemCert | Out-File -FilePath $certFilePath -Encoding utf8NoBOM
+
+            Write-Verbose "Certificate exported successfully: $certFilePath"
+
+            # If requested, export the private key to a separate file
+            if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
+              $pemKey = Export-PodePrivateKeyPem -Key $Certificate.PrivateKey -Password $CertificatePassword
+              $keyFilePath = "$FilePath.key"
+              $pemKey | Out-File -FilePath $keyFilePath -Encoding utf8NoBOM
+
+              Write-Verbose "Private key exported successfully: $keyFilePath"
+            }
+
+            # Return the certificate file path (and key file path if applicable)
+            $filePathWithExt = if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
+              [PSCustomObject]@{ CertificateFile = $certFilePath; PrivateKeyFile = $keyFilePath }
+            }
+            else {
+              [PSCustomObject]@{ CertificateFile = $certFilePath }
+            }
+            break
+          }
+        }
+
+        if ($Format -ne 'PEM') {
+          Write-Verbose "Certificate exported successfully: $($filePathWithExt.CertificateFile)"
+        }
+        return  $filePathWithExt
+      }
+
+      'WindowsStore' {
+        if (Test-PodeIsWindows) {
+          $store = [System.Security.Cryptography.X509Certificates.X509Store]::new($CertificateStoreName, $CertificateStoreLocation)
+          $store.Open('ReadWrite')
+          $store.Add($Certificate)
+          $store.Close()
+
+          Write-Verbose "Certificate successfully stored in: $CertificateStoreLocation\$CertificateStoreName"
+          return  [PSCustomObject]@{CertificateStore = "$CertificateStoreLocation\$CertificateStoreName" }
+        }
+        return $null
+      }
     }
+  }
 }
 
 <#
@@ -815,41 +822,41 @@ function Export-PodeCertificate {
 
 #>
 function Get-PodeCertificatePurpose {
-    [CmdletBinding()]
-    [OutputType([object[]])]
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate
-    )
-    process {
-        # Define known EKU OIDs and their purposes
-        $purposeOids = @{
-            '1.3.6.1.5.5.7.3.1' = 'ServerAuth'
-            '1.3.6.1.5.5.7.3.2' = 'ClientAuth'
-            '1.3.6.1.5.5.7.3.3' = 'CodeSigning'
-            '1.3.6.1.5.5.7.3.4' = 'EmailSecurity'
-        }
-
-        # Retrieve the EKU extension (OID: 2.5.29.37)
-        $ekuExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.37' }
-
-        if ($ekuExtension -and $ekuExtension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
-            # Use the EnhancedKeyUsages property which returns an OidCollection
-            $purposes = @()
-            foreach ($oid in $ekuExtension.EnhancedKeyUsages) {
-                if ($purposeOids.ContainsKey($oid.Value)) {
-                    $purposes += $purposeOids[$oid.Value]
-                }
-                else {
-                    $purposes += "Unknown ($($oid.Value))"
-                }
-            }
-            return $purposes
-        }
-
-        # If no EKU is present, return an empty array (no restrictions)
-        return @()
+  [CmdletBinding()]
+  [OutputType([object[]])]
+  param (
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate
+  )
+  process {
+    # Define known EKU OIDs and their purposes
+    $purposeOids = @{
+      '1.3.6.1.5.5.7.3.1' = 'ServerAuth'
+      '1.3.6.1.5.5.7.3.2' = 'ClientAuth'
+      '1.3.6.1.5.5.7.3.3' = 'CodeSigning'
+      '1.3.6.1.5.5.7.3.4' = 'EmailSecurity'
     }
+
+    # Retrieve the EKU extension (OID: 2.5.29.37)
+    $ekuExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.37' }
+
+    if ($ekuExtension -and $ekuExtension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
+      # Use the EnhancedKeyUsages property which returns an OidCollection
+      $purposes = @()
+      foreach ($oid in $ekuExtension.EnhancedKeyUsages) {
+        if ($purposeOids.ContainsKey($oid.Value)) {
+          $purposes += $purposeOids[$oid.Value]
+        }
+        else {
+          $purposes += "Unknown ($($oid.Value))"
+        }
+      }
+      return $purposes
+    }
+
+    # If no EKU is present, return an empty array (no restrictions)
+    return @()
+  }
 }
 
 <#
@@ -914,139 +921,139 @@ function Get-PodeCertificatePurpose {
   Validates the certificate and ensures it is explicitly intended for CodeSigning.
 #>
 function Test-PodeCertificate {
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]
-        $Certificate,
+  [CmdletBinding()]
+  [OutputType([bool])]
+  param (
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    [System.Security.Cryptography.X509Certificates.X509Certificate2]
+    $Certificate,
 
-        [Parameter()]
-        [switch]$CheckRevocation,
+    [Parameter()]
+    [switch]$CheckRevocation,
 
-        [Parameter()]
-        [switch]$OfflineRevocation,
+    [Parameter()]
+    [switch]$OfflineRevocation,
 
-        [Parameter()]
-        [switch]$AllowWeakAlgorithms,
+    [Parameter()]
+    [switch]$AllowWeakAlgorithms,
 
-        [Parameter()]
-        [switch]$DenySelfSigned,
+    [Parameter()]
+    [switch]$DenySelfSigned,
 
-        [Parameter()]
-        [ValidateSet('ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity')]
-        [string]$ExpectedPurpose,
+    [Parameter()]
+    [ValidateSet('ServerAuth', 'ClientAuth', 'CodeSigning', 'EmailSecurity')]
+    [string]$ExpectedPurpose,
 
-        [Parameter()]
-        [switch]$Strict
-    )
-    process {
-        # Validate certificate validity period
-        $currentDate = [System.DateTime]::UtcNow
-        $notBefore = $Certificate.NotBefore.ToUniversalTime()
-        $notAfter = $Certificate.NotAfter.ToUniversalTime()
+    [Parameter()]
+    [switch]$Strict
+  )
+  process {
+    # Validate certificate validity period
+    $currentDate = [System.DateTime]::UtcNow
+    $notBefore = $Certificate.NotBefore.ToUniversalTime()
+    $notAfter = $Certificate.NotAfter.ToUniversalTime()
 
-        if ($currentDate -lt $notBefore) {
-            Write-Error ($PodeLocale.certificateNotValidYetExceptionMessage -f $Certificate.Subject, $notBefore)
-            return $false
-        }
-        if ($currentDate -gt $notAfter) {
-            Write-Error ($PodeLocale.certificateExpiredExceptionMessage -f $Certificate.Subject, $notAfter)
-            return $false
-        }
-        Write-Verbose "Certificate $($Certificate.Subject) is within its valid period."
-
-        # Option: Deny self-signed certificates if requested.
-        if ($DenySelfSigned -and ($Certificate.Subject -eq $Certificate.Issuer)) {
-            Write-Error $PodeLocale.selfSignedCertificatesNotAllowedExceptionMessage
-            return $false
-        }
-
-        # For CA-issued certificates, check signature validity.
-        # Self-signed certificates: skip signature verification but log a message.
-        if ($Certificate.Subject -ne $Certificate.Issuer) {
-            if (! $Certificate.Verify()) {
-                Write-Error ($PodeLocale.certificateSignatureInvalidExceptionMessage -f $Certificate.Subject)
-                return $false
-            }
-        }
-        else {
-            Write-Verbose 'Self-signed certificate detected: skipping signature verification.'
-        }
-
-        # Initialize the certificate chain.
-        $chain = [System.Security.Cryptography.X509Certificates.X509Chain]::new()
-
-        # For self-signed certificates, allow an unknown certificate authority and disable revocation checks.
-        if ($Certificate.Subject -eq $Certificate.Issuer) {
-            $chain.ChainPolicy.VerificationFlags = [System.Security.Cryptography.X509Certificates.X509VerificationFlags]::AllowUnknownCertificateAuthority
-            $CheckRevocation = $false
-            Write-Verbose 'Self-signed certificate detected: revocation check disabled.'
-        }
-
-        # Apply revocation policy.
-        if ($CheckRevocation) {
-            $chain.ChainPolicy.RevocationMode = if ($OfflineRevocation) {
-                [System.Security.Cryptography.X509Certificates.X509RevocationMode]::Offline
-            }
-            else {
-                [System.Security.Cryptography.X509Certificates.X509RevocationMode]::Online
-            }
-            Write-Verbose "Revocation checking set to: $($chain.ChainPolicy.RevocationMode)"
-        }
-        else {
-            $chain.ChainPolicy.RevocationMode = [System.Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
-        }
-
-        # Build the certificate chain.
-        $isValidChain = $chain.Build($Certificate)
-        if (-not $isValidChain) {
-            foreach ($status in $chain.ChainStatus) {
-                if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::UntrustedRoot) {
-                    Write-Error ($PodeLocale.certificateUntrustedRootExceptionMessage -f $Certificate.Subject)
-                    return $false
-                }
-                if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::Revoked) {
-                    Write-Error ($PodeLocale.certificateRevokedExceptionMessage -f $Certificate.Subject, $status.StatusInformation)
-                    return $false
-                }
-                if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::NotTimeValid) {
-                    Write-Error ($PodeLocale.certificateExpiredIntermediateExceptionMessage -f $Certificate.Subject)
-                    return $false
-                }
-            }
-            Write-Error ($PodeLocale.certificateValidationFailedExceptionMessage -f $Certificate.Subject)
-            return $false
-        }
-        Write-Verbose 'Certificate chain validation successful.'
-
-        # Check for weak algorithms unless weak ones are allowed.
-        if (-not $AllowWeakAlgorithms) {
-            $weakAlgorithms = @('md5RSA', 'sha1RSA', 'sha1ECDSA', 'RSA-1024')
-            if ($Certificate.SignatureAlgorithm.FriendlyName -in $weakAlgorithms) {
-                Write-Error ($PodeLocale.certificateWeakAlgorithmExceptionMessage -f $Certificate.Subject, $Certificate.SignatureAlgorithm.FriendlyName)
-                return $false
-            }
-        }
-
-        # If an ExpectedPurpose is provided, check the certificate's EKU restrictions.
-        if ($ExpectedPurpose) {
-            # Retrieve the EKU values via a helper function.
-            $purposes = Get-PodeCertificatePurpose -Certificate $Certificate
-            if ($purposes.Count -eq 0 -and ! $Strict) {
-                Write-Verbose 'Certificate has no EKU restrictions; it can be used for any purpose.'
-            }
-            elseif ($ExpectedPurpose -notin $purposes) {
-                Write-Error ($PodeLocale.certificateNotValidForPurposeExceptionMessage -f $ExpectedPurpose, ($purposes -join ', '))
-                return $false
-            }
-            if ($Strict -and ($purposes -match '^Unknown')) {
-                Write-Error ($PodeLocale.certificateUnknownEkusStrictModeExceptionMessage -f ($purposes -join ', '))
-                return $false
-            }
-            Write-Verbose "Certificate is valid for the expected purpose '$ExpectedPurpose'. Found purposes: $($purposes -join ', ')"
-        }
-
-        return $true
+    if ($currentDate -lt $notBefore) {
+      Write-Error ($PodeLocale.certificateNotValidYetExceptionMessage -f $Certificate.Subject, $notBefore)
+      return $false
     }
+    if ($currentDate -gt $notAfter) {
+      Write-Error ($PodeLocale.certificateExpiredExceptionMessage -f $Certificate.Subject, $notAfter)
+      return $false
+    }
+    Write-Verbose "Certificate $($Certificate.Subject) is within its valid period."
+
+    # Option: Deny self-signed certificates if requested.
+    if ($DenySelfSigned -and ($Certificate.Subject -eq $Certificate.Issuer)) {
+      Write-Error $PodeLocale.selfSignedCertificatesNotAllowedExceptionMessage
+      return $false
+    }
+
+    # For CA-issued certificates, check signature validity.
+    # Self-signed certificates: skip signature verification but log a message.
+    if ($Certificate.Subject -ne $Certificate.Issuer) {
+      if (! $Certificate.Verify()) {
+        Write-Error ($PodeLocale.certificateSignatureInvalidExceptionMessage -f $Certificate.Subject)
+        return $false
+      }
+    }
+    else {
+      Write-Verbose 'Self-signed certificate detected: skipping signature verification.'
+    }
+
+    # Initialize the certificate chain.
+    $chain = [System.Security.Cryptography.X509Certificates.X509Chain]::new()
+
+    # For self-signed certificates, allow an unknown certificate authority and disable revocation checks.
+    if ($Certificate.Subject -eq $Certificate.Issuer) {
+      $chain.ChainPolicy.VerificationFlags = [System.Security.Cryptography.X509Certificates.X509VerificationFlags]::AllowUnknownCertificateAuthority
+      $CheckRevocation = $false
+      Write-Verbose 'Self-signed certificate detected: revocation check disabled.'
+    }
+
+    # Apply revocation policy.
+    if ($CheckRevocation) {
+      $chain.ChainPolicy.RevocationMode = if ($OfflineRevocation) {
+        [System.Security.Cryptography.X509Certificates.X509RevocationMode]::Offline
+      }
+      else {
+        [System.Security.Cryptography.X509Certificates.X509RevocationMode]::Online
+      }
+      Write-Verbose "Revocation checking set to: $($chain.ChainPolicy.RevocationMode)"
+    }
+    else {
+      $chain.ChainPolicy.RevocationMode = [System.Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
+    }
+
+    # Build the certificate chain.
+    $isValidChain = $chain.Build($Certificate)
+    if (-not $isValidChain) {
+      foreach ($status in $chain.ChainStatus) {
+        if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::UntrustedRoot) {
+          Write-Error ($PodeLocale.certificateUntrustedRootExceptionMessage -f $Certificate.Subject)
+          return $false
+        }
+        if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::Revoked) {
+          Write-Error ($PodeLocale.certificateRevokedExceptionMessage -f $Certificate.Subject, $status.StatusInformation)
+          return $false
+        }
+        if ($status.Status -eq [System.Security.Cryptography.X509Certificates.X509ChainStatusFlags]::NotTimeValid) {
+          Write-Error ($PodeLocale.certificateExpiredIntermediateExceptionMessage -f $Certificate.Subject)
+          return $false
+        }
+      }
+      Write-Error ($PodeLocale.certificateValidationFailedExceptionMessage -f $Certificate.Subject)
+      return $false
+    }
+    Write-Verbose 'Certificate chain validation successful.'
+
+    # Check for weak algorithms unless weak ones are allowed.
+    if (-not $AllowWeakAlgorithms) {
+      $weakAlgorithms = @('md5RSA', 'sha1RSA', 'sha1ECDSA', 'RSA-1024')
+      if ($Certificate.SignatureAlgorithm.FriendlyName -in $weakAlgorithms) {
+        Write-Error ($PodeLocale.certificateWeakAlgorithmExceptionMessage -f $Certificate.Subject, $Certificate.SignatureAlgorithm.FriendlyName)
+        return $false
+      }
+    }
+
+    # If an ExpectedPurpose is provided, check the certificate's EKU restrictions.
+    if ($ExpectedPurpose) {
+      # Retrieve the EKU values via a helper function.
+      $purposes = Get-PodeCertificatePurpose -Certificate $Certificate
+      if ($purposes.Count -eq 0 -and ! $Strict) {
+        Write-Verbose 'Certificate has no EKU restrictions; it can be used for any purpose.'
+      }
+      elseif ($ExpectedPurpose -notin $purposes) {
+        Write-Error ($PodeLocale.certificateNotValidForPurposeExceptionMessage -f $ExpectedPurpose, ($purposes -join ', '))
+        return $false
+      }
+      if ($Strict -and ($purposes -match '^Unknown')) {
+        Write-Error ($PodeLocale.certificateUnknownEkusStrictModeExceptionMessage -f ($purposes -join ', '))
+        return $false
+      }
+      Write-Verbose "Certificate is valid for the expected purpose '$ExpectedPurpose'. Found purposes: $($purposes -join ', ')"
+    }
+
+    return $true
+  }
 }
