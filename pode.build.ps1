@@ -1228,7 +1228,7 @@ Add-BuildTask Build BuildDeps, Yarn, {
 }
 
 Add-BuildTask  Yarn {
-    yarn install --force --ignore-scripts --modules-folder pode_modules
+    yarn install --force --ignore-scripts --modules-folder pode_modules 2>&1| Select-String -NotMatch '^warning'
 }, MoveLibs
 
 
