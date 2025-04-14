@@ -11,13 +11,13 @@ If you have Pode's source code checked out locally on your machine, you can foll
 
 1. Install InvokeBuild Module
 
-    ### Using Powershell Gallery
+   ### Using Powershell Gallery
 
     ```powershell
     Install-Module InvokeBuild -Scope CurrentUser
     ```
 
-    ### Using Chocolatey
+   ### Using Chocolatey
 
     ```powershell
     choco install invoke-build
@@ -56,6 +56,7 @@ If you have Pode's source code checked out locally on your machine, you can foll
     ```
 
     To uninstall, use:
+
     ```powershell
     Invoke-Build Remove-Module
     ```
@@ -69,23 +70,26 @@ If you have Pode's source code checked out locally on your machine, you can foll
     Invoke-Build clean
     ```
 
-## Linux
+### Linux
 
 1. Register the Microsoft Repository
 
     #### CentOS
+
     ```shell
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo curl -o /etc/yum.repos.d/microsoft.repo https://packages.microsoft.com/config/centos/8/prod.repo
     ```
 
     #### RedHat
+
     ```shell
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo curl -o /etc/yum.repos.d/microsoft.repo https://packages.microsoft.com/config/rhel/9/prod.repo
     ```
 
     #### Debian / Ubuntu
+
     ```shell
     sudo apt-get update
     sudo apt-get install -y wget apt-transport-https software-properties-common
@@ -138,7 +142,6 @@ If you have Pode's source code checked out locally on your machine, you can foll
     ```powershell
     Invoke-Build Remove-Module
     ```
-
 
 ## MacOS
 
