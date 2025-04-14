@@ -190,6 +190,7 @@ function Test-PodeCsrfConfigured {
   - PEM certificates may require a separate private key file.
   - Uses EphemeralKeySet storage on non-macOS platforms for security.
 #>
+
 function Get-PodeCertificateByFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -214,13 +215,6 @@ function Get-PodeCertificateByFile {
     )
 
     $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
-    # cert + key
-    if (![string]::IsNullOrWhiteSpace($PrivateKeyPath) -or ( [System.IO.Path]::GetExtension($path).ToLower() -eq '.pem') ) {
-        return (Get-PodeCertificateByPemFile -Certificate $Certificate -SecurePassword $SecurePassword -PrivateKeyPath $PrivateKeyPath)
-    }
-
-    # read the cert bytes from the file to avoid the use of obsolete constructors
-    $certBytes = [System.IO.File]::ReadAllBytes($path)
 
     if ($Ephemeral -and !$IsMacOS) {
         $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
@@ -232,6 +226,13 @@ function Get-PodeCertificateByFile {
     if ($Exportable) {
         $storageFlags = $storageFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
     }
+    # cert + key
+    if (![string]::IsNullOrWhiteSpace($PrivateKeyPath)) {
+        return (Get-PodeCertificateByPemFile -Certificate $Certificate -SecurePassword $SecurePassword -PrivateKeyPath $PrivateKeyPath -StorageFlags $storageFlags)
+    }
+
+    # read the cert bytes from the file to avoid the use of obsolete constructors
+    $certBytes = [System.IO.File]::ReadAllBytes($path)
 
     if ( [System.IO.Path]::GetExtension($path).ToLower() -eq '.pfx') {
         if ($null -ne $SecurePassword) {
@@ -298,8 +299,8 @@ function Get-PodeCertificateByPemFile {
                         $rsa.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
                     }
                 }
-                $cert = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
             }
+            $cert = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
         }
         catch {
             $ecsd = [ECDSA]::Create()
@@ -311,8 +312,6 @@ function Get-PodeCertificateByPemFile {
                     $ecsd.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword))
 
                 }
-
-
                 # .NET3
                 else {
                     $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
@@ -335,31 +334,8 @@ function Get-PodeCertificateByPemFile {
 
                 $cert = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
             }
-            $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12))
         }
-    }
-    # for everything else, there's the openssl way
-    else {
-        $tempFile = Join-Path (Split-Path -Parent -Path $certPath) 'temp.pfx'
-
-        try {
-            if ($null -ne $SecurePassword) {
-                $Password = Convert-PodeSecureStringToPlainText -SecureString $SecurePassword
-            }
-            if ([string]::IsNullOrWhiteSpace($Password)) {
-                $Password = [string]::Empty
-            }
-
-            $result = openssl pkcs12 -inkey $keyPath -in $certPath -export -passin pass:$Password -password pass:$Password -out $tempFile
-            if (!$?) {
-                throw ($PodeLocale.failedToCreateOpenSslCertExceptionMessage -f $result) #"Failed to create openssl cert: $($result)"
-            }
-
-            $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($tempFile, $Password)
-        }
-        finally {
-            $null = Remove-Item $tempFile -Force
-        }
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12))
     }
 
     return $cert

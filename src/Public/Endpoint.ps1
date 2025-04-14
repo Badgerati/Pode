@@ -396,18 +396,22 @@ function Add-PodeEndpoint {
                 }
 
                 $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate  -SecurePassword $securePassword  -PrivateKeyPath $CertificateKey
+                break
             }
 
             'certthumb' {
                 $obj.Certificate.Raw = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+                break
             }
 
             'certname' {
                 $obj.Certificate.Raw = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+                break
             }
 
             'certself' {
                 $obj.Certificate.Raw = New-PodeSelfSignedCertificate -Loopback -CertificatePurpose ServerAuth -DnsName $obj.address.ToString()
+                break
             }
         }
 
