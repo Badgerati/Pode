@@ -8,6 +8,7 @@ function Start-PodeWebServer {
 
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
+        (Get-PodeFaviconMiddleware),
         (Get-PodeSecurityMiddleware),
         (Get-PodeAccessMiddleware),
         (Get-PodeLimitMiddleware),
@@ -210,13 +211,7 @@ function Start-PodeWebServer {
                                 if ($Request.IsAborted) {
                                     throw $Request.Error
                                 }
-
-                                # deal with favicon if available
-                                if (($WebEvent.Path -eq '/favicon.ico') -and ($WebEvent.Method -eq 'GET') -and ($null -ne $PodeContext.Server.Endpoints[$context.EndpointName].Favicon)) {
-                                    # Write the file content as the HTTP response
-                                    Write-PodeTextResponse -Bytes $PodeContext.Server.Endpoints[$context.EndpointName].Favicon.Bytes -ContentType $PodeContext.Server.Endpoints[$context.EndpointName].Favicon.ContentType -StatusCode 200
-                                    continue
-                                }
+                                
                                 # if we have an sse clientId, verify it and then set details in WebEvent
                                 if ($WebEvent.Request.HasSseClientId) {
                                     if (!(Test-PodeSseClientIdValid)) {

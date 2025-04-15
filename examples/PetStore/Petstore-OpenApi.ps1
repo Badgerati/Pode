@@ -104,7 +104,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         else {
             $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
             $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
-            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default -DefaultFavicon
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default
         }
     }
     else {
