@@ -168,7 +168,7 @@ function New-PodeCertificateRequest {
   $csrPath = Join-Path -Path $OutputPath -ChildPath "$fileBaseName.csr"
   $keyPath = Join-Path -Path $OutputPath -ChildPath "$fileBaseName.key"
   # Split $csrObject.Request into 64-char lines
-  $csrFormatted = ($csrObject.Request -split "(.{1,64})" | Where-Object { $_ -ne "" }) -join "`n"
+  $csrFormatted = ($csrObject.Request -split '(.{1,64})' | Where-Object { $_ -ne '' }) -join "`n"
 
   "-----BEGIN CERTIFICATE REQUEST-----`n$csrFormatted`n-----END CERTIFICATE REQUEST-----" | Out-File -FilePath $csrPath -Encoding $encoding
 
@@ -488,6 +488,10 @@ function New-PodeSelfSignedCertificate {
   If not specified, the certificate will be imported **ephemerally**, meaning the
   private key will exist **only in memory** and will be lost when the process exits.
 
+.PARAMETER ChainFile
+  An optional array of file paths to PEM-formatted certificate chain files.
+  These certificates (e.g., intermediate and root certificates) are combined with the primary certificate to form a full chain.
+
 .PARAMETER CertificateThumbprint
   The thumbprint of a certificate stored in the Windows certificate store.
 
@@ -510,8 +514,12 @@ function New-PodeSelfSignedCertificate {
   Imports a PFX certificate file with an ephemeral private key.
 
 .EXAMPLE
-  $cert = Import-PodeCertificate -Path "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force) -Persistent
+  $cert = Import-PodeCertificate -Path "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force) -Exportable
   Imports a PFX certificate file **with a persistent private key**, allowing it to be saved.
+
+  .EXAMPLE
+  $cert = Import-PodeCertificate -Path "C:\Certs\mycert.pfx" -CertificatePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force) -Exportable -ChainFile "C:\Certs\chain1.pem", "C:\Certs\chain2.pem"
+  Imports a PFX certificate file **with a persistent private key**, allowing it to be saved along with multiple chain files.
 
 .EXAMPLE
   $cert = Import-PodeCertificate -Path "C:\Certs\mycert.cer"
@@ -552,6 +560,9 @@ function Import-PodeCertificate {
     [Parameter()]
     [switch]$Exportable,
 
+    [Parameter(Mandatory = $false, ParameterSetName = 'CertFile')]
+    [string[]]$ChainFile = $null,
+
     [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
     [string]
     $CertificateThumbprint,
@@ -580,7 +591,7 @@ function Import-PodeCertificate {
       if (![string]::IsNullOrEmpty($PrivateKeyPath) -and !(Test-Path -Path $PrivateKeyPath -PathType Leaf)) {
         throw ($PodeLocale.pathNotExistExceptionMessage -f $PrivateKeyPath)
       }
-      $X509Certificate = Get-PodeCertificateByFile -Certificate $Path -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath -Exportable:$Exportable
+      $X509Certificate = Get-PodeCertificateByFile -Certificate $Path -SecurePassword $CertificatePassword -PrivateKeyPath $PrivateKeyPath -Exportable:$Exportable -ChainFile $ChainFile
       break
     }
 

@@ -81,7 +81,7 @@ Describe 'New-PodeCertificateRequest Function' {
 
         # Validate file contents.
         $csrContent = Get-Content -Path $result.CsrPath -Raw
-        $csrContent.Trim() | Should -Be 'Dummy CSR Content'
+        $csrContent.Trim() | Should -Be "-----BEGIN CERTIFICATE REQUEST-----`nDummy CSR Content`n-----END CERTIFICATE REQUEST-----"
 
         $keyContent = Get-Content -Path $result.PrivateKeyPath -Raw
         $keyContent | Should -Match '-----BEGIN PRIVATE KEY-----'

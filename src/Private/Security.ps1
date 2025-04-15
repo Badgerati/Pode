@@ -137,7 +137,8 @@ function Test-PodeCsrfConfigured {
 
 <#
 .SYNOPSIS
-  Loads an X.509 certificate from a file (PFX, PEM, or CER), optionally decrypting it with a password.
+  Loads an X.509 certificate from a file (PFX, PEM, or CER), optionally decrypting it with a password,
+  and attaches an optional certificate chain.
 
 .DESCRIPTION
   This function reads an X.509 certificate from a file and loads it as an X509Certificate2 object.
@@ -146,8 +147,12 @@ function Test-PodeCsrfConfigured {
     - PEM certificates with a separate private key file.
     - CER (DER or Base64-encoded) certificates (public key only).
 
-  It applies the appropriate key storage flags depending on the operating system and
-  ensures compatibility with Pode’s certificate handling utilities.
+  Additionally, the function accepts one or more certificate chain file paths (in PEM format) that
+  form the complete chain (e.g., intermediate and root certificates). These chain certificates are
+  combined with the primary certificate to form a full certificate chain.
+
+  It applies the appropriate key storage flags depending on the operating system and ensures compatibility
+  with Pode’s certificate handling utilities.
 
 .PARAMETER Certificate
   The file path to the certificate (.pfx, .pem, or .cer) to load.
@@ -160,18 +165,21 @@ function Test-PodeCsrfConfigured {
   Required if the PEM certificate does not contain the private key.
 
 .PARAMETER Ephemeral
-  If specified, the certificate will be created with `EphemeralKeySet`, meaning the private key
-  will **not be persisted** on disk or in the certificate store.
-
-  This is useful for temporary certificates that should only exist in memory for the duration
-  of the current session. Once the process exits, the private key will be lost.
+  If specified, the certificate will be created with the EphemeralKeySet flag, meaning the private key
+  will not be persisted on disk or in the certificate store.
+  This is useful for temporary certificates that should only exist in memory for the duration of the current session.
+  Once the process exits, the private key will be lost.
 
 .PARAMETER Exportable
- If specified the certificate will be created with `Exportable`, meaning the certificate can be exported
+  If specified, the certificate will be created with the Exportable flag, meaning the certificate can be exported.
+
+.PARAMETER ChainFile
+  An optional array of file paths to PEM-formatted certificate chain files.
+  These certificates (e.g., intermediate and root certificates) are combined with the primary certificate to form a full chain.
 
 .OUTPUTS
   [System.Security.Cryptography.X509Certificates.X509Certificate2]
-  Returns an X.509 certificate object.
+  Returns an X.509 certificate object that includes the main certificate and any attached certificate chain.
 
 .EXAMPLE
   $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.pfx" -SecurePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force)
@@ -185,12 +193,15 @@ function Test-PodeCsrfConfigured {
   $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.cer"
   Loads a CER certificate (public key only).
 
+.EXAMPLE
+  $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.pem" -PrivateKeyPath "C:\Certs\mykey.pem" -ChainFile "C:\Certs\chain1.pem", "C:\Certs\chain2.pem"
+  Loads a PEM certificate along with multiple chain files.
+
 .NOTES
   - CER files do not contain private keys and cannot be decrypted with a password.
   - PEM certificates may require a separate private key file.
   - Uses EphemeralKeySet storage on non-macOS platforms for security.
 #>
-
 function Get-PodeCertificateByFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -211,7 +222,10 @@ function Get-PodeCertificateByFile {
 
         [Parameter()]
         [switch]
-        $Exportable
+        $Exportable,
+
+        [Parameter()]
+        [string[]]$ChainFile = $null
     )
 
     $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
@@ -226,21 +240,62 @@ function Get-PodeCertificateByFile {
     if ($Exportable) {
         $storageFlags = $storageFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
     }
-    # cert + key
-    if (![string]::IsNullOrWhiteSpace($PrivateKeyPath)) {
-        return (Get-PodeCertificateByPemFile -Certificate $Certificate -SecurePassword $SecurePassword -PrivateKeyPath $PrivateKeyPath -StorageFlags $storageFlags)
+
+    # If a PrivateKeyPath is provided, delegate to the PEM specialized function.
+    if (! [string]::IsNullOrWhiteSpace($PrivateKeyPath)) {
+        $cert = Get-PodeCertificateByPemFile -Certificate $Certificate -SecurePassword $SecurePassword -PrivateKeyPath $PrivateKeyPath -storageFlags $storageFlags
+    }
+    else {
+        # Read certificate bytes to avoid use of obsolete constructors.
+        $certBytes = [System.IO.File]::ReadAllBytes($path)
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certBytes, $SecurePassword, $storageFlags)
     }
 
-    # read the cert bytes from the file to avoid the use of obsolete constructors
-    $certBytes = [System.IO.File]::ReadAllBytes($path)
+    # Process chain certificates if one or more chain file paths are provided.
+    if ($ChainFile -and $ChainFile.Count -gt 0) {
+        # Initialize the collection with the primary certificate.
+        $certCollection = [System.Security.Cryptography.X509Certificates.X509Certificate2Collection]::new()
+        $certCollection.Add($cert)
 
-    if ( [System.IO.Path]::GetExtension($path).ToLower() -eq '.pfx') {
-        if ($null -ne $SecurePassword) {
-            return [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certBytes, $SecurePassword, $storageFlags)
+        foreach ($chainPath in $ChainFile) {
+            if (Test-Path $chainPath) {
+                $resolvedChainPath = Get-PodeRelativePath -Path $chainPath -JoinRoot -Resolve
+                $chainContent = Get-Content -Path $resolvedChainPath -Raw
+
+                # Split the file into certificate blocks by the PEM delimiter.
+                $pemBlocks = $chainContent -split '-----END CERTIFICATE-----' | ForEach-Object {
+                    if ($_ -match '-----BEGIN CERTIFICATE-----') {
+                        $_ + '-----END CERTIFICATE-----'
+                    }
+                } | Where-Object { $_ -and $_.Trim().Length -gt 0 }
+
+                foreach ($pem in $pemBlocks) {
+
+                    $base64 = $pem -replace '-----BEGIN CERTIFICATE-----', '' `
+                        -replace '-----END CERTIFICATE-----', '' `
+                        -replace '\s+', ''
+                    $chainCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([System.Convert]::FromBase64String($base64))
+                    $certCollection.Add($chainCert)
+
+                }
+            }
+            else {
+                throw ($PodeLocale.noCertificateFoundExceptionMessage -f $chainPath, '', 'import') # "Certificate chain file not found: $chainPath"
+            }
         }
+
+        # Optionally combine the certificates into a single PFX.
+        if ($SecurePassword -ne $null) {
+            $pwd = Convert-PodeSecureStringToPlainText -SecureString $SecurePassword
+        }
+        else {
+            $pwd = ''
+        }
+        $pfxBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $pwd)
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($pfxBytes, $pwd, $storageFlags)
     }
-    # plain cert
-    return [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certBytes, $null, $storageFlags)
+
+    return $cert
 }
 
 function Get-PodeCertificateByPemFile {
@@ -255,7 +310,11 @@ function Get-PodeCertificateByPemFile {
 
         [Parameter(Mandatory = $true)]
         [string]
-        $PrivateKeyPath
+        $PrivateKeyPath,
+
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]
+        $storageFlags
     )
 
     if ($PSVersionTable.PSVersion.Major -lt 7) {
@@ -269,7 +328,7 @@ function Get-PodeCertificateByPemFile {
 
     # pem's kinda work in .NET3/.NET5
     if ([version]$PSVersionTable.PSVersion -ge [version]'7.0.0') {
-        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath)
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath, $SecurePassword, $storageFlags)
         $keyText = [System.IO.File]::ReadAllText($keyPath)
         try {
             $rsa = [RSA]::Create()
@@ -312,28 +371,29 @@ function Get-PodeCertificateByPemFile {
                     $ecsd.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword))
 
                 }
-                # .NET3
-                else {
-                    $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
-                    $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
+            }
+            # .NET3
+            else {
+                $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
+                $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
 
-                    if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
-                        $ecsd.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
-                    }
-                    elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
-                        $ecsd.ImportRSAPrivateKey($keyBytes, [ref]$null)
-                    }
-                    elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
-                        if ($null -ne $SecurePassword) {
-                            [int32]$bytesRead = 0
-                            $ecsd.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
-                        }
+                if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
+                    $ecsd.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
+                    $ecsd.ImportRSAPrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
+                    if ($null -ne $SecurePassword) {
+                        [int32]$bytesRead = 0
+                        $ecsd.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
                     }
                 }
 
-
-                $cert = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
             }
+
+            $cert = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
+
         }
         $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12))
     }
