@@ -285,9 +285,13 @@ namespace Pode
                         }
                         catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException)
                         {
-                            PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                            if (Context.Listener.IsConnected)
+                            {
+                                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                            }
                             break;
                         }
+
                         if (read <= 0)
                         {
                             break;
