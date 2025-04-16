@@ -8,10 +8,10 @@ function Start-PodeWebServer {
 
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
-        (Get-PodeFaviconMiddleware),
-        (Get-PodeSecurityMiddleware),
-        (Get-PodeAccessMiddleware),
         (Get-PodeLimitMiddleware),
+        (Get-PodeSecurityMiddleware),
+        (Get-PodeFaviconMiddleware),
+        (Get-PodeAccessMiddleware),
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
@@ -211,7 +211,7 @@ function Start-PodeWebServer {
                                 if ($Request.IsAborted) {
                                     throw $Request.Error
                                 }
-                                
+
                                 # if we have an sse clientId, verify it and then set details in WebEvent
                                 if ($WebEvent.Request.HasSseClientId) {
                                     if (!(Test-PodeSseClientIdValid)) {
