@@ -285,14 +285,14 @@ function Get-PodeCertificateByFile {
         }
 
         # Optionally combine the certificates into a single PFX.
-        if ($SecurePassword -ne $null) {
-            $pwd = Convert-PodeSecureStringToPlainText -SecureString $SecurePassword
+        $paswd = if ($SecurePassword -ne $null) {
+            Convert-PodeSecureStringToPlainText -SecureString $SecurePassword
         }
         else {
-            $pwd = ''
+            ''
         }
-        $pfxBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $pwd)
-        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($pfxBytes, $pwd, $storageFlags)
+        $pfxBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $paswd)
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($pfxBytes, $paswd, $storageFlags)
     }
 
     return $cert
