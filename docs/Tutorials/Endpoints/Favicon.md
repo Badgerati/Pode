@@ -2,8 +2,6 @@
 
 Pode allows you to customize favicons served from HTTP/HTTPS endpoints using a set of dedicated commands. By default, Pode does not serve any favicon until one is explicitly configured using the provided favicon commands.
 
----
-
 ## Overview
 
 Favicons are the small icons displayed in browser tabs, bookmarks, and other UI elements. Pode supports using favicons in the standard ICO format, as well as other common web image formats such as PNG or SVG (depending on browser support).
@@ -31,8 +29,8 @@ Favicons are typically stored in `.ico` format but Pode also supports:
 - `.png`: Lossless compressed raster format. Supported in modern browsers.
 - `.svg`: Vector-based, resolution-independent. Supported in modern browsers with limitations.
 
-Other formats like `.jpg` or `.gif` may work but are not recommended due to lack of transparency or limited quality.\
-\
+Other formats like `.jpg` or `.gif` may work but are not recommended due to lack of transparency or limited quality.
+
 For further details on favicon formats and specifications, refer to the [Favicon specification]([https://en.wikipedia.org/wiki/Favicon](https://en.wikipedia.org/wiki/Favicon)) and [RFC 5988]([https://datatracker.ietf.org/doc/html/rfc5988](https://datatracker.ietf.org/doc/html/rfc5988)).
 
 ---

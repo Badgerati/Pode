@@ -326,5 +326,4 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "La règle de limite de taux '{0}' n'existe pas."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Une règle de limite d'accès nommée '{0}' existe déjà."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La règle de limite d'accès '{0}' n'existe pas."
-    invalidFaviconTypeExceptionMessage                                = 'Type de favicon invalide fourni : {0}'
 }

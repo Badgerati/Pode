@@ -4007,44 +4007,71 @@ function Test-PodeIsISEHost {
     $bytes = [System.IO.File]::ReadAllBytes("C:\path\to\image.gif")
     $mimeType = Get-PodeImageContentType -Image $bytes
     # $mimeType will be 'image/gif' if the image is a GIF.
-    
+
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeImageContentType {
-    param (
-        [byte[]]$Image
+    param(
+        [Parameter()]
+        [byte[]]
+        $Image
     )
 
-    if ($null -eq $Image -or $Image.Count -lt 12) {
+    if (($null -eq $Image) -or ($Image.Length -lt 12)) {
         return 'application/octet-stream'
     }
 
-    # Convert bytes to a hex string (2-digit uppercase per byte)
-    $hex8 = ($Image[0..7] | ForEach-Object { "{0:X2}" -f $_ }) -join ' '
-    $hex6 = ($Image[0..5] | ForEach-Object { "{0:X2}" -f $_ }) -join ' '
-    $hex4 = ($Image[0..3] | ForEach-Object { "{0:X2}" -f $_ }) -join ' '
-    $hex12 = ($Image[0..11] | ForEach-Object { "{0:X2}" -f $_ }) -join ' '
+    # WebP: starts with "RIFF....WEBP"
+    if (
+        $Image[0] -eq 0x52 -and $Image[1] -eq 0x49 -and $Image[2] -eq 0x46 -and $Image[3] -eq 0x46 -and
+        $Image[8] -eq 0x57 -and $Image[9] -eq 0x45 -and $Image[10] -eq 0x42 -and $Image[11] -eq 0x50
+    ) {
+        return 'image/webp'
+    }
 
-    switch -regex ($hex8) {
-        '^89 50 4E 47 0D 0A 1A 0A' { return 'image/png' }
+    # PNG: starts with "89 50 4E 47 0D 0A 1A 0A"
+    if (
+        $Image[0] -eq 0x89 -and $Image[1] -eq 0x50 -and $Image[2] -eq 0x4E -and $Image[3] -eq 0x47 -and
+        $Image[4] -eq 0x0D -and $Image[5] -eq 0x0A -and $Image[6] -eq 0x1A -and $Image[7] -eq 0x0A
+    ) {
+        return 'image/png'
     }
-    switch -regex ($hex4) {
-        '^FF D8 FF'    { return 'image/jpeg' }
-        '^00 00 01 00' { return 'image/x-icon' }
+
+    # GIF (GIF87a or GIF89a): starts with "47 49 46 38 37 61" or "47 49 46 38 39 61"
+    if (
+        $Image[0] -eq 0x47 -and $Image[1] -eq 0x49 -and $Image[2] -eq 0x46 -and $Image[3] -eq 0x38 -and
+        (
+            ($Image[4] -eq 0x37 -and $Image[5] -eq 0x61) -or
+            ($Image[4] -eq 0x39 -and $Image[5] -eq 0x61)
+        )
+    ) {
+        return 'image/gif'
     }
-    switch -regex ($hex6) {
-        '^47 49 46 38 37 61' { return 'image/gif' } # GIF87a
-        '^47 49 46 38 39 61' { return 'image/gif' } # GIF89a
+
+    # ICO: starts with "00 00 01 00"
+    if (
+        $Image[0] -eq 0x00 -and $Image[1] -eq 0x00 -and
+        $Image[2] -eq 0x01 -and $Image[3] -eq 0x00
+    ) {
+        return 'image/x-icon'
     }
-    switch -regex ($hex12) {
-        '^52 49 46 46 .* 57 45 42 50' { return 'image/webp' }
-    }
-    # Check for SVG by converting to a string and looking for "<svg"
-    if ([System.Text.Encoding]::UTF8.GetString($Image[0..4]) -match '<svg') {
+
+    # SVG: starts with "<svg"
+    if (
+        $Image[0] -eq 0x3C -and $Image[1] -eq 0x73 -and
+        $Image[2] -eq 0x76 -and $Image[3] -eq 0x67
+    ) {
         return 'image/svg+xml'
     }
 
+    # JPEG: starts with "FF D8 FF"
+    if (
+        $Image[0] -eq 0xFF -and $Image[1] -eq 0xD8 -and $Image[2] -eq 0xFF
+    ) {
+        return 'image/jpeg'
+    }
+
+    # If none of the above formats match, return a generic binary type
     return 'application/octet-stream'
 }
-

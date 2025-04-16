@@ -326,5 +326,4 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = 'قاعدة الحد الأقصى للمعدل غير موجودة: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = 'تم تعريف قاعدة الحد الأقصى للوصول بالفعل: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = 'قاعدة الحد الأقصى للوصول غير موجودة: {0}'
-    invalidFaviconTypeExceptionMessage                                = 'نوع رمز الموقع غير صالح: {0}'
 }

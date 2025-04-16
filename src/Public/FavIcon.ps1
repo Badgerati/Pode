@@ -1,49 +1,49 @@
 <#
 .SYNOPSIS
-	Adds a favicon to one or more Pode HTTP/HTTPS endpoints.
+    Adds a favicon to one or more Pode HTTP/HTTPS endpoints.
 
 .DESCRIPTION
-	This function allows you to define a favicon for Pode endpoints. You can either use the default favicon provided
-	by Pode, specify a file path to a `.ico` file, or directly supply the favicon as a byte array. The function can apply
-	the favicon to all HTTP/S endpoints, a specific endpoint, or only to endpoints marked as default.
+    This function allows you to define a favicon for Pode endpoints. You can either use the default favicon provided
+    by Pode, specify a file path to a `.ico` file, or directly supply the favicon as a byte array. The function can apply
+    the favicon to all HTTP/S endpoints, a specific endpoint, or only to endpoints marked as default.
 
 .PARAMETER Default
-	Use the default Pode favicon.ico embedded in the module.
+    Use the default Pode favicon embedded in the module.
 
 .PARAMETER Path
-	The path to a custom favicon.ico file to use. Must be a valid, accessible path.
+    The path to a custom favicon file to use. Must be a valid, accessible path.
 
 .PARAMETER Binary
-	A raw byte array representing the favicon.ico file contents.
+    A raw byte array representing the favicon file contents.
 
 .PARAMETER EndpointName
-	The name of the specific endpoint to apply the favicon to. If not provided, the favicon is applied to all HTTP/S endpoints.
+    The name of the specific endpoint to apply the favicon to. If not provided, the favicon is applied to all HTTP/S endpoints.
 
 .PARAMETER DefaultEndpoint
-	If supplied, only endpoints marked with `.Default = $true` will receive the favicon.
+    If supplied, only endpoints created with `-Default` will receive the favicon.
 
 .OUTPUTS
-	None
+    None
 
 .EXAMPLE
-	Add-PodeFavicon -Default
+    Add-PodeFavicon -Default
 
-	# Adds the default Pode favicon to all HTTP/S endpoints.
-
-.EXAMPLE
-	Add-PodeFavicon -Path './assets/favicon.ico'
-
-	# Adds a custom favicon from file to all HTTP/S endpoints.
+    # Adds the default Pode favicon to all HTTP/S endpoints.
 
 .EXAMPLE
-	Add-PodeFavicon -Binary $bytes -EndpointName 'api'
+    Add-PodeFavicon -Path './assets/favicon.ico'
 
-	# Adds a binary favicon to a specific endpoint named 'api'.
+    # Adds a custom favicon from file to all HTTP/S endpoints.
 
 .EXAMPLE
-	Add-PodeFavicon -Default -DefaultEndpoint
+    Add-PodeFavicon -Binary $bytes -EndpointName 'api'
 
-	# Adds the default favicon only to endpoints marked as default.
+    # Adds a binary favicon to a specific endpoint named 'api'.
+
+.EXAMPLE
+    Add-PodeFavicon -Default -DefaultEndpoint
+
+    # Adds the default favicon only to endpoints marked as default.
 #>
 function Add-PodeFavicon {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
@@ -127,39 +127,39 @@ function Add-PodeFavicon {
 
 <#
 .SYNOPSIS
-	Checks whether a favicon is configured for one or more Pode endpoints.
+    Checks whether a favicon is configured for one or more Pode endpoints.
 
 .DESCRIPTION
-	This function determines if a favicon is configured on a specific HTTP/S endpoint, or across all
-	endpoints if no name is supplied. You can also limit the check to only endpoints marked as default.
-	It returns $true only if all applicable endpoints have a favicon configured.
+    This function determines if a favicon is configured on a specific HTTP/S endpoint, or across all
+    endpoints if no name is supplied. You can also limit the check to only endpoints marked as default.
+    It returns $true only if all applicable endpoints have a favicon configured.
 
 .PARAMETER EndpointName
-	The name of the specific endpoint to check. If not provided, all endpoints are checked.
+    The name of the specific endpoint to check. If not provided, all endpoints are checked.
 
 .PARAMETER DefaultEndpoint
-	If supplied, only endpoints marked with `.Default = $true` are checked.
+    If supplied, only endpoints created with `-Default` are checked.
 
 .OUTPUTS
-	System.Boolean
+    System.Boolean
 
 .EXAMPLE
-	Test-PodeFavicon
+    Test-PodeFavicon
 
-	# Returns true if all endpoints have a favicon configured.
-
-.EXAMPLE
-	Test-PodeFavicon -EndpointName 'api'
-
-	# Returns true if the 'api' endpoint has a favicon configured.
+    # Returns true if all endpoints have a favicon configured.
 
 .EXAMPLE
-	Test-PodeFavicon -DefaultEndpoint
+    Test-PodeFavicon -EndpointName 'api'
 
-	# Returns true only if all default endpoints have a favicon.
+    # Returns true if the 'api' endpoint has a favicon configured.
+
+.EXAMPLE
+    Test-PodeFavicon -DefaultEndpoint
+
+    # Returns true only if all default endpoints have a favicon.
 
 .NOTES
-	This is an internal Pode function and is subject to change.
+    This is an internal Pode function and is subject to change.
 #>
 function Test-PodeFavicon {
     param(
@@ -182,9 +182,15 @@ function Test-PodeFavicon {
     else {
         @($EndpointName)
     }
-
+    $found = $false
     foreach ($key in $keys) {
         $endpoint = $PodeContext.Server.Endpoints[$key]
+
+
+        # Only check HTTP/S endpoints
+        if (@('Http', 'Https') -inotcontains $endpoint.Protocol) {
+            continue
+        }
 
         # If filtering to default endpoints only, skip others
         if ($DefaultEndpoint -and !$endpoint.Default) {
@@ -195,44 +201,47 @@ function Test-PodeFavicon {
         if ($null -eq $endpoint.Favicon) {
             return $false
         }
+
+        # If we reach here, the endpoint has a favicon
+        $found = $true  
     }
 
-    return $true
+    return $found
 }
 
 <#
 .SYNOPSIS
-	Retrieves the configured favicon(s) for one or more Pode endpoints.
+    Retrieves the configured favicon(s) for one or more Pode endpoints.
 
 .DESCRIPTION
-	This function returns a hashtable containing the endpoint names and their corresponding favicon data
-	(byte array and content type). If an endpoint name is specified, only its favicon is returned if set.
-	If none is specified, the function returns all favicons set across endpoints. You can also limit the
-	query to only endpoints marked as default.
+    This function returns a hashtable containing the endpoint names and their corresponding favicon data
+    (byte array and content type). If an endpoint name is specified, only its favicon is returned if set.
+    If none is specified, the function returns all favicons set across endpoints. You can also limit the
+    query to only endpoints marked as default.
 
 .PARAMETER EndpointName
-	The name of a specific endpoint to retrieve the favicon from. If not provided, favicons from all endpoints are returned.
+    The name of a specific endpoint to retrieve the favicon from. If not provided, favicons from all endpoints are returned.
 
 .PARAMETER DefaultEndpoint
-	If supplied, only endpoints marked with `.Default = $true` are included in the result.
+    If supplied, only endpoints created with `-Default` are included in the result.
 
 .OUTPUTS
-	System.Collections.Hashtable
+    System.Collections.Hashtable
 
 .EXAMPLE
-	Get-PodeFavicon
+    Get-PodeFavicon
 
-	# Returns a hashtable of all endpoints with configured favicons.
-
-.EXAMPLE
-	Get-PodeFavicon -EndpointName 'api'
-
-	# Returns the favicon for the 'api' endpoint.
+    # Returns a hashtable of all endpoints with configured favicons.
 
 .EXAMPLE
-	Get-PodeFavicon -DefaultEndpoint
+    Get-PodeFavicon -EndpointName 'api'
 
-	# Returns favicons for endpoints marked as default only.
+    # Returns the favicon for the 'api' endpoint.
+
+.EXAMPLE
+    Get-PodeFavicon -DefaultEndpoint
+
+    # Returns favicons for endpoints marked as default only.
 #>
 function Get-PodeFavicon {
     param(
@@ -277,36 +286,36 @@ function Get-PodeFavicon {
 
 <#
 .SYNOPSIS
-	Removes the favicon from one or more Pode endpoints.
+    Removes the favicon from one or more Pode endpoints.
 
 .DESCRIPTION
-	This function clears the favicon from a specified endpoint, or from all endpoints if no name is provided.
-	It safely checks that the endpoint(s) exist and have a favicon assigned before removing. You can also limit
-	the removal to endpoints marked as default.
+    This function clears the favicon from a specified endpoint, or from all endpoints if no name is provided.
+    It safely checks that the endpoint(s) exist and have a favicon assigned before removing. You can also limit
+    the removal to endpoints marked as default.
 
 .PARAMETER EndpointName
-	The name of a specific endpoint to remove the favicon from. If not specified, all endpoints are affected.
+    The name of a specific endpoint to remove the favicon from. If not specified, all endpoints are affected.
 
 .PARAMETER DefaultEndpoint
-	If supplied, only endpoints marked with `.Default = $true` will be affected.
+    If supplied, only endpoints created with `-Default` will be affected.
 
 .OUTPUTS
-	None
+    None
 
 .EXAMPLE
-	Remove-PodeFavicon
+    Remove-PodeFavicon
 
-	# Removes the favicon from all endpoints.
-
-.EXAMPLE
-	Remove-PodeFavicon -EndpointName 'api'
-
-	# Removes the favicon from the 'api' endpoint.
+    # Removes the favicon from all endpoints.
 
 .EXAMPLE
-	Remove-PodeFavicon -DefaultEndpoint
+    Remove-PodeFavicon -EndpointName 'api'
 
-	# Removes favicons only from endpoints marked as default.
+    # Removes the favicon from the 'api' endpoint.
+
+.EXAMPLE
+    Remove-PodeFavicon -DefaultEndpoint
+
+    # Removes favicons only from endpoints marked as default.
 #>
 function Remove-PodeFavicon {
     param(
@@ -332,6 +341,11 @@ function Remove-PodeFavicon {
 
     foreach ($key in $keys) {
         $endpoint = $PodeContext.Server.Endpoints[$key]
+
+        # Only check HTTP/S endpoints
+        if (@('Http', 'Https') -inotcontains $endpoint.Protocol) {
+            continue
+        }
 
         # If filtering to default endpoints only, skip others
         if ($DefaultEndpoint -and !$endpoint.Default) {
