@@ -134,73 +134,79 @@ function Test-PodeCsrfConfigured {
     return (!(Test-PodeIsEmpty $PodeContext.Server.Cookies.Csrf))
 }
 
-
 <#
 .SYNOPSIS
   Loads an X.509 certificate from a file (PFX, PEM, or CER), optionally decrypting it with a password,
-  and attaches an optional certificate chain.
+  and optionally appending additional chain certificates.
 
 .DESCRIPTION
   This function reads an X.509 certificate from a file and loads it as an X509Certificate2 object.
   It supports:
     - PFX (PKCS#12) certificates with optional password decryption.
     - PEM certificates with a separate private key file.
-    - CER (DER or Base64-encoded) certificates (public key only).
+    - CER (DER or Base64‑encoded) certificates (public key only).
+    - Appending one or more additional chain certificates (PEM or CER) to build a full certificate chain,
+      and re‑exporting as PFX if a password is provided.
 
-  Additionally, the function accepts one or more certificate chain file paths (in PEM format) that
-  form the complete chain (e.g., intermediate and root certificates). These chain certificates are
-  combined with the primary certificate to form a full certificate chain.
-
-  It applies the appropriate key storage flags depending on the operating system and ensures compatibility
-  with Pode’s certificate handling utilities.
+  It applies the appropriate key storage flags depending on the operating system and
+  ensures compatibility with Pode’s certificate handling utilities.
 
 .PARAMETER Certificate
   The file path to the certificate (.pfx, .pem, or .cer) to load.
 
 .PARAMETER SecurePassword
-  A secure string containing the password for decrypting the certificate (only applicable for PFX files).
+  A secure string containing the password for decrypting the certificate (only applicable for PFX files)
+  and for re‑exporting the combined chain if `ChainFile` is provided.
 
 .PARAMETER PrivateKeyPath
   The path to a separate private key file (only applicable for PEM certificates).
   Required if the PEM certificate does not contain the private key.
 
 .PARAMETER Ephemeral
-  If specified, the certificate will be created with the EphemeralKeySet flag, meaning the private key
-  will not be persisted on disk or in the certificate store.
-  This is useful for temporary certificates that should only exist in memory for the duration of the current session.
-  Once the process exits, the private key will be lost.
+  If specified, the certificate will be created with `EphemeralKeySet`, meaning the private key
+  will **not be persisted** on disk or in the certificate store.
 
 .PARAMETER Exportable
-  If specified, the certificate will be created with the Exportable flag, meaning the certificate can be exported.
+  If specified, the certificate will be created with the `Exportable` flag, allowing it to be exported later.
 
 .PARAMETER ChainFile
-  An optional array of file paths to PEM-formatted certificate chain files.
-  These certificates (e.g., intermediate and root certificates) are combined with the primary certificate to form a full chain.
+  An array of file paths to additional certificate files (PEM or CER) to include in the chain.
+  Each file will be parsed for one or more certificates and appended to the primary certificate.
+  If `SecurePassword` is provided, the full chain will be re‑exported as a single PFX.
 
 .OUTPUTS
   [System.Security.Cryptography.X509Certificates.X509Certificate2]
-  Returns an X.509 certificate object that includes the main certificate and any attached certificate chain.
+  Returns an X.509 certificate object containing the primary cert (and chain, if requested).
 
 .EXAMPLE
-  $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.pfx" -SecurePassword (ConvertTo-SecureString -String "MyPass" -AsPlainText -Force)
-  Loads a PFX certificate with a password.
+  # Load a PFX with password
+  $cert = Get-PodeCertificateByFile `
+    -Certificate "C:\Certs\mycert.pfx" `
+    -SecurePassword (ConvertTo-SecureString "MyPass" -AsPlainText -Force)
 
 .EXAMPLE
-  $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.pem" -PrivateKeyPath "C:\Certs\mykey.pem"
-  Loads a PEM certificate with a separate private key.
+  # Load a PEM plus private key
+  $cert = Get-PodeCertificateByFile `
+    -Certificate "C:\Certs\mycert.pem" `
+    -PrivateKeyPath "C:\Certs\mykey.pem"
 
 .EXAMPLE
+  # Load a CER (public only)
   $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.cer"
-  Loads a CER certificate (public key only).
 
 .EXAMPLE
-  $cert = Get-PodeCertificateByFile -Certificate "C:\Certs\mycert.pem" -PrivateKeyPath "C:\Certs\mykey.pem" -ChainFile "C:\Certs\chain1.pem", "C:\Certs\chain2.pem"
-  Loads a PEM certificate along with multiple chain files.
+  # Load a PFX and append chain files, re-exporting as PFX
+  $cert = Get-PodeCertificateByFile `
+    -Certificate "C:\Certs\server.pfx" `
+    -SecurePassword (ConvertTo-SecureString "ChainPass" -AsPlainText -Force) `
+    -ChainFile @("C:\Certs\intermediate.pem","C:\Certs\root.cer")
 
 .NOTES
   - CER files do not contain private keys and cannot be decrypted with a password.
-  - PEM certificates may require a separate private key file.
-  - Uses EphemeralKeySet storage on non-macOS platforms for security.
+  - PEM certificates may require a separate private‑key file.
+  - Uses `EphemeralKeySet` storage on non‑macOS platforms for in‑memory keys.
+  - When `ChainFile` is used with a password, the collective chain is exported to PFX and reloaded,
+    ensuring the returned certificate contains the full chain.
 #>
 function Get-PodeCertificateByFile {
     param(
@@ -237,7 +243,9 @@ function Get-PodeCertificateByFile {
         $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
     }
 
-    if ($Exportable) {
+    # if user explicitly asked for Exportable *or* we know
+    # we’re going to re-export with a chain, mark it now
+    if ($Exportable -or ($ChainFile -and $ChainFile.Count -gt 0)) {
         $storageFlags = $storageFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
     }
 
@@ -255,7 +263,7 @@ function Get-PodeCertificateByFile {
     if ($ChainFile -and $ChainFile.Count -gt 0) {
         # Initialize the collection with the primary certificate.
         $certCollection = [System.Security.Cryptography.X509Certificates.X509Certificate2Collection]::new()
-        $certCollection.Add($cert)
+        $null = $certCollection.Add($cert)
 
         foreach ($chainPath in $ChainFile) {
             if (Test-Path $chainPath) {
@@ -275,7 +283,7 @@ function Get-PodeCertificateByFile {
                         -replace '-----END CERTIFICATE-----', '' `
                         -replace '\s+', ''
                     $chainCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([System.Convert]::FromBase64String($base64))
-                    $certCollection.Add($chainCert)
+                    $null = $certCollection.Add($chainCert)
 
                 }
             }
@@ -285,11 +293,11 @@ function Get-PodeCertificateByFile {
         }
 
         # Optionally combine the certificates into a single PFX.
-        $paswd = if ($SecurePassword -ne $null) {
-            Convert-PodeSecureStringToPlainText -SecureString $SecurePassword
+        if ($SecurePassword -ne $null) {
+            $paswd = Convert-PodeSecureStringToPlainText -SecureString $SecurePassword
         }
         else {
-            ''
+            $paswd = ''
         }
         $pfxBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $paswd)
         $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($pfxBytes, $paswd, $storageFlags)
@@ -298,6 +306,44 @@ function Get-PodeCertificateByFile {
     return $cert
 }
 
+<#
+.SYNOPSIS
+  Loads an X.509 certificate from a PEM file and associates it with a corresponding private key, returning an X509Certificate2 object.
+
+.DESCRIPTION
+  This function reads an X.509 certificate from a PEM-formatted file and combines it with a corresponding private key from a separate PEM file. It supports both RSA and ECDSA keys, handling encrypted and unencrypted private keys. The resulting X509Certificate2 object includes the private key and is instantiated with specified key storage flags to control key persistence and exportability.
+
+.PARAMETER Certificate
+  The file path to the PEM-formatted certificate file.
+
+.PARAMETER SecurePassword
+  A secure string containing the password for decrypting the private key, if it is encrypted.
+
+.PARAMETER PrivateKeyPath
+  The file path to the PEM-formatted private key file corresponding to the certificate.
+
+.PARAMETER storageFlags
+  Specifies the key storage flags to use when instantiating the X509Certificate2 object. These flags determine how and where the private key is stored, such as in memory or on disk, and whether it is exportable.
+
+.OUTPUTS
+  [System.Security.Cryptography.X509Certificates.X509Certificate2]
+  Returns an X.509 certificate object that includes the associated private key.
+
+.EXAMPLE
+  $cert = Get-PodeCertificateByPemFile -Certificate "C:\Certs\mycert.pem" -PrivateKeyPath "C:\Certs\mykey.pem" -storageFlags ([System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+  Loads a PEM certificate and its corresponding private key, returning an exportable X509Certificate2 object.
+
+.EXAMPLE
+  $password = ConvertTo-SecureString -String "MyPass" -AsPlainText -Force
+  $cert = Get-PodeCertificateByPemFile -Certificate "C:\Certs\mycert.pem" -PrivateKeyPath "C:\Certs\mykey.pem" -SecurePassword $password -storageFlags ([System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+  Loads an encrypted PEM private key using the provided password and combines it with the certificate.
+
+.NOTES
+  - Requires PowerShell 7.0 or later due to the use of ImportFromPem and related methods.
+  - The function handles both PKCS#1 and PKCS#8 private key formats.
+  - Ensure that the certificate and private key files correspond to each other to avoid mismatches.
+  - The resulting certificate object can be used for secure communications, such as HTTPS bindings or client authentication.
+#>
 function Get-PodeCertificateByPemFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -395,7 +441,17 @@ function Get-PodeCertificateByPemFile {
             $cert = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
 
         }
-        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12))
+        $passwd = if ( $null -eq $SecurePassword ) {
+            $null
+        }
+        else {
+            Convert-PodeSecureStringToPlainText -SecureString $SecurePassword
+        }
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+            $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12),
+            $passwd,
+            $storageFlags
+        )
     }
 
     return $cert
