@@ -46,7 +46,7 @@ function ConvertFrom-PodeFile {
     }
 
     # invoke the content as a script to generate the dynamic content
-    return (Invoke-PodeScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
+    return (Invoke-PodeScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return -NoNewClosure)
 }
 
 function Get-PodeViewEngineType {
