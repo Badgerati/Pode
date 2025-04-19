@@ -372,6 +372,12 @@
         'Test-PodeOAComponent',
         'Remove-PodeOAComponent',
 
+        # favicon
+        'Add-PodeFavicon',
+        'Test-PodeFavicon',
+        'Get-PodeFavicon',
+        'Remove-PodeFavicon',
+
         # Metrics
         'Get-PodeServerUptime',
         'Get-PodeServerRestartCount',
