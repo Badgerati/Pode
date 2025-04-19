@@ -324,6 +324,7 @@ function Add-PodeEndpoint {
             Acknowledge    = $Acknowledge
             CRLFMessageEnd = $CRLFMessageEnd
         }
+        Favicon      = $null
     }
 
     # set ssl protocols
