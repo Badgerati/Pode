@@ -40,7 +40,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Endpoints.Count | Should -Be 1
 
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
-            $endpoint.Port | Should -Be 3684280
+            $endpoint.Port | Should -Be 8080
             $endpoint.Name | Should -Not -Be ([string]::Empty)
             $endpoint.HostName | Should -Be 'foo.com'
             $endpoint.Address.ToString() | Should -Be '127.0.0.1'
@@ -57,7 +57,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Endpoints.Count | Should -Be 1
 
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
-            $endpoint.Port | Should -Be 3684280
+            $endpoint.Port | Should -Be 8080
             $endpoint.Name | Should -Not -Be ([string]::Empty)
             $endpoint.HostName | Should -Be 'foo.com'
             $endpoint.Address.ToString() | Should -Be '127.0.0.1'
@@ -73,7 +73,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Endpoints.Count | Should -Be 1
 
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
-            $endpoint.Port | Should -Be 3684280
+            $endpoint.Port | Should -Be 8080
             $endpoint.Name | Should -Be 'Example'
             $endpoint.HostName | Should -Be 'foo.com'
             $endpoint.Address.ToString() | Should -Be '127.0.0.1'
@@ -88,7 +88,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Endpoints.Count | Should -Be 1
 
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
-            $endpoint.Port | Should -Be 3684280
+            $endpoint.Port | Should -Be 8080
             $endpoint.HostName | Should -Be 'foo.com'
             $endpoint.Address.ToString() | Should -Be '127.0.0.1'
             $endpoint.RawAddress | Should -Be 'foo.com:8080'
@@ -132,7 +132,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Endpoints.Count | Should -Be 1
 
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
-            $endpoint.Port | Should -Be 3684280
+            $endpoint.Port | Should -Be 8080
             $endpoint.HostName | Should -Be ''
             $endpoint.Address.ToString() | Should -Be '127.0.0.1'
         }
@@ -146,7 +146,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Endpoints.Count | Should -Be 1
 
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
-            $endpoint.Port | Should -Be 3684280
+            $endpoint.Port | Should -Be 8080
             $endpoint.HostName | Should -Be ''
             $endpoint.Address.ToString() | Should -Be '0.0.0.0'
             $endpoint.RawAddress | Should -Be '0.0.0.0:8080'
@@ -161,7 +161,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Endpoints.Count | Should -Be 1
 
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
-            $endpoint.Port | Should -Be 3684280
+            $endpoint.Port | Should -Be 8080
             $endpoint.HostName | Should -Be ''
             $endpoint.Address.ToString() | Should -Be '127.0.0.1'
         }
