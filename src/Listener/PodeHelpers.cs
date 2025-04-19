@@ -57,12 +57,12 @@ namespace Pode
 
             // write the exception to terminal
             Console.WriteLine($"[{level}] {ex.GetType().Name}: {ex.Message}");
-            Console.WriteLine(ex.StackTrace);
+            Console.WriteLine(string.IsNullOrEmpty(ex.StackTrace) ? "   [No Stack Trace]" : ex.StackTrace);
 
             if (ex.InnerException != null)
             {
                 Console.WriteLine($"[{level}] {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
-                Console.WriteLine(ex.InnerException.StackTrace);
+                Console.WriteLine(string.IsNullOrEmpty(ex.InnerException.StackTrace) ? "   [No Stack Trace]" : ex.InnerException.StackTrace);
             }
         }
 
