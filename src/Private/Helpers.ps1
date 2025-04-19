@@ -4191,30 +4191,39 @@ function Write-PodeDeprecationWarning {
 
 <#
 .SYNOPSIS
-    Converts a SecureString to plain text.
+    Converts a SecureString to its plain text equivalent.
 
 .DESCRIPTION
-    This function takes a SecureString input and converts it into a plain text string.
-    Supports pipeline input for seamless integration with other cmdlets.
+    Converts a [securestring] object into a plain text [string]. This is useful for logging, debugging,
+    or passing credentials in plain text form when needed. If the input is $null, the function returns $null.
+
+    The function supports pipeline input for seamless composition with other commands.
 
 .PARAMETER SecureString
-    The SecureString that needs to be converted.
+    The SecureString instance to convert to plain text. If null, the function returns null.
+
+.INPUTS
+    [securestring] Accepts a SecureString object from the pipeline.
 
 .OUTPUTS
-    [string] Plain text representation of the SecureString.
+    [string] The plain text representation of the SecureString, or $null if the input was null.
 
 .NOTES
-    Internal Pode function - subject to change.
+    Internal Pode function - subject to change without notice.
 #>
 function Convert-PodeSecureStringToPlainText {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline)]
-        [securestring]$SecureString
+        [Parameter(ValueFromPipeline = $true)]
+        [securestring]
+        $SecureString
     )
 
     process {
+        if ($null -eq $SecureString) {
+            return $null
+        }
         $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
         try {
             [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)

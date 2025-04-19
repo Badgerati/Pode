@@ -352,7 +352,7 @@ Describe 'Import-PodeCertificate Function' {
             It 'Imports certificate to a PEM file with private key' {
                 if ($PSVersionTable.PSEdition -eq 'Desktop') {
                     Mock Test-Path { $true }
-                    { $cert = Import-PodeCertificate -Path ( Join-Path  $script:tempDir 'dummycertPEM.pem') -CertificatePassword $script:dummyPassword -PrivateKeyPath ( Join-Path  $script:tempDir 'dummycertPEM.key') } |
+                    { $cert = Import-PodeCertificate -Path ( Join-Path  $script:tempDir 'dummycertPEM_WithKey.pem') -CertificatePassword $script:dummyPassword -PrivateKeyPath ( Join-Path  $script:tempDir 'dummycertPEM.key') } |
                         Should -Throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
                 }
                 else {
