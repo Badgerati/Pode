@@ -46,7 +46,7 @@ function ConvertFrom-PodeFile {
     }
 
     # invoke the content as a script to generate the dynamic content
-    return (Invoke-PodeScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
+    return (Invoke-PodeScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return -NoNewClosure)
 }
 
 function Get-PodeViewEngineType {
@@ -4134,4 +4134,93 @@ function Compare-PodeVersion {
 
     # Allow state only if its numeric part is less than or equal to current.
     return ($stateNum -le $currentNum)
+}
+
+<#
+.SYNOPSIS
+    Determines the MIME type of an image from its binary header.
+
+.DESCRIPTION
+    This function accepts a byte array representing an image and analyzes the first few bytes
+    (converted to hexadecimal strings) to determine its file format. It supports PNG, JPEG, GIF
+    (both GIF87a and GIF89a), ICO, WebP, and SVG formats. If the image format cannot be determined,
+    it returns a generic MIME type of 'application/octet-stream'.
+
+.PARAMETER Image
+    A byte array containing the image data.
+
+.OUTPUTS
+    A string representing the MIME type of the image.
+
+.EXAMPLE
+    $bytes = [System.IO.File]::ReadAllBytes("C:\path\to\image.gif")
+    $mimeType = Get-PodeImageContentType -Image $bytes
+    # $mimeType will be 'image/gif' if the image is a GIF.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeImageContentType {
+    param(
+        [Parameter()]
+        [byte[]]
+        $Image
+    )
+
+    if (($null -eq $Image) -or ($Image.Length -lt 12)) {
+        return 'application/octet-stream'
+    }
+
+    # WebP: starts with "RIFF....WEBP"
+    if (
+        $Image[0] -eq 0x52 -and $Image[1] -eq 0x49 -and $Image[2] -eq 0x46 -and $Image[3] -eq 0x46 -and
+        $Image[8] -eq 0x57 -and $Image[9] -eq 0x45 -and $Image[10] -eq 0x42 -and $Image[11] -eq 0x50
+    ) {
+        return 'image/webp'
+    }
+
+    # PNG: starts with "89 50 4E 47 0D 0A 1A 0A"
+    if (
+        $Image[0] -eq 0x89 -and $Image[1] -eq 0x50 -and $Image[2] -eq 0x4E -and $Image[3] -eq 0x47 -and
+        $Image[4] -eq 0x0D -and $Image[5] -eq 0x0A -and $Image[6] -eq 0x1A -and $Image[7] -eq 0x0A
+    ) {
+        return 'image/png'
+    }
+
+    # GIF (GIF87a or GIF89a): starts with "47 49 46 38 37 61" or "47 49 46 38 39 61"
+    if (
+        $Image[0] -eq 0x47 -and $Image[1] -eq 0x49 -and $Image[2] -eq 0x46 -and $Image[3] -eq 0x38 -and
+        (
+            ($Image[4] -eq 0x37 -and $Image[5] -eq 0x61) -or
+            ($Image[4] -eq 0x39 -and $Image[5] -eq 0x61)
+        )
+    ) {
+        return 'image/gif'
+    }
+
+    # ICO: starts with "00 00 01 00"
+    if (
+        $Image[0] -eq 0x00 -and $Image[1] -eq 0x00 -and
+        $Image[2] -eq 0x01 -and $Image[3] -eq 0x00
+    ) {
+        return 'image/x-icon'
+    }
+
+    # SVG: starts with "<svg"
+    if (
+        $Image[0] -eq 0x3C -and $Image[1] -eq 0x73 -and
+        $Image[2] -eq 0x76 -and $Image[3] -eq 0x67
+    ) {
+        return 'image/svg+xml'
+    }
+
+    # JPEG: starts with "FF D8 FF"
+    if (
+        $Image[0] -eq 0xFF -and $Image[1] -eq 0xD8 -and $Image[2] -eq 0xFF
+    ) {
+        return 'image/jpeg'
+    }
+
+    # If none of the above formats match, return a generic binary type
+    return 'application/octet-stream'
 }
