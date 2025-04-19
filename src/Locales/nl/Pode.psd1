@@ -356,4 +356,5 @@
     selfSignedCertificatesNotAllowedExceptionMessage                  = 'Zelfondertekende certificaten zijn niet toegestaan vanwege beveiligingsbeperkingen.'
     digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int' wordt alleen ondersteund voor HTTP PUT-, POST- of PATCH-methoden."
     pemCertificateNotSupportedByPwshVersionExceptionMessage           = 'Het PEM-certificaatformaat wordt niet ondersteund in PowerShell {0}. Gebruik een ander certificaatformaat of upgrade naar PowerShell 7.0 of later.'
+    chainCertificateNotSupportedByPwshVersionExceptionMessage         = 'Certificaatketens worden niet ondersteund in PowerShell {0}. Gebruik PowerShell 7.5 of nieuwer.'
 }

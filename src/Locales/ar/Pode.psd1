@@ -356,5 +356,5 @@
     selfSignedCertificatesNotAllowedExceptionMessage                  = 'لا يُسمح باستخدام الشهادات الموقعة ذاتيًا بسبب قيود الأمان.'
     digestTokenAuthMethodNotSupportedExceptionMessage                 = "ميزة Digest Quality of Protection 'auth-int' مدعومة فقط لطرق HTTP PUT أو POST أو PATCH."
     pemCertificateNotSupportedByPwshVersionExceptionMessage           = 'تنسيق شهادة PEM غير مدعوم في PowerShell {0}. يرجى استخدام تنسيق شهادة آخر أو الترقية إلى PowerShell 7.0 أو أحدث.'
+    chainCertificateNotSupportedByPwshVersionExceptionMessage         = 'سلاسل الشهادات غير مدعومة في PowerShell {0}. يُرجى استخدام PowerShell 7.5 أو أحدث.'
 }
-

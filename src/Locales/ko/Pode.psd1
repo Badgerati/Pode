@@ -356,4 +356,5 @@
     selfSignedCertificatesNotAllowedExceptionMessage                  = '보안 제한으로 인해 자체 서명된 인증서는 허용되지 않습니다.'
     digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int'는 HTTP PUT, POST, PATCH 메서드에서만 지원됩니다."
     pemCertificateNotSupportedByPwshVersionExceptionMessage           = 'PEM 인증서 형식은 PowerShell {0}에서 지원되지 않습니다. 다른 인증서 형식을 사용하거나 PowerShell 7.0 이상으로 업그레이드하세요.'
+    chainCertificateNotSupportedByPwshVersionExceptionMessage         = 'PowerShell {0}에서는 인증서 체인이 지원되지 않습니다. PowerShell 7.5 이상을 사용하세요.'
 }

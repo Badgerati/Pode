@@ -465,6 +465,7 @@ function Test-PodeCertificateRestriction {
   An array of file paths to additional certificate files (PEM or CER) to include in the chain.
   Each file will be parsed for one or more certificates and appended to the primary certificate.
   If `SecurePassword` is provided, the full chain will be re‑exported as a single PFX.
+  Powershell 7.5+ is required for this feature.
 
 .OUTPUTS
   [System.Security.Cryptography.X509Certificates.X509Certificate2]
@@ -501,100 +502,104 @@ function Test-PodeCertificateRestriction {
     ensuring the returned certificate contains the full chain.
 #>
 function Get-PodeCertificateByFile {
-  param(
-      [Parameter(Mandatory = $true)]
-      [string]
-      $Certificate,
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Certificate,
 
-      [Parameter()]
-      [securestring]
-      $SecurePassword = $null,
+        [Parameter()]
+        [securestring]
+        $SecurePassword = $null,
 
-      [Parameter()]
-      [string]
-      $PrivateKeyPath = $null,
+        [Parameter()]
+        [string]
+        $PrivateKeyPath = $null,
 
-      [Parameter()]
-      [switch]
-      $Ephemeral,
+        [Parameter()]
+        [switch]
+        $Ephemeral,
 
-      [Parameter()]
-      [switch]
-      $Exportable,
+        [Parameter()]
+        [switch]
+        $Exportable,
 
-      [Parameter()]
-      [string[]]$ChainFile = $null
-  )
+        [Parameter()]
+        [string[]]$ChainFile = $null
+    )
 
-  $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
+    $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
 
-  if ($Ephemeral -and !$IsMacOS) {
-      $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
-  }
-  else {
-      $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
-  }
+    if ($Ephemeral -and !$IsMacOS) {
+        $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+    }
+    else {
+        $storageFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
+    }
 
-  # if user explicitly asked for Exportable *or* we know
-  # we’re going to re-export with a chain, mark it now
-  if ($Exportable -or ($ChainFile -and $ChainFile.Count -gt 0)) {
-      $storageFlags = $storageFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
-  }
+    # if user explicitly asked for Exportable *or* we know
+    # we’re going to re-export with a chain, mark it now
+    if ($Exportable -or ($ChainFile -and $ChainFile.Count -gt 0)) {
+        $storageFlags = $storageFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
+    }
 
-  # If a PrivateKeyPath is provided, delegate to the PEM specialized function.
-  if (! [string]::IsNullOrWhiteSpace($PrivateKeyPath)) {
-      $cert = Get-PodeCertificateByPemFile -Certificate $Certificate -SecurePassword $SecurePassword -PrivateKeyPath $PrivateKeyPath -storageFlags $storageFlags
-  }
-  else {
-      # Read certificate bytes to avoid use of obsolete constructors.
-      $certBytes = [System.IO.File]::ReadAllBytes($path)
-      $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certBytes, $SecurePassword, $storageFlags)
-  }
+    # If a PrivateKeyPath is provided, delegate to the PEM specialized function.
+    if (! [string]::IsNullOrWhiteSpace($PrivateKeyPath)) {
+        $cert = Get-PodeCertificateByPemFile -Certificate $Certificate -SecurePassword $SecurePassword -PrivateKeyPath $PrivateKeyPath -storageFlags $storageFlags
+    }
+    else {
+        # Read certificate bytes to avoid use of obsolete constructors.
+        $certBytes = [System.IO.File]::ReadAllBytes($path)
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certBytes, $SecurePassword, $storageFlags)
+    }
 
-  # Process chain certificates if one or more chain file paths are provided.
-  if ($ChainFile -and $ChainFile.Count -gt 0) {
-      # Initialize the collection with the primary certificate.
-      $certCollection = [System.Security.Cryptography.X509Certificates.X509Certificate2Collection]::new()
-      $null = $certCollection.Add($cert)
 
-      foreach ($chainPath in $ChainFile) {
-          if (Test-Path $chainPath) {
-              $resolvedChainPath = Get-PodeRelativePath -Path $chainPath -JoinRoot -Resolve
-              $chainContent = Get-Content -Path $resolvedChainPath -Raw
+    # Process chain certificates if one or more chain file paths are provided.
+    if ($ChainFile -and $ChainFile.Count -gt 0) {
+        if ($PSVersionTable.PSVersion -lt [version]'7.5.0') {
+            throw ($PodeLocale.chainCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
+        }
+        # Initialize the collection with the primary certificate.
+        $certCollection = [System.Security.Cryptography.X509Certificates.X509Certificate2Collection]::new()
+        $null = $certCollection.Add($cert)
 
-              # Split the file into certificate blocks by the PEM delimiter.
-              $pemBlocks = $chainContent -split '-----END CERTIFICATE-----' | ForEach-Object {
-                  if ($_ -match '-----BEGIN CERTIFICATE-----') {
-                      $_ + '-----END CERTIFICATE-----'
-                  }
-              } | Where-Object { $_ -and $_.Trim().Length -gt 0 }
+        foreach ($chainPath in $ChainFile) {
+            if (Test-Path $chainPath) {
+                $resolvedChainPath = Get-PodeRelativePath -Path $chainPath -JoinRoot -Resolve
+                $chainContent = Get-Content -Path $resolvedChainPath -Raw
 
-              foreach ($pem in $pemBlocks) {
+                # Split the file into certificate blocks by the PEM delimiter.
+                $pemBlocks = $chainContent -split '-----END CERTIFICATE-----' | ForEach-Object {
+                    if ($_ -match '-----BEGIN CERTIFICATE-----') {
+                        $_ + '-----END CERTIFICATE-----'
+                    }
+                } | Where-Object { $_ -and $_.Trim().Length -gt 0 }
 
-                  $base64 = $pem -replace '-----BEGIN CERTIFICATE-----', '' `
-                      -replace '-----END CERTIFICATE-----', '' `
-                      -replace '\s+', ''
-                  $chainCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([System.Convert]::FromBase64String($base64))
-                  $null = $certCollection.Add($chainCert)
+                foreach ($pem in $pemBlocks) {
 
-              }
-          }
-          else {
-              throw ($PodeLocale.noCertificateFoundExceptionMessage -f $chainPath, '', 'import') # "Certificate chain file not found: $chainPath"
-          }
-      }
+                    $base64 = $pem -replace '-----BEGIN CERTIFICATE-----', '' `
+                        -replace '-----END CERTIFICATE-----', '' `
+                        -replace '\s+', ''
+                    $chainCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([System.Convert]::FromBase64String($base64))
+                    $null = $certCollection.Add($chainCert)
 
-      # Optionally combine the certificates into a single PFX.
-      $pfxBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword))
-      $cert = [System.Security.Cryptography.X509Certificates.X509CertificateLoader]::LoadPkcs12Collection(
-          $pfxBytes,
+                }
+            }
+            else {
+                throw ($PodeLocale.noCertificateFoundExceptionMessage -f $chainPath, '', 'import') # "Certificate chain file not found: $chainPath"
+            }
+        }
+
+        # Optionally combine the certificates into a single PFX.
+        $pfxBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword))
+        $cert = [System.Security.Cryptography.X509Certificates.X509CertificateLoader]::LoadPkcs12Collection(
+            $pfxBytes,
           (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword),
-          $storageFlags,
-          [System.Security.Cryptography.X509Certificates.Pkcs12LoaderLimits]::Defaults
-      )
-  }
+            $storageFlags,
+            [System.Security.Cryptography.X509Certificates.Pkcs12LoaderLimits]::Defaults
+        )
+    }
 
-  return $cert
+    return $cert
 }
 
 <#
@@ -636,163 +641,209 @@ Loads an encrypted PEM private key using the provided password and combines it w
 - The resulting certificate object can be used for secure communications, such as HTTPS bindings or client authentication.
 #>
 function Get-PodeCertificateByPemFile {
-  param(
-      [Parameter(Mandatory = $true)]
-      [string]
-      $Certificate,
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Certificate,
 
-      [Parameter()]
-      [securestring]
-      $SecurePassword = $null,
+        [Parameter()]
+        [securestring]
+        $SecurePassword = $null,
 
-      [Parameter(Mandatory = $true)]
-      [string]
-      $PrivateKeyPath,
+        [Parameter(Mandatory = $true)]
+        [string]
+        $PrivateKeyPath,
 
-      [Parameter(Mandatory = $true)]
-      [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]
-      $storageFlags
-  )
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]
+        $storageFlags
+    )
 
-  if ($PSVersionTable.PSVersion.Major -lt 7) {
-      throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
-  }
+    if ($PSVersionTable.PSVersion.Major -lt 7) {
+        throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
+    }
 
-  $cert = $null
+    $cert = $null
 
-  $certPath = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
-  $keyPath = Get-PodeRelativePath -Path $PrivateKeyPath -JoinRoot -Resolve
+    $certPath = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
+    $keyPath = Get-PodeRelativePath -Path $PrivateKeyPath -JoinRoot -Resolve
 
-  # pem's kinda work in .NET3/.NET5
-  if ([version]$PSVersionTable.PSVersion -ge [version]'7.0.0') {
-      $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath, $SecurePassword, $storageFlags)
-      $keyText = [System.IO.File]::ReadAllText($keyPath)
-      try {
-          $rsa = [System.Security.Cryptography.RSA]::Create()
+    # pem's kinda work in .NET3/.NET5
+    if ([version]$PSVersionTable.PSVersion -ge [version]'7.0.0') {
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath, $SecurePassword, $storageFlags)
+        $keyText = [System.IO.File]::ReadAllText($keyPath)
+        try {
+            $rsa = [System.Security.Cryptography.RSA]::Create()
 
-          # .NET5
-          if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
-              if ($null -eq $SecurePassword ) {
-                  $rsa.ImportFromPem($keyText)
-              }
-              else {
-                  $rsa.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword))
-              }
-          } # .NET3
-          else {
-              $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
-              $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
+            # .NET5
+            if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
+                if ($null -eq $SecurePassword ) {
+                    $rsa.ImportFromPem($keyText)
+                }
+                else {
+                    $rsa.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword))
+                }
+            } # .NET3
+            else {
+                $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
+                $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
 
-              if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
-                  $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
-              }
-              elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
-                  $rsa.ImportRSAPrivateKey($keyBytes, [ref]$null)
-              }
-              elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
-                  if ($null -ne $SecurePassword) {
-                      [int32]$bytesRead = 0
-                      $rsa.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
-                  }
-              }
-          }
-          $cert = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
-      }
-      catch {
-          $ecsd = [System.Security.Cryptography.ECDsa]::Create()
-          if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
-              if ( $null -eq $SecurePassword ) {
-                  $ecsd.ImportFromPem($keyText)
-              }
-              else {
-                  $ecsd.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword))
+                if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
+                    $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
+                    $rsa.ImportRSAPrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
+                    if ($null -ne $SecurePassword) {
+                        [int32]$bytesRead = 0
+                        $rsa.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
+                    }
+                }
+            }
+            $cert = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
+        }
+        catch {
+            $ecsd = [System.Security.Cryptography.ECDsa]::Create()
+            if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
+                if ( $null -eq $SecurePassword ) {
+                    $ecsd.ImportFromPem($keyText)
+                }
+                else {
+                    $ecsd.ImportFromEncryptedPem($keyText, (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword))
 
-              }
-          }
-          # .NET3
-          else {
-              $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
-              $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
+                }
+            }
+            # .NET3
+            else {
+                $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
+                $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
 
-              if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
-                  $ecsd.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
-              }
-              elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
-                  $ecsd.ImportRSAPrivateKey($keyBytes, [ref]$null)
-              }
-              elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
-                  if ($null -ne $SecurePassword) {
-                      [int32]$bytesRead = 0
-                      $ecsd.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
-                  }
-              }
+                if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
+                    $ecsd.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
+                    $ecsd.ImportRSAPrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
+                    if ($null -ne $SecurePassword) {
+                        [int32]$bytesRead = 0
+                        $ecsd.ImportEncryptedPkcs8PrivateKey( (Convert-PodeSecureStringToByteArray -SecureString $SecurePassword), $keyBytes, [ref]$bytesRead)
+                    }
+                }
 
-          }
+            }
 
-          $cert = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
+            $cert = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::CopyWithPrivateKey($cert, $ecsd)
 
-      }
-      # Export the certificate to a byte array in PKCS#12 format
-      $certificateBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12, $SecurePassword)
+        }
+        # Export the certificate to a byte array in PKCS#12 format
+        $certificateBytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12, $SecurePassword)
 
-      $cert = [System.Security.Cryptography.X509Certificates.X509CertificateLoader]::LoadPkcs12(
-          $certificateBytes,
-          (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword),
-          $storageFlags,
-          [System.Security.Cryptography.X509Certificates.Pkcs12LoaderLimits]::Defaults
-      )
+        if ($PSVersionTable.PSVersion -ge [version]'7.5.0') {
+            #[System.Security.Cryptography.X509Certificates.X509Certificate2]::new is deprecated in .NET 9.0
+            $cert = [System.Security.Cryptography.X509Certificates.X509CertificateLoader]::LoadPkcs12(
+                $certificateBytes,
+                (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword),
+                $storageFlags,
+                [System.Security.Cryptography.X509Certificates.Pkcs12LoaderLimits]::Defaults
+            )
+        }
+        else {
+            $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+                $certificateBytes,
+                (Convert-PodeSecureStringToPlainText -SecureString $SecurePassword),
+                $storageFlags
+            )
+        }
+    }
 
-  }
-
-  return $cert
+    return $cert
 }
 
+
+<#
+.SYNOPSIS
+    Finds and returns an X.509 certificate from the Windows certificate store.
+
+.DESCRIPTION
+    This function searches the specified Windows certificate store using a provided query
+    (such as a thumbprint or subject name) and returns the first matching X509Certificate2 object.
+
+    The function only works on Windows platforms, as certificate store operations are not supported cross-platform.
+
+.PARAMETER FindType
+    The type of search to perform in the certificate store (e.g., FindByThumbprint, FindBySubjectName).
+    Uses the [System.Security.Cryptography.X509Certificates.X509FindType] enum.
+
+.PARAMETER Query
+    The query string to search for (e.g., thumbprint or subject name, depending on FindType).
+
+.PARAMETER StoreName
+    The logical store name to open (e.g., My, Root, CA).
+    Uses the [System.Security.Cryptography.X509Certificates.StoreName] enum.
+
+.PARAMETER StoreLocation
+    The location of the certificate store (e.g., CurrentUser or LocalMachine).
+    Uses the [System.Security.Cryptography.X509Certificates.StoreLocation] enum.
+
+.EXAMPLE
+    Find-PodeCertificateInCertStore -FindType Thumbprint -Query 'ABCD1234...' -StoreName My -StoreLocation CurrentUser
+
+    Returns the certificate with the specified thumbprint from the CurrentUser\My store.
+
+.NOTES
+    Throws an exception if the platform is not Windows or no matching certificate is found.
+
+    This function is used internally by Pode for loading certificates securely from the Windows cert store.
+
+#>
 function Find-PodeCertificateInCertStore {
-  param(
-      [Parameter(Mandatory = $true)]
-      [System.Security.Cryptography.X509Certificates.X509FindType]
-      $FindType,
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.X509FindType]
+        $FindType,
 
-      [Parameter(Mandatory = $true)]
-      [string]
-      $Query,
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Query,
 
-      [Parameter(Mandatory = $true)]
-      [System.Security.Cryptography.X509Certificates.StoreName]
-      $StoreName,
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.StoreName]
+        $StoreName,
 
-      [Parameter(Mandatory = $true)]
-      [System.Security.Cryptography.X509Certificates.StoreLocation]
-      $StoreLocation
-  )
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        $StoreLocation
+    )
 
-  # fail if not windows
-  if (!(Test-PodeIsWindows)) {
-      # Certificate Thumbprints/Name are only supported on Windows
-      throw ($PodeLocale.certificateThumbprintsNameSupportedOnWindowsExceptionMessage)
-  }
+    # fail if not windows
+    if (!(Test-PodeIsWindows)) {
+        # Certificate Thumbprints/Name are only supported on Windows
+        throw ($PodeLocale.certificateThumbprintsNameSupportedOnWindowsExceptionMessage)
+    }
 
-  # open the currentuser\my store
-  $x509store = [System.Security.Cryptography.X509Certificates.X509Store]::new($StoreName, $StoreLocation)
+    # open the currentuser\my store
+    $x509store = [System.Security.Cryptography.X509Certificates.X509Store]::new($StoreName, $StoreLocation)
 
-  try {
-      # attempt to find the cert
-      $x509store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
-      $x509certs = $x509store.Certificates.Find($FindType, $Query, $false)
-  }
-  finally {
-      # close the store!
-      if ($null -ne $x509store) {
-          Close-PodeDisposable -Disposable $x509store -Close
-      }
-  }
+    try {
+        # attempt to find the cert
+        $x509store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+        $x509certs = $x509store.Certificates.Find($FindType, $Query, $false)
+    }
+    finally {
+        # close the store!
+        if ($null -ne $x509store) {
+            Close-PodeDisposable -Disposable $x509store -Close
+        }
+    }
 
-  # fail if no cert found for query
-  if (($null -eq $x509certs) -or ($x509certs.Count -eq 0)) {
-      throw ($PodeLocale.noCertificateFoundExceptionMessage -f $StoreLocation, $StoreName, $Query) # "No certificate could be found in $($StoreLocation)\$($StoreName) for '$($Query)'"
-  }
+    # fail if no cert found for query
+    if (($null -eq $x509certs) -or ($x509certs.Count -eq 0)) {
+        throw ($PodeLocale.noCertificateFoundExceptionMessage -f $StoreLocation, $StoreName, $Query) # "No certificate could be found in $($StoreLocation)\$($StoreName) for '$($Query)'"
+    }
 
-  return ([System.Security.Cryptography.X509Certificates.X509Certificate2]($x509certs[0]))
+    return ([System.Security.Cryptography.X509Certificates.X509Certificate2]($x509certs[0]))
 }
 
 
@@ -821,25 +872,25 @@ function Find-PodeCertificateInCertStore {
     Internal Pode function - subject to change without notice.
 #>
 function Get-PodeCertificateByThumbprint {
-  param(
-      [Parameter(Mandatory = $true)]
-      [string]
-      $Thumbprint,
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Thumbprint,
 
-      [Parameter(Mandatory = $true)]
-      [System.Security.Cryptography.X509Certificates.StoreName]
-      $StoreName,
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.StoreName]
+        $StoreName,
 
-      [Parameter(Mandatory = $true)]
-      [System.Security.Cryptography.X509Certificates.StoreLocation]
-      $StoreLocation
-  )
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        $StoreLocation
+    )
 
-  return Find-PodeCertificateInCertStore `
-      -FindType ([System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint) `
-      -Query $Thumbprint `
-      -StoreName $StoreName `
-      -StoreLocation $StoreLocation
+    return Find-PodeCertificateInCertStore `
+        -FindType ([System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint) `
+        -Query $Thumbprint `
+        -StoreName $StoreName `
+        -StoreLocation $StoreLocation
 }
 
 <#
@@ -867,23 +918,23 @@ function Get-PodeCertificateByThumbprint {
     Internal Pode function - subject to change without notice.
 #>
 function Get-PodeCertificateByName {
-  param(
-      [Parameter(Mandatory = $true)]
-      [string]
-      $Name,
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
 
-      [Parameter(Mandatory = $true)]
-      [System.Security.Cryptography.X509Certificates.StoreName]
-      $StoreName,
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.StoreName]
+        $StoreName,
 
-      [Parameter(Mandatory = $true)]
-      [System.Security.Cryptography.X509Certificates.StoreLocation]
-      $StoreLocation
-  )
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        $StoreLocation
+    )
 
-  return Find-PodeCertificateInCertStore `
-      -FindType ([System.Security.Cryptography.X509Certificates.X509FindType]::FindBySubjectName) `
-      -Query $Name `
-      -StoreName $StoreName `
-      -StoreLocation $StoreLocation
+    return Find-PodeCertificateInCertStore `
+        -FindType ([System.Security.Cryptography.X509Certificates.X509FindType]::FindBySubjectName) `
+        -Query $Name `
+        -StoreName $StoreName `
+        -StoreLocation $StoreLocation
 }

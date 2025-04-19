@@ -356,4 +356,5 @@
     selfSignedCertificatesNotAllowedExceptionMessage                  = 'Selbstsignierte Zertifikate sind aufgrund von Sicherheitsbeschränkungen nicht erlaubt.'
     digestTokenAuthMethodNotSupportedExceptionMessage                 = "Digest Quality of Protection 'auth-int' wird nur für die HTTP-Methoden PUT, POST oder PATCH unterstützt."
     pemCertificateNotSupportedByPwshVersionExceptionMessage           = 'Das PEM-Zertifikatsformat wird in PowerShell {0} nicht unterstützt. Bitte verwenden Sie ein anderes Zertifikatsformat oder aktualisieren Sie auf PowerShell 7.0 oder höher.'
+    chainCertificateNotSupportedByPwshVersionExceptionMessage         = 'Zertifikatketten werden in PowerShell {0} nicht unterstützt. Bitte verwenden Sie PowerShell 7.5 oder neuer.'
 }
