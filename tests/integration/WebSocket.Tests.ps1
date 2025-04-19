@@ -50,7 +50,6 @@ Describe 'WebSocket' {
         Get-Job -Name 'Pode' | Remove-Job -Force
     }
 
-
     It 'sends and receives a WebSocket signal with current date' {
         # Create a new WebSocket client
         $client = [System.Net.WebSockets.ClientWebSocket]::new()
@@ -98,7 +97,7 @@ Describe 'WebSocket' {
         $client.State | Should -Be 'Open'
 
         # Generate a large message (~3MB)
-        $largeMessage = if($PSVersionTable.PSEdition -eq 'Desktop') { ('a' * ((16KB) - 32))} else { ('a' * ((32KB) - 16)) }
+        $largeMessage = if ($PSVersionTable.PSEdition -eq 'Desktop') { ('a' * ((16KB) - 32)) } else { ('a' * ((32KB) - 16)) }
         $jsonMessage = ('{"message": "' + $largeMessage + '"}')
         $sendBuffer = [System.Text.Encoding]::UTF8.GetBytes($jsonMessage)
         $sendSegment = [System.ArraySegment[byte]]::new($sendBuffer)
@@ -107,12 +106,24 @@ Describe 'WebSocket' {
 
         Start-Sleep -Seconds 2
 
-        $receiveBuffer = [byte[]]::new(4MB)
-        $receiveSegment = [System.ArraySegment[byte]]::new($receiveBuffer, 0, $receiveBuffer.Length)
+        $receiveBuffer = [byte[]]::new(8192)
+        $memoryStream = [System.IO.MemoryStream]::new()
 
-        $receiveResult = $client.ReceiveAsync($receiveSegment, [Threading.CancellationToken]::None).Result
-        $receivedText = [System.Text.Encoding]::UTF8.GetString($receiveBuffer, 0, $receiveResult.Count)
+        do {
+            $receiveSegment = [System.ArraySegment[byte]]::new($receiveBuffer, 0, $receiveBuffer.Length)
+            $receiveResult = $client.ReceiveAsync($receiveSegment, [Threading.CancellationToken]::None).Result
 
+            # Write the received bytes into the memory stream
+            $memoryStream.Write($receiveBuffer, 0, $receiveResult.Count)
+
+        } while (!$receiveResult.EndOfMessage)
+
+        # Convert the full message to string
+        $memoryStream.Seek(0, 'Begin') | Out-Null
+        $reader = [System.IO.StreamReader]::new($memoryStream, [System.Text.Encoding]::UTF8)
+        $receivedText = $reader.ReadToEnd()
+
+        # Optionally convert from JSON if it's a JSON payload
         $response = $receivedText | ConvertFrom-Json
 
         $client.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, 'Closing', [Threading.CancellationToken]::None).Wait()
@@ -121,8 +132,7 @@ Describe 'WebSocket' {
         $response.message | Should -BeExactly $largeMessage
     }
 
-    <# This test fails because the default max message size is 32KB.
-   It 'handles sending and receiving large messages (>3MB)' {
+    It 'handles sending and receiving large messages (>3MB)' {
         $client = [System.Net.WebSockets.ClientWebSocket]::new()
         $wsUri = "ws://localhost:$Port/"
 
@@ -130,7 +140,7 @@ Describe 'WebSocket' {
         $client.State | Should -Be 'Open'
 
         # Generate a large message (~3MB)
-        $largeMessage = ('a' * ((3MB)-16))
+        $largeMessage = ('a' * ((3MB) - 16))
         $jsonMessage = ('{"message": "' + $largeMessage + '"}')
         $sendBuffer = [System.Text.Encoding]::UTF8.GetBytes($jsonMessage)
         $sendSegment = [System.ArraySegment[byte]]::new($sendBuffer)
@@ -139,12 +149,24 @@ Describe 'WebSocket' {
 
         Start-Sleep -Seconds 2
 
-        $receiveBuffer = [byte[]]::new(4MB)
-        $receiveSegment = [System.ArraySegment[byte]]::new($receiveBuffer, 0, $receiveBuffer.Length)
+        $receiveBuffer = [byte[]]::new(8192)
+        $memoryStream = [System.IO.MemoryStream]::new()
 
-        $receiveResult = $client.ReceiveAsync($receiveSegment, [Threading.CancellationToken]::None).Result
-        $receivedText = [System.Text.Encoding]::UTF8.GetString($receiveBuffer, 0, $receiveResult.Count)
+        do {
+            $receiveSegment = [System.ArraySegment[byte]]::new($receiveBuffer, 0, $receiveBuffer.Length)
+            $receiveResult = $client.ReceiveAsync($receiveSegment, [Threading.CancellationToken]::None).Result
 
+            # Write the received bytes into the memory stream
+            $memoryStream.Write($receiveBuffer, 0, $receiveResult.Count)
+
+        } while (!$receiveResult.EndOfMessage)
+
+        # Convert the full message to string
+        $memoryStream.Seek(0, 'Begin') | Out-Null
+        $reader = [System.IO.StreamReader]::new($memoryStream, [System.Text.Encoding]::UTF8)
+        $receivedText = $reader.ReadToEnd()
+
+        # Optionally convert from JSON if it's a JSON payload
         $response = $receivedText | ConvertFrom-Json
 
         $client.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, 'Closing', [Threading.CancellationToken]::None).Wait()
@@ -152,5 +174,4 @@ Describe 'WebSocket' {
         $response.message.Length | Should -Be $largeMessage.Length
         $response.message | Should -BeExactly $largeMessage
     }
-        #>
 }
