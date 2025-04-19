@@ -6,12 +6,12 @@ namespace Pode
 
         public bool IsHttp
         {
-            get => (Type == PodeProtocolType.Http || Type == PodeProtocolType.HttpAndWs);
+            get => Type == PodeProtocolType.Http || Type == PodeProtocolType.HttpAndWs;
         }
 
         public bool IsWebSocket
         {
-            get => (Type == PodeProtocolType.Ws || Type == PodeProtocolType.HttpAndWs);
+            get => Type == PodeProtocolType.Ws || Type == PodeProtocolType.HttpAndWs;
         }
 
         public bool IsSmtp
