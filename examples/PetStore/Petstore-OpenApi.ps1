@@ -111,6 +111,9 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default
     }
 
+    # Set the default endpoint to use the PodeFavicon icon
+    Add-PodeFavicon -Default
+
     # Enable error logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 

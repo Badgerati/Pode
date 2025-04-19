@@ -486,7 +486,6 @@ function Write-PodeAttachmentResponseInternal {
             else {
                 $content = (Get-Content -Path $Path -Raw -Encoding byte)
             }
-
             $WebEvent.Response.Body = $content
         }
 
