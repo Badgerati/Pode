@@ -1227,8 +1227,14 @@ Add-BuildTask Build BuildDeps, Yarn, {
 
 }
 
+# synopsis: Download the nmpm packages to pode_modules folder
 Add-BuildTask  Yarn {
-    yarn install --force --ignore-scripts --modules-folder pode_modules 2>&1| Select-String -NotMatch '^warning'
+    if ($PSVersionTable.PSEdition -eq 'Desktop') {
+        yarn install --force --ignore-scripts --modules-folder pode_modules
+    }
+    else {
+        yarn install --force --ignore-scripts --modules-folder pode_modules 2>&1 | Select-String -NotMatch '^warning'
+    }
 }, MoveLibs
 
 
@@ -1497,7 +1503,7 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
                 $line = $_
 
-                while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
+                while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(] | $))') {
                     $updated = $true
                     $name = $Matches['name']
                     $char = $Matches['char']
