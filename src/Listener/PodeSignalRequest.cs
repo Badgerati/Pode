@@ -184,7 +184,7 @@ namespace Pode
             catch (Exception ex)
             {
                 // Log the error and return false to indicate failure.
-                PodeHelpers.WriteErrorMessage($"Error decoding WebSocket frame: {ex.Message}", Context.Listener, PodeLoggingLevel.Error, Context);
+                PodeLogger.LogMessage($"Error decoding WebSocket frame: {ex.Message}", Context.Listener, PodeLoggingLevel.Error, Context);
                 throw;
             }
             finally

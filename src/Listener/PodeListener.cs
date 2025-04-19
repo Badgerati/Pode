@@ -300,14 +300,14 @@ namespace Pode
             PodeLogger.LogMessage($"Closed server events", this, PodeLoggingLevel.Verbose);
 
             // shutdown the sockets
-            PodeHelpers.WriteErrorMessage($"Closing sockets", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closing sockets", this, PodeLoggingLevel.Verbose);
             for (var i = Sockets.Count - 1; i >= 0; i--)
             {
                 Sockets[i].Dispose();
             }
 
             Sockets.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed sockets", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closed sockets", this, PodeLoggingLevel.Verbose);
         }
     }
 }
