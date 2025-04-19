@@ -477,3 +477,41 @@ function Initialize-PodeIISMiddleware {
         Set-PodeResponseStatus -Code 202
     }
 }
+
+
+<#
+.SYNOPSIS
+	Returns a Pode middleware scriptblock for handling requests to the /favicon.ico path.
+
+.DESCRIPTION
+	This function returns a middleware delegate that intercepts GET requests to `/favicon.ico`.
+	If a favicon is defined for the current endpoint, it returns the favicon file directly in the response
+	with the appropriate content type and a 200 OK status.
+
+	If the request is not for a favicon, the request is passed to the next middleware.
+
+.PARAMETER None
+	This function takes no parameters.
+
+.OUTPUTS
+	ScriptBlock
+	Returns a Pode-compatible middleware scriptblock.
+
+.EXAMPLE
+	$middleware = Get-PodeFaviconMiddleware
+	Add-PodeMiddleware -Middleware $middleware
+
+.NOTES
+	This is an internal Pode middleware function and may be subject to change.
+#>
+function Get-PodeFaviconMiddleware {
+    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_favicon__' -ScriptBlock {
+            if (($WebEvent.Path -eq '/favicon.ico') -and ($WebEvent.Method -eq 'GET') -and ($null -ne $PodeContext.Server.Endpoints[$context.EndpointName].Favicon)) {
+                # Write the file content as the HTTP response
+                Write-PodeTextResponse -Bytes $PodeContext.Server.Endpoints[$context.EndpointName].Favicon.Bytes -ContentType $PodeContext.Server.Endpoints[$context.EndpointName].Favicon.ContentType -StatusCode 200
+                return $false
+            }
+
+            return $true
+        })
+}
