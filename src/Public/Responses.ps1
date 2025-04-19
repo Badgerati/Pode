@@ -1932,6 +1932,7 @@ function Send-PodeSignal {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         # error if not configured
         if (!$PodeContext.Server.Signals.Enabled) {
             # WebSockets have not been configured to send signal messages

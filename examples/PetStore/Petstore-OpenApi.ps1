@@ -111,6 +111,9 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default
     }
 
+    # Set the default endpoint to use the PodeFavicon icon
+    Add-PodeFavicon -Default
+
     # Enable error logging
     New-PodeFileLoggingMethod   -Name 'error' -MaxDays 4 -Format RFC5424 -ISO8601 | Enable-PodeErrorLogging
     New-PodeFileLoggingMethod   -Name 'petstore' -MaxDays 4 -Format RFC5424 -ISO8601 | Enable-PodeDefaultLogging -Levels Alert,Critical,Emergency,Error,Informational,Warning

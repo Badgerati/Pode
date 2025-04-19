@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,9 @@ namespace Pode
 
         // The decoded message body as a string.
         public string Body { get; private set; }
+
+        // The stream used to read the message body.
+        private MemoryStream BodyStream;
 
         // The raw data received (entire WebSocket frame).
         public byte[] RawBody { get; private set; }
@@ -65,6 +69,24 @@ namespace Pode
             get => !CloseImmediately && OpCode != PodeWsOpCode.Pong && OpCode != PodeWsOpCode.Ping && !string.IsNullOrEmpty(Body);
         }
 
+        // The current frame being processed.
+        private PodeSignalFrame CurrentFrame { get; set; } = default;
+
+        /// <summary>
+        /// Overrides the base Buffer property to always return a new buffer.
+        /// This ensures that every time a buffer is needed for parsing a WebSocket frame,
+        /// a fresh array is allocated, avoiding any residual data from previous operations.
+        /// Although this introduces a small allocation overhead, it ensures data integrity
+        /// for WebSocket communication.
+        /// </summary>
+        protected override byte[] Buffer
+        {
+            get
+            {
+                return new byte[MAX_BUFFER_SIZE];
+            }
+        }
+
         /// <summary>
         /// Constructs a new PodeSignalRequest from an existing HTTP request and an associated signal.
         /// Sets up the connection as a WebSocket request, preserving the original host and URL details.
@@ -76,11 +98,14 @@ namespace Pode
         {
             Signal = signal;
             IsKeepAlive = true;
-            Type = PodeProtocolType.Ws; // Set protocol type to WebSocket.
+
+            // Set protocol type to WebSocket.
+            Type = PodeProtocolType.Ws;
 
             // Determine the protocol prefix based on SSL usage.
             var _proto = IsSsl ? "wss" : "ws";
             Host = request.Host;
+
             // Build the WebSocket URL from the original request's authority and path/query.
             Url = new Uri($"{_proto}://{request.Url.Authority}{request.Url.PathAndQuery}");
         }
@@ -94,22 +119,27 @@ namespace Pode
         {
             return new PodeClientSignal(Signal, Body, Context.Listener);
         }
-        
-        /// <summary>
-        /// Overrides the base GetBuffer() method to always return a new buffer.
-        /// This ensures that every time a buffer is needed for parsing a WebSocket frame,
-        /// a fresh array is allocated, avoiding any residual data from previous operations.
-        /// Although this introduces a small allocation overhead, it ensures data integrity
-        /// for WebSocket communication.
-        /// </summary>
-        // protected override byte[] GetBuffer() => new byte[BufferSize];
-        protected override byte[] Buffer
+
+        protected override bool ValidateInput(byte[] bytes)
         {
-            get
+            // if we have a current frame, update it with the new bytes and check if it's still awaiting a body
+            if (CurrentFrame != default)
             {
-                return new byte[BufferSize];
+                CurrentFrame.Update(bytes);
+                return !CurrentFrame.AwaitingBody;
             }
+
+            // otherwise, make sure we have enough bytes to parse the header
+            if (!PodeSignalFrame.ValidateHeader(bytes))
+            {
+                return false;
+            }
+
+            // create initial frame
+            CurrentFrame = new PodeSignalFrame(bytes);
+            return !CurrentFrame.AwaitingBody;
         }
+
         /// <summary>
         /// Parses the raw WebSocket frame bytes.
         /// This method extracts the frame's operation code, decodes the payload using the masking key,
@@ -120,46 +150,58 @@ namespace Pode
         /// <returns>True if parsing is successful.</returns>
         protected override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
         {
-            // Calculate the payload length; the second byte includes a mask bit (subtract 128)
-            var dataLength = bytes[1] - 128;
-            // Extract the operation code from the first byte (lower 4 bits)
-            OpCode = (PodeWsOpCode)(bytes[0] & 0b00001111);
-            var offset = 0;
-
-            // Determine the proper offset based on the payload length format.
-            if (dataLength < 126)
+            // if there are no bytes, return (0 bytes read means we can close the socket)
+            if (bytes == default || bytes.Length == 0 || CurrentFrame == default)
             {
-                offset = 2;
-            }
-            else if (dataLength == 126)
-            {
-                // For payload lengths equal to 126, the actual length is stored in the next 2 bytes.
-                dataLength = BitConverter.ToInt16(new byte[] { bytes[3], bytes[2] }, 0);
-                offset = 4;
-            }
-            else
-            {
-                // For payload lengths greater than 126, the length is stored in the next 8 bytes.
-                dataLength = (int)BitConverter.ToInt64(new byte[] { bytes[9], bytes[8], bytes[7], bytes[6], bytes[5], bytes[4], bytes[3], bytes[2] }, 0);
-                offset = 10;
+                return true;
             }
 
-            // Read the 4-byte masking key.
-            var mask = new byte[] { bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3] };
-            offset += 4;
-
-            // Decode the message by applying the mask to each byte of the payload.
-            var decoded = new byte[dataLength];
-            for (var i = 0; i < dataLength; ++i)
+            // set the body stream
+            if (BodyStream == default)
             {
-                decoded[i] = (byte)(bytes[offset + i] ^ mask[i % 4]);
+                BodyStream = new MemoryStream();
+            }
+
+            // set the OpCode from the current frame
+            if (CurrentFrame.OpCode != PodeWsOpCode.Continuation)
+            {
+                OpCode = CurrentFrame.OpCode;
+            }
+
+            try
+            {
+                // Decode the message by applying the mask to each byte of the payload.
+                var decoded = CurrentFrame.Decode(bytes);
+
+                // handle continuation final frames, and build the body stream
+                await PodeHelpers.WriteTo(BodyStream, decoded, 0, decoded.Length, cancellationToken).ConfigureAwait(false);
+                if (!CurrentFrame.IsFinalFrame)
+                {
+                    // returning false tells the receiver to wait for more frames
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error and return false to indicate failure.
+                PodeHelpers.WriteErrorMessage($"Error decoding WebSocket frame: {ex.Message}", Context.Listener, PodeLoggingLevel.Error, Context);
+                throw;
+            }
+            finally
+            {
+                CurrentFrame = default;
             }
 
             // Store the raw frame and set the content length.
-            RawBody = bytes;
+            RawBody = BodyStream.ToArray();
+            if (BodyStream != default)
+            {
+                BodyStream.Dispose();
+                BodyStream = default;
+            }
+
             ContentLength = RawBody.Length;
-            // Convert the decoded bytes to a string message.
-            Body = Encoding.GetString(decoded);
+            Body = Encoding.GetString(RawBody);
 
             // Process the frame based on its operation code.
             switch (OpCode)
@@ -169,22 +211,22 @@ namespace Pode
                     _closeStatus = WebSocketCloseStatus.Empty;
                     _closeDescription = string.Empty;
 
-                    if (dataLength >= 2)
+                    if (ContentLength >= 2)
                     {
                         // Reverse the first two bytes to correctly interpret the close code.
-                        Array.Reverse(decoded, 0, 2);
-                        var code = (int)BitConverter.ToUInt16(decoded, 0);
+                        Array.Reverse(RawBody, 0, 2);
+                        var code = (int)BitConverter.ToUInt16(RawBody, 0);
 
                         // Validate and assign the close status.
                         _closeStatus = Enum.IsDefined(typeof(WebSocketCloseStatus), code)
                             ? (WebSocketCloseStatus)code
                             : WebSocketCloseStatus.Empty;
 
-                        var descCount = dataLength - 2;
+                        var descCount = ContentLength - 2;
                         if (descCount > 0)
                         {
                             // Extract the close description text, if available.
-                            _closeDescription = Encoding.GetString(decoded, 2, descCount);
+                            _closeDescription = Encoding.GetString(RawBody, 2, descCount);
                         }
                     }
                     break;

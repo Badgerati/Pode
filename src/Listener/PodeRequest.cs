@@ -16,6 +16,9 @@ namespace Pode
     /// </summary>
     public class PodeRequest : PodeProtocol, IDisposable
     {
+        // Maximum buffer size for reading data from the input stream
+        protected const int MAX_BUFFER_SIZE = 16384;
+
         // Endpoint information for remote and local addresses
         public EndPoint RemoteEndPoint { get; private set; }
         public EndPoint LocalEndPoint { get; private set; }
@@ -61,9 +64,7 @@ namespace Pode
         // A fixed buffer used to temporarily store data read from the input stream.
         // This buffer is readonly to prevent reassignment and reduce memory allocations.
         private byte[] _buffer;
-
         private MemoryStream BufferStream;
-        protected const int BufferSize = 16384;
 
         /// <summary>
         /// Initializes a new instance of the PodeRequest class.
@@ -239,7 +240,7 @@ namespace Pode
             {
                 if (_buffer == null)
                 {
-                    _buffer = new byte[BufferSize];
+                    _buffer = new byte[MAX_BUFFER_SIZE];
                 }
                 return _buffer;
             }
@@ -277,16 +278,20 @@ namespace Pode
                         {
                             // Read data from the input stream
 #if NETCOREAPP2_1_OR_GREATER
-                            read = await InputStream.ReadAsync(localBuffer.AsMemory(0, BufferSize), cancellationToken).ConfigureAwait(false);
+                            read = await InputStream.ReadAsync(localBuffer.AsMemory(0, MAX_BUFFER_SIZE), cancellationToken).ConfigureAwait(false);
 #else
-                            read = await InputStream.ReadAsync(localBuffer, 0, BufferSize, cancellationToken).ConfigureAwait(false);
+                            read = await InputStream.ReadAsync(localBuffer, 0, MAX_BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
 #endif
                         }
                         catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException)
                         {
-                            PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                            if (Context.Listener.IsConnected)
+                            {
+                                PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                            }
                             break;
                         }
+
                         if (read <= 0)
                         {
                             break;
@@ -358,14 +363,14 @@ namespace Pode
             }
 
             // Read data from the input stream until the check bytes are found
-             var localBuffer = Buffer;
+            var localBuffer = Buffer;
             using (var bufferStream = new MemoryStream())
             {
                 while (true)
                 {
 #if NETCOREAPP2_1_OR_GREATER
                     // Read data from the input stream
-                    var read = await InputStream.ReadAsync(localBuffer.AsMemory(0, BufferSize), cancellationToken).ConfigureAwait(false);
+                    var read = await InputStream.ReadAsync(localBuffer.AsMemory(0, MAX_BUFFER_SIZE), cancellationToken).ConfigureAwait(false);
                     if (read <= 0)
                     {
                         break;
@@ -375,7 +380,7 @@ namespace Pode
                     await bufferStream.WriteAsync(localBuffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
 #else
                     // Read data from the input stream
-                    var read = await InputStream.ReadAsync(localBuffer, 0, BufferSize, cancellationToken).ConfigureAwait(false);
+                    var read = await InputStream.ReadAsync(localBuffer, 0, MAX_BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
                     if (read <= 0)
                     {
                         break;

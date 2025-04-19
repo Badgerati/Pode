@@ -268,7 +268,8 @@ namespace Pode
         /// </summary>
         public void CancelTimeout()
         {
-            TimeoutTimer.Dispose();
+            TimeoutTimer?.Dispose();
+            TimeoutTimer = null;
         }
 
         /// <summary>
@@ -279,18 +280,30 @@ namespace Pode
         {
             try
             {
-                // Start timeout
+                // Start timeout - unless receiving a WebSocket request.
                 ContextTimeoutToken = new CancellationTokenSource();
-                TimeoutTimer = new Timer(TimeoutCallback, null, Listener.RequestTimeout * 1000, Timeout.Infinite);
+                if (!IsWebSocketUpgraded)
+                {
+                    TimeoutTimer = new Timer(TimeoutCallback, null, Listener.RequestTimeout * 1000, Timeout.Infinite);
+                }
 
                 // Start receiving data.
                 State = PodeContextState.Receiving;
+
                 try
                 {
                     PodeLogger.LogMessage($"Receiving request", Listener, PodeLoggingLevel.Verbose, this);
                     var close = await Request.Receive(ContextTimeoutToken.Token).ConfigureAwait(false);
                     SetContextType();
                     await EndReceive(close).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is IOException || ex is SocketException)
+                {
+                    // ignore if listener is closing, else re-throw
+                    if (Listener.IsConnected)
+                    {
+                        throw;
+                    }
                 }
                 catch (OperationCanceledException ex) when (ContextTimeoutToken.IsCancellationRequested)
                 {
@@ -379,6 +392,9 @@ namespace Pode
 
             // Send response to upgrade to WebSocket.
             await Response.Send().ConfigureAwait(false);
+
+            // Cancel the timeout timer before upgrading.
+            CancelTimeout();
 
             // Add the upgraded WebSocket to the listener.
             var signal = new PodeSignal(this, HttpRequest.Url.AbsolutePath, clientId);
