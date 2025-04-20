@@ -4292,7 +4292,7 @@ function Test-PodeBindToPrivilegedPort {
         catch [System.Net.Sockets.SocketException] {
             switch ($_.Exception.SocketErrorCode) {
                 'AccessDenied' {
-                    Write-Verbose "Access denied on $($IP):$p"
+                    Write-Debug "Access denied on $($IP):$p"
                     if ($ThrowError) {
                         if (!$CheckAdmin) { return }
                         throw ($PodeLocale.mustBeRunningWithAdminPrivilegesExceptionMessage)
@@ -4304,18 +4304,18 @@ function Test-PodeBindToPrivilegedPort {
 
                 }
                 'AddressAlreadyInUse' {
-                    Write-Verbose "Port $p is already in use on $IP"
+                    Write-Debug "Port $p is already in use on $IP"
 
                     if ($Port.Count -gt 1) {
                         continue
                     }
                     if ($ThrowError) {
-                        throw  ($PodeLocale.cannotBindPortInUseExceptionMessage -f $IP,$p)
+                        throw  ($PodeLocale.cannotBindPortInUseExceptionMessage -f $IP, $p)
                     }
                     return $false
                 }
                 default {
-                    Write-Verbose "Unhandled socket error on $($IP):$p — $($_.Exception.SocketErrorCode)"
+                    #    Write-Debug "Unhandled socket error on $($IP):$p — $($_.Exception.SocketErrorCode)"
                     if ($ThrowError) {
                         throw  $_
                     }
@@ -4324,7 +4324,7 @@ function Test-PodeBindToPrivilegedPort {
             }
         }
         catch {
-            Write-Verbose "Unexpected error on $($IP):$p — $($_.Exception.Message)"
+            #Write-Debug "Unexpected error on $($IP):$p — $($_.Exception.Message)"
             if ($ThrowError) {
                 throw  $_
             }
@@ -4332,7 +4332,7 @@ function Test-PodeBindToPrivilegedPort {
         }
     }
 
-    Write-Verbose "All test ports on $IP were in use, but no privilege error detected"
+    Write-Debug "All test ports on $IP were in use, but no privilege error detected"
     return $false
 }
 
