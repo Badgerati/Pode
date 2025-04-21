@@ -60,7 +60,7 @@ function Get-PodeViewEngineType {
     $type = $PodeContext.Server.ViewEngine.Type
 
     $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
-    if (![string]::IsNullOrWhiteSpace($ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
+    if (![string]::IsNullOrEmpty($ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
         $type = $ext
     }
 
@@ -68,18 +68,28 @@ function Get-PodeViewEngineType {
 }
 
 function Get-PodeFileContentUsingViewEngine {
+    [CmdletBinding(DefaultParameterSetName = 'Path')]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Path')]
         [string]
         $Path,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileInfo')]
+        [System.IO.FileSystemInfo]
+        $FileInfo,
 
         [Parameter()]
         [hashtable]
         $Data
     )
 
+    # if we have no file info, get the file info from the path
+    if ($null -eq $FileInfo) {
+        $FileInfo = Get-Item -Path $Path -Force -ErrorAction Stop
+    }
+
     # work out the engine to use when parsing the file
-    $engine = Get-PodeViewEngineType -Path $Path
+    $engine = Get-PodeViewEngineType -Path $FileInfo.FullName
 
     # setup the content
     $content = [string]::Empty
@@ -87,23 +97,23 @@ function Get-PodeFileContentUsingViewEngine {
     # run the relevant engine logic
     switch ($engine.ToLowerInvariant()) {
         'html' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
+            $content = [System.IO.File]::ReadAllText($FileInfo.FullName, [System.Text.Encoding]::UTF8)
         }
 
         'md' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
+            $content = [System.IO.File]::ReadAllText($FileInfo.FullName, [System.Text.Encoding]::UTF8)
         }
 
         'pode' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
+            $content = [System.IO.File]::ReadAllText($FileInfo.FullName, [System.Text.Encoding]::UTF8)
             $content = ConvertFrom-PodeFile -Content $content -Data $Data
         }
 
         default {
             if ($null -ne $PodeContext.Server.ViewEngine.ScriptBlock) {
-                $_args = @($Path)
+                $_args = @($FileInfo.FullName)
                 if (($null -ne $Data) -and ($Data.Count -gt 0)) {
-                    $_args = @($Path, $Data)
+                    $_args = @($FileInfo.FullName, $Data)
                 }
 
                 $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables -Return -Splat)
@@ -1826,20 +1836,21 @@ function Test-PodePath {
     }
 
     if ($statusCode -eq 200) {
-        if ($ReturnItem.IsPresent) {
-            return  $item
+        if ($ReturnItem) {
+            return $item
         }
         return $true
     }
 
     # if we failed to get the file, report back the status code and/or return true/false
-    if (!$NoStatus.IsPresent) {
+    if (!$NoStatus) {
         Set-PodeResponseStatus -Code $statusCode
     }
 
-    if ($ReturnItem.IsPresent) {
-        return  $null
+    if ($ReturnItem) {
+        return $null
     }
+
     return $false
 }
 
@@ -1853,15 +1864,15 @@ function Test-PodePathIsFile {
         $FailOnWildcard
     )
 
-    if ([string]::IsNullOrWhiteSpace($Path)) {
+    if ([string]::IsNullOrEmpty($Path)) {
         return $false
     }
 
-    if ($FailOnWildcard -and (Test-PodePathIsWildcard $Path)) {
+    if ($FailOnWildcard -and (Test-PodePathIsWildcard -Path $Path)) {
         return $false
     }
 
-    return (![string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
+    return (![string]::IsNullOrEmpty([System.IO.Path]::GetExtension($Path)))
 }
 
 function Test-PodePathIsWildcard {
@@ -1871,7 +1882,7 @@ function Test-PodePathIsWildcard {
         $Path
     )
 
-    if ([string]::IsNullOrWhiteSpace($Path)) {
+    if ([string]::IsNullOrEmpty($Path)) {
         return $false
     }
 

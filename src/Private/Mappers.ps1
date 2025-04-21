@@ -8,7 +8,7 @@ function Get-PodeContentType {
         $DefaultIsNull
     )
 
-    if ([string]::IsNullOrWhiteSpace($Extension)) {
+    if ([string]::IsNullOrEmpty($Extension)) {
         $Extension = [string]::Empty
     }
 
