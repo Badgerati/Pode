@@ -110,7 +110,7 @@ Describe 'Add-PodeEndpoint' {
 
         It 'Set all the Hostname, ip and port' {
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
-            Add-PodeEndpoint -Address '127.0.0.2' -Hostname 'foo.com' -Port 36880 -Protocol 'HTTP'
+            Add-PodeEndpoint -Address '127.0.0.1' -Hostname 'foo.com' -Port 36880 -Protocol 'HTTP'
 
             $PodeContext.Server.Types | Should -Be 'HTTP'
             $PodeContext.Server.Endpoints | Should -Not -Be $null
@@ -119,7 +119,7 @@ Describe 'Add-PodeEndpoint' {
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
             $endpoint.Port | Should -Be 36880
             $endpoint.HostName | Should -Be 'foo.com'
-            $endpoint.Address.ToString() | Should -Be '127.0.0.2'
+            $endpoint.Address.ToString() | Should -Be '127.0.0.1'
             $endpoint.RawAddress | Should -Be 'foo.com:36880'
         }
 
