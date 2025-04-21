@@ -104,29 +104,32 @@ function Find-PodePublicRoute {
         $NoEscape
     )
 
-    $source = $null
+    # check if we have a public drive
     $publicPath = $PodeContext.Server.InbuiltDrives['public']
-
-    # return null if there is no public directory
-    if ([string]::IsNullOrWhiteSpace($publicPath)) {
-        return $source
+    if ([string]::IsNullOrEmpty($publicPath)) {
+        return $null
     }
 
     # escape characters in the path
     $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
 
-    # use the public static directory (but only if path is a file, and a public dir is present)
-    if (Test-PodePathIsFile $Path) {
-        $source = [System.IO.Path]::Combine($publicPath, $Path.TrimStart('/', '\'))
-        if (!(Test-PodePath -Path $source -NoStatus)) {
-            $source = $null
-        }
+    # use the public static directory - but only if path is a file
+    if (!(Test-PodePathIsFile -Path $Path)) {
+        return $null
     }
 
-    # return the route details
-    return $source
-}
+    $source = [System.IO.Path]::Combine($publicPath, $Path.TrimStart('/', '\'))
+    $fileInfo = Test-PodePath -Path $source -NoStatus -Force -ReturnItem
 
+    if ($null -eq $fileInfo) {
+        return $null
+    }
+
+    return @{
+        Source   = $source
+        FileInfo = $fileInfo
+    }
+}
 
 <#
 .SYNOPSIS
@@ -199,7 +202,7 @@ function Find-PodeStaticRoute {
         $matchingPath = "$($found.Path.Replace('*', '.+?'))$"
 
         if ($Path -imatch $matchingPath) {
-            $file = (Protect-PodeValue -Value $Matches['file'] -Default ([string]::Empty))
+            $file = Protect-PodeValue -Value $Matches['file'] -Default ([string]::Empty)
         }
 
         # if $file doesn't exist return $null
@@ -208,12 +211,17 @@ function Find-PodeStaticRoute {
             return $null
         }
 
-        # if there's no file, we need to check defaults
-        if (!$found.Download -and $fileInfo.PSIsContainer -and (Get-PodeCount @($found.Defaults)) -gt 0) {
+        # if this is a folder, we need to check defaults
+        if (!$found.Download -and $fileInfo.PSIsContainer -and (($null -ne $found.Defaults) -and ($found.Defaults.Count -gt 0))) {
             foreach ($def in $found.Defaults) {
-                $fileInfoDefaultFile = Get-Item -Path ([System.IO.Path]::Combine($fileInfo.FullName, $def)) -Force -ErrorAction Ignore
-                if ($fileInfoDefaultFile) {
-                    $file = $fileInfoDefaultFile.FullName
+                if ([string]::IsNullOrEmpty($def)) {
+                    continue
+                }
+
+                $defFileInfo = Get-Item -Path ([System.IO.Path]::Combine($fileInfo.FullName, $def)) -Force -ErrorAction Ignore
+                if ($null -ne $defFileInfo) {
+                    $file = [System.IO.Path]::Combine($file, $def)
+                    $fileInfo = $defFileInfo
                     $isDefault = $true
                     break
                 }
@@ -224,8 +232,13 @@ function Find-PodeStaticRoute {
     }
 
     # check public, if flagged
-    if ($CheckPublic -and !(Test-PodePath -Path $source -NoStatus)) {
-        $source = Find-PodePublicRoute -Path $Path
+    if ($CheckPublic -and [string]::IsNullOrEmpty($source)) {
+        # check if we have a public route
+        $pubRoute = Find-PodePublicRoute -Path $Path
+        $source = $pubRoute.Source
+        $fileInfo = $pubRoute.FileInfo
+
+        # set download/default flags
         $download = $false
         $found = $null
         $isDefault = $false
@@ -233,19 +246,18 @@ function Find-PodeStaticRoute {
     }
 
     # return nothing if no source
-    if ([string]::IsNullOrWhiteSpace($source)) {
+    if ([string]::IsNullOrEmpty($source)) {
         return $null
     }
 
     # return the route details
-    $redirectToDefault = $redirectToDefault -and $isDefault
-
     return @{
         Content = @{
             Source            = $source
+            FileInfo          = $fileInfo
             IsDownload        = $download
             IsCachable        = (Test-PodeRouteValidForCaching -Path $Path)
-            RedirectToDefault = $redirectToDefault
+            RedirectToDefault = ($redirectToDefault -and $isDefault)
         }
         Route   = $found
     }
@@ -458,10 +470,12 @@ function ConvertTo-PodeRouteRegex {
 }
 
 function Get-PodeStaticRouteDefault {
+    # return if we have a defaults set
     if (!(Test-PodeIsEmpty $PodeContext.Server.Web.Static.Defaults)) {
         return @($PodeContext.Server.Web.Static.Defaults)
     }
 
+    # otherwise, return the inbuilt defaults
     return @(
         'index.html',
         'index.htm',
