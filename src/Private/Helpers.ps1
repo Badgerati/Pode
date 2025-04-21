@@ -4086,13 +4086,3 @@ function Get-PodeImageContentType {
     # If none of the above formats match, return a generic binary type
     return 'application/octet-stream'
 }
-
-function Read-PodeFileContent {
-    param(
-        [Parameter()]
-        [System.IO.FileInfo]
-        $FileInfo
-    )
-
-    return ([PodeHelpers]::ReadAllBytes($FileInfo))
-}

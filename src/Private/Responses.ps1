@@ -213,7 +213,7 @@ function Write-PodeFileResponseInternal {
     # this is a static file
     try {
         # load the file content
-        $content = Read-PodeFileContent -FileInfo $FileInfo
+        $content = [System.IO.File]::ReadAllBytes($FileInfo.FullName)
 
         # Determine and set the content type for static files
         $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
@@ -497,7 +497,7 @@ function Write-PodeAttachmentResponseInternal {
 
     # if serverless, get the content raw and return
     if (!$WebEvent.Streamed) {
-        $WebEvent.Response.Body = Read-PodeFileContent -FileInfo $FileInfo
+        $WebEvent.Response.Body = [System.IO.File]::ReadAllBytes($FileInfo.FullName)
         return
     }
 

@@ -557,9 +557,9 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
         Mock Get-PodeContentType { return 'application/octet-stream' }
         Mock Find-PodePublicRoute {}
         Mock Get-Item {
-            return [System.IO.FileInfo]::new('myfile.txt')
+            return [System.IO.FileInfo]::new($Path)
         }
-        Mock Read-PodeFileContent { return [System.Text.Encoding]::UTF8.GetBytes('Test file content') }
+        # Mock Read-PodeFileContent { return [System.Text.Encoding]::UTF8.GetBytes('Test file content') }
         Mock Set-PodeHeader {}
     }
 
@@ -570,15 +570,15 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
     It 'Sets response status to 404 if file does not exist' {
         Mock Get-Item { return $null } -Verifiable
 
-        Write-PodeAttachmentResponseInternal -Path 'nonexistent.txt' -ContentType 'text/plain' | Should -BeNullOrEmpty
+        Write-PodeAttachmentResponseInternal -Path (Join-Path $pwd 'non-existent.txt') -ContentType 'text/plain' | Should -BeNullOrEmpty
         Should -Invoke Set-PodeResponseStatus -Times 1 -Scope It -ParameterFilter { $Code -eq 404 }
     }
 
     It 'Sets correct content type and downloads file' {
-        Write-PodeAttachmentResponseInternal -Path 'existing.txt' -ContentType 'text/plain'
+        Write-PodeAttachmentResponseInternal -Path (Join-Path $src 'Pode.psm1') -ContentType 'text/plain'
 
         Should -Invoke Set-PodeHeader -Times 1 -Scope It -ParameterFilter {
-            $Name -eq 'Content-Disposition' -and $Value -like '*filename=myfile.txt'
+            $Name -eq 'Content-Disposition' -and $Value -like '*filename=Pode.psm1'
         }
         Should -Invoke Get-PodeContentType -Times 0 -Scope It # ContentType is provided, so it should not attempt to get it
     }
@@ -589,7 +589,7 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
             $dir | Add-Member -Name 'PSIsContainer' -Value $true -MemberType NoteProperty -PassThru
         }
 
-        Write-PodeAttachmentResponseInternal -Path 'mydirectory' -FileBrowser
+        Write-PodeAttachmentResponseInternal -Path $pwd -FileBrowser
         Should -Invoke Write-PodeDirectoryResponseInternal -Times 1 -Scope It
     }
 

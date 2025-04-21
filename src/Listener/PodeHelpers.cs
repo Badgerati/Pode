@@ -308,26 +308,5 @@ namespace Pode
                     return stream;
             }
         }
-
-        public static byte[] ReadAllBytes(string path)
-        {
-            return ReadAllBytes(new FileInfo(path));
-        }
-
-        public static byte[] ReadAllBytes(FileSystemInfo file)
-        {
-            if (!(file is FileInfo fileInfo) || !fileInfo.Exists)
-            {
-                throw new FileNotFoundException($"File not found: {file.FullName}");
-            }
-
-            using (var stream = fileInfo.OpenRead())
-            {
-                using (var reader = new BinaryReader(stream))
-                {
-                    return reader.ReadBytes((int)stream.Length);
-                }
-            }
-        }
     }
 }
