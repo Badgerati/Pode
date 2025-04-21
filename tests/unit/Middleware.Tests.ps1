@@ -675,7 +675,7 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return '/' }
+        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
         Mock Write-PodeFileResponse { }
 
         $WebEvent = @{
@@ -702,7 +702,7 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return '/' }
+        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
         Mock Write-PodeFileResponse { }
 
         $WebEvent = @{
@@ -730,7 +730,7 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return '/' }
+        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
         Mock Write-PodeFileResponse { }
 
         $WebEvent = @{
@@ -758,7 +758,7 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return '/' }
+        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
         Mock Write-PodeFileResponse { }
 
         $WebEvent = @{
@@ -785,7 +785,7 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return '/' }
+        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
         Mock Write-PodeFileResponse { }
 
         $WebEvent = @{

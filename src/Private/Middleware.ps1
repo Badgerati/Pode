@@ -197,8 +197,8 @@ function Get-PodePublicMiddleware {
     param()
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_static_content__' -ScriptBlock {
             # only find public static content here
-            $path = Find-PodePublicRoute -Path $WebEvent.Path
-            if ([string]::IsNullOrWhiteSpace($path)) {
+            $pubRoute = Find-PodePublicRoute -Path $WebEvent.Path
+            if ($null -eq $pubRoute) {
                 return $true
             }
 
@@ -206,7 +206,7 @@ function Get-PodePublicMiddleware {
             $cachable = Test-PodeRouteValidForCaching -Path $WebEvent.Path
 
             # write the file to the response
-            Write-PodeFileResponse -Path $path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+            Write-PodeFileResponse -FileInfo $pubRoute.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
 
             # public static content found, stop
             return $false
@@ -266,7 +266,7 @@ function Get-PodeRouteValidateMiddleware {
                     return $false
                 }
 
-                # otheriwse, it's a 404
+                # otherwise, it's a 404
                 Set-PodeResponseStatus -Code 404
                 return $false
             }
@@ -287,12 +287,12 @@ function Get-PodeRouteValidateMiddleware {
             $WebEvent.Route = $route
 
             # override the content type from the route if it's not empty
-            if (![string]::IsNullOrWhiteSpace($route.ContentType)) {
+            if (![string]::IsNullOrEmpty($route.ContentType)) {
                 $WebEvent.ContentType = $route.ContentType
             }
 
             # override the transfer encoding from the route if it's not empty
-            if (![string]::IsNullOrWhiteSpace($route.TransferEncoding)) {
+            if (![string]::IsNullOrEmpty($route.TransferEncoding)) {
                 $WebEvent.TransferEncoding = $route.TransferEncoding
             }
 
@@ -395,7 +395,7 @@ function Initialize-PodeIISMiddleware {
     }
 
     # fail if no iis token - because there should be!
-    if ([string]::IsNullOrWhiteSpace($PodeContext.Server.IIS.Token)) {
+    if ([string]::IsNullOrEmpty($PodeContext.Server.IIS.Token)) {
         # IIS ASPNETCORE_TOKEN is missing
         throw ($PodeLocale.iisAspnetcoreTokenMissingExceptionMessage)
     }

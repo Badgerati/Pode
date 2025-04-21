@@ -7,19 +7,13 @@
     <style>
         body {
             font-family: Helvetica, Arial, sans-serif;
-            /* Applies monospace font to <h2> */
         }
 
         /* Add CSS styles here for column widths */
-
         .icon {
             width: 10px;
-            /* Fixed width for the icon column */
             text-align: right;
-            /* Centers the icon within the column */
             vertical-align: middle;
-            /* Aligns the icon vertically in the middle of the cell */
-
         }
 
         .unixMode,
@@ -41,7 +35,6 @@
         .DateTime {
             width: 200px;
             text-align: right;
-            /* Align text to the right */
         }
 
         .size {
@@ -49,9 +42,7 @@
             max-width: 80px;
             min-width: 80px;
             text-align: right;
-            /* Align text to the right */
             padding-right: 20px;
-            /* Adds space to the right inside the Size cell */
         }
 
         .name {
@@ -61,24 +52,30 @@
 
         a {
             color: blue;
-            /* Or any color that fits your design */
             text-decoration: none;
-            /* Removes underline */
         }
 
         a:hover {
             text-decoration: underline;
-            /* Optional: underline on hover for visual feedback */
         }
 
+        span.icon::before {
+            display: inline-block;
+            margin-right: 0.5em;
+        }
+
+        span.icon-folder::before {
+            content: '📁';
+        }
+
+        span.icon-file::before {
+            content: '📄';
+        }
 
         table {
             table-layout: fixed;
             width: 100%;
             font-family: 'Courier New', Courier, monospace;
-            /* Applies monospace font to the table */
-            /*   border-collapse: collapse;
-             Removes the space between borders */
         }
 
         th {
@@ -86,8 +83,6 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             font-weight: bold;
-            /* Makes the header text bold */
-            /*   border-bottom: 1px solid #000;  Adds a solid line under the header */
         }
 
         td {
@@ -96,27 +91,20 @@
             white-space: nowrap;
         }
 
-        /* Style the container to match h3 styling */
         #pathContainer {
             font-size: 1.47em;
-            /* Standard size for h3 */
             font-weight: bold;
-            /* Bold text for h3 */
             margin-top: 20px;
-            /* Spacing for visual separation */
             margin-bottom: 30px;
-            /* Additional space after the container */
         }
 
         #pathContainer a,
         #pathContainer span {
             margin-right: -1px;
-            /* Reduced spacing between segments */
         }
 
         #pathContainer span.separator {
             margin-right: 0;
-            /* Remove spacing after separator */
         }
     </style>
 
@@ -366,7 +354,7 @@
 <body style='color: white; '>
 
     <div>
-        <div id="pathContainer"> </div>
+        <div id="pathContainer">&nbsp;</div>
         <div></div>
         <table>
             <tbody id="tableBody">
