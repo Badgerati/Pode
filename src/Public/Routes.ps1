@@ -879,7 +879,7 @@ function Add-PodeStaticRoute {
                 ErrorType         = $ErrorContentType
                 Download          = $DownloadOnly.IsPresent
                 IsStatic          = $true
-                FileBrowser       = $FileBrowser.isPresent
+                FileBrowser       = $FileBrowser.IsPresent
                 OpenApi           = @{
                     Path           = $OpenApiPath
                     Responses      = @{}
