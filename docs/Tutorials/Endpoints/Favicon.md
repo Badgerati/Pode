@@ -6,8 +6,6 @@ Pode allows you to customize favicons served from HTTP/HTTPS endpoints using a s
 
 Favicons are the small icons displayed in browser tabs, bookmarks, and other UI elements. Pode supports using favicons in the standard ICO format, as well as other common web image formats such as PNG or SVG (depending on browser support).
 
----
-
 ## Managing Favicons
 
 Pode provides the following functions to manage favicons:
@@ -18,8 +16,6 @@ Pode provides the following functions to manage favicons:
 - `Test-PodeFavicon`: Checks whether a favicon is configured on one or more endpoints.
 
 These functions support targeting specific endpoints by name, or applying changes globally to all endpoints. You can also limit operations to only endpoints marked as default using the `-DefaultEndpoint` switch.
-
----
 
 ## Supported Formats
 
@@ -33,23 +29,15 @@ Other formats like `.jpg` or `.gif` may work but are not recommended due to lack
 
 For further details on favicon formats and specifications, refer to the [Favicon specification]([https://en.wikipedia.org/wiki/Favicon](https://en.wikipedia.org/wiki/Favicon)) and [RFC 5988]([https://datatracker.ietf.org/doc/html/rfc5988](https://datatracker.ietf.org/doc/html/rfc5988)).
 
----
-
 ## Recommended Sizes
 
 Favicons should include multiple resolutions for optimal display across different devices. Recommended sizes include:
 
 - **16x16** : Used in browser tabs, bookmarks, and address bars.
-
 - **32x32** : Used in browser tabs on higher-resolution displays.
-
 - **48x48** : Used by some older browsers and web applications.
-
 - **64x64** : Generally not used by browsers but can be helpful for scalability in web apps.
-
 - **256x256** : Mainly for **Windows app icons** (not typically used as a favicon in browsers).
-
----
 
 ## Usage Examples
 
@@ -103,8 +91,6 @@ Get-PodeFavicon
 ```powershell
 Test-PodeFavicon -DefaultEndpoint
 ```
-
----
 
 ## Notes
 
