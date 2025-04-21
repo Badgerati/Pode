@@ -585,7 +585,7 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
 
     It 'Returns directory listing if FileBrowser is present and path is a directory' {
         Mock Get-Item {
-            $dir = [System.IO.FileInfo]::new($pwd)
+            $dir = [System.IO.DirectoryInfo]::new($pwd)
             $dir | Add-Member -Name 'PSIsContainer' -Value $true -MemberType NoteProperty -PassThru
         }
 
