@@ -366,6 +366,7 @@ namespace Pode
             await Write(Encoding.GetBytes($"{message}{PodeHelpers.NEW_LINE}"), flush).ConfigureAwait(false);
         }
 
+        // write a byte array to the actual client stream
         public async Task Write(byte[] buffer, bool flush = false)
         {
             if (Request.IsDisposed || !Request.InputStream.CanWrite)
@@ -396,6 +397,30 @@ namespace Pode
             {
                 PodeHelpers.WriteException(ex, Context.Listener);
                 throw;
+            }
+        }
+
+        public void WriteFile(string path)
+        {
+            WriteFile(new FileInfo(path));
+        }
+
+        public void WriteFile(FileSystemInfo file)
+        {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            if (!(file is FileInfo fileInfo) || !fileInfo.Exists)
+            {
+                throw new FileNotFoundException($"File not found: {file.FullName}");
+            }
+
+            ContentLength64 = fileInfo.Length;
+            using (var fileStream = fileInfo.OpenRead())
+            {
+                fileStream.CopyTo(OutputStream);
             }
         }
 
