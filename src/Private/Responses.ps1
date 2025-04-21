@@ -182,7 +182,7 @@ function Write-PodeFileResponseInternal {
 
     # Check if the path is a directory, and if enabled, use the directory response function
     if ($FileInfo.PSIsContainer) {
-        Write-PodeDirectoryResponseInternal -FileInfo $FileInfo
+        Write-PodeDirectoryResponseInternal -DirectoryInfo $FileInfo
         return
     }
 
@@ -269,22 +269,23 @@ function Write-PodeDirectoryResponseInternal {
         [string]
         $Path,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'FileInfo')]
-        [System.IO.FileSystemInfo]
-        $FileInfo,
+        [Parameter(Mandatory = $true, ParameterSetName = 'DirectoryInfo')]
+        [System.IO.DirectoryInfo]
+        $DirectoryInfo,
 
         [switch]
         $NoEscape
     )
 
     # if we have no path, build it from the file info
-    if ($null -ne $FileInfo) {
-        $Path = $FileInfo.FullName.Replace($FileInfo.PSDrive.Root.TrimEnd('\', '/'), "$($FileInfo.PSDrive.Name):")
+    if ($null -ne $DirectoryInfo) {
+        $Path = $DirectoryInfo.FullName.Replace($DirectoryInfo.PSDrive.Root.TrimEnd('\', '/'), "$($DirectoryInfo.PSDrive.Name):")
     }
 
     # escape the path
     else {
         $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+        $DirectoryInfo = Get-Item -Path $Path -Force -ErrorAction Stop
     }
 
     # Attempt to retrieve information about the path
@@ -294,7 +295,7 @@ function Write-PodeDirectoryResponseInternal {
     }
     else {
         # get leaf of current physical path, and set root path
-        $leaf = ($Path.Split(':')[1] -split '[\\/]+') -join '/'
+        $leaf = ($Path.Split(':', 2)[1] -split '[\\/]+') -join '/'
         $rootPath = $WebEvent.Path -ireplace "$($leaf)$", ''
     }
 
@@ -312,7 +313,7 @@ function Write-PodeDirectoryResponseInternal {
             }
         })
 
-    if ([string]::IsNullOrWhiteSpace($atoms)) {
+    if ([string]::IsNullOrEmpty($atoms)) {
         $baseLink = ''
     }
     else {
@@ -328,74 +329,62 @@ function Write-PodeDirectoryResponseInternal {
         }
 
         $ParentLink = $baseLink.Substring(0, $LastSlash)
-        if ([string]::IsNullOrWhiteSpace($ParentLink)) {
+        if ([string]::IsNullOrEmpty($ParentLink)) {
             $ParentLink = '/'
         }
 
-        $item = Get-Item '..'
+        $item = Get-Item -Path $DirectoryInfo.Parent.FullName -Force -ErrorAction Stop
+        $null = $htmlContent.Append('<tr>')
 
         if ($windowsMode) {
-            $htmlContent.Append("<tr> <td class='mode'>")
-            $htmlContent.Append($item.Mode)
+            $null = $htmlContent.Append("<td class='mode'>$($item.Mode)</td>")
         }
         else {
-            $htmlContent.Append("<tr> <td class='unixMode'>")
-            $htmlContent.Append($item.UnixMode)
-            $htmlContent.Append("</td> <td class='user'>")
-            $htmlContent.Append($item.User)
-            $htmlContent.Append("</td> <td class='group'>")
-            $htmlContent.Append($item.Group)
+            $null = $htmlContent.Append("<td class='unixMode'>$($item.UnixMode)</td>")
+            $null = $htmlContent.Append("<td class='user'>$($item.User)</td>")
+            $null = $htmlContent.Append("<td class='group'>$($item.Group)</td>")
         }
 
-        $htmlContent.Append("</td> <td class='dateTime'>")
-        $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
-        $htmlContent.Append("</td> <td class='dateTime'>")
-        $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
-        $htmlContent.Append( "</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder2-open'></td> <td class='name'><a href='")
-        $htmlContent.Append($ParentLink)
-        $htmlContent.AppendLine("'>..</a></td> </tr>")
+        $null = $htmlContent.Append("<td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td>")
+        $null = $htmlContent.Append("<td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td>")
+        $null = $htmlContent.Append("<td class='size'></td>")
+        $null = $htmlContent.Append("<td class='icon'><span class='icon icon-folder'></span></td>")
+        $null = $htmlContent.Append("<td class='name'><a href='$($ParentLink)'>..</a></td>")
+        $null = $htmlContent.AppendLine('</tr>')
     }
 
     # Retrieve the child items of the specified directory
-    $child = Get-ChildItem -Path $Path -Force
-    foreach ($item in $child) {
+    $children = Get-ChildItem -Path $DirectoryInfo.FullName -Force -ErrorAction Stop
+
+    foreach ($item in $children) {
         $link = "$baseLink/$([uri]::EscapeDataString($item.Name))"
         if ($item.PSIsContainer) {
             $size = ''
-            $icon = '📁'
+            $icon = 'folder'
         }
         else {
             $size = '{0:N2}KB' -f ($item.Length / 1KB)
-            $icon = '📄'
+            $icon = 'file'
         }
 
         # Format each item as an HTML row
+        $null = $htmlContent.Append('<tr>')
+
         if ($windowsMode) {
-            $htmlContent.Append("<tr> <td class='mode'>")
-            $htmlContent.Append($item.Mode)
+            $null = $htmlContent.Append("<td class='mode'>$($item.Mode)</td>")
         }
         else {
-            $htmlContent.Append("<tr> <td class='unixMode'>")
-            $htmlContent.Append($item.UnixMode)
-            $htmlContent.Append("</td> <td class='user'>")
-            $htmlContent.Append($item.User)
-            $htmlContent.Append("</td> <td class='group'>")
-            $htmlContent.Append($item.Group)
+            $null = $htmlContent.Append("<td class='unixMode'>$($item.UnixMode)</td>")
+            $null = $htmlContent.Append("<td class='user'>$($item.User)</td>")
+            $null = $htmlContent.Append("<td class='group'>$($item.Group)</td>")
         }
 
-        $htmlContent.Append("</td> <td class='dateTime'>")
-        $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
-        $htmlContent.Append("</td> <td class='dateTime'>")
-        $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
-        $htmlContent.Append("</td> <td class='size'>")
-        $htmlContent.Append($size)
-        $htmlContent.Append("</td> <td class='icon'>")
-        $htmlContent.Append($icon)
-        $htmlContent.Append("</td> <td class='name'><a href='")
-        $htmlContent.Append($link)
-        $htmlContent.Append("'>")
-        $htmlContent.Append($item.Name)
-        $htmlContent.AppendLine('</a></td> </tr>')
+        $null = $htmlContent.Append("<td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td>")
+        $null = $htmlContent.Append("<td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td>")
+        $null = $htmlContent.Append("<td class='size'>$($size)</td>")
+        $null = $htmlContent.Append("<td class='icon'><span class='icon icon-$($icon)'></span></td>")
+        $null = $htmlContent.Append("<td class='name'><a href='$($link)'>$($item.Name)</a></td>")
+        $null = $htmlContent.AppendLine('</tr>')
     }
 
     $Data = @{
@@ -483,7 +472,7 @@ function Write-PodeAttachmentResponseInternal {
 
     # file browsing is enabled, use the directory response function
     if ($FileInfo.PSIsContainer) {
-        Write-PodeDirectoryResponseInternal -FileInfo $FileInfo
+        Write-PodeDirectoryResponseInternal -DirectoryInfo $FileInfo
         return
     }
 
