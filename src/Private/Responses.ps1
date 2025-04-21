@@ -84,8 +84,6 @@ function Show-PodeErrorPage {
     Write-PodeFileResponse -Path $errorPage.Path -Data $data -ContentType $errorPage.ContentType
 }
 
-
-
 <#
 .SYNOPSIS
 Serves files as HTTP responses in a Pode web server, handling both dynamic and static content.
@@ -97,6 +95,9 @@ For static content, it simply returns the file's content. The function allows fo
 
 .PARAMETER Path
 The relative path to the file to be served. This path is resolved against the server's root directory.
+
+.PARAMETER FileInfo
+A FileSystemInfo object to use instead of the path.
 
 .PARAMETER Data
 A hashtable of data that can be passed to the view engine for dynamic files.
@@ -133,12 +134,15 @@ None. The function writes directly to the HTTP response stream.
 This is an internal function and may change in future releases of Pode.
 #>
 function Write-PodeFileResponseInternal {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
+    [CmdletBinding(DefaultParameterSetName = 'Path')]
+    param(
+        [Parameter(Mandatory = $true, ParameterSetName = 'Path')]
         [string]
         $Path,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileInfo')]
+        [System.IO.FileSystemInfo]
+        $FileInfo,
 
         [Parameter()]
         $Data = @{},
@@ -165,72 +169,68 @@ function Write-PodeFileResponseInternal {
         $NoEscape
     )
 
-    # escape the path
-    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+    # if the file info isn't supplied, get it from the path
+    if ($null -eq $FileInfo) {
+        $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+        $FileInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
+    }
 
-    # Attempt to retrieve information about the path
-    $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
-
-    if (!$pathinfo) {
+    # if the file info is still null, return
+    if ($null -eq $FileInfo) {
         return
     }
 
-    # Check if the path is a directory
-    if ( $pathInfo.PSIsContainer) {
-        # If directory browsing is enabled, use the directory response function
-        Write-PodeDirectoryResponseInternal -Path $Path
+    # Check if the path is a directory, and if enabled, use the directory response function
+    if ($FileInfo.PSIsContainer) {
+        Write-PodeDirectoryResponseInternal -FileInfo $FileInfo
+        return
     }
-    else {
-        # are we dealing with a dynamic file for the view engine? (ignore html)
-        # Determine if the file is dynamic and should be processed by the view engine
-        $mainExt = $pathInfo.Extension.TrimStart('.')
 
-        # generate dynamic content
-        if (![string]::IsNullOrWhiteSpace($mainExt) -and (
-                ($mainExt -ieq 'pode') -or
-                ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
-            )
-        ) {
-            # Process dynamic content with the view engine
-            $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
+    # are we dealing with a dynamic file for the view engine? (ignore html)
+    # Determine if the file is dynamic and should be processed by the view engine
+    $mainExt = $FileInfo.Extension.TrimStart('.')
 
-            # Determine the correct content type for the response
-            # get the sub-file extension, if empty, use original
-            $subExt = [System.IO.Path]::GetExtension($pathInfo.BaseName).TrimStart('.')
+    # generate dynamic content
+    if (![string]::IsNullOrEmpty($mainExt) -and (
+            ($mainExt -ieq 'pode') -or
+            ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
+        )
+    ) {
+        # Process dynamic content with the view engine
+        $content = Get-PodeFileContentUsingViewEngine -FileInfo $FileInfo -Data $Data
 
-            $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
+        # Determine the correct content type for the response
+        # get the sub-file extension, if empty, use original
+        $subExt = [System.IO.Path]::GetExtension($FileInfo.BaseName).TrimStart('.')
+        $subExt = Protect-PodeValue -Value $subExt -Default $mainExt
+        $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt)
 
-            $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
-
-            # Write the processed content as the HTTP response
-            Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
-        }
-        # this is a static file
-        else {
-            try {
-                if (Test-PodeIsPSCore) {
-                    $content = (Get-Content -Path $Path -Raw -AsByteStream)
-                }
-                else {
-                    $content = (Get-Content -Path $Path -Raw -Encoding byte)
-                }
-                # Determine and set the content type for static files
-                $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
-                # Write the file content as the HTTP response
-                Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
-                return
-            }
-            catch [System.UnauthorizedAccessException] {
-                $statusCode = 401
-            }
-            catch {
-                $statusCode = 400
-            }
-            # If the file does not exist, set the HTTP response status code appropriately
-            Set-PodeResponseStatus -Code $StatusCode
-
-        }
+        # Write the processed content as the HTTP response
+        Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
+        return
     }
+
+    # this is a static file
+    try {
+        # load the file content
+        $content = Read-PodeFileContent -FileInfo $FileInfo
+
+        # Determine and set the content type for static files
+        $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
+
+        # Write the file content as the HTTP response
+        Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+        return
+    }
+    catch [System.UnauthorizedAccessException] {
+        $statusCode = 401
+    }
+    catch {
+        $statusCode = 400
+    }
+
+    # If the file does not exist, set the HTTP response status code appropriately
+    Set-PodeResponseStatus -Code $StatusCode
 }
 
 <#
@@ -246,6 +246,9 @@ serves the file directly.
 .PARAMETER Path
 The relative path to the directory that should be displayed. This path is resolved and used to generate a list of contents.
 
+.PARAMETER FileInfo
+A FileSystemInfo object to use instead of the path.
+
 .PARAMETER NoEscape
 If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
 
@@ -260,24 +263,34 @@ Generates and serves an HTML page that lists the contents of the './static' dire
 This is an internal function and may change in future releases of Pode.
 #>
 function Write-PodeDirectoryResponseInternal {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
+    [CmdletBinding(DefaultParameterSetName = 'Path')]
+    param(
+        [Parameter(Mandatory = $true, ParameterSetName = 'Path')]
         [string]
         $Path,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileInfo')]
+        [System.IO.FileSystemInfo]
+        $FileInfo,
 
         [switch]
         $NoEscape
     )
 
+    # if we have no path, build it from the file info
+    if ($null -ne $FileInfo) {
+        $Path = $FileInfo.FullName.Replace($FileInfo.PSDrive.Root.TrimEnd('\', '/'), "$($FileInfo.PSDrive.Name):")
+    }
+
     # escape the path
-    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+    else {
+        $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+    }
 
     # Attempt to retrieve information about the path
     if ($WebEvent.Path -eq '/') {
         $leaf = '/'
-        $rootPath = '/'
+        $rootPath = [string]::Empty
     }
     else {
         # get leaf of current physical path, and set root path
@@ -313,11 +326,14 @@ function Write-PodeDirectoryResponseInternal {
             Set-PodeResponseStatus -Code 404
             return
         }
+
         $ParentLink = $baseLink.Substring(0, $LastSlash)
         if ([string]::IsNullOrWhiteSpace($ParentLink)) {
             $ParentLink = '/'
         }
+
         $item = Get-Item '..'
+
         if ($windowsMode) {
             $htmlContent.Append("<tr> <td class='mode'>")
             $htmlContent.Append($item.Mode)
@@ -330,6 +346,7 @@ function Write-PodeDirectoryResponseInternal {
             $htmlContent.Append("</td> <td class='group'>")
             $htmlContent.Append($item.Group)
         }
+
         $htmlContent.Append("</td> <td class='dateTime'>")
         $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
         $htmlContent.Append("</td> <td class='dateTime'>")
@@ -365,19 +382,20 @@ function Write-PodeDirectoryResponseInternal {
             $htmlContent.Append("</td> <td class='group'>")
             $htmlContent.Append($item.Group)
         }
+
         $htmlContent.Append("</td> <td class='dateTime'>")
         $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
         $htmlContent.Append("</td> <td class='dateTime'>")
         $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
         $htmlContent.Append("</td> <td class='size'>")
-        $htmlContent.Append( $size)
-        $htmlContent.Append( "</td> <td class='icon'>")
-        $htmlContent.Append( $icon)
-        $htmlContent.Append( "</td> <td class='name'><a href='")
-        $htmlContent.Append( $link)
-        $htmlContent.Append( "'>")
-        $htmlContent.Append($item.Name )
-        $htmlContent.AppendLine('</a></td> </tr>' )
+        $htmlContent.Append($size)
+        $htmlContent.Append("</td> <td class='icon'>")
+        $htmlContent.Append($icon)
+        $htmlContent.Append("</td> <td class='name'><a href='")
+        $htmlContent.Append($link)
+        $htmlContent.Append("'>")
+        $htmlContent.Append($item.Name)
+        $htmlContent.AppendLine('</a></td> </tr>')
     }
 
     $Data = @{
@@ -393,8 +411,6 @@ function Write-PodeDirectoryResponseInternal {
     Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data -NoEscape
 }
 
-
-
 <#
 .SYNOPSIS
 Sends a file as an attachment in the response, supporting both file streaming and directory browsing options.
@@ -404,6 +420,9 @@ The Write-PodeAttachmentResponseInternal function is designed to handle HTTP res
 
 .PARAMETER Path
 The path to the file or directory. This parameter is mandatory and accepts pipeline input. The function resolves relative paths based on the server's root directory.
+
+.PARAMETER FileInfo
+A FileSystemInfo object to use instead of the path.
 
 .PARAMETER ContentType
 The MIME type of the file being served. This is validated against a pattern to ensure it's in the format 'type/subtype'. If not specified, the function attempts to determine the content type based on the file extension.
@@ -429,11 +448,15 @@ Lists the contents of the './files' directory if the FileBrowser switch is enabl
 - This is an internal function and may change in future releases of Pode.
 #>
 function Write-PodeAttachmentResponseInternal {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
+    [CmdletBinding(DefaultParameterSetName = 'Path')]
+    param(
+        [Parameter(Mandatory = $true, ParameterSetName = 'Path')]
         [string]
         $Path,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileInfo')]
+        [System.IO.FileSystemInfo]
+        $FileInfo,
 
         [Parameter()]
         [string]
@@ -447,68 +470,40 @@ function Write-PodeAttachmentResponseInternal {
         $NoEscape
     )
 
-    # escape the path
-    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+    # if the file info isn't supplied, get it from the path
+    if ($null -eq $FileInfo) {
+        $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+        $FileInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
+    }
 
-    # Attempt to retrieve information about the path
-    $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
-    if (!$pathInfo) {
+    # if the file info is still null, return
+    if ($null -eq $FileInfo) {
         return
     }
 
-    # Check if the path exists
-    if ($null -eq $pathInfo) {
+    # file browsing is enabled, use the directory response function
+    if ($FileInfo.PSIsContainer) {
+        Write-PodeDirectoryResponseInternal -FileInfo $FileInfo
         return
     }
 
-    if ( $pathInfo.PSIsContainer) {
-        # file browsing is enabled, use the directory response function
-        Write-PodeDirectoryResponseInternal -Path $Path
+    # setup the content type and disposition
+    if ([string]::IsNullOrEmpty($ContentType)) {
+        $ContentType = Get-PodeContentType -Extension $FileInfo.Extension
+    }
+
+    $WebEvent.Response.ContentType = $ContentType
+    Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($FileInfo.Name)"
+
+    # if serverless, get the content raw and return
+    if (!$WebEvent.Streamed) {
+        $WebEvent.Response.Body = Read-PodeFileContent -FileInfo $FileInfo
         return
     }
 
-    try {
-        # setup the content type and disposition
-        if (!$ContentType) {
-            $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $pathInfo.Extension)
-        }
-        else {
-            $WebEvent.Response.ContentType = $ContentType
-        }
+    # else if normal, stream the content back
+    $WebEvent.Response.SendChunked = $false
 
-        Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($pathInfo.Name)"
-
-        # if serverless, get the content raw and return
-        if (!$WebEvent.Streamed) {
-            if (Test-PodeIsPSCore) {
-                $content = (Get-Content -Path $Path -Raw -AsByteStream)
-            }
-            else {
-                $content = (Get-Content -Path $Path -Raw -Encoding byte)
-            }
-            $WebEvent.Response.Body = $content
-        }
-
-        # else if normal, stream the content back
-        else {
-            # setup the response details and headers
-            $WebEvent.Response.SendChunked = $false
-
-            # set file as an attachment on the response
-            $buffer = [byte[]]::new(64 * 1024)
-            $read = 0
-
-            # open up the file as a stream
-            $fs = (Get-Item $Path).OpenRead()
-            $WebEvent.Response.ContentLength64 = $fs.Length
-
-            while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
-            }
-        }
-    }
-    finally {
-        Close-PodeDisposable -Disposable $fs
-    }
-
+    # set file as an attachment on the response
+    $WebEvent.Response.WriteFile($FileInfo)
 }

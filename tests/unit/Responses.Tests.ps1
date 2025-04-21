@@ -7,6 +7,10 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
+    # Import Pode Assembly
+    $helperPath = (Split-Path -Parent -Path $path) -ireplace 'unit', 'shared'
+    . "$helperPath/TestHelper.ps1"
+    Import-PodeAssembly -SrcPath $src
 }
 
 Describe 'Set-PodeResponseStatus' {
@@ -431,7 +435,7 @@ Describe 'Write-PodeFileResponse' {
 
 
     It 'Loads the contents of a dynamic file' {
-        Mock Test-PodePath { return @{ PSIsContainer = $false ; extension = '.pode' } }
+        Mock Test-PodePath { return [System.IO.FileInfo]::new((Join-Path $src '../examples/views/simple.pode')) }
         Mock Get-PodeRelativePath { return $Path }
         Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
         Mock Write-PodeTextResponse { return $Value }
@@ -443,8 +447,7 @@ Describe 'Write-PodeFileResponse' {
     }
 
     It 'Loads the contents of a static file' {
-
-        Mock Test-PodePath { return @{ PSIsContainer = $false ; extension = '.pode' } }
+        Mock Test-PodePath { return [System.IO.FileInfo]::new((Join-Path $src '../examples/views/simple.pode')) }
         Mock Get-PodeRelativePath { return $Path }
         Mock Get-Content { return 'file contents' }
         Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
@@ -468,20 +471,17 @@ Describe 'Use-PodePartialView' {
     }
 
     It 'Throws an error for a path that does not exist' {
-        Mock Test-PodePath { return $false }
+        Mock Test-PodePath { return $null }
         { Use-PodePartialView -Path 'sub-view.pode' } | Should -Throw -ExpectedMessage ($PodeLocale.viewsPathDoesNotExistExceptionMessage -f '*' ) # The Views path does not exist: sub-view.pode'
     }
 
-
-
-
     It 'Returns file contents, and appends view engine' {
-        Mock Test-PodePath { return $true }
+        Mock Test-PodePath { return [System.IO.FileInfo]::new('./sub-view.pode') }
         Use-PodePartialView -Path 'sub-view' | Should -Be 'file contents'
     }
 
     It 'Returns file contents' {
-        Mock Test-PodePath { return $true }
+        Mock Test-PodePath { return [System.IO.FileInfo]::new('./sub-view.pode') }
         Use-PodePartialView -Path 'sub-view.pode' | Should -Be 'file contents'
     }
 }
@@ -557,18 +557,14 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
         Mock Get-PodeContentType { return 'application/octet-stream' }
         Mock Find-PodePublicRoute {}
         Mock Get-Item {
-            return @{
-                PSIsContainer = $false
-                Name          = 'myfile.txt'
-                Extension     = '.txt'
-                OpenRead      = { [System.IO.MemoryStream]::new([System.Text.Encoding]::UTF8.GetBytes('Test file content')) }
-            }
+            return [System.IO.FileInfo]::new('myfile.txt')
         }
+        Mock Read-PodeFileContent { return [System.Text.Encoding]::UTF8.GetBytes('Test file content') }
         Mock Set-PodeHeader {}
-
     }
+
     BeforeEach {
-        $WebEvent = @{Response = @{} }
+        $WebEvent = @{ Response = @{} }
     }
 
     It 'Sets response status to 404 if file does not exist' {
@@ -589,14 +585,11 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
 
     It 'Returns directory listing if FileBrowser is present and path is a directory' {
         Mock Get-Item {
-            return @{
-                PSIsContainer = $true
-                Name          = 'mydirectory'
-            }
+            $dir = [System.IO.FileInfo]::new($pwd)
+            $dir | Add-Member -Name 'PSIsContainer' -Value $true -MemberType NoteProperty -PassThru
         }
 
         Write-PodeAttachmentResponseInternal -Path 'mydirectory' -FileBrowser
-
         Should -Invoke Write-PodeDirectoryResponseInternal -Times 1 -Scope It
     }
 
