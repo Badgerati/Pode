@@ -1,4 +1,4 @@
-function Measure-AvoidNewObjectRule {
+function Measure-AvoidWhereObjectRule {
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('AvoidForEachObjectRule', '')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSProvideCommentHelp', '')]
@@ -15,16 +15,16 @@ function Measure-AvoidNewObjectRule {
     $diagnostics = @()
 
     try {
-        # Traverse the AST to find all instances of New-Object cmdlet
+        # Traverse the AST to find all instances of Where-Object cmdlet
         $ScriptBlockAst.FindAll({
                 param($Ast)
                 $Ast -is [System.Management.Automation.Language.CommandAst] -and
-                $Ast.CommandElements[0].Extent.Text -eq 'New-Object'
+                $Ast.CommandElements[0].Extent.Text -eq 'Where-Object'
             }, $true) | ForEach-Object {
             $diagnostics += [PSCustomObject]@{
-                Message    = "Avoid using 'New-Object' and use '::new()' instead."
+                Message    = "Avoid using 'Where-Object' and use 'foreach() { if() }' instead."
                 Extent     = $_.Extent
-                RuleName   = 'AvoidNewObjectRule'
+                RuleName   = 'AvoidWhereObjectRule'
                 Severity   = 'Warning'
                 ScriptName = $FileName
             }
@@ -38,4 +38,4 @@ function Measure-AvoidNewObjectRule {
     }
 }
 
-Export-ModuleMember -Function Measure-AvoidNewObjectRule
+Export-ModuleMember -Function Measure-AvoidWhereObjectRule
