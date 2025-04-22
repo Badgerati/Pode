@@ -62,8 +62,6 @@
     - Remove-Module: Removes the Pode module from the local registry.
     - SetupPowerShell: Sets up the PowerShell environment for the build.
     - ReleaseNotes: Generates release notes based on merged pull requests.
-    - Sort-LanguageFiles: Sort Language resource files
-    - AutoMerge-LanguageFiles: Automerge Language Resource files.
 
 .EXAMPLE
     Invoke-Build -Task Default
@@ -123,6 +121,7 @@ $Versions = @{
     DotNet      = $SdkVersion
     MkDocsTheme = '9.6.12'
     PlatyPS     = '0.14.2'
+    Yarn        = '1.22.22'
 }
 
 
@@ -884,128 +883,6 @@ function Split-PodeBuildPwshPath {
     }
 }
 
-<#
-.SYNOPSIS
-  Processes language resource files and standardizes their formatting.
-
-.DESCRIPTION
-  This function scans for `Pode.psd1` language resource files within the specified `Locales` directory.
-  It normalizes key-value pairs, removes duplicate keys while preserving the last occurrence, and
-  organizes messages into Exception Messages and General Messages. The cleaned and formatted content
-  is then written back to the respective files.
-
-.PARAMETER None
-  This function does not accept parameters. It operates on files found within `./src/Locales`.
-
-.OUTPUTS
-  None. The function modifies `Pode.psd1` files directly by updating their content.
-
-.EXAMPLE
-  Group-LanguageResource
-  Processes all `Pode.psd1` files in `./src/Locales`, normalizes their format, and removes duplicates.
-
-.NOTES
-  - This function ensures that all messages are consistently formatted and sorted.
-  - Duplicate keys are detected, with only the first occurrence being retained.
-  - Exception messages are grouped separately from general messages.
-  - The function enforces single-quoted values while escaping any existing single quotes.
-#>
-function Group-LanguageResource {
-    $localePath = './src/Locales'
-    $files = Get-ChildItem -Path $localePath -Filter 'Pode.psd1' -Recurse
-
-    foreach ($file in $files) {
-        Write-Host "Processing file: $($file.FullName)"
-
-        # Read raw content
-        $content = Get-Content $file.FullName -Raw
-
-        $normalized = [regex]::Replace(
-            $content,
-            '(?m)^(?<key>\s*[^=\s]+)\s*=\s*(")(?<value>.*?)(")\s*$',
-            {
-                param($match)
-                # Get the value and double any single quotes within it
-                $value = $match.Groups['value'].Value -replace "'", "''"
-                # Build the new line using single quotes
-                return "$($match.Groups['key'].Value) = '$value'"
-            }
-        )
-
-
-        # Extract keys and values using improved regex to support accented characters
-        $matches = [regex]::Matches($normalized, "(?m)^\s*([^=\s]+)\s*=\s*'(.*?)'\s*$")
-
-
-        # Use a hashtable to track unique keys and remove duplicates
-        $uniqueMessages = [ordered]@{}
-        foreach ($match in $matches) {
-            $key = $match.Groups[1].Value
-            $value = $match.Groups[2].Value
-
-            if (  $uniqueMessages.Contains($key)) {
-                Write-Warning "Duplicate key '$key' found in $($file.Name). Keeping only the second occurrence."
-            }
-            $uniqueMessages[$key] = $value
-        }
-
-        # Sort keys
-        $sortedKeys = $uniqueMessages.Keys | Sort-Object
-
-        # Split into Exception and General Messages
-        $exceptionMessages = [ordered]@{}
-        $generalMessages = [ordered]@{}
-
-        foreach ($key in $sortedKeys) {
-            if ($key -match 'ExceptionMessage$') {
-                $exceptionMessages[$key] = $uniqueMessages[$key]
-            }
-            else {
-                $generalMessages[$key] = $uniqueMessages[$key]
-            }
-        }
-
-        $maxLength = ($sortedKeys | Measure-Object -Property Length -Maximum).Maximum + 1
-
-        # Build the file content
-        $lines = @()
-        $lines += '@{'
-        $lines += '    # -------------------------------'
-        $lines += '    # Exception Messages'
-        $lines += '    # -------------------------------'
-
-        foreach ($key in $exceptionMessages.Keys) {
-            $padding = ' ' * ($maxLength - $key.Length)
-            # Replace single quotes only if they're not already escaped
-            $escapedValue = [regex]::Replace($exceptionMessages[$key], "(?<!')'(?!')", "''")
-            $lines += "    $key$padding= '$escapedValue'"
-        }
-
-        $lines += ''
-        $lines += '    # -------------------------------'
-        $lines += '    # General Messages'
-        $lines += '    # -------------------------------'
-
-        foreach ($key in $generalMessages.Keys) {
-            $padding = ' ' * ($maxLength - $key.Length)
-            # Replace single quotes only if they're not already escaped
-            $escapedValue = [regex]::Replace($generalMessages[$key], "(?<!')'(?!')", "''")
-            $lines += "    $key$padding= '$escapedValue'"
-        }
-
-        $lines += '}'
-
-        # Write the updated content back to the file
-        [System.IO.File]::WriteAllText(
-            $file.FullName,
-            ($lines -join "`r`n") + "`r`n",
-            [System.Text.UTF8Encoding]::new($false)
-        )
-
-        Write-Host "Updated file: $($file.FullName)"
-    }
-}
-
 # Check if the script is running under Invoke-Build
 if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
     Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
@@ -1053,10 +930,7 @@ Add-BuildTask Default {
     Write-Host '- CleanDocs: Cleans up generated documentation files.'
     Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
     Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
-    Write-Host '- Sort-LanguageFiles: Sort Language resource files.'
-    Write-Host '- AutoMerge-LanguageFiles: Automerge Language Resource files.'
 }
-
 
 <#
 # Helper Tasks
@@ -1126,6 +1000,10 @@ Add-BuildTask BuildDeps {
     }
     elseif ($majorVersions -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
         Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
+    }
+
+    if (!(Test-PodeBuildCommand 'yarn')) {
+        Invoke-PodeBuildInstall 'yarn' $Versions.Yarn
     }
 
 }
@@ -1230,10 +1108,13 @@ Add-BuildTask Build BuildDeps, Yarn, {
 # synopsis: Download the nmpm packages to pode_modules folder
 Add-BuildTask  Yarn {
     if ($PSVersionTable.PSEdition -eq 'Desktop') {
-        yarn install --force --ignore-scripts --modules-folder pode_modules
+        yarn install --force --ignore-scripts --ignore-optional --ignore-engines --modules-folder pode_modules
     }
     else {
-        yarn install --force --ignore-scripts --modules-folder pode_modules 2>&1 | Select-String -NotMatch '^warning'
+        yarn install --force --ignore-scripts --ignore-optional --ignore-engines  --modules-folder pode_modules 2>&1 | Select-String -NotMatch '^warning'
+    }
+    if (!$? -or ($LASTEXITCODE -ne 0)) {
+        throw "yarn install failed with exit code $($LASTEXITCODE)"
     }
 }, MoveLibs
 
@@ -1243,11 +1124,11 @@ Add-BuildTask MoveLibs {
 
     # Define source and target
     $NodeModules = Join-Path -Path $PSScriptRoot -ChildPath 'pode_modules'
-    $Target = Join-Path -Path $PSScriptRoot -ChildPath '/src/Misc/third_party'
+    $Target = Join-Path -Path $PSScriptRoot -ChildPath '/src/Misc/libs'
 
     # Clean third_party (optional: only if you want to start fresh)
     if (Test-Path $Target) {
-        Remove-Item -Recurse -Force -Path $Target
+        Remove-Item -Recurse -Force -Path $Target | Out-Null
     }
     New-Item -ItemType Directory -Force -Path $Target | Out-Null
 
@@ -1281,13 +1162,8 @@ Add-BuildTask MoveLibs {
     foreach ($Item in $CopyList) {
         $DestFolder = $Item.To
         New-Item -ItemType Directory -Force -Path $DestFolder | Out-Null
+        Copy-Item -Force -Path $Item.From -Destination $DestFolder
 
-        if ($Item.ContainsKey('Recurse') -and $Item.Recurse) {
-            Copy-Item -Recurse -Force -Path $Item.From -Destination $DestFolder
-        }
-        else {
-            Copy-Item -Force -Path $Item.From -Destination $DestFolder
-        }
     }
 
     Write-Output "All third-party files copied to $Target"
@@ -1602,7 +1478,7 @@ Add-BuildTask CleanYarn {
         Write-Host "Removing $path"
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
-    $path = Join-Path -Path $PSScriptRoot -ChildPath '/src/Misc/third_party'
+    $path = Join-Path -Path $PSScriptRoot -ChildPath '/src/Misc/libs'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing $path"
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -1913,39 +1789,4 @@ task ReleaseNotes {
         $categories[$category] | Sort-Object | ForEach-Object { Write-Host $_ }
         Write-Host ''
     }
-}
-
-
-
-Add-BuildTask Sort-LanguageFiles {
-    Group-LanguageResource
-}
-
-# Adds a build task to automatically merge conflicting language files.
-# This task identifies unresolved merge conflicts in the 'src/Locales/' directory and attempts to resolve them by:
-# 1. Detecting files with merge conflicts using `git diff --name-only --diff-filter=U`.
-# 2. Removing Git conflict markers (`<<<<<<< HEAD`, `=======`, and `>>>>>>> pr-<number>`),
-#    dynamically detecting the PR number from the conflict markers.
-# 3. Running `Group-LanguageResource` to ensure language resources are correctly formatted.
-# 4. Staging the resolved files (`git add ./src/Locales/*`).
-# 5. Printing status messages for visibility during execution.
-Add-BuildTask AutoMerge-LanguageFiles {
-    Write-Output 'Attempting auto-merge for language files...'
-
-    # Identify files with unresolved merge conflicts in 'src/Locales/'.
-    git diff --name-only --diff-filter=U ./src/Locales/ | ForEach-Object {
-        $content = Get-Content $_ -Raw
-        if ($content -match '>>>>>>> pr-(\d+)') {
-            # Remove Git conflict markers, dynamically resolving PR numbers
-            $content -replace '<<<<<<< HEAD', '' -replace '=======', '' -replace ">>>>>>> pr-$($matches[1])", '' | Set-Content $_
-        }
-    }
-
-    # Ensure language resources are formatted and grouped correctly.
-    Group-LanguageResource
-
-    # Stage the resolved files.
-    git add ./src/Locales/*
-
-    Write-Output 'Language files auto-merged.'
 }
