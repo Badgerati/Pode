@@ -1429,10 +1429,10 @@ function ConvertTo-PodeResponseContent {
         { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
+                    return (ConvertTo-PodeYaml -InputObject $InputObject )
                 }
                 else {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
+                    return (ConvertTo-PodeYaml -InputObject $InputObject -Depth $Depth  )
                 }
             }
 
@@ -1566,15 +1566,24 @@ function ConvertFrom-PodeRequestContent {
     switch ($ContentType) {
         { $_ -ilike '*/json' } {
             if (Test-PodeIsPSCore) {
-                $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
+                $Result.Data = ($Content | ConvertFrom-Json -AsHashtable:$PodeContext.Server.Web.Conversion.JsonToHashTable)
             }
             else {
-                $Result.Data = ($Content | ConvertFrom-Json)
+                if ($PodeContext.Server.Web.Conversion.JsonToHashTable) {
+                    $Result.Data = ConvertTo-PodeHashtable -PSObject ($Content | ConvertFrom-Json)
+                }
+                else {
+                    $Result.Data = ($Content | ConvertFrom-Json)
+                }
             }
         }
 
         { $_ -ilike '*/xml' } {
             $Result.Data = [xml]($Content)
+        }
+
+        { $_ -ilike '*/yaml' } {
+            $Result.Data = ($Content | ConvertFrom-PodeYaml -AsHashtable:$PodeContext.Server.Web.Conversion.YamlToHashTable)
         }
 
         { $_ -ilike '*/csv' } {
@@ -3397,66 +3406,6 @@ function Test-PodeVersionPwshEOL {
     }
 }
 
-
-<#
-.SYNOPSIS
-    creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
-
-.DESCRIPTION
-    This produces YAML from any object you pass to it.
-
-.PARAMETER Object
-    The object that you want scripted out. This parameter accepts input via the pipeline.
-
-.PARAMETER Depth
-    The depth that you want your object scripted to
-
-.EXAMPLE
-    Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
-#>
-function ConvertTo-PodeYaml {
-    [CmdletBinding()]
-    [OutputType([string])]
-    param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-        [AllowNull()]
-        $InputObject,
-
-        [parameter()]
-        [int]
-        $Depth = 16
-    )
-
-    begin {
-        $pipelineObject = @()
-    }
-
-    process {
-        $pipelineObject += $_
-    }
-
-    end {
-        if ($pipelineObject.Count -gt 1) {
-            $InputObject = $pipelineObject
-        }
-
-        if ($PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
-            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
-        }
-
-        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
-            $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
-        }
-
-        if ($PodeContext.Server.InternalCache.YamlModuleImported) {
-            return ($InputObject | ConvertTo-Yaml)
-        }
-        else {
-            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
-        }
-    }
-}
-
 <#
 .SYNOPSIS
     Converts PowerShell objects into a YAML-formatted string.
@@ -3555,7 +3504,7 @@ function ConvertTo-PodeYamlInternal {
             'string' {
                 $String = "$InputObject"
                 if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
-                    $multiline = [System.Text.StringBuilder]::new("|`n")
+                    $multiline = [System.Text.StringBuilder]::new('|' + [Environment]::NewLine)
 
                     $items = $string.Split("`n")
                     for ($i = 0; $i -lt $items.Length; $i++) {
@@ -3618,7 +3567,7 @@ function ConvertTo-PodeYamlInternal {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
-                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = [Environment]::NewLine + $padding }
                         $null = $string.Append( $NewPadding).Append( $item).Append(': ')
                         if ($InputObject[$item] -is [System.ValueType]) {
                             if ($InputObject[$item] -is [bool]) {
@@ -3644,7 +3593,7 @@ function ConvertTo-PodeYamlInternal {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in ($InputObject | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name)) {
-                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = [Environment]::NewLine + $padding }
                         $null = $string.Append( $NewPadding).Append( $item).Append(': ')
                         if ($InputObject.$item -is [System.ValueType]) {
                             if ($InputObject.$item -is [bool]) {
@@ -3669,7 +3618,7 @@ function ConvertTo-PodeYamlInternal {
                 $string = [System.Text.StringBuilder]::new()
                 $index = 0
                 foreach ($item in $InputObject ) {
-                    if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                    if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = [Environment]::NewLine +$padding }
                     $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
                 }
                 $string.ToString()
@@ -3997,6 +3946,165 @@ function ConvertTo-PodeSleep {
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }
+
+
+
+
+<#
+.SYNOPSIS
+    Converts a YAML string into a nested ordered hashtable.
+
+.DESCRIPTION
+    This function takes a YAML string as input and converts it into a nested ordered hashtable, preserving
+    the order of keys. It supports conversion of boolean, integer, float, and datetime values.
+
+.PARAMETER InputObject
+    The YAML string to be converted.
+
+.EXAMPLE
+    $yamlString = @'
+    openapi: 3.0.3
+    info:
+        title: Async test - OpenAPI 3.0
+        version: 0.0.1
+    paths:
+        /task/{taskId}:
+            get:
+                summary: Get Pode Task Info
+    '@
+
+    $hashtable = ConvertFrom-PodeYamlInternal -InputObject $yamlString
+    # Converts the YAML string to a nested ordered hashtable.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertFrom-PodeYamlInternal {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$InputObject
+    )
+    # Split the YAML input into lines
+    [string[]]$lines = $InputObject -split "`n"
+    # Initialize the main hashtable as an ordered hashtable
+    $hashtable = [ordered]@{}
+    # Stacks to keep track of current hashtable and indentation levels
+    $stack = [System.Collections.Stack]::new()
+    $indentStack = [System.Collections.Stack]::new()
+    $stack.Push($hashtable)
+    $indentStack.Push(-1)
+
+    # Iterate over each line of the YAML input
+    for ($i = 0; $i -lt $lines.Length; $i++) {
+        $line = $lines[$i]
+        if ($line -match '^(\s*)([^:]+):\s*(.*)$') {
+            $indent = $matches[1].Length
+            $key = $matches[2].Trim()
+            $value = $matches[3].Trim()
+
+            # Pop the stack if the current indentation level is less than or equal to the previous level
+            while (  $indentStack.Peek() -ge $indent) {
+                $null = $indentStack.Pop()
+                $null = $stack.Pop()
+            }
+
+            # Peek the current hashtable from the stack
+            $current = $null = $stack.Peek()
+
+            # If value is empty, create a new nested ordered hashtable
+            if ($value -eq '') {
+                $current[$key] = [ordered]@{}
+                $stack.Push($current[$key])
+                $indentStack.Push($indent)
+            }
+            # Handle inline arrays
+            elseif ($value -match '^\[(.*)\]$') {
+                $current[$key] = ($matches[1] -split ',\s*') -replace '"', ''
+            }
+            # Handle multiline strings
+            elseif ($value -eq '|') {
+                $value = ''
+                while (++$i -lt $lines.Length -and $lines[$i] -match '^\s+(.*)$') {
+                    $value += $matches[1] + "`n"
+                }
+                $i--
+                $current[$key] = $value.TrimEnd()
+            }
+            # Convert and assign the value
+            else {
+                $current[$key] = Convert-PodeStringToType $value
+            }
+        }
+        # Handle list items
+        elseif ($line -match '^\s*-\s*(.*)$') {
+            $value = $matches[1].Trim()
+            if (-not ($current[$key] -is [System.Collections.ArrayList])) {
+                $current[$key] = [System.Collections.ArrayList]::new()
+            }
+            $null = $current[$key].Add((Convert-PodeStringToType $value))
+        }
+    }
+
+    return $hashtable
+}
+
+<#
+.SYNOPSIS
+    Converts a string value to its appropriate data type (bool, int, float, datetime, or string).
+
+.DESCRIPTION
+    This function takes a string value and determines if it can be converted to a boolean, integer, float,
+    or datetime. If none of these conversions apply, it returns the original string.
+
+.PARAMETER value
+    The string value to be converted.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "true"
+    # Converts the string "true" to a boolean $true.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "123"
+    # Converts the string "123" to an integer 123.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "123.45"
+    # Converts the string "123.45" to a float 123.45.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "2021-05-01"
+    # Converts the string "2021-05-01" to a datetime object.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "some string"
+    # Returns the original string "some string".
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Convert-PodeStringToType($value) {
+    # Convert to boolean if value matches 'true' or 'false'
+    if ($value -match '^(true|false)$') {
+        return [bool]::Parse($value)
+    }
+    # Convert to integer if value matches an integer pattern
+    elseif ($value -match '^-?\d+$') {
+        return [int]::Parse($value)
+    }
+    # Convert to float if value matches a float pattern
+    elseif ($value -match '^-?\d*\.\d+$') {
+        return [float]::Parse($value)
+    }
+    # Convert to datetime if value matches a datetime pattern
+    elseif ($value -match '^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{1,3})?(Z|[+-]\d{2}:\d{2})?)?$') {
+        return [DateTime]::Parse($value)
+    }
+    # Return the original string if no other conversion applies
+    else {
+        return $value
+    }
+}
+
 
 <#
 .SYNOPSIS
