@@ -64,6 +64,8 @@
     - ReleaseNotes: Generates release notes based on merged pull requests.
     - Sort-LanguageFiles: Sort Language resource files
     - AutoMerge-LanguageFiles: Automerge Language Resource files.
+    - Format-FunctionHeaders: Formats function headers in the file to follow Pode's standard style.
+    - Refresh-HeaderFooter: Adds or refreshes the file-level header and footer using Pode's standard formatting.
 
 .EXAMPLE
     Invoke-Build -Task Default
@@ -1055,6 +1057,8 @@ Add-BuildTask Default {
     Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
     Write-Host '- Sort-LanguageFiles: Sort Language resource files.'
     Write-Host '- AutoMerge-LanguageFiles: Automerge Language Resource files.'
+    Write-Host "- Format-FunctionHeaders: Formats function headers in the file to follow Pode's standard style."
+    Write-Host "- Refresh-HeaderFooter: Adds or refreshes the file-level header and footer using Pode's standard formatting."
 }
 
 <#
@@ -1872,169 +1876,10 @@ Add-BuildTask AutoMerge-LanguageFiles {
 
     Write-Output 'Language files auto-merged.'
 }
-
-function Update-PodeFunctionFiles {
-    [CmdletBinding()]
-    param ()
-
-    $baseDirs = '.\src\Public', '.\src\Private'
-
-    foreach ($dir in $baseDirs) {
-        $isPrivate = $dir -like '*\Private'
-
-        foreach ($file in Get-ChildItem -Path $dir -Recurse -Filter *.ps1) {
-            $path = $file.FullName
-            $original = Get-Content -Raw -Path $path
-
-            #
-            #  ———  CLEAN UP ANY PREVIOUSLY‑INJECTED HEADER & FOOTER ———
-            #
-
-            # Remove an existing Pode file header block (from start-of-file through its closing #>)
-            $cleaned = $original -replace '(?ms)^<#\r?\n\s*File:[\s\S]*?#>\s*(?:\r?\n)*', ''
-            # Strip old footer (use $cleaned, not $original!)
-            $cleaned = $cleaned -replace '(?ms)#[-]{42}\r?\n# End of File[\s\S]*$', ''
-
-            # Now split on lines and work off $cleaned
-            $lines = $cleaned -split "`n"
-            $new = ''
-
-            #—— 1) Gather function names ——
-            $functions = @()
-            foreach ($ln in $lines) {
-                if ($ln -match '^\s*function\s+([a-zA-Z0-9\-_]+)\s*{') {
-                    $functions += $Matches[1]
-                }
-            }
-
-            #—— 2) Build top-of-file header ——
-            $lastModified = (Get-Item $path).LastWriteTimeUtc.ToString('yyyy-MM-dd')
-            $filename = Split-Path -Leaf $path
-            $headerLines = @(
-                '<#'
-                "    File: $filename"
-            )
-
-            $headerLines += @(
-                "    Last Modified: $lastModified"
-            )
-            if ($functions.Count) {
-                $headerLines += @(
-                    ''
-                    '    Functions:'
-                )
-                foreach ($fn in $functions) {
-                    $headerLines += "        $fn"
-                }
-            }
-            # Standard Notes section (applies to all)
-            $headerLines += @(
-                ''
-                '    Notes:'
-                '        This file is part of the Pode server framework.'
-                '        https://github.com/Badgerati/Pode'
-            )
-            if ($isPrivate) {
-                $headerLines += @(
-                    ''
-                    '    WARNING: This file may contain internal implementation details.'
-                    '    Do not use or modify unless you know what you''re doing.'
-                )
-            }
-            $headerLines += @(
-                '#>'    # single blank line before code starts
-                ''      # first blank line
-                ''      # second blank line
-            )
-            $new += ($headerLines -join "`n")
-
-            #—— 3) Re‑format any existing help blocks ——
-            $insideHelp = $false
-            $sections = @()
-            foreach ($line in $lines) {
-                switch -Regex ($line) {
-                    '^\s*<#\s*$' {
-                        $insideHelp = $true
-                        $sections = @()
-                        continue
-                    }
-                    '^\s*#>\s*$' {
-                        # inject default .NOTES on private
-                        if ($isPrivate -and -not ($sections.Where({ $_.Header -match '^\.(NOTES)\b' }).Count)) {
-                            $sections += [pscustomobject]@{
-                                Header = '.NOTES'
-                                Lines  = @('This is an internal function and may change in future releases of Pode.')
-                            }
-                        }
-                        # rebuild help block
-                        $new += '<#' + "`n"
-                        foreach ($sec in $sections) {
-                            $new += "$($sec.Header)`n"
-                            foreach ($content in $sec.Lines) {
-                                if ($content.Trim() -eq '') {
-                                    $new += "`n"
-                                }
-                                else {
-                                    if ($sec.Header -match '^\.EXAMPLE\b') {
-                                        if ($content -match '^[ ]{4}') {
-                                            $new += "$content`n"
-                                        }
-                                        else {
-                                            $new += "    $content`n"
-                                        }
-                                    }
-                                    else {
-                                        $new += "    $($content.Trim())`n"
-                                    }
-                                }
-                            }
-                        }
-                        $new += '#>' + "`n"
-                        $insideHelp = $false
-                        continue
-                    }
-                    default {
-                        if ($insideHelp) {
-                            if ($line -match '^\s*(\.(SYNOPSIS|DESCRIPTION|PARAMETER|EXAMPLE|OUTPUTS|NOTES)\b.*)') {
-                                $sections += [pscustomobject]@{
-                                    Header = $Matches[1].Trim()
-                                    Lines  = @()
-                                }
-                            }
-                            elseif ($sections) {
-                                $sections[-1].Lines += $line
-                            }
-                            continue
-                        }
-                        $new += $line + "`n"
-                    }
-                }
-            }
-
-            #  BEFORE APPENDING FOOTER: trim any trailing blank lines/spaces
-            $new = $new.TrimEnd("`r", "`n", ' ')
-
-            #  ——— APPEND A SINGLE FOOTER BLOCK ———
-            $new += "`n`n#------------------------------------------`n"
-            $new += "# End of File`n"
-            $new += "#------------------------------------------`n"
-
-            #—— 5) Normalize blank lines ——
-            # a) After '#>' collapse any run of blank lines down to exactly one real newline
-            $new = $new -replace '(?m)(#>\r?\n)(?:[ \t]*\r?\n)+(?=\s*function\b)', '$1'
-            # b) Between a closing '}' and the next '<#', enforce exactly two real newlines
-            $new = $new -replace '(?m)(\})\r?\n(?:[ \t]*\r?\n)+<#', "`$1`n`n`n<#"
-
-            #—— 6) Write if changed ——
-            if ($new -and $new -ne $original) {
-                Set-Content -Path $path -Value $new
-            }
-        }
-    }
-}
+ 
 
 
-
+# Adds or refreshes the file-level header and footer using Pode's standard formatting.
 Add-BuildTask Refresh-HeaderFooter {
     $baseDirs = '.\src\Public', '.\src\Private'
 
@@ -2109,6 +1954,9 @@ Add-BuildTask Refresh-HeaderFooter {
                 '    Notes:'
                 '        This file is part of the Pode server framework.'
                 '        https://github.com/Badgerati/Pode'
+                ''
+                '    License:'
+                '        MIT License - See LICENSE file in the project root for full license information.'
             )
             if ($isPrivate) {
                 $headerLines += @(
@@ -2139,6 +1987,8 @@ Add-BuildTask Refresh-HeaderFooter {
     }
 }
 
+
+# Automatically formats the headers of all functions to match Pode's formatting conventions.
 Add-BuildTask Format-FunctionHeaders {
     $baseDirs = '.\src\Public', '.\src\Private'
 
@@ -2246,6 +2096,8 @@ Add-BuildTask Format-FunctionHeaders {
         }
     }
 }
- 
 
+#------------------------------------------
+# End of pode.build.ps1
+#------------------------------------------
 
