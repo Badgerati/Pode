@@ -2743,7 +2743,7 @@ function Test-PodeStaticRoute {
         $Path,
 
         [Parameter()]
-        [string]
+        [string[]]
         $EndpointName
     )
 
