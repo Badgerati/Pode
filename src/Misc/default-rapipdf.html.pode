@@ -5,7 +5,6 @@
     <title>RapiPdf Web Page</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
 
     <style>
         body {
@@ -122,7 +121,7 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/rapipdf/dist/rapipdf-min.js"></script>
+    <script src="$($data.DistPath)dist/rapipdf-min.js"></script>
     <script>
         // Get all form elements
         const formElements = document.querySelectorAll("#rapipdf-form input, #rapipdf-form textarea");
