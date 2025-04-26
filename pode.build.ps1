@@ -86,6 +86,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingCmdletAliases', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUSeDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPositionalParameters', '')]
 param(
     [string]
     $Version = '0.0.0',
@@ -120,6 +121,7 @@ $Versions = @{
     DotNet      = $SdkVersion
     MkDocsTheme = '9.6.12'
     PlatyPS     = '0.14.2'
+    Yarn        = '1.22.22'
 }
 
 
@@ -881,8 +883,6 @@ function Split-PodeBuildPwshPath {
     }
 }
 
-
-
 # Check if the script is running under Invoke-Build
 if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
     Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
@@ -931,7 +931,6 @@ Add-BuildTask Default {
     Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
     Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
 }
-
 
 <#
 # Helper Tasks
@@ -1001,6 +1000,10 @@ Add-BuildTask BuildDeps {
     }
     elseif ($majorVersions -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
         Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
+    }
+
+    if (!(Test-PodeBuildCommand 'yarn')) {
+        Invoke-PodeBuildInstall 'yarn' $Versions.Yarn
     }
 
 }
@@ -1075,13 +1078,10 @@ Add-BuildTask IndexSamples {
 #>
 
 # Synopsis: Build the .NET Listener
-Add-BuildTask Build BuildDeps, {
+Add-BuildTask Build BuildDeps, Yarn, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
-
-
-
 
     # Retrieve the SDK version being used
     #   $dotnetVersion = dotnet --version
@@ -1105,7 +1105,88 @@ Add-BuildTask Build BuildDeps, {
 
 }
 
+# synopsis: Download the nmpm packages to pode_modules folder
+Add-BuildTask  Yarn {
+    if ($PSVersionTable.PSEdition -eq 'Desktop') {
+        yarn install --force --ignore-scripts --ignore-optional --ignore-engines --modules-folder pode_modules
+    }
+    else {
+        yarn install --force --ignore-scripts --ignore-optional --ignore-engines  --modules-folder pode_modules 2>&1 | Select-String -NotMatch '^warning'
+    }
+    if (!$? -or ($LASTEXITCODE -ne 0)) {
+        throw "yarn install failed with exit code $($LASTEXITCODE)"
+    }
+}, MoveLibs
 
+
+# Synopsis: Move the libraries to the public directory
+Add-BuildTask MoveLibs {
+
+    # Define source and target
+    $NodeModules = Join-Path -Path $PSScriptRoot -ChildPath 'pode_modules'
+    $Target = Join-Path -Path $PSScriptRoot -ChildPath '/src/Misc/libs'
+    $LicenseTarget = Join-Path -Path $PSScriptRoot -ChildPath '/licenses'
+
+    # Clean third_party (optional: only if you want to start fresh)
+    if (Test-Path $Target) {
+        Remove-Item -Recurse -Force -Path $Target | Out-Null
+    }
+    New-Item -ItemType Directory -Force -Path $Target | Out-Null
+
+    # Create subfolders and copy only needed files
+    $CopyList = @(
+        @{ From = "$NodeModules/swagger-ui-dist/swagger-ui.css"; To = "$Target/swagger/" },
+        @{ From = "$NodeModules/swagger-ui-dist/swagger-ui-bundle.js"; To = "$Target/swagger/" },
+        @{ From = "$NodeModules/swagger-ui-dist/LICENSE"; To = "$LicenseTarget/LICENSE.swagger-ui.txt" ; Comment = 'Project URL: https://github.com/swagger-api/swagger-ui' },
+
+        @{ From = "$NodeModules/swagger-editor-dist/swagger-editor.css"; To = "$Target/swagger-editor/" },
+        @{ From = "$NodeModules/swagger-editor-dist/swagger-editor-bundle.js"; To = "$Target/swagger-editor/" },
+        @{ From = "$NodeModules/swagger-editor-dist/swagger-editor-standalone-preset.js"; To = "$Target/swagger-editor/" },
+        @{ From = "$NodeModules/swagger-editor-dist/LICENSE"; To = "$LicenseTarget/LICENSE.swagger-editor.txt" ; Comment = 'Project URL: https://github.com/swagger-api/swagger-editor' },
+
+        @{ From = "$NodeModules/redoc/bundles/redoc.standalone.js"; To = "$Target/redoc/" },
+        @{ From = "$NodeModules/redoc/LICENSE"; To = "$LicenseTarget/LICENSE.redoc.txt"  ; Comment = 'Project URL: https://github.com/Redocly/redoc' },
+
+        @{ From = "$NodeModules/@stoplight/elements/styles.min.css"; To = "$Target/stoplight/elements/" },
+        @{ From = "$NodeModules/@stoplight/elements/web-components.min.js"; To = "$Target/stoplight/elements/" },
+        @{ From = "$NodeModules/@stoplight/elements/LICENSE"; To = "$LicenseTarget/LICENSE.stoplight.txt"  ; Comment = 'Project URL: https://github.com/stoplightio/elements' },
+
+        @{ From = "$NodeModules/@highlightjs/cdn-assets/styles/monokai-sublime.min.css"; To = "$Target/highlightjs/styles/" },
+        @{ From = "$NodeModules/@highlightjs/cdn-assets/highlight.min.js"; To = "$Target/highlightjs/" },
+        @{ From = "$NodeModules/@highlightjs/cdn-assets/LICENSE"; To = "$LicenseTarget/LICENSE.highlightjs.txt" ; Comment = 'Project URL: https://github.com/highlightjs/highlight.js' },
+
+        @{ From = "$NodeModules/rapipdf/dist/rapipdf-min.js"; To = "$Target/rapipdf/" },
+        @{ From = "$NodeModules/rapipdf/LICENSE.txt"; To = "$LicenseTarget/LICENSE.rapipdf.txt"  ; Comment = 'Project URL: https://github.com/mrin9/RapiPdf' },
+
+
+        @{ From = "$NodeModules/rapidoc/dist/rapidoc-min.js"; To = "$Target/rapidoc/" },
+        @{ From = "$NodeModules/rapidoc/LICENSE.txt"; To = "$LicenseTarget/LICENSE.rapidoc.txt"  ; Comment = 'Project URL: https://github.com/rapi-doc/RapiDoc' },
+
+        @{ From = "$NodeModules/openapi-explorer/dist/browser/openapi-explorer.min.js"; To = "$Target/explorer/browser/" }
+        @{ From = "$NodeModules/openapi-explorer/LICENSE"; To = "$LicenseTarget/LICENSE.openapi-explorer.txt"  ; Comment = 'Project URL: https://github.com/Authress-Engineering/openapi-explorer' },
+
+        @{ From = "$NodeModules/bootstrap/dist/css/bootstrap.min.css"; To = "$Target/explorer/css/" },
+
+        @{ From = "$NodeModules/bootstrap/dist/css/bootstrap.min.css"; To = "$Target/bootstrap/css/" },
+        @{ From = "$NodeModules/bootstrap/LICENSE"; To = "$LicenseTarget/LICENSE.bootstrap.txt"  ; Comment = 'Project URL: https://github.com/twbs/bootstrap' }
+    )
+
+    foreach ($Item in $CopyList) {
+        # If Comment exists, prepend it properly depending on file type
+        if ($Item.Comment) {
+            $fileContent = Get-Content -Raw -Path $Item.From
+            Set-Content -Path $Item.To -Value ($Item.Comment + "`n`n" + $fileContent)
+        }
+        else {
+            New-Item -ItemType Directory -Force -Path $Item.To | Out-Null
+            # Copy file
+            Copy-Item -Force -Path $Item.From -Destination $Item.To| Out-Null
+        }
+    }
+
+    Write-Output "All third-party files copied to $Target"
+
+}
 <#
 # Packaging
 #>
@@ -1234,9 +1315,10 @@ Add-BuildTask TestNoBuild TestDeps, {
     $configuration = [PesterConfiguration]::Default
     $configuration.run.path = @('./tests/unit', './tests/integration')
     $configuration.run.PassThru = $true
-    $configuration.TestResult.OutputFormat = 'NUnitXml'
     $configuration.Output.Verbosity = $PesterVerbosity
     $configuration.TestResult.OutputPath = $Script:TestResultFile
+    $configuration.TestResult.OutputFormat = 'NUnitXml'
+    $configuration.TestResult.Enabled = $true
 
     # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {
@@ -1315,7 +1397,7 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
                 $line = $_
 
-                while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
+                while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(] | $))') {
                     $updated = $true
                     $name = $Matches['name']
                     $char = $Matches['char']
@@ -1345,7 +1427,7 @@ Add-BuildTask DocsBuild DocsDeps, DocsHelpBuild, {
 #>
 
 # Synopsis: Clean the build enviroment
-Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
+Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs, CleanYarn
 
 # Synopsis: Clean the Deliverable folder
 Add-BuildTask CleanDeliverable {
@@ -1405,6 +1487,19 @@ Add-BuildTask CleanDocs {
     if (Test-Path -Path $path -PathType Leaf) {
         Write-Host "Removing $path"
         Remove-Item -Path $path -Force | Out-Null
+    }
+}
+
+Add-BuildTask CleanYarn {
+    $path = Join-Path -Path $PSScriptRoot -ChildPath 'pode_modules'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    $path = Join-Path -Path $PSScriptRoot -ChildPath '/src/Misc/libs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
 }
 <#
