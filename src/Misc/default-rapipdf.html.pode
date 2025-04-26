@@ -121,7 +121,7 @@
         </div>
     </div>
 
-    <script src="dist/rapipdf-min.js"></script>
+    <script src="$($data.DistPath)dist/rapipdf-min.js"></script>
     <script>
         // Get all form elements
         const formElements = document.querySelectorAll("#rapipdf-form input, #rapipdf-form textarea");

@@ -5,8 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
     <title>$($data.Title)</title>
-    <link href="dist/css/bootstrap.min.css" rel="stylesheet" >
-    <script type="module" src="dist/browser/openapi-explorer.min.js"></script>
+    <link href="$($data.DistPath)dist/css/bootstrap.min.css" rel="stylesheet" >
+    <script type="module" src="$($data.DistPath)dist/browser/openapi-explorer.min.js"></script>
     <!-- Or use a local deployed copy -->
     <!-- <script type="module" src="node_modules/openapi-explorer/dist/openapi-explorer.min.js"></script> -->
     <style>

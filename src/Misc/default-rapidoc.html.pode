@@ -4,7 +4,7 @@
 <head>
     <title>$($data.Title)</title>
     <meta charset="utf-8"> <!-- Important: rapi-doc uses utf8 characters -->
-    <script type="module" src="dist/rapidoc-min.js"></script>
+    <script type="module" src="$($data.DistPath)dist/rapidoc-min.js"></script>
 
 </head>
 

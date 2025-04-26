@@ -6,8 +6,8 @@
     <title>OpenAPI Documentation Bookmarks</title>
 
     <!-- Highlight.js styles and scripts -->
-    <link rel="stylesheet" href="dist/styles/monokai-sublime.min.css">
-    <script src="dist/highlight.min.js"></script>
+    <link rel="stylesheet" href="$($data.DistPath)dist/styles/monokai-sublime.min.css">
+    <script src="$($data.DistPath)dist/highlight.min.js"></script>
     <script>hljs.highlightAll();</script>
 
     <style>
