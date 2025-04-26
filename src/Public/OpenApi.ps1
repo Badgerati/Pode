@@ -1909,7 +1909,7 @@ function Enable-PodeOAViewer {
 
     if ($Editor.IsPresent) {
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default '/editor/'
+        $Path = Protect-PodeValue -Value $Path -Default '/editor'
 
         $DistPath = if ( $Path.EndsWith('/')) { $Path } else { "$Path/" }
 
@@ -1953,7 +1953,7 @@ function Enable-PodeOAViewer {
     }
     elseif ($Bookmarks.IsPresent) {
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default '/bookmarks/'
+        $Path = Protect-PodeValue -Value $Path -Default '/bookmarks'
         $DistPath = if ( $Path.EndsWith('/')) { $Path } else { "$Path/" }
 
         if ([string]::IsNullOrWhiteSpace($Title)) {
@@ -2009,7 +2009,7 @@ function Enable-PodeOAViewer {
             throw ($PodeLocale.rapidPdfDoesNotSupportOpenApi31ExceptionMessage)
         }
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())/"
+        $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())"
         $DistPath = if ( $Path.EndsWith('/')) { $Path } else { "$Path/" }
 
         if ([string]::IsNullOrWhiteSpace($Title)) {
