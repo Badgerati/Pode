@@ -1125,6 +1125,7 @@ Add-BuildTask MoveLibs {
     # Define source and target
     $NodeModules = Join-Path -Path $PSScriptRoot -ChildPath 'pode_modules'
     $Target = Join-Path -Path $PSScriptRoot -ChildPath '/src/Misc/libs'
+    $LicenseTarget = Join-Path -Path $PSScriptRoot -ChildPath '/licenses'
 
     # Clean third_party (optional: only if you want to start fresh)
     if (Test-Path $Target) {
@@ -1136,34 +1137,51 @@ Add-BuildTask MoveLibs {
     $CopyList = @(
         @{ From = "$NodeModules/swagger-ui-dist/swagger-ui.css"; To = "$Target/swagger/" },
         @{ From = "$NodeModules/swagger-ui-dist/swagger-ui-bundle.js"; To = "$Target/swagger/" },
+        @{ From = "$NodeModules/swagger-ui-dist/LICENSE"; To = "$LicenseTarget/LICENSE.swagger-ui.txt" ; Comment = 'Project URL: https://github.com/swagger-api/swagger-ui' },
 
         @{ From = "$NodeModules/swagger-editor-dist/swagger-editor.css"; To = "$Target/swagger-editor/" },
         @{ From = "$NodeModules/swagger-editor-dist/swagger-editor-bundle.js"; To = "$Target/swagger-editor/" },
         @{ From = "$NodeModules/swagger-editor-dist/swagger-editor-standalone-preset.js"; To = "$Target/swagger-editor/" },
+        @{ From = "$NodeModules/swagger-editor-dist/LICENSE"; To = "$LicenseTarget/LICENSE.swagger-editor.txt" ; Comment = 'Project URL: https://github.com/swagger-api/swagger-editor' },
 
         @{ From = "$NodeModules/redoc/bundles/redoc.standalone.js"; To = "$Target/redoc/" },
+        @{ From = "$NodeModules/redoc/LICENSE"; To = "$LicenseTarget/LICENSE.redoc.txt"  ; Comment = 'Project URL: https://github.com/Redocly/redoc' },
 
         @{ From = "$NodeModules/@stoplight/elements/styles.min.css"; To = "$Target/stoplight/elements/" },
         @{ From = "$NodeModules/@stoplight/elements/web-components.min.js"; To = "$Target/stoplight/elements/" },
+        @{ From = "$NodeModules/@stoplight/elements/LICENSE"; To = "$LicenseTarget/LICENSE.stoplight.txt"  ; Comment = 'Project URL: https://github.com/stoplightio/elements' },
 
         @{ From = "$NodeModules/@highlightjs/cdn-assets/styles/monokai-sublime.min.css"; To = "$Target/highlightjs/styles/" },
         @{ From = "$NodeModules/@highlightjs/cdn-assets/highlight.min.js"; To = "$Target/highlightjs/" },
+        @{ From = "$NodeModules/@highlightjs/cdn-assets/LICENSE"; To = "$LicenseTarget/LICENSE.highlightjs.txt" ; Comment = 'Project URL: https://github.com/highlightjs/highlight.js' },
 
         @{ From = "$NodeModules/rapipdf/dist/rapipdf-min.js"; To = "$Target/rapipdf/" },
+        @{ From = "$NodeModules/rapipdf/LICENSE.txt"; To = "$LicenseTarget/LICENSE.rapipdf.txt"  ; Comment = 'Project URL: https://github.com/mrin9/RapiPdf' },
+
 
         @{ From = "$NodeModules/rapidoc/dist/rapidoc-min.js"; To = "$Target/rapidoc/" },
+        @{ From = "$NodeModules/rapidoc/LICENSE.txt"; To = "$LicenseTarget/LICENSE.rapidoc.txt"  ; Comment = 'Project URL: https://github.com/rapi-doc/RapiDoc' },
 
         @{ From = "$NodeModules/openapi-explorer/dist/browser/openapi-explorer.min.js"; To = "$Target/explorer/browser/" }
+        @{ From = "$NodeModules/openapi-explorer/LICENSE"; To = "$LicenseTarget/LICENSE.openapi-explorer.txt"  ; Comment = 'Project URL: https://github.com/Authress-Engineering/openapi-explorer' },
+
         @{ From = "$NodeModules/bootstrap/dist/css/bootstrap.min.css"; To = "$Target/explorer/css/" },
 
-        @{ From = "$NodeModules/bootstrap/dist/css/bootstrap.min.css"; To = "$Target/bootstrap/css/bootstrap.min.css" }
+        @{ From = "$NodeModules/bootstrap/dist/css/bootstrap.min.css"; To = "$Target/bootstrap/css/" },
+        @{ From = "$NodeModules/bootstrap/LICENSE"; To = "$LicenseTarget/LICENSE.bootstrap.txt"  ; Comment = 'Project URL: https://github.com/twbs/bootstrap' }
     )
 
     foreach ($Item in $CopyList) {
-        $DestFolder = $Item.To
-        New-Item -ItemType Directory -Force -Path $DestFolder | Out-Null
-        Copy-Item -Force -Path $Item.From -Destination $DestFolder
-
+        # If Comment exists, prepend it properly depending on file type
+        if ($Item.Comment) {
+            $fileContent = Get-Content -Raw -Path $Item.From
+            Set-Content -Path $Item.To -Value ($Item.Comment + "`n`n" + $fileContent)
+        }
+        else {
+            New-Item -ItemType Directory -Force -Path $Item.To | Out-Null
+            # Copy file
+            Copy-Item -Force -Path $Item.From -Destination $Item.To| Out-Null
+        }
     }
 
     Write-Output "All third-party files copied to $Target"
