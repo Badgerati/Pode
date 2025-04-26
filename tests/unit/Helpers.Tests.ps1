@@ -1653,7 +1653,6 @@ Describe 'ConvertTo-PodeYaml Tests' {
 Describe 'ConvertTo-PodeYamlInternal Tests' {
     Context 'When converting basic types' {
         It 'Converts strings correctly' {
-
             $result = ConvertTo-PodeYamlInternal -InputObject 'hello world'
             $result | Should -Be 'hello world'
         }
@@ -1686,60 +1685,73 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
                 }
             }
             $result = ConvertTo-PodeYamlInternal -InputObject  $nestedHash -NoNewLine
-
             $result | Should -Be "parent: `n  child: value"
         }
     }
 
-
-    # Test case for a hashtable containing a key named 'Count'
     Context "When a hashtable contains a 'Count' key" {
-
-        It 'Should convert the hashtable to YAML without error' {
-            # Arrange
+        It 'Should convert the hashtable to YAML without error and include Count' {
             $hashtable = @{
                 Name  = 'Sample'
                 Count = 10
             }
-
-            # Act
-            $result = { ConvertTo-PodeYamlInternal -InputObject $hashtable -NoNewLine } | Should -Not -Throw
-
-            # Assert
+            { ConvertTo-PodeYamlInternal -InputObject $hashtable -NoNewLine } | Should -Not -Throw
             $yaml = ConvertTo-PodeYamlInternal -InputObject $hashtable -NoNewLine
-
-            # Check if YAML conversion includes both 'Name' and 'Count' keys in the YAML output
             $yaml | Should -Match 'Name: Sample'
             $yaml | Should -Match 'Count: 10'
         }
     }
 
-    # Test case for a PSCustomObject containing a key named 'Count'
     Context "When a PSCustomObject contains a 'Count' property" {
-
-        It 'Should convert the PSCustomObject to YAML without error' {
-            # Arrange
+        It 'Should convert the PSCustomObject to YAML without error and include Count' {
             $object = [pscustomobject]@{
                 Name  = 'Sample'
                 Count = 20
             }
-
-            # Act
-            $result = { ConvertTo-PodeYamlInternal -InputObject $object -NoNewLine } | Should -Not -Throw
-
-            # Assert
+            { ConvertTo-PodeYamlInternal -InputObject $object -NoNewLine } | Should -Not -Throw
             $yaml = ConvertTo-PodeYamlInternal -InputObject $object -NoNewLine
-
-            # Check if YAML conversion includes both 'Name' and 'Count' properties in the YAML output
             $yaml | Should -Match 'Name: Sample'
             $yaml | Should -Match 'Count: 20'
         }
     }
 
-    Context 'Error handling' {
+    Context 'When handling null or empty input' {
         It 'Returns empty string for null input' {
             $result = ConvertTo-PodeYamlInternal -InputObject $null
             $result | Should -Be ''
+        }
+        It 'Returns [] for an empty array input' {
+            $result = ConvertTo-PodeYamlInternal -InputObject @()
+            $result | Should -Be '[]'
+        }
+    }
+
+    Describe 'ConvertTo-PodeYamlInternal Edge-Case Quoting' {
+
+        # Define all your corner cases as an array of hashtables
+        $testCases = @(
+            @{ Name = 'internal single-quote'; obj = "O'Reilly"; Expected = "O'Reilly" }
+            @{ Name = 'multi-line string'; obj = "line1`nline2"; Expected = "|`nline1`nline2" }
+            @{ Name = 'leading space'; obj = ' foo'; Expected = "' foo'" }
+            @{ Name = 'trailing space'; obj = 'bar '; Expected = "'bar '" }
+            @{ Name = 'special prefix'; obj = '-dash'; Expected = "'-dash'" }
+            @{ Name = 'embedded map syntax'; obj = 'key: value'; Expected = "'key: value'" }
+            @{ Name = 'bare boolean true'; obj = 'true'; Expected = "'true'" }
+            @{ Name = 'bare boolean false'; obj = 'false'; Expected = "'false'" }
+            @{ Name = 'bare null (~)'; obj = '~'; Expected = "'~'" }
+            @{ Name = 'bare null (null)'; obj = 'null'; Expected = "'null'" }
+            @{ Name = 'integer number'; obj = '42'; Expected = "'42'" }
+            @{ Name = 'negative integer'; obj = '-7'; Expected = "'-7'" }
+            @{ Name = 'float number'; obj = '3.14'; Expected = "'3.14'" }
+            @{ Name = 'starts with double-quote'; obj = '"quoted"'; Expected = "'`"quoted`"'" }
+            @{ Name = 'url stays unquoted'; obj = 'http://example.com'; Expected = 'http://example.com' }
+        )
+
+        It 'Properly quotes all edge-case strings <Name>' -TestCases $testCases {
+            param($Name, $obj, $Expected)
+
+            $actual = ConvertTo-PodeYamlInternal -InputObject $obj -NoNewLine
+            $actual | Should -Be $Expected
         }
     }
 }

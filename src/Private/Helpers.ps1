@@ -3592,12 +3592,12 @@ function ConvertTo-PodeYamlInternal {
 
                             $index += $breakpoint
                             if ($index -lt $length) {
-                                $null = $multiline.Append([System.Environment]::NewLine)
+                                $null = $multiline.Append("`n")
                             }
                         }
 
                         if ($i -lt ($items.Length - 1)) {
-                            $null = $multiline.Append([System.Environment]::NewLine)
+                            $null = $multiline.Append("`n")
                         }
                     }
 
@@ -3605,12 +3605,23 @@ function ConvertTo-PodeYamlInternal {
                     break
                 }
                 else {
-                    if ($string -match '^[#\[\]@\{\}\!\*]') {
-                        "'$($string -replace '''', '''''')'"
+                    # decide if this needs quoting
+                    $needsQuote = ($string -match '^[\-?:,\[\]{}#&*!|>''"%@`]') -or
+                    $string.StartsWith(' ') -or # leading space
+                    $string.EndsWith(' ') -or # trailing space
+                        ($string -match ':\s') -or # contains ": "
+                        ($string -match '^(?:~|null|true|false)$') -or # bare null/boolean
+                        ($string -match '^-?\d+(\.\d+)?$')                # integer or float
+
+                    if ($needsQuote) {
+                        # single-quote style: double any internal ' to ''
+                        $s = $string -replace '''', ''''''
+                        "'$s'"
                     }
                     else {
                         $string
                     }
+
                     break
                 }
                 break
