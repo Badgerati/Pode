@@ -1703,6 +1703,8 @@ task ReleaseNotes {
 
     foreach ($pr in $prs) {
         $labels = @($pr.labels.name)
+
+        # skip PRs with certain labels
         if ($labels -icontains 'superseded' -or
             $labels -icontains 'new-release' -or
             $labels -icontains 'internal-code :hammer:' -or
@@ -1710,7 +1712,20 @@ task ReleaseNotes {
             continue
         }
 
-        $label = ($pr.labels[0].name -split ' ')[0]
+        # filter out labels that are not relevant
+        $label = @(foreach ($label in $labels) {
+                if ($label -imatch '^(story|priority)') {
+                    continue
+                }
+
+                if ($label -inotmatch '\s\:') {
+                    continue
+                }
+
+                ($label -split ' ', 2)[0]
+                break
+            })[0]
+
         if ([string]::IsNullOrWhiteSpace($label)) {
             $label = 'misc'
         }
@@ -1779,7 +1794,7 @@ task ReleaseNotes {
 
     # add dependabot aggregated PRs
     if ($dependabot.Count -gt 0) {
-        $label = 'dependencies'
+        $label = 'Packaging'
         if (!$categories.Contains($label)) {
             $categories[$label] = @()
         }
