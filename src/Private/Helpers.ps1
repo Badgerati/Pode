@@ -46,7 +46,7 @@ function ConvertFrom-PodeFile {
     }
 
     # invoke the content as a script to generate the dynamic content
-    return (Invoke-PodeScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
+    return (Invoke-PodeScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return -NoNewClosure)
 }
 
 function Get-PodeViewEngineType {
@@ -60,7 +60,7 @@ function Get-PodeViewEngineType {
     $type = $PodeContext.Server.ViewEngine.Type
 
     $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
-    if (![string]::IsNullOrWhiteSpace($ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
+    if (![string]::IsNullOrEmpty($ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
         $type = $ext
     }
 
@@ -68,18 +68,28 @@ function Get-PodeViewEngineType {
 }
 
 function Get-PodeFileContentUsingViewEngine {
+    [CmdletBinding(DefaultParameterSetName = 'Path')]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Path')]
         [string]
         $Path,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileInfo')]
+        [System.IO.FileSystemInfo]
+        $FileInfo,
 
         [Parameter()]
         [hashtable]
         $Data
     )
 
+    # if we have no file info, get the file info from the path
+    if ($null -eq $FileInfo) {
+        $FileInfo = Get-Item -Path $Path -Force -ErrorAction Stop
+    }
+
     # work out the engine to use when parsing the file
-    $engine = Get-PodeViewEngineType -Path $Path
+    $engine = Get-PodeViewEngineType -Path $FileInfo.FullName
 
     # setup the content
     $content = [string]::Empty
@@ -87,23 +97,23 @@ function Get-PodeFileContentUsingViewEngine {
     # run the relevant engine logic
     switch ($engine.ToLowerInvariant()) {
         'html' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
+            $content = [System.IO.File]::ReadAllText($FileInfo.FullName, [System.Text.Encoding]::UTF8)
         }
 
         'md' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
+            $content = [System.IO.File]::ReadAllText($FileInfo.FullName, [System.Text.Encoding]::UTF8)
         }
 
         'pode' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
+            $content = [System.IO.File]::ReadAllText($FileInfo.FullName, [System.Text.Encoding]::UTF8)
             $content = ConvertFrom-PodeFile -Content $content -Data $Data
         }
 
         default {
             if ($null -ne $PodeContext.Server.ViewEngine.ScriptBlock) {
-                $_args = @($Path)
+                $_args = @($FileInfo.FullName)
                 if (($null -ne $Data) -and ($Data.Count -gt 0)) {
-                    $_args = @($Path, $Data)
+                    $_args = @($FileInfo.FullName, $Data)
                 }
 
                 $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables -Return -Splat)
@@ -118,10 +128,31 @@ function Get-PodeFileContent {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        $NoEscape
     )
 
+    $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
     return (Get-Content -Path $Path -Raw -Encoding utf8)
+}
+
+function Protect-PodePath {
+    param(
+        [Parameter()]
+        [string]
+        $Path,
+
+        [switch]
+        $NoEscape
+    )
+
+    if ($NoEscape -or [string]::IsNullOrEmpty($Path)) {
+        return $Path
+    }
+
+    return [WildcardPattern]::Escape($Path)
 }
 
 function Get-PodeType {
@@ -1799,24 +1830,24 @@ function Test-PodePath {
         catch {
             $statusCode = 400
         }
-
     }
 
     if ($statusCode -eq 200) {
-        if ($ReturnItem.IsPresent) {
-            return  $item
+        if ($ReturnItem) {
+            return $item
         }
         return $true
     }
 
     # if we failed to get the file, report back the status code and/or return true/false
-    if (!$NoStatus.IsPresent) {
+    if (!$NoStatus) {
         Set-PodeResponseStatus -Code $statusCode
     }
 
-    if ($ReturnItem.IsPresent) {
-        return  $null
+    if ($ReturnItem) {
+        return $null
     }
+
     return $false
 }
 
@@ -1830,15 +1861,15 @@ function Test-PodePathIsFile {
         $FailOnWildcard
     )
 
-    if ([string]::IsNullOrWhiteSpace($Path)) {
+    if ([string]::IsNullOrEmpty($Path)) {
         return $false
     }
 
-    if ($FailOnWildcard -and (Test-PodePathIsWildcard $Path)) {
+    if ($FailOnWildcard -and (Test-PodePathIsWildcard -Path $Path)) {
         return $false
     }
 
-    return (![string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
+    return (![string]::IsNullOrEmpty([System.IO.Path]::GetExtension($Path)))
 }
 
 function Test-PodePathIsWildcard {
@@ -1848,7 +1879,7 @@ function Test-PodePathIsWildcard {
         $Path
     )
 
-    if ([string]::IsNullOrWhiteSpace($Path)) {
+    if ([string]::IsNullOrEmpty($Path)) {
         return $false
     }
 
@@ -2497,7 +2528,6 @@ function Get-PodeRelativePath {
 
         [switch]
         $TestPath
-
     )
 
     # if the path is relative, join to root if flagged
@@ -2517,7 +2547,8 @@ function Get-PodeRelativePath {
 
     # if flagged, test the path and throw error if it doesn't exist
     if ($TestPath -and !(Test-PodePath $Path -NoStatus)) {
-        throw ($PodeLocale.pathNotExistExceptionMessage -f (Protect-PodeValue -Value $Path -Default $_rawPath))#"The path does not exist: $(Protect-PodeValue -Value $Path -Default $_rawPath)"
+        # "The path does not exist: $(Protect-PodeValue -Value $Path -Default $_rawPath)"
+        throw ($PodeLocale.pathNotExistExceptionMessage -f (Protect-PodeValue -Value $Path -Default $_rawPath))
     }
 
     return $Path
@@ -3558,12 +3589,12 @@ function ConvertTo-PodeYamlInternal {
 
                             $index += $breakpoint
                             if ($index -lt $length) {
-                                $null = $multiline.Append([System.Environment]::NewLine)
+                                $null = $multiline.Append("`n")
                             }
                         }
 
                         if ($i -lt ($items.Length - 1)) {
-                            $null = $multiline.Append([System.Environment]::NewLine)
+                            $null = $multiline.Append("`n")
                         }
                     }
 
@@ -3571,12 +3602,23 @@ function ConvertTo-PodeYamlInternal {
                     break
                 }
                 else {
-                    if ($string -match '^[#\[\]@\{\}\!\*]') {
-                        "'$($string -replace '''', '''''')'"
+                    # decide if this needs quoting
+                    $needsQuote = ($string -match '^[\-?:,\[\]{}#&*!|>''"%@`]') -or
+                    $string.StartsWith(' ') -or # leading space
+                    $string.EndsWith(' ') -or # trailing space
+                        ($string -match ':\s') -or # contains ": "
+                        ($string -match '^(?:~|null|true|false)$') -or # bare null/boolean
+                        ($string -match '^-?\d+(\.\d+)?$')                # integer or float
+
+                    if ($needsQuote) {
+                        # single-quote style: double any internal ' to ''
+                        $s = $string -replace '''', ''''''
+                        "'$s'"
                     }
                     else {
                         $string
                     }
+
                     break
                 }
                 break
@@ -3965,4 +4007,93 @@ function ConvertTo-PodeSleep {
 #>
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
+}
+
+<#
+.SYNOPSIS
+    Determines the MIME type of an image from its binary header.
+
+.DESCRIPTION
+    This function accepts a byte array representing an image and analyzes the first few bytes
+    (converted to hexadecimal strings) to determine its file format. It supports PNG, JPEG, GIF
+    (both GIF87a and GIF89a), ICO, WebP, and SVG formats. If the image format cannot be determined,
+    it returns a generic MIME type of 'application/octet-stream'.
+
+.PARAMETER Image
+    A byte array containing the image data.
+
+.OUTPUTS
+    A string representing the MIME type of the image.
+
+.EXAMPLE
+    $bytes = [System.IO.File]::ReadAllBytes("C:\path\to\image.gif")
+    $mimeType = Get-PodeImageContentType -Image $bytes
+    # $mimeType will be 'image/gif' if the image is a GIF.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeImageContentType {
+    param(
+        [Parameter()]
+        [byte[]]
+        $Image
+    )
+
+    if (($null -eq $Image) -or ($Image.Length -lt 12)) {
+        return 'application/octet-stream'
+    }
+
+    # WebP: starts with "RIFF....WEBP"
+    if (
+        $Image[0] -eq 0x52 -and $Image[1] -eq 0x49 -and $Image[2] -eq 0x46 -and $Image[3] -eq 0x46 -and
+        $Image[8] -eq 0x57 -and $Image[9] -eq 0x45 -and $Image[10] -eq 0x42 -and $Image[11] -eq 0x50
+    ) {
+        return 'image/webp'
+    }
+
+    # PNG: starts with "89 50 4E 47 0D 0A 1A 0A"
+    if (
+        $Image[0] -eq 0x89 -and $Image[1] -eq 0x50 -and $Image[2] -eq 0x4E -and $Image[3] -eq 0x47 -and
+        $Image[4] -eq 0x0D -and $Image[5] -eq 0x0A -and $Image[6] -eq 0x1A -and $Image[7] -eq 0x0A
+    ) {
+        return 'image/png'
+    }
+
+    # GIF (GIF87a or GIF89a): starts with "47 49 46 38 37 61" or "47 49 46 38 39 61"
+    if (
+        $Image[0] -eq 0x47 -and $Image[1] -eq 0x49 -and $Image[2] -eq 0x46 -and $Image[3] -eq 0x38 -and
+        (
+            ($Image[4] -eq 0x37 -and $Image[5] -eq 0x61) -or
+            ($Image[4] -eq 0x39 -and $Image[5] -eq 0x61)
+        )
+    ) {
+        return 'image/gif'
+    }
+
+    # ICO: starts with "00 00 01 00"
+    if (
+        $Image[0] -eq 0x00 -and $Image[1] -eq 0x00 -and
+        $Image[2] -eq 0x01 -and $Image[3] -eq 0x00
+    ) {
+        return 'image/x-icon'
+    }
+
+    # SVG: starts with "<svg"
+    if (
+        $Image[0] -eq 0x3C -and $Image[1] -eq 0x73 -and
+        $Image[2] -eq 0x76 -and $Image[3] -eq 0x67
+    ) {
+        return 'image/svg+xml'
+    }
+
+    # JPEG: starts with "FF D8 FF"
+    if (
+        $Image[0] -eq 0xFF -and $Image[1] -eq 0xD8 -and $Image[2] -eq 0xFF
+    ) {
+        return 'image/jpeg'
+    }
+
+    # If none of the above formats match, return a generic binary type
+    return 'application/octet-stream'
 }

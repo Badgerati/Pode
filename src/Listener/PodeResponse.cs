@@ -11,6 +11,8 @@ namespace Pode
 {
     public class PodeResponse : IDisposable
     {
+        protected const int MAX_FRAME_SIZE = 8192;
+
         public PodeResponseHeaders Headers { get; private set; }
         public int StatusCode = 200;
         public bool SendChunked = false;
@@ -308,33 +310,55 @@ namespace Pode
             }
 
             var msgBytes = Encoding.GetBytes(message);
-            var buffer = new List<byte>() { (byte)((byte)0x80 | (byte)opCode) };
+            var msgLength = msgBytes.Length;
+            var offset = 0;
+            var firstFrame = true;
 
-            if (msgBytes.Length < 126)
+            while (offset < msgLength || (msgLength == 0 && firstFrame))
             {
-                buffer.Add((byte)((byte)0x00 | (byte)msgBytes.Length));
-            }
-            else if (msgBytes.Length <= UInt16.MaxValue)
-            {
-                buffer.Add((byte)((byte)0x00 | (byte)126));
-                buffer.Add((byte)((msgBytes.Length >> 8) & (byte)255));
-                buffer.Add((byte)(msgBytes.Length & (byte)255));
-            }
-            else
-            {
-                buffer.Add((byte)((byte)0x00 | (byte)127));
-                buffer.Add((byte)((msgBytes.Length >> 56) & (byte)255));
-                buffer.Add((byte)((msgBytes.Length >> 48) & (byte)255));
-                buffer.Add((byte)((msgBytes.Length >> 40) & (byte)255));
-                buffer.Add((byte)((msgBytes.Length >> 32) & (byte)255));
-                buffer.Add((byte)((msgBytes.Length >> 24) & (byte)255));
-                buffer.Add((byte)((msgBytes.Length >> 16) & (byte)255));
-                buffer.Add((byte)((msgBytes.Length >> 8) & (byte)255));
-                buffer.Add((byte)(msgBytes.Length & (byte)255));
-            }
+                var frameSize = Math.Min(msgLength - offset, MAX_FRAME_SIZE);
+                var frame = new byte[frameSize];
+                Array.Copy(msgBytes, offset, frame, 0, frameSize);
 
-            buffer.AddRange(msgBytes);
-            await Write(buffer.ToArray(), flush).ConfigureAwait(false);
+                // fin bit and op code
+                var isFinal = offset + frameSize >= msgLength;
+                var finBit = (byte)(isFinal ? 0x80 : 0x00);
+                var opCodeByte = (byte)(firstFrame ? opCode : PodeWsOpCode.Continuation);
+
+                // build the frame buffer
+                var buffer = new List<byte> { (byte)(finBit | opCodeByte) };
+
+                if (frameSize < 126)
+                {
+                    buffer.Add((byte)((byte)0x00 | (byte)frameSize));
+                }
+                else if (frameSize <= UInt16.MaxValue)
+                {
+                    buffer.Add((byte)((byte)0x00 | (byte)126));
+                    buffer.Add((byte)((frameSize >> 8) & (byte)255));
+                    buffer.Add((byte)(frameSize & (byte)255));
+                }
+                else
+                {
+                    buffer.Add((byte)((byte)0x00 | (byte)127));
+                    buffer.Add((byte)((frameSize >> 56) & (byte)255));
+                    buffer.Add((byte)((frameSize >> 48) & (byte)255));
+                    buffer.Add((byte)((frameSize >> 40) & (byte)255));
+                    buffer.Add((byte)((frameSize >> 32) & (byte)255));
+                    buffer.Add((byte)((frameSize >> 24) & (byte)255));
+                    buffer.Add((byte)((frameSize >> 16) & (byte)255));
+                    buffer.Add((byte)((frameSize >> 8) & (byte)255));
+                    buffer.Add((byte)(frameSize & (byte)255));
+                }
+
+                // add the payload
+                buffer.AddRange(frame);
+
+                // send
+                await Write(buffer.ToArray(), flush).ConfigureAwait(false);
+                offset += frameSize;
+                firstFrame = false;
+            }
         }
 
         public async Task WriteLine(string message, bool flush = false)
@@ -342,6 +366,7 @@ namespace Pode
             await Write(Encoding.GetBytes($"{message}{PodeHelpers.NEW_LINE}"), flush).ConfigureAwait(false);
         }
 
+        // write a byte array to the actual client stream
         public async Task Write(byte[] buffer, bool flush = false)
         {
             if (Request.IsDisposed || !Request.InputStream.CanWrite)
@@ -372,6 +397,30 @@ namespace Pode
             {
                 PodeHelpers.WriteException(ex, Context.Listener);
                 throw;
+            }
+        }
+
+        public void WriteFile(string path)
+        {
+            WriteFile(new FileInfo(path));
+        }
+
+        public void WriteFile(FileSystemInfo file)
+        {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            if (!(file is FileInfo fileInfo) || !fileInfo.Exists)
+            {
+                throw new FileNotFoundException($"File not found: {file.FullName}");
+            }
+
+            ContentLength64 = fileInfo.Length;
+            using (var fileStream = fileInfo.OpenRead())
+            {
+                fileStream.CopyTo(OutputStream);
             }
         }
 

@@ -229,7 +229,16 @@ Describe 'Restart-PodeInternalServer' {
                         Resume  = 30  # timeout in seconds
                     }
                 }
-
+                Limits          = @{
+                    Rate   = @{
+                        Rules     = [ordered]@{}
+                        RuleOrder = @()
+                    }
+                    Access = @{
+                        Rules     = [ordered]@{}
+                        RuleOrder = @()
+                    }
+                }
             }
             Metrics   = @{
                 Server = @{
