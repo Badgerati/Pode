@@ -9,6 +9,14 @@
 .PARAMETER Version
     Specifies the project version for stamping, packaging, and documentation. Defaults to '0.0.0'.
 
+.PARAMETER Prerelease
+    Specifies the prerelease label to append to the module version, following semantic versioning conventions.
+    Examples include 'alpha.1', 'alpha.2', 'beta.1', etc. This label indicates the stability and iteration of the prerelease version.
+
+.PARAMETER PersistVersion
+  If specified, the provided version and prerelease label will be saved to `Version.json`.
+  This ensures future builds use the same versioning information unless explicitly overridden.
+
 .PARAMETER PesterVerbosity
     Sets the verbosity level for Pester tests. Options: None, Normal, Detailed, Diagnostic.
 
@@ -62,6 +70,8 @@
     - Remove-Module: Removes the Pode module from the local registry.
     - SetupPowerShell: Sets up the PowerShell environment for the build.
     - ReleaseNotes: Generates release notes based on merged pull requests.
+    - Sort-LanguageFiles: Sort Language resource files
+    - AutoMerge-LanguageFiles: Automerge Language Resource files.
 
 .EXAMPLE
     Invoke-Build -Task Default
@@ -76,6 +86,9 @@
     Invoke-Build -Task Docs
         # Builds and serves the documentation locally.
 
+    Invoke-Build -Task Build -Version '2.13.0' -Prerelease 'beta.1' -PersistVersion
+        # Saves "2.13.0-beta.1" to Version.json for future builds.
+
 .LINK
     For more information, visit https://github.com/Badgerati/Pode
 #>
@@ -89,7 +102,13 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPositionalParameters', '')]
 param(
     [string]
-    $Version = '0.0.0',
+    $Version,
+
+    [string]
+    $Prerelease,
+
+    [switch]
+    $PersistVersion,
 
     [string]
     [ValidateSet('None', 'Normal' , 'Detailed', 'Diagnostic')]
@@ -488,18 +507,27 @@ function Invoke-PodeBuildDotnetBuild {
 
     # Optionally set assembly version
     if ($Version) {
-        Write-Output "Assembly Version: $Version"
-        $AssemblyVersion = "-p:Version=$Version"
+        if ($Prerelease) {
+            Write-Output "Assembly Version: $Version-$Prerelease"
+            $AssemblyVersion = "-p:VersionPrefix=$Version"
+            $AssemblyPrerelease = "-p:VersionSuffix=$Prerelease"
+        }
+        else {
+            Write-Output "Assembly Version: $Version"
+            $AssemblyVersion = "-p:Version=$Version"
+            $AssemblyPrerelease = ''
+        }
     }
     else {
         $AssemblyVersion = ''
+        $AssemblyPrerelease = ''
     }
 
     # restore dependencies
     dotnet restore
 
     # Use dotnet publish for .NET Core and .NET 5+
-    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
+    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion $AssemblyPrerelease --output ../Libs/$target
 
     if (!$?) {
         throw "Build failed for target framework '$target'."
@@ -889,6 +917,179 @@ if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParamete
     return
 }
 
+# Import Version File if needed
+if ([string]::IsNullOrEmpty($Version)) {
+    if (Test-Path './Version.json' -PathType Leaf) {
+        $importedVersion = Get-Content -Path './Version.json' | ConvertFrom-Json
+        if ($importedVersion.Version) {
+            $Version = $importedVersion.Version
+        }
+        if ($importedVersion.Prerelease) {
+            $Prerelease = $importedVersion.Prerelease
+        }
+    }
+    else {
+        $Version = '0.0.0'
+        if ($PersistVersion) {
+            Write-Error 'The -PersistVersion parameter requires the -Version parameter to be specified.'
+            return
+        }
+    }
+}
+elseif ($PersistVersion) {
+    if ($Prerelease) {
+        [ordered]@{Version = $Version; Prerelease = $Prerelease } | ConvertTo-Json | Out-File './Version.json'
+    }
+    else {
+        [ordered]@{Version = $Version } | ConvertTo-Json | Out-File './Version.json'
+    }
+}
+
+<#
+.SYNOPSIS
+  Processes language resource files and standardizes their formatting.
+
+.DESCRIPTION
+  This function scans for `Pode.psd1` language resource files within the specified `Locales` directory.
+  It normalizes key-value pairs, removes duplicate keys while preserving the first occurrence, and
+  organizes messages into Exception Messages and General Messages. The cleaned and formatted content
+  is then written back to the respective files.
+
+.PARAMETER None
+  This function does not accept parameters. It operates on files found within `./src/Locales`.
+
+.OUTPUTS
+  None. The function modifies `Pode.psd1` files directly by updating their content.
+
+.EXAMPLE
+  Group-LanguageResource
+  Processes all `Pode.psd1` files in `./src/Locales`, normalizes their format, and removes duplicates.
+
+.NOTES
+  - This function ensures that all messages are consistently formatted and sorted.
+  - Duplicate keys are detected, with only the first occurrence being retained.
+  - Exception messages are grouped separately from general messages.
+  - The function enforces single-quoted values while escaping any existing single quotes.
+#>
+function Group-LanguageResource {
+    $localePath = './src/Locales'
+    $files = Get-ChildItem -Path $localePath -Filter 'Pode.psd1' -Recurse
+
+    foreach ($file in $files) {
+        Write-Host "Processing file: $($file.FullName)"
+
+        # Read raw content
+        $content = Get-Content $file.FullName -Raw
+
+        $normalized = [regex]::Replace(
+            $content,
+            '(?m)^(?<key>\s*[^=\s]+)\s*=\s*(")(?<value>.*?)(")\s*$',
+            {
+                param($match)
+                # Get the value and double any single quotes within it
+                $value = $match.Groups['value'].Value -replace "'", "''"
+                # Build the new line using single quotes
+                return "$($match.Groups['key'].Value) = '$value'"
+            }
+        )
+
+
+        # Extract keys and values using improved regex to support accented characters
+        $matches = [regex]::Matches($normalized, "(?m)^\s*([^=\s]+)\s*=\s*'(.*?)'\s*$")
+
+
+        # Use a hashtable to track unique keys and remove duplicates
+        $uniqueMessages = [ordered]@{}
+        foreach ($match in $matches) {
+            $key = $match.Groups[1].Value
+            $value = $match.Groups[2].Value
+
+            if (-not $uniqueMessages.Contains($key)) {
+                $uniqueMessages[$key] = $value
+            }
+            else {
+                Write-Warning "Duplicate key '$key' found in $($file.Name). Keeping only the first occurrence."
+            }
+        }
+
+        # Sort keys
+        $sortedKeys = $uniqueMessages.Keys | Sort-Object
+
+        # Split into Exception and General Messages
+        $exceptionMessages = [ordered]@{}
+        $generalMessages = [ordered]@{}
+
+        foreach ($key in $sortedKeys) {
+            if ($key -match 'ExceptionMessage$') {
+                $exceptionMessages[$key] = $uniqueMessages[$key]
+            }
+            else {
+                $generalMessages[$key] = $uniqueMessages[$key]
+            }
+        }
+
+        $maxLength = ($sortedKeys | Measure-Object -Property Length -Maximum).Maximum + 1
+
+        # Build the file content
+        $lines = @()
+        $lines += '@{'
+        $lines += '    # -------------------------------'
+        $lines += '    # Exception Messages'
+        $lines += '    # -------------------------------'
+
+        foreach ($key in $exceptionMessages.Keys) {
+            $padding = ' ' * ($maxLength - $key.Length)
+            # Replace single quotes only if they're not already escaped
+            $escapedValue = [regex]::Replace($exceptionMessages[$key], "(?<!')'(?!')", "''")
+            $lines += "    $key$padding= '$escapedValue'"
+        }
+
+        $lines += ''
+        $lines += '    # -------------------------------'
+        $lines += '    # General Messages'
+        $lines += '    # -------------------------------'
+
+        foreach ($key in $generalMessages.Keys) {
+            $padding = ' ' * ($maxLength - $key.Length)
+            # Replace single quotes only if they're not already escaped
+            $escapedValue = [regex]::Replace($generalMessages[$key], "(?<!')'(?!')", "''")
+            $lines += "    $key$padding= '$escapedValue'"
+        }
+
+        $lines += '}'
+
+        # Write the updated content back to the file
+        [System.IO.File]::WriteAllText(
+            $file.FullName,
+            ($lines -join "`r`n") + "`r`n",
+            [System.Text.UTF8Encoding]::new($false)
+        )
+
+        Write-Host "Updated file: $($file.FullName)"
+    }
+}
+
+Write-Host '---------------------------------------------------' -ForegroundColor DarkCyan
+
+# Display the Pode build version
+if ($Prerelease) {
+    Write-Host "Pode Build: v$Version-$Prerelease (Pre-release)" -ForegroundColor DarkCyan
+}
+else {
+    if ($Version -eq '0.0.0') {
+        Write-Host 'Pode Build: [Development Version]' -ForegroundColor DarkCyan
+    }
+    else {
+        Write-Host "Pode Build: v$Version" -ForegroundColor DarkCyan
+    }
+}
+
+# Display the current UTC time in a readable format
+$utcTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
+Write-Host "Start Time: $utcTime" -ForegroundColor DarkCyan
+
+Write-Host '---------------------------------------------------' -ForegroundColor DarkCyan
+
 
 Add-BuildTask Default {
     Write-Host 'Tasks in the Build Script:' -ForegroundColor DarkMagenta
@@ -930,6 +1131,8 @@ Add-BuildTask Default {
     Write-Host '- CleanDocs: Cleans up generated documentation files.'
     Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
     Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
+    Write-Host '- Sort-LanguageFiles: Sort Language resource files.'
+    Write-Host '- AutoMerge-LanguageFiles: Automerge Language Resource files.'
 }
 
 <#
@@ -939,7 +1142,13 @@ Add-BuildTask Default {
 # Synopsis: Stamps the version onto the Module
 Add-BuildTask StampVersion {
     $pwshVersions = Get-PodeBuildPwshEOL
-    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) } | Set-Content ./pkg/Pode.psd1
+    $prereleaseValue = if ($Prerelease) {
+        "Prerelease = '$Prerelease'"
+    }
+    else {
+        ''
+    }
+    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) -replace '#\$Prerelease-Here\$', $prereleaseValue } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
@@ -1682,7 +1891,7 @@ Add-BuildTask SetupPowerShell {
 #>
 
 # Synopsis: Build the Release Notes
-task ReleaseNotes {
+Add-BuildTask ReleaseNotes {
     if ([string]::IsNullOrWhiteSpace($ReleaseNoteVersion)) {
         Write-Host 'Please provide a ReleaseNoteVersion' -ForegroundColor Red
         return
@@ -1818,3 +2027,39 @@ task ReleaseNotes {
         Write-Host ''
     }
 }
+
+
+Add-BuildTask Sort-LanguageFiles {
+    Group-LanguageResource
+}
+
+
+# Adds a build task to automatically merge conflicting language files.
+# This task identifies unresolved merge conflicts in the 'src/Locales/' directory and attempts to resolve them by:
+# 1. Detecting files with merge conflicts using `git diff --name-only --diff-filter=U`.
+# 2. Removing Git conflict markers (`<<<<<<< HEAD`, `=======`, and `>>>>>>> pr-<number>`),
+#    dynamically detecting the PR number from the conflict markers.
+# 3. Running `Group-LanguageResource` to ensure language resources are correctly formatted.
+# 4. Staging the resolved files (`git add ./src/Locales/*`).
+# 5. Printing status messages for visibility during execution.
+Add-BuildTask AutoMerge-LanguageFiles {
+    Write-Output 'Attempting auto-merge for language files...'
+
+    # Identify files with unresolved merge conflicts in 'src/Locales/'.
+    git diff --name-only --diff-filter=U ./src/Locales/ | ForEach-Object {
+        $content = Get-Content $_ -Raw
+        if ($content -match '>>>>>>> pr-(\d+)') {
+            # Remove Git conflict markers, dynamically resolving PR numbers
+            $content -replace '<<<<<<< HEAD', '' -replace '=======', '' -replace ">>>>>>> pr-$($matches[1])", '' | Set-Content $_
+        }
+    }
+
+    # Ensure language resources are formatted and grouped correctly.
+    Group-LanguageResource
+
+    # Stage the resolved files.
+    git add ./src/Locales/*
+
+    Write-Output 'Language files auto-merged.'
+}
+
