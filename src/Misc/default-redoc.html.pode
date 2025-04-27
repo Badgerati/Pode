@@ -4,8 +4,6 @@
     <title>$($data.Title)</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
-
     <style>
         body {
             margin: 0;
@@ -16,7 +14,7 @@
 
 <body>
     <redoc spec-url='$($data.OpenApi)'></redoc>
-    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js" theme="$($data.Theme)"></script>
+    <script src="$($data.DistPath)dist/redoc.standalone.js" theme="$($data.Theme)"></script>
 </body>
 
 </html>
