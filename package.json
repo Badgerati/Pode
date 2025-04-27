@@ -1,6 +1,6 @@
 {
   "name": "pode",
-  "description": "Web Componenent for use with the Pode PowerShell web server",
+  "description": "Web Component for use with the Pode PowerShell web server",
   "repository": "https://github.com/Badgerati/Pode.git",
   "author": "Matthew Kelly <badgerati42@gmail.com>",
   "license": "MIT",
