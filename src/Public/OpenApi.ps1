@@ -1884,6 +1884,7 @@ function Enable-PodeOAViewer {
         [string]
         $DefinitionTag
     )
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     # If no EndpointName try to reetrieve the EndpointName from the DefinitionTag if exist
@@ -1909,6 +1910,9 @@ function Enable-PodeOAViewer {
     if ($Editor.IsPresent) {
         # set a default path
         $Path = Protect-PodeValue -Value $Path -Default '/editor'
+
+        $DistPath = if ( $Path.EndsWith('/')) { $Path } else { "$Path/" }
+
         if ([string]::IsNullOrWhiteSpace($Title)) {
             # No route path supplied for $Type page
             throw ($PodeLocale.noRoutePathSuppliedForPageExceptionMessage -f $Type)
@@ -1917,13 +1921,17 @@ function Enable-PodeOAViewer {
             # This version on Swagger-Editor doesn't support OpenAPI 3.1
             throw ($PodeLocale.swaggerEditorDoesNotSupportOpenApi31ExceptionMessage)
         }
+
+        # Add the static route for the viewer third party library
+        Add-PodeStaticRoute -Path "$($DistPath)dist" -Source "$(Get-PodeModuleMiscPath)/libs/swagger-editor" -Middleware $Middleware -EndpointName $EndpointName -Authentication $Authentication
+
         # setup meta info
         $meta = @{
-            Title             = $Title
-            OpenApi           = "$($OpenApiUrl)?format=yaml"
-            DarkMode          = $DarkMode
-            DefinitionTag     = $DefinitionTag
-            SwaggerEditorDist = 'https://unpkg.com/swagger-editor-dist@4'
+            Title         = $Title
+            OpenApi       = "$($OpenApiUrl)?format=yaml"
+            DarkMode      = $DarkMode
+            DefinitionTag = $DefinitionTag
+            DistPath      = $DistPath
         }
         Add-PodeRoute -Method Get -Path $Path `
             -Middleware $Middleware -ArgumentList $meta `
@@ -1932,9 +1940,9 @@ function Enable-PodeOAViewer {
             -ScriptBlock {
             param($meta)
             $Data = @{
-                Title             = $meta.Title
-                OpenApi           = $meta.OpenApi
-                SwaggerEditorDist = $meta.SwaggerEditorDist
+                Title    = $meta.Title
+                OpenApi  = $meta.OpenApi
+                DistPath = $meta.DistPath
             }
 
             $podeRoot = Get-PodeModuleMiscPath
@@ -1946,16 +1954,23 @@ function Enable-PodeOAViewer {
     elseif ($Bookmarks.IsPresent) {
         # set a default path
         $Path = Protect-PodeValue -Value $Path -Default '/bookmarks'
+        $DistPath = if ( $Path.EndsWith('/')) { $Path } else { "$Path/" }
+
         if ([string]::IsNullOrWhiteSpace($Title)) {
             # No route path supplied for $Type page
             throw ($PodeLocale.noRoutePathSuppliedForPageExceptionMessage -f $Type)
         }
+
+        # Add the static route for the viewer third party library
+        Add-PodeStaticRoute -Path "$($DistPath)dist" -Source "$(Get-PodeModuleMiscPath)/libs/highlightjs" -Middleware $Middleware -EndpointName $EndpointName -Authentication $Authentication
+
         # setup meta info
         $meta = @{
             Title         = $Title
             OpenApi       = $OpenApiUrl
             DarkMode      = $DarkMode
             DefinitionTag = $DefinitionTag
+            DistPath      = $DistPath
         }
 
         $route = Add-PodeRoute -Method Get -Path $Path `
@@ -1965,8 +1980,9 @@ function Enable-PodeOAViewer {
             -PassThru -ScriptBlock {
             param($meta)
             $Data = @{
-                Title   = $meta.Title
-                OpenApi = $meta.OpenApi
+                Title    = $meta.Title
+                OpenApi  = $meta.OpenApi
+                DistPath = $meta.DistPath
             }
             $DefinitionTag = $meta.DefinitionTag
             foreach ($type in $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer.Keys) {
@@ -1977,6 +1993,7 @@ function Enable-PodeOAViewer {
             $podeRoot = Get-PodeModuleMiscPath
             Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
         }
+
         if (! $NoAdvertise.IsPresent) {
             $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.bookmarks = @{
                 path       = $Path
@@ -1985,7 +2002,6 @@ function Enable-PodeOAViewer {
             }
             $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.bookmarks.route += $route
         }
-
     }
     else {
         if ($Type -ieq 'RapiPdf' -and (Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag)) {
@@ -1994,16 +2010,23 @@ function Enable-PodeOAViewer {
         }
         # set a default path
         $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())"
+        $DistPath = if ( $Path.EndsWith('/')) { $Path } else { "$Path/" }
+
         if ([string]::IsNullOrWhiteSpace($Title)) {
             # No route path supplied for $Type page
             throw ($PodeLocale.noRoutePathSuppliedForPageExceptionMessage -f $Type)
         }
+
+        # Add the static route for the viewer third party library
+        Add-PodeStaticRoute -Path "$($DistPath)dist" -Source "$(Get-PodeModuleMiscPath)/libs/$($Type.ToLowerInvariant())" -Middleware $Middleware -EndpointName $EndpointName -Authentication $Authentication
+
         # setup meta info
         $meta = @{
             Type     = $Type.ToLowerInvariant()
             Title    = $Title
             OpenApi  = $OpenApiUrl
             DarkMode = $DarkMode
+            DistPath = $DistPath
         }
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer[$($meta.Type)] = $Path
         # add the viewer route
@@ -2019,12 +2042,12 @@ function Enable-PodeOAViewer {
                 OpenApi  = $meta.OpenApi
                 DarkMode = $meta.DarkMode
                 Theme    = $Theme
+                DistPath = $meta.DistPath
             }
         }
     }
 
 }
-
 
 <#
 .SYNOPSIS
