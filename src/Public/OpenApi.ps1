@@ -1887,7 +1887,7 @@ function Enable-PodeOAViewer {
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    # If no EndpointName try to reetrieve the EndpointName from the DefinitionTag if exist
+    # If no EndpointName try to retrieve the EndpointName from the DefinitionTag if exist
     if ([string]::IsNullOrWhiteSpace($EndpointName) -and $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.EndpointName) {
         $EndpointName = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.EndpointName
     }
