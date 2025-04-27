@@ -1340,6 +1340,7 @@ function Set-PodeConsoleOverrideConfiguration {
         $PodeContext.Server.Console.Quiet = $true
         $PodeContext.Server.Console.DisableConsoleInput = $true
         $PodeContext.Server.Console.DisableTermination = $true
+        $PodeContext.Server.Console.Daemon = $true
     }
 
     # Apply IIS-specific overrides

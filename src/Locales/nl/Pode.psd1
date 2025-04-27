@@ -154,7 +154,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "Een parameter genaamd '{0}' is niet opgegeven in het verzoek of heeft geen beschikbare gegevens."
     cacheStorageNotFoundForSetExceptionMessage                        = "Cache-opslag met naam '{0}' niet gevonden bij poging om gecachte item '{1}' in te stellen"
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: Al gedefinieerd.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'Foutlogboekregistratie is al ingeschakeld.'
     valueForUsingVariableNotFoundExceptionMessage                     = "Waarde voor '`$using:{0}' kon niet worden gevonden."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = 'Het Document-tool RapidPdf ondersteunt OpenAPI 3.1 niet'
     oauth2ClientSecretRequiredExceptionMessage                        = 'OAuth2 vereist een Client Secret wanneer PKCE niet wordt gebruikt.'
@@ -281,10 +280,12 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "Het opgegeven '{0}' schema voor de '{1}' authenticatievalidator vereist een geldige ScriptBlock."
     sseFailedToBroadcastExceptionMessage                              = 'SSE kon niet uitzenden vanwege het gedefinieerde SSE-uitzendniveau voor {0}: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory-module alleen beschikbaar op Windows OS.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'Verzoeklogboekregistratie is al ingeschakeld.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ongeldige Access-Control-Max-Age duur opgegeven: {0}. Moet groter zijn dan 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
+    loggingAlreadyEnabledExceptionMessage                             = "Logging '{0}' is al ingeschakeld."
+    invalidEncodingExceptionMessage                                   = 'Ongeldige codering: {0}'
+    syslogProtocolExceptionMessage                                    = 'Het Syslog-protocol kan alleen RFC3164 of RFC5424 gebruiken.'
     taskProcessDoesNotExistExceptionMessage                           = "Taakproces '{0}' bestaat niet."
     scheduleProcessDoesNotExistExceptionMessage                       = "Schema-proces '{0}' bestaat niet."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
@@ -292,6 +293,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "De functie '{0}' accepteert geen array als pipeline-invoer."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Niet-ondersteunde streamcompressie-encodering: {0}'
     localEndpointConflictExceptionMessage                             = "Zowel '{0}' als '{1}' zijn gedefinieerd als lokale OpenAPI-eindpunten, maar er is slechts één lokaal eindpunt per API-definitie toegestaan."
+    deprecatedFunctionWarningMessage                                  = "WAARSCHUWING: De functie '{0}' is verouderd en zal in toekomstige versies worden verwijderd. Gebruik in plaats daarvan de functie '{1}'."
     suspendingMessage                                                 = 'Onderbreken'
     resumingMessage                                                   = 'Hervatten'
     serverControlCommandsTitle                                        = "Serverbedieningscommando's:"
@@ -326,4 +328,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Rate Limit-regel met de naam '{0}' bestaat niet."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Toegangslimietregel met de naam '{0}' bestaat al."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Toegangslimietregel met de naam '{0}' bestaat niet."
+    loggerDoesNotExistExceptionMessage                                = "Logger '{0}' bestaat niet."
 }

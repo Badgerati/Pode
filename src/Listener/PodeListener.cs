@@ -265,27 +265,27 @@ namespace Pode
         protected override void Close()
         {
             // close existing contexts
-            PodeHelpers.WriteErrorMessage($"Closing contexts", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closing contexts", this, PodeLoggingLevel.Verbose);
             foreach (var _context in Contexts.ToArray())
             {
                 _context.Dispose(true);
             }
 
             Contexts.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed contexts", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closed contexts", this, PodeLoggingLevel.Verbose);
 
             // close connected signals
-            PodeHelpers.WriteErrorMessage($"Closing signals", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closing signals", this, PodeLoggingLevel.Verbose);
             foreach (var _signal in Signals.Values.ToArray())
             {
                 _signal.Dispose();
             }
 
             Signals.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed signals", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closed signals", this, PodeLoggingLevel.Verbose);
 
             // close connected server events
-            PodeHelpers.WriteErrorMessage($"Closing server events", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closing server events", this, PodeLoggingLevel.Verbose);
             foreach (var _sseName in ServerEvents.Values.ToArray())
             {
                 foreach (var _sse in _sseName.Values.ToArray())
@@ -297,17 +297,17 @@ namespace Pode
             }
 
             ServerEvents.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed server events", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closed server events", this, PodeLoggingLevel.Verbose);
 
             // shutdown the sockets
-            PodeHelpers.WriteErrorMessage($"Closing sockets", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closing sockets", this, PodeLoggingLevel.Verbose);
             for (var i = Sockets.Count - 1; i >= 0; i--)
             {
                 Sockets[i].Dispose();
             }
 
             Sockets.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed sockets", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closed sockets", this, PodeLoggingLevel.Verbose);
         }
     }
 }

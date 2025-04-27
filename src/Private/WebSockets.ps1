@@ -21,8 +21,8 @@ function New-PodeWebSocketReceiver {
 
     try {
         $receiver = [PodeReceiver]::new($PodeContext.Tokens.Cancellation.Token)
-        $receiver.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-        $receiver.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
+        $receiver.ErrorLoggingEnabled = (Test-PodeLoggerEnabled -Type Error)
+        $receiver.ErrorLoggingLevels = If ( $listener.ErrorLoggingEnabled) { @(Get-PodeLoggerLevel -Type Error) } else { @() }
         $PodeContext.Server.WebSockets.Receiver = $receiver
         $PodeContext.Receivers += $receiver
     }

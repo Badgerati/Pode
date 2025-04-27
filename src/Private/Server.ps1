@@ -98,7 +98,7 @@ function Start-PodeInternalServer {
 
         if (!$PodeContext.Server.IsServerless) {
             # start runspace for loggers
-            Start-PodeLoggingRunspace
+            Start-PodeLoggerDispatcher
 
             # start runspace for schedules
             Start-PodeScheduleRunspace
@@ -255,7 +255,7 @@ function Restart-PodeInternalServer {
 
         $PodeContext.Server.Views.Clear()
         $PodeContext.Timers.Items.Clear()
-        $PodeContext.Server.Logging.Types.Clear()
+        Clear-PodeLogging
 
         # clear schedules
         $PodeContext.Schedules.Items.Clear()

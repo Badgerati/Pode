@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "Parametr o nazwie '{0}' nie został dostarczony w żądaniu lub nie ma dostępnych danych."
     cacheStorageNotFoundForSetExceptionMessage                        = "Nie znaleziono magazynu pamięci podręcznej o nazwie '{0}' podczas próby ustawienia elementu w pamięci podręcznej '{1}'."
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: Już zdefiniowane.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'Rejestrowanie błędów jest już włączone.'
     valueForUsingVariableNotFoundExceptionMessage                     = "Nie można znaleźć wartości dla '`$using:{0}'."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = 'Narzędzie do dokumentów RapidPdf nie obsługuje OpenAPI 3.1'
     oauth2ClientSecretRequiredExceptionMessage                        = 'OAuth2 wymaga tajemnicy klienta, gdy nie używa się PKCE.'
@@ -281,10 +280,12 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "Dostarczony schemat '{0}' dla walidatora uwierzytelniania '{1}' wymaga ważnego ScriptBlock."
     sseFailedToBroadcastExceptionMessage                              = 'SSE nie udało się przesłać z powodu zdefiniowanego poziomu przesyłania SSE dla {0}: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Moduł Active Directory jest dostępny tylko w systemie Windows.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'Rejestrowanie żądań jest już włączone.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Podano nieprawidłowy czas trwania Access-Control-Max-Age: {0}. Powinien być większy niż 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'Definicja OpenAPI o nazwie {0} już istnieje.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag nie może być używany wewnątrz 'ScriptBlock' Select-PodeOADefinition."
+    loggingAlreadyEnabledExceptionMessage                             = "Rejestrowanie '{0}' jest już włączone."
+    invalidEncodingExceptionMessage                                   = 'Nieprawidłowe kodowanie: {0}'
+    syslogProtocolExceptionMessage                                    = 'Protokół Syslog może używać tylko RFC3164 lub RFC5424.'
     taskProcessDoesNotExistExceptionMessage                           = "Proces zadania '{0}' nie istnieje."
     scheduleProcessDoesNotExistExceptionMessage                       = "Proces harmonogramu '{0}' nie istnieje."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Tag definicji dla Route nie może zostać zmieniony.'
@@ -292,6 +293,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
     localEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."
+    deprecatedFunctionWarningMessage                                  = "OSTRZEŻENIE: Funkcja '{0}' jest przestarzała i zostanie usunięta w przyszłych wersjach. Użyj funkcji '{1}' zamiast niej."
     suspendingMessage                                                 = 'Wstrzymywanie'
     resumingMessage                                                   = 'Wznawianie'
     serverControlCommandsTitle                                        = 'Polecenia sterowania serwerem:'
@@ -326,4 +328,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Reguła limitu szybkości o nazwie '{0}' nie istnieje."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Reguła limitu dostępu o nazwie '{0}' już istnieje."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Reguła limitu dostępu o nazwie '{0}' nie istnieje."
+    loggerDoesNotExistExceptionMessage                                = "Logger '{0}' nie istnieje."
 }
