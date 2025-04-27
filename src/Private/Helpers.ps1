@@ -3308,31 +3308,6 @@ function Test-PodePlaceholder {
     return ($Path -imatch $Placeholder)
 }
 
-
-<#
-.SYNOPSIS
-Retrieves the PowerShell module manifest object for the specified module.
-
-.DESCRIPTION
-This function constructs the path to a PowerShell module manifest file (.psd1) located in the parent directory of the script root. It then imports the module manifest file to access its properties and returns the manifest object. This can be useful for scripts that need to dynamically discover and utilize module metadata, such as version, dependencies, and exported functions.
-
-.PARAMETERS
-This function does not accept any parameters.
-
-.EXAMPLE
-$manifest = Get-PodeModuleManifest
-This example calls the `Get-PodeModuleManifest` function to retrieve the module manifest object and stores it in the variable `$manifest`.
-
-#>
-function Get-PodeModuleManifest {
-    # Construct the path to the module manifest (.psd1 file)
-    $moduleManifestPath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -ChildPath 'Pode.psd1'
-
-    # Import the module manifest to access its properties
-    $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath
-    return  $moduleManifest
-}
-
 <#
 .SYNOPSIS
     Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.
@@ -3366,8 +3341,8 @@ function Test-PodeVersionPwshEOL {
     param(
         [switch] $ReportUntested
     )
-    $moduleManifest = Get-PodeModuleManifest
-    if ($moduleManifest.ModuleVersion -eq '$version$') {
+
+    if ($PodeManifest.ModuleVersion -eq '$version$') {
         return @{
             eol       = $false
             supported = $true
@@ -3375,7 +3350,7 @@ function Test-PodeVersionPwshEOL {
     }
 
     $psVersion = $PSVersionTable.PSVersion
-    $eolVersions = $moduleManifest.PrivateData.PwshVersions.Untested -split ','
+    $eolVersions = $PodeManifest.PrivateData.PwshVersions.Untested -split ','
     $isEol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
 
     if ($isEol) {
@@ -3383,7 +3358,7 @@ function Test-PodeVersionPwshEOL {
         Write-PodeHost ($PodeLocale.eolPowerShellWarningMessage -f $PodeVersion, $PSVersion) -ForegroundColor Yellow
     }
 
-    $SupportedVersions = $moduleManifest.PrivateData.PwshVersions.Supported -split ','
+    $SupportedVersions = $PodeManifest.PrivateData.PwshVersions.Supported -split ','
     $isSupported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
 
     if ((! $isSupported) -and (! $isEol) -and $ReportUntested) {
@@ -4007,6 +3982,180 @@ function ConvertTo-PodeSleep {
 #>
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
+}
+
+<#
+.SYNOPSIS
+    Retrieves the name of the main Pode application script.
+
+.DESCRIPTION
+    The `Get-PodeApplicationName` function determines the name of the primary script (`.ps1`)
+    that started execution. It does this by examining the PowerShell call stack and
+    extracting the first script file that appears.
+
+    If no script file is found in the call stack, the function returns `"NoName"`.
+
+.OUTPUTS
+    [string]
+    Returns the filename of the main application script, or `"NoName"` if no script is found.
+
+.EXAMPLE
+    Get-PodeApplicationName
+
+    This retrieves the name of the main script that launched the Pode application.
+
+.EXAMPLE
+    $AppName = Get-PodeApplicationName
+    Write-Host "Application Name: $AppName"
+
+    This stores the retrieved application name in a variable and prints it.
+
+.NOTES
+    - This function relies on `Get-PSCallStack`, meaning it must be run within a script execution context.
+    - If called interactively or if no `.ps1` script is in the call stack, it will return `"NoName"`.
+    - This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeApplicationName {
+    $scriptFrame = (Get-PSCallStack | Where-Object { $_.Command -match '\.ps1$' } | Select-Object -First 1)
+    if ($scriptFrame) {
+        return    [System.IO.Path]::GetFileName($scriptFrame.Command)
+    }
+    else {
+        return 'NoName'
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Returns the current date and time in UTC format.
+
+.DESCRIPTION
+    This function retrieves the current date and time in Coordinated Universal Time (UTC), ensuring consistency across different time zones.
+
+.OUTPUTS
+    [DateTime] - The current UTC date and time.
+
+.EXAMPLE
+    Get-PodeUtcNow
+
+    Returns the current UTC datetime.
+
+.NOTES
+    - This function is required to allow Pester test to mock it
+    - This function is for internal Pode usage and may be subject to change.
+#>
+function Get-PodeUtcNow {
+    [CmdletBinding()]
+    [OutputType([System.DateTime])]
+    param ()
+
+    process {
+        return [System.DateTime]::UtcNow
+    }
+}
+
+<#
+.SYNOPSIS
+	Evaluates if a given state version is valid against the current Pode version.
+
+.DESCRIPTION
+	This internal function compares two Pode version strings to determine if the state version is acceptable for use with the current version.
+	It accounts for semantic versioning rules and special handling for pre-release identifiers (e.g., alpha, beta).
+	If the current version is set to '[dev]', it always returns true to permit development overrides.
+
+.PARAMETER CurrentVersion
+	The currently executing Pode version string. This may include pre-release identifiers or be '[dev]'.
+
+.PARAMETER StateVersion
+	The version string from state data that should be validated against the current Pode version.
+
+.OUTPUTS
+	System.Boolean
+
+.EXAMPLE
+	Compare-PodeVersion -CurrentVersion '2.5.0' -StateVersion '2.4.3'
+	# Returns $true since the state version is less than the current version.
+
+.EXAMPLE
+	Compare-PodeVersion -CurrentVersion '2.5.0-beta.2' -StateVersion '2.5.0-beta.1'
+	# Returns $true since the state version is a lower pre-release of the same channel.
+
+.EXAMPLE
+	Compare-PodeVersion -CurrentVersion '2.5.0' -StateVersion '2.5.0-beta.1'
+	# Returns $false since a production version cannot accept a pre-release state.
+
+.NOTES
+	This is an internal Pode function and is subject to change.
+#>
+function Compare-PodeVersion {
+    param (
+        [string]$CurrentVersion,
+        [string]$StateVersion
+    )
+
+    # [dev] always passes.
+    if ($CurrentVersion -eq '[dev]') {
+        return $true
+    }
+
+    # Determine if versions have pre-release parts.
+    $currentHasPre = $CurrentVersion -match '-'
+    $stateHasPre = $StateVersion -match '-'
+
+    # Rule: Production (no pre-release) should never accept a pre-release state.
+    if (-not $currentHasPre -and $stateHasPre) {
+        return $false
+    }
+
+    # Split each version into base and pre-release components.
+    $currentSplit = $CurrentVersion -split '-', 2
+    $stateSplit = $StateVersion -split '-', 2
+
+    $currentBase = [System.Version]::Parse($currentSplit[0])
+    $stateBase = [System.Version]::Parse($stateSplit[0])
+
+
+    # Compare base versions.
+    if ($stateBase -lt $currentBase) {
+        return $true
+    }
+    elseif ($stateBase -gt $currentBase) {
+        return $false
+    }
+
+    # Base versions are equal.
+    $currentPre = if ($currentSplit.Length -gt 1) { $currentSplit[1] } else { $null }
+    $statePre = if ($stateSplit.Length -gt 1) { $stateSplit[1] } else { $null }
+
+    # If current is production (no pre-release) and state is not, allow it.
+    if ($null -eq $currentPre -and $null -eq $statePre) {
+        return $true
+    }
+    # If current has a pre-release but state is production, that's not allowed.
+    if ($null -ne $currentPre -and $null -eq $statePre) {
+        return $false
+    }
+
+    # Both have pre-release parts: split on the period.
+    $currentParts = $currentPre -split '\.'
+    $stateParts = $statePre -split '\.'
+
+    # Compare pre-release channels (e.g. alpha vs beta)
+    $currentTag = $currentParts[0]
+    $stateTag = $stateParts[0]
+
+    if ($currentTag -ne $stateTag) {
+        # Different channels are not allowed.
+        return $false
+    }
+
+    # Compare numeric identifiers if available.
+    $currentNum = if ($currentParts.Length -gt 1) { [int]$currentParts[1] } else { 0 }
+    $stateNum = if ($stateParts.Length -gt 1) { [int]$stateParts[1] } else { 0 }
+
+    # Allow state only if its numeric part is less than or equal to current.
+    return ($stateNum -le $currentNum)
 }
 
 <#

@@ -7,6 +7,12 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
+    $helperPath = (Split-Path -Parent -Path $path) -ireplace 'unit', 'shared'
+    . "$helperPath/TestHelper.ps1"
+
+    # Import the module manifest to access its properties
+    $PodeManifest = Get-PodeModuleManifest -Src $src
+
     $PodeContext = @{ 'Server' = $null; }
 }
 
@@ -17,7 +23,7 @@ Describe 'Set-PodeState' {
     }
 
     It 'Sets and returns an object' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         $result = Set-PodeState -Name 'test' -Value 7
 
         $result | Should -Be 7
@@ -26,11 +32,11 @@ Describe 'Set-PodeState' {
     }
 
     It 'Sets by pipe and returns an object array' {
-        $PodeContext.Server = @{ 'State' = @{} }
-        $result =  @(7,3,4)|Set-PodeState -Name 'test'
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
+        $result = @(7, 3, 4) | Set-PodeState -Name 'test'
 
-        $result | Should -Be @(7,3,4)
-        $PodeContext.Server.State['test'].Value | Should -Be @(7,3,4)
+        $result | Should -Be @(7, 3, 4)
+        $PodeContext.Server.State['test'].Value | Should -Be @(7, 3, 4)
         $PodeContext.Server.State['test'].Scope | Should -Be @()
     }
 }
@@ -42,7 +48,7 @@ Describe 'Get-PodeState' {
     }
 
     It 'Gets an object from the state' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Get-PodeState -Name 'test' | Should -Be 8
     }
@@ -55,7 +61,7 @@ Describe 'Remove-PodeState' {
     }
 
     It 'Removes an object from the state' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Remove-PodeState -Name 'test' | Should -Be 8
         $PodeContext.Server.State['test'] | Should -Be $null
@@ -72,7 +78,7 @@ Describe 'Save-PodeState' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Out-File {}
 
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Save-PodeState -Path './state.json'
 
@@ -83,7 +89,7 @@ Describe 'Save-PodeState' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Out-File {}
 
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Save-PodeState -Path './state.json' -Include 'test'
 
@@ -94,7 +100,7 @@ Describe 'Save-PodeState' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Out-File {}
 
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Save-PodeState -Path './state.json' -Exclude 'test'
 
@@ -111,9 +117,9 @@ Describe 'Restore-PodeState' {
     It 'Restores the state from file' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Test-Path { return $true }
-        Mock Get-Content { return '{ "Name": "Morty" }' }
+        Mock Get-Content { return '{"Metadata":{"Product":"Pode","Version":"[dev]","Timestamp":"2025-02-04T01:54:30.6400033Z","Application":"Pester"},"Data":{"Type":"ConcurrentDictionary","Items":[{"Key":"Name","Value":{"Type":"ConcurrentDictionary","Items":[{"Key":"Value","Value":"Morty"},{"Key":"Scope","Value":[]}]}}]}}' }
 
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase); ApplicationName = 'Pester' }
         Restore-PodeState -Path './state.json'
         Get-PodeState -Name 'Name' | Should -Be 'Morty'
     }
@@ -126,14 +132,101 @@ Describe 'Test-PodeState' {
     }
 
     It 'Returns true for an object being in the state' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Test-PodeState -Name 'test' | Should -Be $true
     }
 
     It 'Returns false for an object not being in the state' {
-        $PodeContext.Server = @{ 'State' = @{} }
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Test-PodeState -Name 'tests' | Should -Be $false
+    }
+}
+
+# Get-PodeStateNames.Tests.ps1
+# Pester 5 test script for Get-PodeStateNames
+
+# If your function is in a separate file, dot-source it. Adjust the path as needed:
+# . "$PSScriptRoot\..\Functions\Get-PodeStateNames.ps1"
+
+Describe 'Get-PodeStateNames' -Tags 'Unit', 'Pode' {
+    BeforeAll {
+        # Mocking up $PodeLocale and $PodeContext to simulate Pode's environment.
+        $PodeLocale = @{
+            podeNotInitializedExceptionMessage = 'Pode has not been initialized.'
+        }
+
+        $PodeContext = @{
+            Server = @{
+                State = $null
+            }
+        }
+ 
+    }
+
+    Context 'When PodeContext.Server.State is $null' {
+        It 'Throws an exception if state is null' {
+            { Get-PodeStateNames } | Should -Throw 'Pode has not been initialized.'
+        }
+    }
+
+    Context 'When PodeContext.Server.State is a valid ConcurrentDictionary' {
+        BeforeEach {
+            # Initialize the thread-safe dictionary before each test
+            $PodeContext.Server.State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
+            # For each key, store another ConcurrentDictionary with "Scope" and "Data"
+            # Key1 -> { Scope = 'Test1'; Data = 'Value1' }
+            # Key2 -> { Scope = 'Test2'; Data = 'Value2' }
+            # SpecialKey -> { Scope = 'Test1'; Data = 'SpecialValue' }
+
+            $cd1 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+            $cd1['Scope'] = 'Test1'
+            $cd1['Data'] = 'Value1'
+            $null = $PodeContext.Server.State.TryAdd('Key1', $cd1)
+
+            $cd2 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+            $cd2['Scope'] = 'Test2'
+            $cd2['Data'] = 'Value2'
+            $null = $PodeContext.Server.State.TryAdd('Key2', $cd2)
+
+            $cd3 = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+            $cd3['Scope'] = 'Test1'
+            $cd3['Data'] = 'SpecialValue'
+            $null = $PodeContext.Server.State.TryAdd('SpecialKey', $cd3)
+        }
+
+        It 'Returns all keys if no scope or pattern is specified' {
+            $keys = Get-PodeStateNames
+            $keys | Should -Contain 'Key1'
+            $keys | Should -Contain 'Key2'
+            $keys | Should -Contain 'SpecialKey'
+            $keys.Count | Should -Be 3
+        }
+
+        It 'Filters by scope correctly' {
+            $keys = Get-PodeStateNames -Scope 'Test1'
+            $keys.Count | Should -Be 2
+            $keys | Should -Contain 'Key1'
+            $keys | Should -Contain 'SpecialKey'
+            $keys | Should -Not -Contain 'Key2'
+        }
+
+        It 'Filters by pattern correctly' {
+            # Pattern to match "Key\d" (e.g. Key1, Key2)
+            $keys = Get-PodeStateNames -Pattern 'Key\d'
+            $keys.Count | Should -Be 2
+            $keys | Should -Contain 'Key1'
+            $keys | Should -Contain 'Key2'
+            $keys | Should -Not -Contain 'SpecialKey'
+        }
+
+        It 'Filters by both scope and pattern' {
+            # e.g. Scope = 'Test1', Pattern = 'Special'
+            $keys = Get-PodeStateNames -Scope 'Test1' -Pattern 'Special'
+            $keys.Count | Should -Be 1
+            $keys | Should -Contain 'SpecialKey'
+        }
     }
 }
