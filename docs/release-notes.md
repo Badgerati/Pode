@@ -1,5 +1,45 @@
 # Release Notes
 
+## v2.12.1
+
+Date: 27th April 2025
+
+```plain
+### Enhancements
+* #1495: Adds Hostname, Scheme, Query, and UtcDate to raw Request item for logging (thanks @chris-dma!)
+* #1509: Support for Custom and default Favicons in Pode Endpoints (thanks @mdaneri!)
+* #1518: Improved Compatibility for 'Write-PodeHostDivider' on Older Windows Versions (thanks @mdaneri!)
+* #1535: Adds new mapping for .mjs files, to application/javascript content-type
+* #1537: Adds support for fragmented WebSocket frames, and larger payloads
+* #1538: Bundles the OpenAPI Libraries with the Pode Module, for stability and to support offline servers (thanks @mdaneri!)
+
+### Bugs
+* #1507: Fixes Pode removing more log files than expected due to too broad of a filter (thanks @nightroman!)
+* #1507: Fixes the way logs are removed when using MaxDays, and servers restart daily (thanks @nightroman!)
+* #1515: Fix: Prevent Early Invocation of Write-PodeErrorLog in Console Setup (thanks @mdaneri!)
+* #1532: Fix buffer reuse issue in WebSockets (thanks @mdaneri!)
+* #1534: Fixes an issue with loading static content paths which contain wildcard characters
+* #1536: Fix crash during server restart, by clearing existing limit rules
+* #1539: Fixes a scoping issue in .pode files, where $_ would sometimes be $null
+* #1542: Fixes the file browser icons, so they render on PS5
+* #1542: Fixes the file browser parent directory create/update dates
+* #1546: Fixes unquoted YAML strings starting with special characters, incorrect indentation for standalone block literals, and incorrect line endings (CRLF) (thanks @mdaneri!)
+
+### Documentation
+* #1524: Fixes AzureAD link in Authentication Overview page
+
+### Packaging
+* #1541: Bump MkDocs-Material theme to v9.6.12
+* #1549: Bumps the InvokeBuild version in GitHub Actions to 5.12.2
+* #1549: Bumps the PS7.5 version in GitHub Actions to 7.5.1
+* #1550: Bump swagger-ui-dist from 5.20.8 to 5.21.0
+* #1551: Bump redoc from 2.4.0 to 2.5.0
+
+### Performance
+* #1540: Re-use existing FileInfo objects for reading/writing byte streams
+* #1540: Removes redundant MemoryStream which doubled memory-use when writing to Responses
+```
+
 ## v2.12.0
 
 Date: 23rd February 2025
