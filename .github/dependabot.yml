@@ -4,7 +4,12 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    labels:
+      - "packaging :package:"
+
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"  
+      interval: "daily"
+    labels:
+      - "packaging :package:"
