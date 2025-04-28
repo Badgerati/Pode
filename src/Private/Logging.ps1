@@ -135,7 +135,7 @@ function ConvertTo-PodeEventViewerLevel {
 function Get-PodeLoggingInbuiltType {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Errors', 'Requests')]
+        [ValidateSet('Errors', 'Requests','service')]
         [string]
         $Type
     )
@@ -189,6 +189,34 @@ function Get-PodeLoggingInbuiltType {
                     "Category: $($item.Category)",
                     "Message: $($item.Message)",
                     "StackTrace: $($item.StackTrace)"
+                )
+
+                # join the details and return
+                return "$($row -join "`n")`n"
+            }
+        }
+        'service' {
+            $script = {
+                param($item, $options)
+
+                # do nothing if the error level isn't present
+                if (@($options.Levels) -inotcontains $item.Level) {
+                    return
+                }
+
+                # just return the item if Raw is set
+                if ($options.Raw) {
+                    return $item
+                }
+
+                # build the exception details
+                $row = @(
+                    "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
+                    "Level: $($item.Level)",
+                    "ThreadId: $($item.ThreadId)",
+                    "Server: $($item.Server)",
+                    "Category: $($item.Category)",
+                    "Message: $($item.Message)"
                 )
 
                 # join the details and return

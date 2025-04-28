@@ -292,6 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
     localEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
+    serviceAlreadyRegisteredException                                 = "サービス '{0}' はすでに登録されています。"
+    serviceIsNotRegisteredException                                   = "サービス '{0}' は登録されていません。"
+    serviceCommandFailedException                                     = "サービスコマンド '{0}' はサービス '{1}' で失敗しました。"
+    serviceRegistrationException                                      = "サービス '{0}' の登録に失敗しました。"
+    serviceIsRunningException                                         = "サービス '{0}' が実行中です。強制的に停止するには、-Force パラメーターを使用してください。"
+    serviceUnRegistrationException                                    = "サービス '{0}' の登録解除に失敗しました。"
+    passwordRequiredForServiceUserException                           = "Windowsでサービスユーザーを指定する際にはパスワードが必要です。ユーザー '{0}' に有効なパスワードを入力してください。"
+    featureNotSupportedException                                      = '{0} は Windows のみでサポートされています。'
     suspendingMessage                                                 = '停止'
     resumingMessage                                                   = '再開'
     serverControlCommandsTitle                                        = 'サーバーコントロールコマンド:'
@@ -326,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "名前が '{0}' のレート制限ルールは存在しません。"
     accessLimitRuleAlreadyExistsExceptionMessage                      = "名前が '{0}' のアクセス制限ルールは既に存在します。"
     accessLimitRuleDoesNotExistExceptionMessage                       = "名前が '{0}' のアクセス制限ルールは存在しません。"
+    cannotBindPortInUseExceptionMessage                               = '{0}:{1} にバインドできません — そのポートは他のプロセスによって使用されています。'
 }

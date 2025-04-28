@@ -196,6 +196,8 @@ function Start-PodeInternalServer {
         Invoke-PodeEvent -Type Running
 
 
+        # Start Service Monitor
+        Start-PodeServiceHeartbeat
     }
     catch {
         throw

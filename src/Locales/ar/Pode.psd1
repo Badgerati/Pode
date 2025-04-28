@@ -292,6 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
     localEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
+    serviceAlreadyRegisteredException                                 = "الخدمة '{0}' مسجلة بالفعل."
+    serviceIsNotRegisteredException                                   = "الخدمة '{0}' غير مسجلة."
+    serviceCommandFailedException                                     = "فشل الأمر '{0}' في الخدمة '{1}'."
+    serviceRegistrationException                                      = "فشل تسجيل الخدمة '{0}'."
+    serviceIsRunningException                                         = "الخدمة '{0}' تعمل. استخدم المعامل -Force للإيقاف بالقوة."
+    serviceUnRegistrationException                                    = "فشل إلغاء تسجيل الخدمة '{0}'."
+    passwordRequiredForServiceUserException                           = "مطلوب كلمة مرور عند تحديد مستخدم الخدمة في نظام Windows. يرجى تقديم كلمة مرور صالحة للمستخدم '{0}'."
+    featureNotSupportedException                                      = '{0} مدعومة فقط على نظام التشغيل Windows.'
     suspendingMessage                                                 = 'تعليق'
     resumingMessage                                                   = 'استئناف'
     serverControlCommandsTitle                                        = 'أوامر التحكم بالخادم:'
@@ -326,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = 'قاعدة الحد الأقصى للمعدل غير موجودة: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = 'تم تعريف قاعدة الحد الأقصى للوصول بالفعل: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = 'قاعدة الحد الأقصى للوصول غير موجودة: {0}'
+    cannotBindPortInUseExceptionMessage                               = 'لا يمكن الربط مع {0}:{1} — المنفذ مستخدم بالفعل من قبل عملية أخرى.'
 }
