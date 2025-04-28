@@ -1,6 +1,6 @@
 {
   "name": "pode",
-  "description": "Web Componenent for use with the Pode PowerShell web server",
+  "description": "Web Component for use with the Pode PowerShell web server",
   "repository": "https://github.com/Badgerati/Pode.git",
   "author": "Matthew Kelly <badgerati42@gmail.com>",
   "license": "MIT",
@@ -11,8 +11,8 @@
     "openapi-explorer": "2.2.734",
     "rapidoc": "9.3.8",
     "rapipdf": "2.2.1",
-    "redoc": "2.4.0",
+    "redoc": "2.5.0",
     "swagger-editor-dist": "4.14.5",
-    "swagger-ui-dist": "5.20.8"
+    "swagger-ui-dist": "5.21.0"
   }
 }
