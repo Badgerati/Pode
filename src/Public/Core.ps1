@@ -222,7 +222,9 @@ function Start-PodeServer {
     end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
-        }    # Store the name of the current runspace
+        }
+
+        # Store the name of the current runspace
         $previousRunspaceName = Get-PodeCurrentRunspaceName
         # Sets the name of the current runspace
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
@@ -230,6 +232,26 @@ function Start-PodeServer {
         # ensure the session is clean
         $Script:PodeContext = $null
         $ShowDoneMessage = $true
+
+        # check if podeWatchdog is configured
+        if ($PodeWatchdog) {
+            if ($null -ne $PodeWatchdog.DisableTermination -or
+                $null -ne $PodeWatchdog.Quiet -or
+                $null -ne $PodeWatchdog.PipeName -or
+                $null -ne $PodeWatchdog.Interval
+            ) {
+                if ($PodeWatchdog -is [hashtable]) {
+                    $watchdogClient = ConvertTo-PodeConcurrentStructure -InputObject $PodeWatchdog
+                }
+                else {
+                    $watchdogClient = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                    $PodeWatchdog | Get-Member -MemberType Properties | ForEach-Object {
+                        $watchdogClient[$_.Name] = $PodeWatchdog.$($_.Name) }
+                }
+                $DisableTermination = [switch]$watchdogClient.DisableTermination
+                $Quiet = [switch]$watchdogClient.Quiet
+            }
+        }
 
         try {
             # if we have a filepath, resolve it - and extract a root path from it
@@ -268,6 +290,7 @@ function Start-PodeServer {
                 EnableBreakpoints    = $EnableBreakpoints
                 IgnoreServerConfig   = $IgnoreServerConfig
                 ConfigFile           = $ConfigFile
+                Watchdog             = $watchdogClient
                 Daemon               = $Daemon
             }
 
@@ -358,6 +381,7 @@ function Start-PodeServer {
             # clean the session
             $PodeContext = $null
             $PodeLocale = $null
+            $PodeWatchdog = $null
         }
     }
 }
