@@ -62,6 +62,10 @@
     - Remove-Module: Removes the Pode module from the local registry.
     - SetupPowerShell: Sets up the PowerShell environment for the build.
     - ReleaseNotes: Generates release notes based on merged pull requests.
+    - Sort-LanguageFiles: Sort Language resource files
+    - AutoMerge-LanguageFiles: Automerge Language Resource files.
+    - Format-FunctionHeaders: Formats function headers in the file to follow Pode's standard style.
+    - Refresh-HeaderFooter: Adds or refreshes the file-level header and footer using Pode's standard formatting.
 
 .EXAMPLE
     Invoke-Build -Task Default
@@ -883,6 +887,129 @@ function Split-PodeBuildPwshPath {
     }
 }
 
+
+<#
+.SYNOPSIS
+  Processes language resource files and standardizes their formatting.
+
+.DESCRIPTION
+  This function scans for `Pode.psd1` language resource files within the specified `Locales` directory.
+  It normalizes key-value pairs, removes duplicate keys while preserving the last occurrence, and
+  organizes messages into Exception Messages and General Messages. The cleaned and formatted content
+  is then written back to the respective files.
+
+.PARAMETER None
+  This function does not accept parameters. It operates on files found within `./src/Locales`.
+
+.OUTPUTS
+  None. The function modifies `Pode.psd1` files directly by updating their content.
+
+.EXAMPLE
+  Group-LanguageResource
+  Processes all `Pode.psd1` files in `./src/Locales`, normalizes their format, and removes duplicates.
+
+.NOTES
+  - This function ensures that all messages are consistently formatted and sorted.
+  - Duplicate keys are detected, with only the first occurrence being retained.
+  - Exception messages are grouped separately from general messages.
+  - The function enforces single-quoted values while escaping any existing single quotes.
+#>
+function Group-LanguageResource {
+    $localePath = './src/Locales'
+    $files = Get-ChildItem -Path $localePath -Filter 'Pode.psd1' -Recurse
+
+    foreach ($file in $files) {
+        Write-Host "Processing file: $($file.FullName)"
+
+        # Read raw content
+        $content = Get-Content $file.FullName -Raw
+
+        $normalized = [regex]::Replace(
+            $content,
+            '(?m)^(?<key>\s*[^=\s]+)\s*=\s*(")(?<value>.*?)(")\s*$',
+            {
+                param($match)
+                # Get the value and double any single quotes within it
+                $value = $match.Groups['value'].Value -replace "'", "''"
+                # Build the new line using single quotes
+                return "$($match.Groups['key'].Value) = '$value'"
+            }
+        )
+
+
+        # Extract keys and values using improved regex to support accented characters
+        $matches = [regex]::Matches($normalized, "(?m)^\s*([^=\s]+)\s*=\s*'(.*?)'\s*$")
+
+
+        # Use a hashtable to track unique keys and remove duplicates
+        $uniqueMessages = [ordered]@{}
+        foreach ($match in $matches) {
+            $key = $match.Groups[1].Value
+            $value = $match.Groups[2].Value
+
+            if (  $uniqueMessages.Contains($key)) {
+                Write-Warning "Duplicate key '$key' found in $($file.Name). Keeping only the second occurrence."
+            }
+            $uniqueMessages[$key] = $value
+        }
+
+        # Sort keys
+        $sortedKeys = $uniqueMessages.Keys | Sort-Object
+
+        # Split into Exception and General Messages
+        $exceptionMessages = [ordered]@{}
+        $generalMessages = [ordered]@{}
+
+        foreach ($key in $sortedKeys) {
+            if ($key -match 'ExceptionMessage$') {
+                $exceptionMessages[$key] = $uniqueMessages[$key]
+            }
+            else {
+                $generalMessages[$key] = $uniqueMessages[$key]
+            }
+        }
+
+        $maxLength = ($sortedKeys | Measure-Object -Property Length -Maximum).Maximum + 1
+
+        # Build the file content
+        $lines = @()
+        $lines += '@{'
+        $lines += '    # -------------------------------'
+        $lines += '    # Exception Messages'
+        $lines += '    # -------------------------------'
+
+        foreach ($key in $exceptionMessages.Keys) {
+            $padding = ' ' * ($maxLength - $key.Length)
+            # Replace single quotes only if they're not already escaped
+            $escapedValue = [regex]::Replace($exceptionMessages[$key], "(?<!')'(?!')", "''")
+            $lines += "    $key$padding= '$escapedValue'"
+        }
+
+        $lines += ''
+        $lines += '    # -------------------------------'
+        $lines += '    # General Messages'
+        $lines += '    # -------------------------------'
+
+        foreach ($key in $generalMessages.Keys) {
+            $padding = ' ' * ($maxLength - $key.Length)
+            # Replace single quotes only if they're not already escaped
+            $escapedValue = [regex]::Replace($generalMessages[$key], "(?<!')'(?!')", "''")
+            $lines += "    $key$padding= '$escapedValue'"
+        }
+
+        $lines += '}'
+
+        # Write the updated content back to the file
+        [System.IO.File]::WriteAllText(
+            $file.FullName,
+            ($lines -join "`r`n") + "`r`n",
+            [System.Text.UTF8Encoding]::new($false)
+        )
+
+        Write-Host "Updated file: $($file.FullName)"
+    }
+}
+
 # Check if the script is running under Invoke-Build
 if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
     Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
@@ -930,6 +1057,10 @@ Add-BuildTask Default {
     Write-Host '- CleanDocs: Cleans up generated documentation files.'
     Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
     Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
+    Write-Host '- Sort-LanguageFiles: Sort Language resource files.'
+    Write-Host '- AutoMerge-LanguageFiles: Automerge Language Resource files.'
+    Write-Host "- Format-FunctionHeaders: Formats function headers in the file to follow Pode's standard style."
+    Write-Host "- Refresh-HeaderFooter: Adds or refreshes the file-level header and footer using Pode's standard formatting."
 }
 
 <#
@@ -1818,3 +1949,263 @@ task ReleaseNotes {
         Write-Host ''
     }
 }
+
+
+# Sort the language file contents and remove any duplicate entries.
+Add-BuildTask Sort-LanguageFiles {
+    Group-LanguageResource
+}
+
+# Adds a build task to automatically merge conflicting language files.
+# This task identifies unresolved merge conflicts in the 'src/Locales/' directory and attempts to resolve them by:
+# 1. Detecting files with merge conflicts using `git diff --name-only --diff-filter=U`.
+# 2. Removing Git conflict markers (`<<<<<<< HEAD`, `=======`, and `>>>>>>> pr-<number>`),
+#    dynamically detecting the PR number from the conflict markers.
+# 3. Running `Group-LanguageResource` to ensure language resources are correctly formatted.
+# 4. Staging the resolved files (`git add ./src/Locales/*`).
+# 5. Printing status messages for visibility during execution.
+Add-BuildTask AutoMerge-LanguageFiles {
+    Write-Output 'Attempting auto-merge for language files...'
+
+    # Identify files with unresolved merge conflicts in 'src/Locales/'.
+    git diff --name-only --diff-filter=U ./src/Locales/ | ForEach-Object {
+        $content = Get-Content $_ -Raw
+        if ($content -match '>>>>>>> pr-(\d+)') {
+            # Remove Git conflict markers, dynamically resolving PR numbers
+            $content -replace '<<<<<<< HEAD', '' -replace '=======', '' -replace ">>>>>>> pr-$($matches[1])", '' | Set-Content $_
+        }
+    }
+
+    # Ensure language resources are formatted and grouped correctly.
+    Group-LanguageResource
+
+    # Stage the resolved files.
+    git add ./src/Locales/*
+
+    Write-Output 'Language files auto-merged.'
+}
+
+
+
+# Adds or refreshes the file-level header and footer using Pode's standard formatting.
+Add-BuildTask Refresh-HeaderFooter {
+    $baseDirs = '.\src\Public', '.\src\Private'
+
+    foreach ($dir in $baseDirs) {
+        $isPrivate = $dir -like '*\Private'
+
+        foreach ($file in Get-ChildItem -Path $dir -Recurse -Filter *.ps1) {
+            $path = $file.FullName
+            $original = Get-Content -Raw -Path $path
+
+            #
+            #  ———  CLEAN UP ANY PREVIOUSLY‑INJECTED HEADER & FOOTER ———
+            #
+
+            # Remove an existing Pode file header block (from start-of-file through its closing #>)
+            $cleaned = $original -replace '(?ms)^<#\r?\n\s*File:[\s\S]*?#>\s*(?:\r?\n)*', ''
+            # Strip old footer (use $cleaned, not $original!)
+            $cleaned = $cleaned -replace '(?ms)#[-]{42}\r?\n# End of [\s\S]*$', ''
+
+            # Now split on lines and work off $cleaned
+            $lines = $cleaned -split "`n"
+            $new = ''
+
+            #—— 1) Gather function names ——
+            $functions = @()
+            foreach ($ln in $lines) {
+                if ($ln -match '^\s*function\s+([a-zA-Z0-9\-_]+)\s*{') {
+                    $functions += $Matches[1]
+                }
+            }
+
+            # — Determine repo root & relative path
+            $repoRoot = (& git rev-parse --show-toplevel).Trim()
+            $relativePath = $path.Substring($repoRoot.Length + 1).Replace('\', '/')
+
+            # — Query Git for creation & last‐modified info
+            #   (uses ISO short dates; adjust --date= if you need time-of-day)
+            $gitCreated = (& git log --reverse --format="%ad" --date=short -- $relativePath |
+                    Select-Object -First 1)
+            if (-not $gitCreated) { $gitCreated = '(untracked)' }
+
+            $gitModified = (& git log -1 --format="%ad" --date=short -- $relativePath) `
+                -replace '^$', '(untracked)'
+            $lastAuthor = (& git log -1 --format="%an" -- $relativePath) `
+                -replace '^$', '—'
+            $lastSha = (& git log -1 --format="%h"  -- $relativePath) `
+                -replace '^$', '—'
+
+
+            #—— 2) Build top-of-file header ——
+            $headerLines = @(
+                '<#'
+                "    File:      $relativePath"
+                ''
+                "    Created:   $gitCreated"
+                "    Modified:  $gitModified by $lastAuthor (commit $lastSha)"
+            )
+
+
+            if ($functions.Count) {
+                $headerLines += @(
+                    ''
+                    '    Functions:'
+                )
+                foreach ($fn in $functions) {
+                    $headerLines += "        $fn"
+                }
+            }
+            # Standard Notes section (applies to all)
+            $headerLines += @(
+                ''
+                '    Notes:'
+                '        This file is part of the Pode server framework.'
+                '        https://github.com/Badgerati/Pode'
+                ''
+                '    License:'
+                '        MIT License - See LICENSE file in the project root for full license information.'
+            )
+            if ($isPrivate) {
+                $headerLines += @(
+                    ''
+                    '    WARNING: This file may contain internal implementation details.'
+                    '    Use at your own risk.'
+                )
+            }
+            $headerLines += @(
+                '#>'    # single blank line before code starts
+                ''      # first blank line
+                ''      # second blank line
+            )
+            $new += ($headerLines -join "`n")
+
+            $new += $cleaned.TrimEnd()
+            #  ——— APPEND A SINGLE FOOTER BLOCK ———
+            $new += "`n`n#------------------------------------------`n"
+            $new += "# End of $relativePath`n"
+            $new += '#------------------------------------------'
+
+
+            #—— 6) Write if changed ——
+            if ($new -and $new -ne $original) {
+                Set-Content -Path $path -Value $new
+            }
+        }
+    }
+}
+
+
+# Automatically formats the headers of all functions to match Pode's formatting conventions.
+Add-BuildTask Format-FunctionHeaders {
+    $baseDirs = '.\src\Public', '.\src\Private'
+
+    foreach ($dir in $baseDirs) {
+        $isPrivate = $dir -like '*\Private'
+
+        foreach ($file in Get-ChildItem -Path $dir -Recurse -Filter *.ps1) {
+            $path = $file.FullName
+            $original = Get-Content -Raw -Path $path
+
+            # ——— Extract and preserve the file header (up through the closing #> plus the two blank lines) ———
+            $headerPattern = '(?ms)^(<#\r?\n\s*File:[\s\S]*?#>\s*\r?\n\r?\n)'
+            $m = [regex]::Match($original, $headerPattern)
+            if ($m.Success) {
+                $fileHeader = $m.Value
+                $body = $original.Substring($m.Length)
+            }
+            else {
+                $fileHeader = ''
+                $body = $original
+            }
+
+            # Now split on lines and work off $cleaned
+            $lines = $body -split "`n"
+            # start your new content with the preserved header
+            $new = $fileHeader
+
+            #—— 3) Re‑format any existing help blocks ——
+            $insideHelp = $false
+            $sections = @()
+            foreach ($line in $lines) {
+                switch -Regex ($line) {
+                    '^\s*<#\s*$' {
+                        $insideHelp = $true
+                        $sections = @()
+                        continue
+                    }
+                    '^\s*#>\s*$' {
+                        # inject default .NOTES on private
+                        if ($isPrivate -and -not ($sections.Where({ $_.Header -match '^\.(NOTES)\b' }).Count)) {
+                            $sections += [pscustomobject]@{
+                                Header = '.NOTES'
+                                Lines  = @('This is an internal function and may change in future releases of Pode.')
+                            }
+                        }
+                        # rebuild help block
+                        $new += '<#' + "`n"
+                        foreach ($sec in $sections) {
+                            $new += "$($sec.Header)`n"
+                            foreach ($content in $sec.Lines) {
+                                if ($content.Trim() -eq '') {
+                                    $new += "`n"
+                                }
+                                else {
+                                    if ($sec.Header -match '^\.EXAMPLE\b') {
+                                        if ($content -match '^[ ]{4}') {
+                                            $new += "$content`n"
+                                        }
+                                        else {
+                                            $new += "    $content`n"
+                                        }
+                                    }
+                                    else {
+                                        $new += "    $($content.Trim())`n"
+                                    }
+                                }
+                            }
+                        }
+                        $new += '#>' + "`n"
+                        $insideHelp = $false
+                        continue
+                    }
+                    default {
+                        if ($insideHelp) {
+                            if ($line -match '^\s*(\.(SYNOPSIS|DESCRIPTION|PARAMETER|EXAMPLE|OUTPUTS|NOTES)\b.*)') {
+                                $sections += [pscustomobject]@{
+                                    Header = $Matches[1].Trim()
+                                    Lines  = @()
+                                }
+                            }
+                            elseif ($sections) {
+                                $sections[-1].Lines += $line
+                            }
+                            continue
+                        }
+                        $new += $line + "`n"
+                    }
+                }
+            }
+
+            #  BEFORE APPENDING FOOTER: trim any trailing blank lines/spaces
+            $new = $new.TrimEnd("`r", "`n", ' ')
+
+
+            #—— 5) Normalize blank lines ——
+            # a) After '#>' collapse any run of blank lines down to exactly one real newline
+            $new = $new -replace '(?m)(#>\r?\n)(?:[ \t]*\r?\n)+(?=\s*function\b)', '$1'
+            # b) Between a closing '}' and the next '<#', enforce exactly two real newlines
+            $new = $new -replace '(?m)(\})\r?\n(?:[ \t]*\r?\n)+<#', "`$1`n`n`n<#"
+
+            #—— 6) Write if changed ——
+            if ($new -and $new -ne $original) {
+                Set-Content -Path $path -Value $new
+            }
+        }
+    }
+}
+
+#------------------------------------------
+# End of pode.build.ps1
+#------------------------------------------
+
