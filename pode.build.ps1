@@ -1143,7 +1143,7 @@ Add-BuildTask IndexSamples {
     $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
         'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues')
 
-    # Convert exlusion list into single regex pattern for directory matching
+    # Convert exclusion list into single regex pattern for directory matching
     $dirSeparator = [IO.Path]::DirectorySeparatorChar
     $excludeDirs = "\$($dirSeparator)($($excludeDirs -join '|'))\$($dirSeparator)"
 
@@ -1180,9 +1180,6 @@ Add-BuildTask Build BuildDeps, Yarn, {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
 
-    # Retrieve the SDK version being used
-    #   $dotnetVersion = dotnet --version
-
     # Display the SDK version
     Write-Output "Building targets '$($targetFrameworks -join "','")' using .NET '$AvailableSdkVersion' framework."
 
@@ -1211,24 +1208,21 @@ Add-BuildTask Build BuildDeps, Yarn, {
     finally {
         Pop-Location
     }
-
-
-
 }
 
-# synopsis: Download the nmpm packages to pode_modules folder
-Add-BuildTask  Yarn {
+# synopsis: Download the npm packages to pode_modules folder
+Add-BuildTask Yarn {
     if ($PSVersionTable.PSEdition -eq 'Desktop') {
         yarn install --force --ignore-scripts --ignore-optional --ignore-engines --modules-folder pode_modules
     }
     else {
         yarn install --force --ignore-scripts --ignore-optional --ignore-engines  --modules-folder pode_modules 2>&1 | Select-String -NotMatch '^warning'
     }
+
     if (!$? -or ($LASTEXITCODE -ne 0)) {
         throw "yarn install failed with exit code $($LASTEXITCODE)"
     }
 }, MoveLibs
-
 
 # Synopsis: Move the libraries to the public directory
 Add-BuildTask MoveLibs {
@@ -1286,18 +1280,17 @@ Add-BuildTask MoveLibs {
         # If Comment exists, prepend it properly depending on file type
         if ($Item.Comment) {
             $fileContent = Get-Content -Raw -Path $Item.From
-            Set-Content -Path $Item.To -Value ($Item.Comment + "`n`n" + $fileContent)
+            ($Item.Comment + "`n`n" + $fileContent).Trim() | Out-File -FilePath $Item.To -Encoding utf8 -Force -NoNewline
         }
         else {
             New-Item -ItemType Directory -Force -Path $Item.To | Out-Null
-            # Copy file
-            Copy-Item -Force -Path $Item.From -Destination $Item.To| Out-Null
+            Copy-Item -Force -Path $Item.From -Destination $Item.To | Out-Null
         }
     }
 
     Write-Output "All third-party files copied to $Target"
-
 }
+
 <#
 # Packaging
 #>
@@ -1509,7 +1502,7 @@ Add-BuildTask CheckFailedTests {
     }
 }
 
-# Synopsis: If AppyVeyor or GitHub, push code coverage stats
+# Synopsis: If AppVeyor or GitHub, push code coverage stats
 Add-BuildTask PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
     try {
         $service = Get-PodeBuildService
@@ -1588,7 +1581,7 @@ Add-BuildTask DocsBuild DocsDeps, DocsHelpBuild, {
 # Clean-up
 #>
 
-# Synopsis: Clean the build enviroment
+# Synopsis: Clean the build environment
 Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs, CleanYarn
 
 # Synopsis: Clean the Deliverable folder
@@ -1876,6 +1869,8 @@ Add-BuildTask ReleaseNotes {
 
     foreach ($pr in $prs) {
         $labels = @($pr.labels.name)
+
+        # skip PRs with certain labels
         if ($labels -icontains 'superseded' -or
             $labels -icontains 'new-release' -or
             $labels -icontains 'internal-code :hammer:' -or
@@ -1883,7 +1878,20 @@ Add-BuildTask ReleaseNotes {
             continue
         }
 
-        $label = ($pr.labels[0].name -split ' ')[0]
+        # filter out labels that are not relevant
+        $label = @(foreach ($label in $labels) {
+                if ($label -imatch '^(story|priority)') {
+                    continue
+                }
+
+                if ($label -inotmatch '\s\:') {
+                    continue
+                }
+
+                ($label -split ' ', 2)[0]
+                break
+            })[0]
+
         if ([string]::IsNullOrWhiteSpace($label)) {
             $label = 'misc'
         }
@@ -1952,7 +1960,7 @@ Add-BuildTask ReleaseNotes {
 
     # add dependabot aggregated PRs
     if ($dependabot.Count -gt 0) {
-        $label = 'dependencies'
+        $label = 'Packaging'
         if (!$categories.Contains($label)) {
             $categories[$label] = @()
         }

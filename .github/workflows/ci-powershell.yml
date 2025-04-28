@@ -20,7 +20,7 @@ on:
     - '.github/workflows/ci-powershell.yml'
 
 env:
-  INVOKE_BUILD_VERSION: '5.12.0'
+  INVOKE_BUILD_VERSION: '5.12.2'
 
 jobs:
   build:
