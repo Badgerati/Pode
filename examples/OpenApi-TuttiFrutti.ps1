@@ -1029,10 +1029,10 @@ Some useful links:
     }
 
 
-    $yaml = Get-PodeOADefinition -Format Yaml -DefinitionTag 'v3.1'
-    $json = Get-PodeOADefinition -Format Json -DefinitionTag 'v3'
+    # $yaml = Get-PodeOADefinition -Format Yaml -DefinitionTag 'v3.1'
+    #  $json = Get-PodeOADefinition -Format Json -DefinitionTag 'v3'
 
-    Write-PodeHost "`rYAML Tag: v3.1  Output:`r $yaml"
+    #  Write-PodeHost "`rYAML Tag: v3.1  Output:`r $yaml"
 
-    Write-PodeHost "`rJSON Tag: v3 Output:`r $json"
+    # Write-PodeHost "`rJSON Tag: v3 Output:`r $json"
 }
