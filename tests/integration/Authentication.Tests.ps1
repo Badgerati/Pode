@@ -146,8 +146,8 @@ Describe 'Authentication Requests' {
         { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer fake-token' } -ErrorAction Stop } | Should -Throw -ExpectedMessage '*401*'
     }
 
-    It 'bearer - returns 400 for no token' {
-        { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer' } -ErrorAction Stop } | Should -Throw -ExpectedMessage '*400*'
+    It 'bearer - returns 401 for no token' {
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer' } -ErrorAction Stop } | Should -Throw -ExpectedMessage '*401*'
     }
 
 

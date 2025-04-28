@@ -85,6 +85,9 @@
 .PARAMETER Daemon
     Configures the server to run as a daemon with minimal console interaction and output.
 
+.PARAMETER ApplicationName
+    Specifies the name of the Pode application. If not provided, the default is the script's file name (excluding the extension).
+
 .EXAMPLE
     Start-PodeServer { /* server logic */ }
     Starts a Pode server using the supplied script block.
@@ -208,7 +211,10 @@ function Start-PodeServer {
         [Parameter(Mandatory = $true, ParameterSetName = 'FileDaemon')]
         [Parameter(Mandatory = $true, ParameterSetName = 'ScriptDaemon')]
         [switch]
-        $Daemon
+        $Daemon,
+
+        [string]
+        $ApplicationName
     )
 
     begin {
@@ -224,8 +230,13 @@ function Start-PodeServer {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }    # Store the name of the current runspace
         $previousRunspaceName = Get-PodeCurrentRunspaceName
+
+        if ([string]::IsNullOrEmpty($ApplicationName)) {
+            $ApplicationName = (Get-PodeApplicationName)
+        }
+
         # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name 'PodeServer'
+        Set-PodeCurrentRunspaceName -Name $ApplicationName
 
         # ensure the session is clean
         $Script:PodeContext = $null
@@ -268,6 +279,7 @@ function Start-PodeServer {
                 EnableBreakpoints    = $EnableBreakpoints
                 IgnoreServerConfig   = $IgnoreServerConfig
                 ConfigFile           = $ConfigFile
+                ApplicationName      = $ApplicationName
                 Daemon               = $Daemon
             }
 

@@ -58,7 +58,7 @@ A quick description of the Endpoint - normally used in OpenAPI.
 An optional Acknowledge message to send to clients when they first connect, for TCP and SMTP endpoints only.
 
 .PARAMETER SslProtocol
-One or more optional SSL Protocols this endpoints supports. (Default: SSL3/TLS12 - Just TLS12 on MacOS).
+One or more optional SSL Protocols this endpoints supports. (Default: what the OS support by default).
 
 .PARAMETER CRLFMessageEnd
 If supplied, TCP endpoints will expect incoming data to end with CRLF.
@@ -67,7 +67,7 @@ If supplied, TCP endpoints will expect incoming data to end with CRLF.
 Ignore Adminstrator checks for non-localhost endpoints.
 
 .PARAMETER SelfSigned
-Create and bind a self-signed certifcate for HTTPS endpoints.
+Create and bind a self-signed certificate for HTTPS endpoints.
 
 .PARAMETER AllowClientCertificate
 Allow for client certificates to be sent on requests.
@@ -126,7 +126,7 @@ function Add-PodeEndpoint {
         $Certificate = $null,
 
         [Parameter(ParameterSetName = 'CertFile')]
-        [string]
+        [object]
         $CertificatePassword = $null,
 
         [Parameter(ParameterSetName = 'CertFile')]
@@ -386,26 +386,43 @@ function Add-PodeEndpoint {
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'certfile' {
-                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword -Key $CertificateKey
+                if (! [string]::IsNullOrEmpty($CertificatePassword )) {
+                    if ($CertificatePassword -is [string]) {
+                        $securePassword = ConvertTo-SecureString -String $CertificatePassword -AsPlainText -Force
+                    }
+                    elseif ($CertificatePassword -is [securestring]) { $securePassword = $CertificatePassword }else {
+                        #  'Error: Invalid type for {0}. Expected {1}, but received [{2}].
+                        throw  ($PodeLocale.invalidTypeExceptionMessage -f '-CertificatePassword', '[string] or [SecureString]', $CertificatePassword.GetType().Name)
+                    }
+                }
+
+                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate  -SecurePassword $securePassword  -PrivateKeyPath $CertificateKey
+                break
             }
 
             'certthumb' {
                 $obj.Certificate.Raw = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+                break
             }
 
             'certname' {
                 $obj.Certificate.Raw = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
+                break
             }
 
             'certself' {
-                $obj.Certificate.Raw = New-PodeSelfSignedCertificate
+                $obj.Certificate.Raw = New-PodeSelfSignedCertificate -Loopback -CertificatePurpose ServerAuth -DnsName $obj.address.ToString()
+                break
             }
         }
 
-        # fail if the cert is expired
-        if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
-            # The certificate has expired
-            throw ($PodeLocale.certificateExpiredExceptionMessage -f $obj.Certificate.Raw.Subject, $obj.Certificate.Raw.NotAfter)
+        # Skip certificate validation if it has been explicitly provided as a variable.
+        if ($PSCmdlet.ParameterSetName -ne 'CertRaw') {
+            # Validate that the certificate:
+            # 1. Is within its validity period.
+            # 2. Has a valid certificate chain.
+            # 3. Is explicitly authorized for the expected purpose (ServerAuth).
+            $null = Test-PodeCertificate -Certificate $obj.Certificate.Raw -ExpectedPurpose ServerAuth -ErrorAction Stop
         }
     }
 

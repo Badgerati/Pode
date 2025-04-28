@@ -1,4 +1,5 @@
 # Basics
+
  <sub><b>!!! Warning</b>
 You can initiate only one server per PowerShell instance. To run multiple servers, start additional PowerShell, or pwsh, sessions. Each session can run its own server. This is fundamental to how Pode operates, so consider it when designing your scripts and infrastructure.</sub>
 
@@ -59,6 +60,7 @@ When you call [`Start-PodeServer`](../../Functions/Core/Start-PodeServer) direct
 For example, the following is a file that contains the same scriptblock for the server at the top of this page. Following that are the two ways to run the server - the first is via another script, and the second is directly from the CLI:
 
 * File.ps1
+
 ```powershell
 {
     # attach to port 8080 for http
@@ -70,12 +72,15 @@ For example, the following is a file that contains the same scriptblock for the 
 ```
 
 * Server.ps1 (start via script)
+
 ```powershell
 Start-PodeServer -FilePath './File.ps1'
 ```
+
 then use `./Server.ps1` on the CLI.
 
 * CLI (start from CLI)
+
 ```powershell
 PS> Start-PodeServer -FilePath './File.ps1'
 ```

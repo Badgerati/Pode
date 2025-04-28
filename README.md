@@ -1,6 +1,6 @@
-<p align="center">
+<h1 align="center">
     <img src="https://github.com/Badgerati/Pode/raw/develop/images/icon-new.svg?raw=true" width="250" />
-</p>
+</h1>
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt)
 [![Documentation](https://img.shields.io/github/v/release/badgerati/pode?label=docs&logo=readthedocs&logoColor=white)](https://badgerati.github.io/Pode)
@@ -53,36 +53,37 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 
 ## 🚀 Features
 
-* Cross-platform using PowerShell Core (with support for PS5)
-* Docker support, including images for ARM/Raspberry Pi
-* Azure Functions, AWS Lambda, and IIS support
-* OpenAPI specification version 3.0.x and 3.1.0
-* OpenAPI documentation with Swagger, Redoc, RapidDoc, StopLight, OpenAPI-Explorer and RapiPdf
-* Listen on a single or multiple IP(v4/v6) address/hostnames
-* Cross-platform support for HTTP(S), WS(S), SSE, SMTP(S), and TCP(S)
-* Host REST APIs, Web Pages, and Static Content (with caching)
-* Support for custom error pages
-* Request and Response compression using GZip/Deflate
-* Multi-thread support for incoming requests
-* Inbuilt template engine, with support for third-parties
-* Async timers for short-running repeatable processes
-* Async scheduled tasks using cron expressions for short/long-running processes
-* Supports logging to CLI, Files, and custom logic for other services like LogStash
-* Cross-state variable access across multiple runspaces
-* Restart the server via file monitoring, or defined periods/times
-* Ability to allow/deny requests from certain IP addresses and subnets
-* Basic rate limiting for IP addresses and subnets
-* Middleware and Sessions on web servers, with Flash message and CSRF support
-* Authentication on requests, such as Basic, Windows and Azure AD
-* Authorisation support on requests, using Roles, Groups, Scopes, etc.
-* Support for dynamically building Routes from Functions and Modules
-* Generate/bind self-signed certificates
-* Secret management support to load secrets from vaults
-* Support for File Watchers
-* In-memory caching, with optional support for external providers (such as Redis)
-* (Windows) Open the hosted server as a desktop application
-* FileBrowsing support
-* Localization (i18n) in Arabic, German, Spanish, France, Italian, Japanese, Korean, Polish, Portuguese, and Chinese
+- ✅ Cross-platform using PowerShell Core (with support for PS5)
+- ✅ Docker support, including images for ARM/Raspberry Pi
+- ✅ Azure Functions, AWS Lambda, and IIS support
+- ✅ OpenAPI specification version 3.0.x and 3.1.0
+- ✅ OpenAPI documentation with Swagger, Redoc, RapidDoc, StopLight, OpenAPI-Explorer and RapiPdf
+- ✅ Listen on a single or multiple IP(v4/v6) addresses/hostnames
+- ✅ Cross-platform support for HTTP(S), WS(S), SSE, SMTP(S), and TCP(S)
+- ✅ Host REST APIs, Web Pages, and Static Content (with caching)
+- ✅ Support for custom error pages
+- ✅ Request and Response compression using GZip/Deflate
+- ✅ Multi-thread support for incoming requests
+- ✅ Inbuilt template engine, with support for third-parties
+- ✅ Async timers for short-running repeatable processes
+- ✅ Async scheduled tasks using cron expressions for short/long-running processes
+- ✅ Supports logging to CLI, Files, and custom logic for other services like LogStash
+- ✅ Cross-state variable access across multiple runspaces
+- ✅ Restart the server via file monitoring, or defined periods/times
+- ✅ Ability to allow/deny requests from certain IP addresses and subnets
+- ✅ Basic rate limiting for IP addresses and subnets
+- ✅ Middleware and Sessions on web servers, with Flash message and CSRF support
+- ✅ Authentication on requests, such as Basic, Windows and Azure AD
+- ✅ Authorisation support on requests, using Roles, Groups, Scopes, etc.
+- ✅ Enhanced authentication support, including Basic, Bearer (with JWT), Certificate, Digest, Form, OAuth2, and ApiKey (with JWT).
+- ✅ Support for dynamically building Routes from Functions and Modules
+- ✅ Generate/bind self-signed certificates
+- ✅ Secret management support to load secrets from vaults
+- ✅ Support for File Watchers
+- ✅ In-memory caching, with optional support for external providers (such as Redis)
+- ✅ (Windows) Open the hosted server as a desktop application
+- ✅ FileBrowsing support
+- ✅ Localization (i18n) in Arabic, German, Spanish, France, Italian, Japanese, Korean, Polish, Portuguese,Dutch and Chinese
 
 ## 📦 Install
 
