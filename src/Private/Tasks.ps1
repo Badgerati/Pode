@@ -13,7 +13,8 @@ function Start-PodeTaskHousekeeper {
             if ($PodeContext.Tasks.Processes.Count -eq 0) {
                 return
             }
-        $RetentionMinutes = $PodeContext.Tasks.HouseKeeping.RetentionMinutes
+
+            # get the current time
             $now = [datetime]::UtcNow
 
             # loop through each process
