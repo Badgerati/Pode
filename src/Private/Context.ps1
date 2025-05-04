@@ -566,29 +566,6 @@ function New-PodeContext {
     return $ctx
 }
 
-function New-PodeRunspaceState {
-    # create the state, and add the pode modules
-    $state = [initialsessionstate]::CreateDefault()
-    $state.ImportPSModule($PodeContext.Server.PodeModule.DataPath)
-    $state.ImportPSModule($PodeContext.Server.PodeModule.InternalPath)
-
-    # load the vars into the share state
-    $session = New-PodeStateContext -Context $PodeContext
-
-    $variables = @(
-        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeLocale', $PodeLocale, $null),
-        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeContext', $session, $null),
-        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('Console', $Host, $null),
-        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PODE_SCOPE_RUNSPACE', $true, $null)
-    )
-
-    foreach ($var in $variables) {
-        $state.Variables.Add($var)
-    }
-
-    $PodeContext.RunspaceState = $state
-}
-
 <#
 .SYNOPSIS
     Creates and initializes runspace pools for various Pode components.
@@ -749,183 +726,17 @@ function New-PodeStateContext {
             Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
             Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
             Add-Member -MemberType NoteProperty -Name Tasks -Value $Context.Tasks -PassThru |
-            Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value $Context.AsyncRoutes -PassThru |
             Add-Member -MemberType NoteProperty -Name Fim -Value $Context.Fim -PassThru |
             Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
             Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
             Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
             Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
             Add-Member -MemberType NoteProperty -Name Threading -Value $Context.Threading -PassThru |
-            Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
-}
-
-
-<#
-.SYNOPSIS
-    Opens and initializes runspace pools for various Pode components.
-
-.DESCRIPTION
-    This function opens and initializes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It asynchronously opens the pools and waits for them to be in the 'Opened' state. If any pool fails to open, it reports an error.
-
-.OUTPUTS
-    Opens and initializes runspace pools for various Pode components.
-#>
-function Open-PodeRunspacePool {
-    if ($PodeContext.Server.IsServerless) {
-        return
-    }
-
-    $start = [datetime]::Now
-    Write-Verbose 'Opening RunspacePools'
-
-    # open pools async
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if ($null -eq $item) {
-            continue
-        }
-
-        $item.Pool.ThreadOptions = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread
-        $item.Pool.CleanupInterval = [timespan]::FromMinutes(5)
-        $item.Result = $item.Pool.BeginOpen($null, $null)
-    }
-
-    # wait for them all to open
-    $queue = @($PodeContext.RunspacePools.Keys)
-
-    while ($queue.Length -gt 0) {
-        foreach ($key in $queue) {
-            $item = $PodeContext.RunspacePools[$key]
-            if ($null -eq $item) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                continue
-            }
-
-            if ($item.Pool.RunspacePoolStateInfo.State -iin @('Opened', 'Broken')) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
-            }
-        }
-
-        if ($queue.Length -gt 0) {
-            Start-Sleep -Milliseconds 100
-        }
-    }
-
-    # report errors for failed pools
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if ($null -eq $item) {
-            continue
-        }
-
-        if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
-            $item.Pool.EndOpen($item.Result) | Out-Default
-            throw ($PodeLocale.failedToOpenRunspacePoolExceptionMessage -f $key) #"Failed to open RunspacePool: $($key)"
-        }
-    }
-
-    Write-Verbose "RunspacePools opened [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
-}
-<#
-.SYNOPSIS
-    Opens and processes the Pode server configuration.
-
-.DESCRIPTION
-    This function closes and disposes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It asynchronously closes the pools and waits for them to be in the 'Closed' state. If any pool fails to close, it reports an error.
-
-.OUTPUTS
-    Closes and disposes runspace pools for various Pode components.
-#>
-function Close-PodeRunspacePool {
-    if ($PodeContext.Server.IsServerless -or ($null -eq $PodeContext.RunspacePools)) {
-        return
-    }
-
-    $start = [datetime]::Now
-    Write-Verbose 'Closing RunspacePools'
-
-    # close pools async
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if (($null -eq $item) -or ($item.Pool.IsDisposed)) {
-            continue
-        }
-
-        $item.Result = $item.Pool.BeginClose($null, $null)
-    }
-
-    # wait for them all to close
-    $queue = @($PodeContext.RunspacePools.Keys)
-
-    while ($queue.Length -gt 0) {
-        foreach ($key in $queue) {
-            $item = $PodeContext.RunspacePools[$key]
-            if ($null -eq $item) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                continue
-            }
-
-            if ($item.Pool.RunspacePoolStateInfo.State -iin @('Closed', 'Broken')) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
-            }
-        }
-
-        if ($queue.Length -gt 0) {
-            Start-Sleep -Milliseconds 100
-        }
-    }
-
-    # report errors for failed pools
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if ($null -eq $item) {
-            continue
-        }
-
-        if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
-            $item.Pool.EndClose($item.Result) | Out-Default
-            # Failed to close RunspacePool
-            throw ($PodeLocale.failedToCloseRunspacePoolExceptionMessage -f $key)
-        }
-    }
-
-    # dispose pools
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if (($null -eq $item) -or ($item.Pool.IsDisposed)) {
-            continue
-        }
-
-        Close-PodeDisposable -Disposable $item.Pool
-    }
-
-    Write-Verbose "RunspacePools closed [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
-}
-
-function New-PodeStateContext {
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        $Context
+            Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru |
+            Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value $Context.AsyncRoutes -PassThru
     )
-
-    return [PSCustomObject]@{
-        Threads       = $Context.Threads
-        Timers        = $Context.Timers
-        Schedules     = $Context.Schedules
-        Tasks         = $Context.Tasks
-        AsyncRoutes= $Context.AsyncRoutes
-        Fim           = $Context.Fim
-        RunspacePools = $Context.RunspacePools
-        Tokens        = $Context.Tokens
-        Metrics       = $Context.Metrics
-        LogsToProcess = $Context.LogsToProcess
-        Threading     = $Context.Threading
-        Server        = $Context.Server
-    }
 }
+
 <#
 .SYNOPSIS
     Opens and processes the Pode server configuration.
