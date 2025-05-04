@@ -288,6 +288,16 @@
     taskProcessDoesNotExistExceptionMessage                           = "Proces zadania '{0}' nie istnieje."
     scheduleProcessDoesNotExistExceptionMessage                       = "Proces harmonogramu '{0}' nie istnieje."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Tag definicji dla Route nie może zostać zmieniony.'
+    invalidQueryFormatExceptionMessage                                = 'Podane zapytanie ma nieprawidłowy format.'
+    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} nie istnieje.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Operacja Async Route z Id {0} nie istnieje.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "Skrypt nie może zawierać polecenia '{0}'."
+    invalidQueryElementExceptionMessage                               = 'Podane zapytanie jest nieprawidłowe. {0} nie jest prawidłowym elementem zapytania.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress można używać tylko wewnątrz bloku skryptowego Async Route.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'Limit postępu nie może być niższy niż obecny postęp.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} różni się między różnymi definicjami OpenAPI.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "Trasa '{0}' nie jest oznaczona jako trasa asynchroniczna."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "Funkcja '{0}' nie może być wywoływana wielokrotnie dla tej samej trasy '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = "Operacje '{0}' nie mogą zawierać treści żądania. Użyj -AllowNonStandardBody, aby obejść to ograniczenie."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE Test Launcher</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>SSE Test Launcher</h1>
+    <p>Click the button below to launch the SSE test page.</p>
+
+    <button onclick="launchSseTest()">Launch SSE Test</button>
+
+    <script>
+        function launchSseTest() {
+            // Opens sse_test.html in a new tab
+            window.open('sse_test.html', '_blank');
+        }
+    </script>
+</body>
+
+</html>

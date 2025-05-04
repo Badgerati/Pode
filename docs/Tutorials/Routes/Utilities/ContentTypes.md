@@ -18,11 +18,11 @@ Start-PodeServer {
         Write-PodeJsonResponse -Value @{}
     }
 
-    Add-PodeRoute -Method Get -Path '/api/xml' -ContentType 'text/xml' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/api/xml' -ContentType 'application/xml' -ScriptBlock {
         Write-PodeXmlResponse -Value @{}
     }
 
-    Add-PodeRoute -Method Get -Path '/api/yaml' -ContentType 'text/yaml' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/api/yaml' -ContentType 'application/yaml' -ScriptBlock {
         Write-PodeYamlResponse -Value @{}
     }
 }

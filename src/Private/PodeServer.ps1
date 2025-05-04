@@ -189,6 +189,7 @@ function Start-PodeWebServer {
                                     Ranges           = $null
                                     Sse              = $null
                                     Metadata         = @{}
+                                    Async            = $false
                                 }
 
                                 # if iis, and we have an app path, alter it

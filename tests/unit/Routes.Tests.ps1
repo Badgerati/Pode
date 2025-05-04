@@ -109,46 +109,75 @@ Describe 'Add-PodeStaticRoute' {
 }
 
 Describe 'Remove-PodeRoute' {
+    BeforeAll {
+        # Mock the Start-PodeAsyncRoutesHousekeeper function
+        Mock Start-PodeAsyncRoutesHousekeeper {}
+        # Mock the New-PodeRunspacePoolNetWrapper function
+        Mock New-PodeRunspacePoolNetWrapper {}
+        # Mock the Add-PodeAsyncRouteComponentSchema function
+        Mock Add-PodeAsyncRouteComponentSchema {}
+    }
     BeforeEach {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'EndpointsMap' = @{}
-            'OpenAPI' = @{
-                SelectedDefinitionTag = 'default'
-                Definitions           = @{
-                    default = Get-PodeOABaseObject
+        $PodeContext = @{
+            Server        = @{
+                'Routes'        = @{
+                    'GET' = @{}
+                }
+                'FindEndpoints' = @{}
+                'Endpoints'     = @{}
+                'EndpointsMap'  = @{}
+                'OpenAPI'       = @{
+                    SelectedDefinitionTag = 'default'
+                    Definitions           = @{
+                        default = @{
+                            hiddenComponents = @{
+                                operationId = @()
+                            }
+                        }
+                    }
                 }
             }
+            RunspacePools = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            AsyncRoutes   = @{
+                Items = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            }
+            Threads       = @{
+                AsyncRoutes = 0
+            }
+            RunspaceState = [initialsessionstate]::CreateDefault()
         }
+        $PodeContext.RunspacePools['Items']
     }
+
     It 'Adds route with simple url, and then removes it' {
         Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
 
-        $routes = $PodeContext.Server.Routes['get']
+        $routes = $PodeContext.Server.Routes['GET']
         $routes | Should -Not -Be $null
         $routes.ContainsKey('/users') | Should -Be $true
         $routes['/users'].Length | Should -Be 1
 
         Remove-PodeRoute -Method Get -Path '/users'
 
-        $routes = $PodeContext.Server.Routes['get']
+        $routes = $PodeContext.Server.Routes['GET']
         $routes | Should -Not -Be $null
         $routes.ContainsKey('/users') | Should -Be $false
     }
 
     It 'Adds two routes with simple url, and then removes one' {
-
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
 
         Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Get -Path '/users' -EndpointName user -ScriptBlock { Write-Host 'hello' }
 
-        $routes = $PodeContext.Server.Routes['get']
+        $routes = $PodeContext.Server.Routes['GET']
         $routes | Should -Not -Be $null
         $routes.ContainsKey('/users') | Should -Be $true
         $routes['/users'].Length | Should -Be 2
 
         Remove-PodeRoute -Method Get -Path '/users'
 
-        $routes = $PodeContext.Server.Routes['get']
+        $routes = $PodeContext.Server.Routes['GET']
         $routes | Should -Not -Be $null
         $routes.ContainsKey('/users') | Should -Be $true
         $routes['/users'].Length | Should -Be 1
@@ -189,7 +218,58 @@ Describe 'Remove-PodeRoute' {
         $routes['/users'].Length | Should -Be 1
         $PodeContext.Server.OpenAPI.Definitions.default.hiddenComponents.operationId | Should -Not -Contain 'getUsers2'
     }
+
+    It 'Removes async route and cleans up runspace and async route pools' {
+        $route = Add-PodeRoute -PassThru -Method Get -Path '/async' -ScriptBlock { Write-Host 'hello' } |
+            Set-PodeAsyncRoute -MaxRunspaces 5 -MinRunspaces 3 -ResponseContentType 'application/json'  -Timeout 300 -PassThru
+        $asyncRouteId = $route.Async.AsyncRouteId
+        $PodeContext.RunspacePools[$asyncRouteId].Pool = [PSCustomObject]@{
+            IsDisposed = $true # to avoid to call BeginClose($null,$null)
+        }
+        Remove-PodeRoute -Method Get -Path '/async'
+
+        $PodeContext.RunspacePools.ContainsKey($asyncRouteId) | Should -Be $false
+        $PodeContext.Threads.AsyncRoutes | Should -Be 0
+    }
+
+    It 'Adds two routes and removes one async route and cleans up runspace and async route pools' {
+        $maxRunspaces=5
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
+
+        $route1 =  Add-PodeRoute -PassThru -Method Get -Path '/asyncusers' -ScriptBlock { Write-Host 'hello' } |
+        Set-PodeAsyncRoute -MaxRunspaces $maxRunspaces -MinRunspaces 3 -ResponseContentType 'application/json'  -Timeout 300 -PassThru
+
+        $route2 =  Add-PodeRoute -PassThru -Method Get -Path '/asyncusers' -EndpointName user -ScriptBlock { Write-Host 'hello' } |
+        Set-PodeAsyncRoute -MaxRunspaces $maxRunspaces -MinRunspaces 3 -ResponseContentType 'application/yaml'  -Timeout 300 -PassThru
+
+        $PodeContext.RunspacePools[$route1.Async.AsyncRouteId].Pool = [PSCustomObject]@{
+            IsDisposed = $true # to avoid to call BeginClose($null,$null)
+        }
+        $PodeContext.RunspacePools[$route2.Async.AsyncRouteId].Pool = [PSCustomObject]@{
+            IsDisposed = $true # to avoid to call BeginClose($null,$null)
+        }
+        $PodeContext.Threads.AsyncRoutes | Should -Be ($maxRunspaces + $maxRunspaces)
+        $PodeContext.RunspacePools.ContainsKey($route2.Async.AsyncRouteId) | Should -Be $true
+
+        $PodeContext.RunspacePools.ContainsKey($route1.Async.AsyncRouteId) | Should -Be $true
+
+        #remove $route1
+        Remove-PodeRoute -Method Get -Path '/asyncusers'
+
+        $PodeContext.RunspacePools.ContainsKey($route2.Async.AsyncRouteId) | Should -Be $true
+
+        $PodeContext.RunspacePools.ContainsKey($route1.Async.AsyncRouteId) | Should -Be $false
+
+        $PodeContext.Threads.AsyncRoutes | Should -Be $maxRunspaces
+
+        $routes = $PodeContext.Server.Routes['GET']
+        $routes | Should -Not -Be $null
+        $routes.ContainsKey('/asyncusers') | Should -Be $true
+        $routes['/asyncusers'].Length | Should -Be 1
+    }
+
 }
+
 
 Describe 'Remove-PodeStaticRoute' {
     It 'Adds a static route, and then removes it' {
@@ -327,8 +407,8 @@ Describe 'Add-PodeRoute' {
 
     It 'Throws error because no scriptblock supplied' {
 
-   #     ?*[] can be escaped using backtick, ex `*.
-        $expectedMessage = ($PodeLocale.noLogicPassedForMethodRouteExceptionMessage -f 'GET', '/').Replace('[','`[').Replace(']','`]')
+        #     ?*[] can be escaped using backtick, ex `*.
+        $expectedMessage = ($PodeLocale.noLogicPassedForMethodRouteExceptionMessage -f 'GET', '/').Replace('[', '`[').Replace(']', '`]')
         { Add-PodeRoute -Method GET -Path '/' -ScriptBlock {} } | Should -Throw -ExpectedMessage $expectedMessage # '*No logic passed*'
         # -Throw -ExpectedMessage $expectedMessage # '*No logic passed*'
     }
@@ -343,7 +423,7 @@ Describe 'Add-PodeRoute' {
                 )
             }
         }
-        $expectedMessage = ($PodeLocale.methodPathAlreadyDefinedExceptionMessage -f 'GET', '/').Replace('[','`[').Replace(']','`]')
+        $expectedMessage = ($PodeLocale.methodPathAlreadyDefinedExceptionMessage -f 'GET', '/').Replace('[', '`[').Replace(']', '`]')
         { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
     }
 

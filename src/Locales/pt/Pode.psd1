@@ -288,6 +288,16 @@
     taskProcessDoesNotExistExceptionMessage                           = "O processo da tarefa '{0}' não existe."
     scheduleProcessDoesNotExistExceptionMessage                       = "O processo do cronograma '{0}' não existe."
     definitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
+    invalidQueryFormatExceptionMessage                                = 'A consulta fornecida tem um formato inválido.'
+    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} não existe.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Nenhuma operação de Rota Assíncrona existe com o Id {0}.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "O script não pode conter o comando '{0}'."
+    invalidQueryElementExceptionMessage                               = 'A consulta fornecida é inválida. {0} não é um elemento válido para uma consulta.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress só pode ser usado dentro de um Scriptblock de Rota Assíncrona.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'Um limite de progresso não pode ser inferior ao progresso atual.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} varia entre diferentes definições OpenAPI.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "A rota '{0}' não está marcada como uma Rota Assíncrona."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "A função '{0}' não pode ser invocada várias vezes para a mesma rota '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = "As operações '{0}' não podem ter um corpo de solicitação. Use -AllowNonStandardBody para contornar essa restrição."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'

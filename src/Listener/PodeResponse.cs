@@ -86,6 +86,34 @@ namespace Pode
             OutputStream = new MemoryStream();
             Context = context;
         }
+        
+        //Clone constructor
+        public PodeResponse(PodeResponse other)
+        {
+            // Copy the status code and other scalar values
+            StatusCode = other.StatusCode;
+            SendChunked = other.SendChunked;
+            IsDisposed = other.IsDisposed;
+            SseScope = other.SseScope;
+            SentHeaders = other.SentHeaders;
+            SentBody = other.SentBody;
+            _statusDesc = other._statusDesc;
+
+            // Create a new memory stream and copy the content of the other stream
+            OutputStream = new MemoryStream();
+            other.OutputStream.CopyTo(OutputStream);
+
+            // Copy the headers (assuming PodeResponseHeaders supports cloning or deep copy)
+            Headers = new PodeResponseHeaders();
+            foreach (var key in other.Headers.Keys)
+            {
+                Headers.Set(key, other.Headers[key]);
+            }
+
+            // Copy the context and request, or create new instances if necessary (context should probably be reused)
+            Context = other.Context;
+        }
+
 
         public async Task Send()
         {
@@ -197,7 +225,7 @@ namespace Pode
             }
         }
 
-        public async Task<string> SetSseConnection(PodeSseScope scope, string clientId, string name, string group, int retry, bool allowAllOrigins)
+        public async Task<string> SetSseConnection(PodeSseScope scope, string clientId, string name, string group, int retry, bool allowAllOrigins, string asyncRouteTaskId = null)
         {
             // do nothing for no scope
             if (scope == PodeSseScope.None)
@@ -237,7 +265,11 @@ namespace Pode
             // send headers, and open event
             await Send().ConfigureAwait(false);
             await SendSseRetry(retry).ConfigureAwait(false);
-            await SendSseEvent("pode.open", $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\"}}").ConfigureAwait(false);
+            string sseEvent = (string.IsNullOrEmpty(asyncRouteTaskId)) ?
+            $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\"}}" :
+            $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\",\"asyncRouteTaskId\":\"{asyncRouteTaskId}\"}}";
+
+            await SendSseEvent("pode.open", sseEvent).ConfigureAwait(false);
 
             // if global, cache connection in listener
             if (scope == PodeSseScope.Global)
