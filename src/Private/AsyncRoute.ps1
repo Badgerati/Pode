@@ -785,7 +785,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
 
             # Initialize the result and runspace for the async route task
             $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
-            $runspace = Add-PodeRunspace -Type $asyncRouteTask.AsyncRouteId -ScriptBlock (($asyncRouteTask.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru -Name $asyncRouteTask.AsyncRouteId -Id $id
+            $runspace = Add-PodeRunspace -Type $asyncRouteTask.AsyncRouteId -ScriptBlock (($asyncRouteTask.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru -Name $asyncRouteTask.AsyncRouteId
 
             # Set the expiration time based on the timeout value
             if ($asyncRouteTask.Timeout -ge 0) {
