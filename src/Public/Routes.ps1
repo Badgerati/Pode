@@ -833,7 +833,7 @@ function Add-PodeStaticRoute {
 
         $options = @{
             Name = $Authentication
-            Anon = $AllowAnon
+            Anon = $AllowAnon.IsPresent
         }
 
         $Middleware = (@(Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
@@ -845,19 +845,15 @@ function Add-PodeStaticRoute {
     # workout a default transfer encoding for the route
     $TransferEncoding = Find-PodeRouteTransferEncoding -Path $Path -TransferEncoding $TransferEncoding
 
-    #The path use KleeneStar(Asterisk)
-    $KleeneStar = $OrigPath.Contains('*')
-
     # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
             @{
                 Source            = $Source
                 Path              = $Path
-                KleeneStar        = $KleeneStar
                 Method            = $Method
                 Defaults          = $Defaults
-                RedirectToDefault = $RedirectToDefault
+                RedirectToDefault = $RedirectToDefault.IsPresent
                 Middleware        = $Middleware
                 Authentication    = $Authentication
                 Access            = $Access
@@ -876,9 +872,9 @@ function Add-PodeStaticRoute {
                 ContentType       = $ContentType
                 TransferEncoding  = $TransferEncoding
                 ErrorType         = $ErrorContentType
-                Download          = $DownloadOnly
+                Download          = $DownloadOnly.IsPresent
                 IsStatic          = $true
-                FileBrowser       = $FileBrowser.isPresent
+                FileBrowser       = $FileBrowser.IsPresent
                 OpenApi           = @{
                     Path           = $OpenApiPath
                     Responses      = @{}
@@ -2794,7 +2790,7 @@ function Test-PodeStaticRoute {
         $Path,
 
         [Parameter()]
-        [string]
+        [string[]]
         $EndpointName
     )
 

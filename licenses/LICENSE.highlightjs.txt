@@ -1,4 +1,4 @@
-Project URL: https://github.com/highlightjs/highlight.js/
+Project URL: https://github.com/highlightjs/highlight.js
 
 BSD 3-Clause License
 

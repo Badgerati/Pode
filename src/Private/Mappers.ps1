@@ -8,7 +8,7 @@ function Get-PodeContentType {
         $DefaultIsNull
     )
 
-    if ([string]::IsNullOrWhiteSpace($Extension)) {
+    if ([string]::IsNullOrEmpty($Extension)) {
         $Extension = [string]::Empty
     }
 
@@ -279,6 +279,7 @@ function Get-PodeContentType {
         '.mid' { return 'audio/mid' }
         '.midi' { return 'audio/mid' }
         '.mix' { return 'application/octet-stream' }
+        '.mjs' { return 'application/javascript' }
         '.mk' { return 'text/plain' }
         '.mk3d' { return 'video/x-matroska-3d' }
         '.mka' { return 'audio/x-matroska' }

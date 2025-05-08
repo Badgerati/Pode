@@ -8,9 +8,10 @@ function Start-PodeWebServer {
 
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
-        (Get-PodeSecurityMiddleware),
-        (Get-PodeAccessMiddleware),
         (Get-PodeLimitMiddleware),
+        (Get-PodeSecurityMiddleware),
+        (Get-PodeFaviconMiddleware),
+        (Get-PodeAccessMiddleware),
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
@@ -247,7 +248,7 @@ function Start-PodeWebServer {
                                         if ($null -ne $WebEvent.StaticContent) {
                                             $fileBrowser = $WebEvent.Route.FileBrowser
                                             if ($WebEvent.StaticContent.IsDownload) {
-                                                Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
+                                                Write-PodeAttachmentResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -FileBrowser:$fileBrowser
                                             }
                                             elseif ($WebEvent.StaticContent.RedirectToDefault) {
                                                 $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
@@ -255,13 +256,11 @@ function Start-PodeWebServer {
                                             }
                                             else {
                                                 $cachable = $WebEvent.StaticContent.IsCachable
-                                                Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
-                                                    -Cache:$cachable -FileBrowser:$fileBrowser
+                                                Write-PodeFileResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
                                             }
                                         }
                                         elseif ($null -ne $WebEvent.Route.Logic) {
-                                            $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments `
-                                                -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
+                                            $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                                         }
                                     }
                                 }
