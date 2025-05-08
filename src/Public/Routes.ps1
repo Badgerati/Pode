@@ -89,6 +89,9 @@ Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (Get-PodeC
 Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
+Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -FilePath '/route.ps1'
+
+.EXAMPLE
 Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -TransferEncoding gzip -ScriptBlock { /* logic */ }
 
 .EXAMPLE
@@ -1109,17 +1112,23 @@ An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Route's main logic.
+
 .EXAMPLE
 Add-PodeRouteGroup -Path '/api' -Routes { Add-PodeRoute -Path '/route1' -Etc }
+
+.EXAMPLE
+Add-PodeRouteGroup -Path '/api' -FilePath '/routes/file.ps1'
 #>
 function Add-PodeRouteGroup {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Routes')]
     param(
         [Parameter()]
         [string]
         $Path,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Routes')]
         [scriptblock]
         $Routes,
 
@@ -1178,12 +1187,23 @@ function Add-PodeRouteGroup {
         $AllowAnon,
 
         [string[]]
-        $OADefinitionTag
+        $OADefinitionTag,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
+        [string]
+        $FilePath
     )
 
+
+
     if (Test-PodeIsEmpty $Routes) {
-        # The Route parameter needs a valid, not empty, scriptblock
-        throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
+        if ($PSCmdlet.ParameterSetName -ieq 'File') {
+            $Routes = Convert-PodeFileToScriptBlock -FilePath $FilePath
+        }
+        else {
+            # The Route parameter needs a valid, not empty, scriptblock
+            throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
+        }
     }
 
     if ($Path -eq '/') {
@@ -1355,9 +1375,12 @@ If supplied, the user will be redirected to the default page if found instead of
 
 .EXAMPLE
 Add-PodeStaticRouteGroup -Path '/static' -Routes { Add-PodeStaticRoute -Path '/images' -Etc }
+
+.EXAMPLE
+Add-PodeStaticRouteGroup -Path '/static' -FilePath '/routes/file.ps1'
 #>
 function Add-PodeStaticRouteGroup {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Routes')]
     param(
         [Parameter()]
         [string]
@@ -1367,7 +1390,7 @@ function Add-PodeStaticRouteGroup {
         [string]
         $Source,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Routes')]
         [scriptblock]
         $Routes,
 
@@ -1436,12 +1459,21 @@ function Add-PodeStaticRouteGroup {
         $DownloadOnly,
 
         [switch]
-        $RedirectToDefault
+        $RedirectToDefault,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
+        [string]
+        $FilePath
     )
 
     if (Test-PodeIsEmpty $Routes) {
-        # The Route parameter needs a valid, not empty, scriptblock
-        throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
+        if ($PSCmdlet.ParameterSetName -ieq 'File') {
+            $Routes = Convert-PodeFileToScriptBlock -FilePath $FilePath
+        }
+        else {
+            # The Route parameter needs a valid, not empty, scriptblock
+            throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
+        }
     }
 
     if ($Path -eq '/') {
@@ -1583,17 +1615,23 @@ The EndpointName of an Endpoint(s) to use for the Signal Routes.
 .PARAMETER IfExists
 Specifies what action to take when a Signal Route already exists. (Default: Default)
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Route's main logic.
+
 .EXAMPLE
 Add-PodeSignalRouteGroup -Path '/signals' -Routes { Add-PodeSignalRoute -Path '/signal1' -Etc }
+
+.EXAMPLE
+Add-PodeSignalRouteGroup -Path '/api' -FilePath '/routes/file.ps1'
 #>
 function Add-PodeSignalRouteGroup {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Routes')]
     param(
         [Parameter()]
         [string]
         $Path,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Routes' )]
         [scriptblock]
         $Routes,
 
@@ -1604,12 +1642,21 @@ function Add-PodeSignalRouteGroup {
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
         [string]
-        $IfExists = 'Default'
+        $IfExists = 'Default',
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
+        [string]
+        $FilePath
     )
 
     if (Test-PodeIsEmpty $Routes) {
-        # The Route parameter needs a valid, not empty, scriptblock
-        throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
+        if ($PSCmdlet.ParameterSetName -ieq 'File') {
+            $Routes = Convert-PodeFileToScriptBlock -FilePath $FilePath
+        }
+        else {
+            # The Route parameter needs a valid, not empty, scriptblock
+            throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
+        }
     }
 
     if ($Path -eq '/') {
