@@ -437,6 +437,9 @@ function Get-PodeJwtSigningAlgorithm {
 .PARAMETER NoStandardClaims
     A switch that, if used, prevents automatically adding iat, nbf, exp, iss, sub, aud, and jti claims.
 
+.PARAMETER Depth
+    Define the default depth used to convert the payload to JSON (default 10)
+
 .OUTPUTS
     System.String
     The resulting JWT string.
@@ -525,23 +528,35 @@ function New-PodeJwt {
         $NotBefore = 0, # Default: Immediate
 
         [Parameter()]
-        [int]$IssuedAt = 0, # Default: Current time
+        [int]
+        $IssuedAt = 0, # Default: Current time
 
         [Parameter()]
-        [string]$Issuer,
+        [string]
+        $Issuer,
 
         [Parameter()]
-        [string]$Subject,
+        [string]
+        $Subject,
 
         [Parameter()]
-        [string]$Audience,
+        [string]
+        $Audience,
 
         [Parameter()]
-        [string]$JwtId,
+        [string]
+        $JwtId,
 
         [Parameter()]
         [switch]
-        $NoStandardClaims
+        $NoStandardClaims,
+
+        [Parameter()]
+        [ValidateRange(1, 100)]
+        [int]
+        $Depth = 10
+
+
     )
     if (!($Header.PSObject.Properties['alg'])) {
         $Header | Add-Member -MemberType NoteProperty -Name 'alg' -Value ''
@@ -629,8 +644,8 @@ function New-PodeJwt {
     # Configure the JWT header and parameters if using a certificate
     if ($null -ne $X509Certificate) {
 
-         # Skip certificate validation if it has been explicitly provided as a variable.
-         if ($PSCmdlet.ParameterSetName -ne 'CertRaw') {
+        # Skip certificate validation if it has been explicitly provided as a variable.
+        if ($PSCmdlet.ParameterSetName -ne 'CertRaw') {
             # Validate that the certificate:
             # 1. Is within its validity period.
             # 2. Has a valid certificate chain.
@@ -706,7 +721,7 @@ function New-PodeJwt {
 
     # Encode header and payload as Base64URL
     $header64 = ConvertTo-PodeBase64UrlValue -Value ($Header | ConvertTo-Json -Compress)
-    $payload64 = ConvertTo-PodeBase64UrlValue -Value ($Payload | ConvertTo-Json -Compress)
+    $payload64 = ConvertTo-PodeBase64UrlValue -Value ($Payload | ConvertTo-Json -Compress -Depth $Depth)
 
     # Combine header and payload
     $jwt = "$($header64).$($payload64)"
@@ -727,7 +742,7 @@ function New-PodeJwt {
 
 
 
- 
+
 
 
 <#

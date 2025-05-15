@@ -558,6 +558,9 @@ function ConvertFrom-PodeJwt {
 .PARAMETER NoStandardClaims
     A switch that, if used, prevents automatically adding iat, nbf, exp, iss, sub, aud, and jti claims.
 
+.PARAMETER Depth
+    Define the default depth used to convert the payload to JSON (default 10)
+
 .OUTPUTS
     System.String
     The resulting JWT string.
@@ -656,7 +659,12 @@ function ConvertTo-PodeJwt {
 
         [Parameter()]
         [switch]
-        $NoStandardClaims
+        $NoStandardClaims,
+
+        [Parameter()]
+        [ValidateRange(1, 100)]
+        [int]
+        $Depth = 10
     )
 
     $psHeader = [PSCustomObject]$Header
@@ -723,19 +731,19 @@ function ConvertTo-PodeJwt {
         'CertFile' {
             return New-PodeJwt -Certificate $Certificate -CertificatePassword $CertificatePassword `
                 -PrivateKeyPath $PrivateKeyPath -RsaPaddingScheme $RsaPaddingScheme `
-                -Payload $psPayload -Header $psHeader
+                -Payload $psPayload -Header $psHeader -Depth $Depth
         }
 
         'certthumb' {
             return New-PodeJwt -CertificateThumbprint $CertificateThumbprint -CertificateStoreName $CertificateStoreName `
                 -CertificateStoreLocation $CertificateStoreLocation -RsaPaddingScheme $RsaPaddingScheme `
-                -Payload $psPayload -Header $psHeader
+                -Payload $psPayload -Header $psHeader -Depth $Depth
         }
 
         'certname' {
             return New-PodeJwt -CertificateName $CertificateName -CertificateStoreName $CertificateStoreName `
                 -CertificateStoreLocation $CertificateStoreLocation -RsaPaddingScheme $RsaPaddingScheme `
-                -Payload $psPayload -Header $psHeader
+                -Payload $psPayload -Header $psHeader -Depth $Depth
         }
 
         'Secret' {
@@ -758,21 +766,21 @@ function ConvertTo-PodeJwt {
             }
 
             return New-PodeJwt -Secret $Secret -Algorithm $Algorithm `
-                -Payload $psPayload -Header $psHeader
+                -Payload $psPayload -Header $psHeader -Depth $Depth
         }
 
         'CertRaw' {
             return New-PodeJwt -X509Certificate $X509Certificate -RsaPaddingScheme $RsaPaddingScheme `
-                -Payload $psPayload -Header $psHeader
+                -Payload $psPayload -Header $psHeader -Depth $Depth
         }
 
         'AuthenticationMethod' {
             return New-PodeJwt -Authentication $Authentication `
-                -Payload $psPayload -Header $psHeader
+                -Payload $psPayload -Header $psHeader -Depth $Depth
         }
         default {
             return New-PodeJwt -Algorithm 'None' `
-                -Payload $psPayload -Header $psHeader
+                -Payload $psPayload -Header $psHeader -Depth $Depth
         }
     }
 }
