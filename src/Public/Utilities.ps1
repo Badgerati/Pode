@@ -1352,51 +1352,45 @@ function New-PodeCron {
     return "$($cron.Minute) $($cron.Hour) $($cron.Date) $($cron.Month) $($cron.Day)"
 }
 
+
+
 <#
 .SYNOPSIS
-    Retrieves the version of the Pode module.
+Gets the version of the Pode module.
 
 .DESCRIPTION
-    The `Get-PodeVersion` function checks the version of the Pode module as specified in the module manifest.
-    If the module version is **not** the placeholder value (`'$version$'`), it returns the actual version prefixed with `'v'`.
-    If the module version **is** the placeholder value, indicating the development branch, it returns `"[dev]"`.
+The Get-PodeVersion function checks the version of the Pode module specified in the module manifest. If the module version is not a placeholder value ('$version$'), it returns the actual version prefixed with 'v.'. If the module version is the placeholder value, indicating the development branch, it returns '[develop branch]'.
 
-.PARAMETER Raw
-    If specified, the function returns only the raw module version without the `'v'` prefix.
-    By default, the function formats the version as `'vX.Y.Z'` unless the module is in development mode.
+.PARAMETER None
+This function does not accept any parameters.
 
 .OUTPUTS
-    System.String
-    Returns a string representing the Pode module version in one of the following formats:
-    - `"vX.Y.Z"` for a release version (e.g., `"v1.2.3"`).
-    - `"[dev]"` for development versions.
+System.String
+Returns a string indicating the version of the Pode module or '[dev]' if on a development version.
 
 .EXAMPLE
-    PS> Get-PodeVersion
-    Returns the Pode module version, e.g., `'v1.2.3'` for release versions or `"[dev]"` if in development.
+PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
+PS> Get-PodeVersion
+
+Returns 'v1.2.3'.
 
 .EXAMPLE
-    PS> Get-PodeVersion -Raw
-    Returns the raw version number, e.g., `'1.2.3'`, without the `'v'` prefix.
+PS> $moduleManifest = @{ ModuleVersion = '$version$' }
+PS> Get-PodeVersion
+
+Returns '[dev]'.
 
 .NOTES
-    - If the module version is a placeholder (`'$version$'`), the function assumes it's running from the development branch.
+This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
+
 #>
 function Get-PodeVersion {
-    param (
-        [switch]
-        $Raw
-    )
-
-    if ($PodeContext.Server.Version -eq '[dev]' -or ! $Raw) {
-        return $PodeContext.Server.Version
-    }
-
-    if ($Raw) {
-        return $PodeContext.Server.Version
+    $moduleManifest = Get-PodeModuleManifest
+    if ($moduleManifest.ModuleVersion -ne '$version$') {
+        return "v$($moduleManifest.ModuleVersion)"
     }
     else {
-        return  "$prefix$($PodeContext.Server.Version)"
+        return '[dev]'
     }
 }
 
