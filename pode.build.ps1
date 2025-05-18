@@ -1302,7 +1302,16 @@ Add-BuildTask MoveLibs {
         # If Comment exists, prepend it properly depending on file type
         if ($Item.Comment) {
             $fileContent = Get-Content -Raw -Path $Item.From
-            ($Item.Comment + "`n`n" + $fileContent).Trim() | Out-File -FilePath $Item.To -Encoding utf8 -Force -NoNewline
+            $newContent = ($Item.Comment + "`n`n" + $fileContent).Trim()
+            if (Test-Path -Path $Item.To) {
+                $fileOriginalContent = Get-Content -Raw -Path $Item.To
+                if ( $newContent -ne ($fileOriginalContent -replace "`r`n", "`n") ) {
+                    $newContent | Out-File -FilePath $Item.To -Encoding utf8 -Force -NoNewline
+                }
+            }
+            else {
+                $newContent | Out-File -FilePath $Item.To -Encoding utf8 -Force -NoNewline
+            }
         }
         else {
             New-Item -ItemType Directory -Force -Path $Item.To | Out-Null
