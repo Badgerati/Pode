@@ -1390,14 +1390,17 @@ function Get-PodeVersion {
         $Raw
     )
     $moduleManifest = Get-PodeModuleManifest
-    if($Raw){
-        return [version]$moduleManifest.ModuleVersion
-    }
     if ($moduleManifest.ModuleVersion -ne '$version$') {
-        if($moduleManifest.PrivateData.PSData.Prerelease) {
-            return "v$($moduleManifest.ModuleVersion)-$($moduleManifest.PrivateData.PSData.Prerelease)"
+        $version = if ( $Raw) {
+            $moduleManifest.ModuleVersion
         }
-        return "v$($moduleManifest.ModuleVersion)"
+        else {
+            "v$($moduleManifest.ModuleVersion)"
+        }
+        if ($moduleManifest.PrivateData.PSData.Prerelease) {
+            return "$version-$($moduleManifest.PrivateData.PSData.Prerelease)"
+        }
+        return $version
     }
     else {
         return '[dev]'
