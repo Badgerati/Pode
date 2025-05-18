@@ -114,13 +114,12 @@ Start-PodeServer -browse {
 
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
-        Disable-PodeRequestLogging
         Set-PodeResponseStatus -Code 500
     }
 
     Add-PodeRoute -Method Get -Path '/exception' -ScriptBlock {
         try {
-            throw 'something happened'
+            throw 4 / 0
         }
         catch {
             $_ | Write-PodeErrorLog

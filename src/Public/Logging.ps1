@@ -1007,10 +1007,13 @@ function Write-PodeLog {
                 $logItem = @{
                     Name = $Name
                     Item = @{
+                        Server   = $PodeContext.Server.ComputerName
                         Category = $Category.ToString()
                         Level    = $Level
+                        Date     = if ($log.Method.Arguments.AsUTC) { [datetime]::UtcNow } else { [datetime]::Now }
                         Message  = $Message
                         Tag      = $Tag
+                        ThreadId =if($ThreadId) { $ThreadId } else { [System.Threading.Thread]::CurrentThread.ManagedThreadId }
                     }
                 }
                 break
@@ -1022,11 +1025,17 @@ function Write-PodeLog {
                 $logItem = @{
                     Name = $Name
                     Item = @{
-                        Level   = $Level
-                        Message = $Exception.Message
-                        Tag     = $Tag
+                        Server     = $PodeContext.Server.ComputerName
+                        Level      = $Level
+                        Date       = if ($log.Method.Arguments.AsUTC) { [datetime]::UtcNow } else { [datetime]::Now }
+                        Category   = $Exception.Source
+                        Message    = $Exception.Message
+                        StackTrace = $Exception.StackTrace
+                        Tag        = $Tag
+                        ThreadId   =if($ThreadId) { $ThreadId } else { [System.Threading.Thread]::CurrentThread.ManagedThreadId }
                     }
                 }
+
                 break
             }
             'errorrecord' {
@@ -1036,9 +1045,14 @@ function Write-PodeLog {
                 $logItem = @{
                     Name = $Name
                     Item = @{
-                        Level   = $Level
-                        Message = $ErrorRecord.Exception.Message
-                        Tag     = $Tag
+                        Server     = $PodeContext.Server.ComputerName
+                        Level      = $Level
+                        Date       = if ($log.Method.Arguments.AsUTC) { [datetime]::UtcNow } else { [datetime]::Now }
+                        Category   = $ErrorRecord.CategoryInfo.ToString()
+                        Message    = $ErrorRecord.Exception.Message
+                        StackTrace = $ErrorRecord.ScriptStackTrace
+                        Tag        = $Tag
+                        ThreadId   =if($ThreadId) { $ThreadId } else { [System.Threading.Thread]::CurrentThread.ManagedThreadId }
                     }
                 }
                 break
@@ -1046,13 +1060,13 @@ function Write-PodeLog {
         }
         if ($log.Standard) {
             # Add server details to the log item.
-            $logItem.Item.Server = $PodeContext.Server.ComputerName
+        #    $logItem.Item.Server = $PodeContext.Server.ComputerName
 
             # Add the current date and time (UTC or local) to the log item.
-            $logItem.Item.Date = if ($log.Method.Arguments.AsUTC) { [datetime]::UtcNow } else { [datetime]::Now }
+          #  $logItem.Item.Date = if ($log.Method.Arguments.AsUTC) { [datetime]::UtcNow } else { [datetime]::Now }
 
             # Set the thread ID if provided, otherwise use the current thread ID.
-            $logItem.Item.ThreadId = if ($ThreadId) { $ThreadId } else { [System.Threading.Thread]::CurrentThread.ManagedThreadId }
+         #   $logItem.Item.ThreadId = if ($ThreadId) { $ThreadId } else { [System.Threading.Thread]::CurrentThread.ManagedThreadId }
 
             # If error logging is not suppressed, log errors or exceptions.
             if ((! $SuppressErrorLog.IsPresent) -and (Test-PodeLoggerEnabled -Type Error)) {
