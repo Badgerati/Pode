@@ -3308,6 +3308,31 @@ function Test-PodePlaceholder {
     return ($Path -imatch $Placeholder)
 }
 
+
+<#
+.SYNOPSIS
+Retrieves the PowerShell module manifest object for the specified module.
+
+.DESCRIPTION
+This function constructs the path to a PowerShell module manifest file (.psd1) located in the parent directory of the script root. It then imports the module manifest file to access its properties and returns the manifest object. This can be useful for scripts that need to dynamically discover and utilize module metadata, such as version, dependencies, and exported functions.
+
+.PARAMETERS
+This function does not accept any parameters.
+
+.EXAMPLE
+$manifest = Get-PodeModuleManifest
+This example calls the `Get-PodeModuleManifest` function to retrieve the module manifest object and stores it in the variable `$manifest`.
+
+#>
+function Get-PodeModuleManifest {
+    # Construct the path to the module manifest (.psd1 file)
+    $moduleManifestPath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -ChildPath 'Pode.psd1'
+
+    # Import the module manifest to access its properties
+    $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath
+    return  $moduleManifest
+}
+
 <#
 .SYNOPSIS
     Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.

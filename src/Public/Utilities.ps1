@@ -1352,8 +1352,6 @@ function New-PodeCron {
     return "$($cron.Minute) $($cron.Hour) $($cron.Date) $($cron.Month) $($cron.Day)"
 }
 
-
-
 <#
 .SYNOPSIS
     Retrieves the version of the Pode module.
@@ -1389,12 +1387,12 @@ function Get-PodeVersion {
         [switch]
         $Raw
     )
-
-    if ($PodeManifest.ModuleVersion -ne '$version$') {
+    $moduleManifest = Get-PodeModuleManifest
+    if ($moduleManifest.ModuleVersion -ne '$version$') {
         if ($Raw) {
-            return $PodeManifest.ModuleVersion
+            return $moduleManifest.ModuleVersion
         }
-        return "v$($PodeManifest.ModuleVersion)"
+        return "v$($moduleManifest.ModuleVersion)"
     }
     else {
         return '[dev]'

@@ -11,7 +11,7 @@ BeforeAll {
     . "$helperPath/TestHelper.ps1"
 
     # Import the module manifest to access its properties
-    $PodeManifest = Get-PodeModuleManifest -Src $src
+    $PodeManifest = Get-PodeModuleManifest
 
     $PodeContext = @{ 'Server' = $null; }
 }
@@ -162,7 +162,7 @@ Describe 'Get-PodeStateNames' -Tags 'Unit', 'Pode' {
                 State = $null
             }
         }
- 
+
     }
 
     Context 'When PodeContext.Server.State is $null' {
