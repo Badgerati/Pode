@@ -3366,8 +3366,8 @@ function Test-PodeVersionPwshEOL {
     param(
         [switch] $ReportUntested
     )
-
-    if ($PodeManifest.ModuleVersion -eq '$version$') {
+    $moduleManifest = Get-PodeModuleManifest
+    if ($moduleManifest.ModuleVersion -eq '$version$') {
         return @{
             eol       = $false
             supported = $true
@@ -3375,7 +3375,7 @@ function Test-PodeVersionPwshEOL {
     }
 
     $psVersion = $PSVersionTable.PSVersion
-    $eolVersions = $PodeManifest.PrivateData.PwshVersions.Untested -split ','
+    $eolVersions = $moduleManifest.PrivateData.PwshVersions.Untested -split ','
     $isEol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
 
     if ($isEol) {
@@ -3383,7 +3383,7 @@ function Test-PodeVersionPwshEOL {
         Write-PodeHost ($PodeLocale.eolPowerShellWarningMessage -f $PodeVersion, $PSVersion) -ForegroundColor Yellow
     }
 
-    $SupportedVersions = $PodeManifest.PrivateData.PwshVersions.Supported -split ','
+    $SupportedVersions = $moduleManifest.PrivateData.PwshVersions.Supported -split ','
     $isSupported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
 
     if ((! $isSupported) -and (! $isEol) -and $ReportUntested) {
