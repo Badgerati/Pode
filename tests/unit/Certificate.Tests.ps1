@@ -169,8 +169,8 @@ Describe 'Export-PodeCertificate Function' {
             $filePathBase = Join-Path  $script:tempDir 'dummycertPFX'
             $script:pfxCertPath = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PFX' -CertificatePassword $script:dummyPassword
             $script:pfxCertPath | Should -BeOfType pscustomobject
-            $script:pfxCertPath.CertificateFile | Should -Match '\.pfx'
-            (Test-Path $script:pfxCertPath.CertificateFile) | Should -BeTrue
+            $script:pfxCertPath.CertificatePath | Should -Match '\.pfx'
+            (Test-Path $script:pfxCertPath.CertificatePath) | Should -BeTrue
         }
     }
 
@@ -179,8 +179,8 @@ Describe 'Export-PodeCertificate Function' {
             $filePathBase = Join-Path  $script:tempDir 'dummycertCER'
             $script:cerCertPath = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'CER' -CertificatePassword $script:dummyPassword
             $script:cerCertPath | Should -BeOfType pscustomobject
-            $script:cerCertPath.CertificateFile | Should -Match '\.cer'
-            (Test-Path $script:cerCertPath.CertificateFile) | Should -BeTrue
+            $script:cerCertPath.CertificatePath | Should -Match '\.cer'
+            (Test-Path $script:cerCertPath.CertificatePath) | Should -BeTrue
         }
     }
 
@@ -194,9 +194,9 @@ Describe 'Export-PodeCertificate Function' {
                 $output = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -CertificatePassword $script:dummyPassword
                 # The output for PEM (without key) is a string containing the file path.
                 $output | Should -BeOfType pscustomobject
-                $output.CertificateFile | Should -Match '\.pem'
-            (Test-Path -Path $output.CertificateFile) | Should -BeTrue
-            (Get-Content -Path $output.CertificateFile -Raw) | Should -Match '-----BEGIN CERTIFICATE-----'
+                $output.CertificatePath | Should -Match '\.pem'
+            (Test-Path -Path $output.CertificatePath) | Should -BeTrue
+            (Get-Content -Path $output.CertificatePath -Raw) | Should -Match '-----BEGIN CERTIFICATE-----'
             }
         }
     }
@@ -212,13 +212,13 @@ Describe 'Export-PodeCertificate Function' {
                 $script:pemCertPath = Export-PodeCertificate -Certificate $script:dummyCert -Path $filePathBase -Format 'PEM' -IncludePrivateKey -CertificatePassword $script:dummyPassword
                 # When IncludePrivateKey is used, output is a hashtable.
                 $script:pemCertPath | Should -BeOfType 'pscustomobject'
-                $script:pemCertPath.CertificateFile | Should -Match '\.pem$'
-                $script:pemCertPath.PrivateKeyFile | Should -Match '\.key$'
-            (Test-Path $script:pemCertPath.CertificateFile) | Should -BeTrue
-            (Test-Path $script:pemCertPath.PrivateKeyFile) | Should -BeTrue
+                $script:pemCertPath.CertificatePath | Should -Match '\.pem$'
+                $script:pemCertPath.PrivateKeyPath | Should -Match '\.key$'
+            (Test-Path $script:pemCertPath.CertificatePath) | Should -BeTrue
+            (Test-Path $script:pemCertPath.PrivateKeyPath) | Should -BeTrue
 
-            (Get-Content -Path $script:pemCertPath.CertificateFile -Raw) | Should -Match '-----BEGIN CERTIFICATE-----'
-            (Get-Content -Path $script:pemCertPath.PrivateKeyFile -Raw) | Should -Match '-----BEGIN ENCRYPTED PRIVATE KEY-----'
+            (Get-Content -Path $script:pemCertPath.CertificatePath -Raw) | Should -Match '-----BEGIN CERTIFICATE-----'
+            (Get-Content -Path $script:pemCertPath.PrivateKeyPath -Raw) | Should -Match '-----BEGIN ENCRYPTED PRIVATE KEY-----'
             }
         }
     }
@@ -323,7 +323,7 @@ Describe 'Import-PodeCertificate Function' {
         Context 'File Import - PFX format' {
             It 'Imports certificate to a PFX file' {
 
-                $cert = Import-PodeCertificate -Path $script:pfxCertPath.CertificateFile -CertificatePassword $script:dummyPassword
+                $cert = Import-PodeCertificate -Path $script:pfxCertPath.CertificatePath -CertificatePassword $script:dummyPassword
 
                 $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
 
@@ -338,7 +338,7 @@ Describe 'Import-PodeCertificate Function' {
 
         Context 'File Import - CER format' {
             It 'Imports certificate to a CER file' {
-                $cert = Import-PodeCertificate -Path  $script:cerCertPath.CertificateFile -CertificatePassword $script:dummyPassword
+                $cert = Import-PodeCertificate -Path  $script:cerCertPath.CertificatePath -CertificatePassword $script:dummyPassword
 
                 $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
 
@@ -356,7 +356,7 @@ Describe 'Import-PodeCertificate Function' {
                         Should -Throw ($PodeLocale.pemCertificateNotSupportedByPwshVersionExceptionMessage -f $PSVersionTable.PSVersion)
                 }
                 else {
-                    $cert = Import-PodeCertificate -Path  $script:pemCertPath.CertificateFile -CertificatePassword $script:dummyPassword -PrivateKeyPath $script:pemCertPath.PrivateKeyFile
+                    $cert = Import-PodeCertificate -Path  $script:pemCertPath.CertificatePath -CertificatePassword $script:dummyPassword -PrivateKeyPath $script:pemCertPath.PrivateKeyPath
                     # The output for PEM (without key) is a string containing the file path.
                     $cert | Should -BeOfType  System.Security.Cryptography.X509Certificates.X509Certificate2
 
