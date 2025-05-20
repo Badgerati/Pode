@@ -736,15 +736,25 @@ function Export-PodeCertificate {
               $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx)
             }
 
-            $filePathWithExt = [PSCustomObject]@{ CertificateFile = "$FilePath.pfx" }
-            [System.IO.File]::WriteAllBytes($filePathWithExt.CertificateFile, $pfxBytes)
+            $certificatePath = if (!([System.IO.Path]::GetExtension($FilePath) -eq '.pfx')) { "$FilePath.pfx" }else { $FilePath }
+
+            $filePathWithExt = [PSCustomObject]@{
+              CertificatePath = $certificatePath
+            }
+
+            [System.IO.File]::WriteAllBytes($filePathWithExt.CertificatePath, $pfxBytes)
             break
           }
           'CER' {
             $cerBytes = $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
 
-            $filePathWithExt = [PSCustomObject]@{ CertificateFile = "$FilePath.cer" }
-            [System.IO.File]::WriteAllBytes($filePathWithExt.CertificateFile, $cerBytes)
+            $certificatePath = if (!([System.IO.Path]::GetExtension($FilePath) -eq '.cer')) { "$FilePath.cer" }else { $FilePath }
+
+            $filePathWithExt = [PSCustomObject]@{
+              CertificatePath = $certificatePath
+            }
+
+            [System.IO.File]::WriteAllBytes($filePathWithExt.CertificatePath, $cerBytes)
             break
           }
           'PEM' {
@@ -771,17 +781,17 @@ function Export-PodeCertificate {
 
             # Return the certificate file path (and key file path if applicable)
             $filePathWithExt = if ($IncludePrivateKey -and $Certificate.HasPrivateKey) {
-              [PSCustomObject]@{ CertificateFile = $certFilePath; PrivateKeyFile = $keyFilePath }
+              [PSCustomObject]@{ CertificatePath = $certFilePath; PrivateKeyPath = $keyFilePath }
             }
             else {
-              [PSCustomObject]@{ CertificateFile = $certFilePath }
+              [PSCustomObject]@{ CertificatePath = $certFilePath }
             }
             break
           }
         }
 
         if ($Format -ne 'PEM') {
-          Write-Verbose "Certificate exported successfully: $($filePathWithExt.CertificateFile)"
+          Write-Verbose "Certificate exported successfully: $($filePathWithExt.CertificatePath)"
         }
         return  $filePathWithExt
       }
