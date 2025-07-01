@@ -1083,42 +1083,7 @@ function Test-PodeValidNetworkFailure {
 
     return ($null -ne $match)
 }
-
-function ConvertFrom-PodeHeaderQValue {
-    param(
-        [Parameter()]
-        [string]
-        $Value
-    )
-
-    process {
-        $qs = [ordered]@{}
-
-        # return if no value
-        if ([string]::IsNullOrWhiteSpace($Value)) {
-            return $qs
-        }
-
-        # split the values up
-        $parts = @($Value -isplit ',').Trim()
-
-        # go through each part and check its q-value
-        foreach ($part in $parts) {
-            # default of 1 if no q-value
-            if ($part.IndexOf(';q=') -eq -1) {
-                $qs[$part] = 1.0
-                continue
-            }
-
-            # parse for q-value
-            $atoms = @($part -isplit ';q=')
-            $qs[$atoms[0]] = [double]$atoms[1]
-        }
-
-        return $qs
-    }
-}
-
+ 
 
 function New-PodeRequestException {
     param(
@@ -1388,7 +1353,7 @@ function ConvertFrom-PodeRequestContent {
 
     $Content = $null
     return $Result
-} 
+}
 
 function ConvertFrom-PodeNameValueToHashTable {
     param(

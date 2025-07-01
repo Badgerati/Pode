@@ -567,7 +567,7 @@ Describe 'Write-PodeFileResponseInternal Tests' {
     }
 
     BeforeEach {
-        $WebEvent = @{ Response = [Pode.PodeResponse]::new(); Path = '/';Streamed=$true; Method = 'Get' }
+        $WebEvent = @{ Response = [Pode.PodeResponse]::new(); Path = '/'; Streamed = $true; Method = 'Get' }
     }
 
     It 'Sets response status to 404 if file does not exist' {

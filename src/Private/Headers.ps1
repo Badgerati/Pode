@@ -1,410 +1,359 @@
-<#
-.SYNOPSIS
-Appends a header against the Response.
 
-.DESCRIPTION
-Appends a header against the Response. If the current context is serverless, then this function acts like Set-PodeHeader.
-
-.PARAMETER Name
-The name of the header.
-
-.PARAMETER Value
-The value to set against the header.
-
-.PARAMETER Secret
-If supplied, the secret with which to sign the header's value.
-
-.PARAMETER Strict
-If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
-
-.EXAMPLE
-Add-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
-#>
-function Add-PodeHeader {
-    [CmdletBinding()]
+function ConvertFrom-PodeHeaderQValue {
     param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name,
-
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Value,
-
         [Parameter()]
         [string]
-        $Secret,
-
-        [switch]
-        $Strict
+        $Value
     )
 
-    # sign the value if we have a secret
-    if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret -Strict:$Strict)
-    }
+    process {
+        $qs = [ordered]@{}
 
-    # add the header to the response
-    if ($PodeContext.Server.IsServerless) {
-        $WebEvent.Response.Headers[$Name] = $Value
-    }
-    else {
-        $WebEvent.Response.Headers.Add($Name, $Value)
-    }
-}
-
-<#
-.SYNOPSIS
-Appends multiple headers against the Response.
-
-.DESCRIPTION
-Appends multiple headers against the Response. If the current context is serverless, then this function acts like Set-PodeHeaderBulk.
-
-.PARAMETER Values
-A hashtable of headers to be appended.
-
-.PARAMETER Secret
-If supplied, the secret with which to sign the header values.
-
-.PARAMETER Strict
-If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
-
-.EXAMPLE
-Add-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
-#>
-function Add-PodeHeaderBulk {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [hashtable]
-        $Values,
-
-        [Parameter()]
-        [string]
-        $Secret,
-
-        [switch]
-        $Strict
-    )
-
-    foreach ($key in $Values.Keys) {
-        $value = $Values[$key]
-
-        # sign the value if we have a secret
-        if (![string]::IsNullOrWhiteSpace($Secret)) {
-            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret -Strict:$Strict)
+        # return if no value
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            return $qs
         }
 
-        # add the header to the response
-        if ($PodeContext.Server.IsServerless) {
-            $WebEvent.Response.Headers[$key] = $value
-        }
-        else {
-            $WebEvent.Response.Headers.Add($key, $value)
-        }
-    }
-}
+        # split the values up
+        $parts = @($Value -isplit ',').Trim()
 
-<#
-.SYNOPSIS
-Tests if a header is present on the Request.
-
-.DESCRIPTION
-Tests if a header is present on the Request.
-
-.PARAMETER Name
-The name of the header to test.
-
-.EXAMPLE
-Test-PodeHeader -Name 'X-AuthToken'
-#>
-function Test-PodeHeader {
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name
-    )
-
-    $header = (Get-PodeHeader -Name $Name)
-    return (![string]::IsNullOrWhiteSpace($header))
-}
-
-<#
-.SYNOPSIS
-    Retrieves the value of a specified header from the incoming request.
-
-.DESCRIPTION
-    The `Get-PodeHeader` function retrieves the value of a specified header from the incoming request.
-    It supports deserialization of header values and can optionally unsign the header using a specified secret.
-    The unsigning process can be further secured with the client's UserAgent and RemoteIPAddress if `-Strict` is specified.
-
-.PARAMETER Name
-    The name of the header to retrieve. This parameter is mandatory.
-
-.PARAMETER Secret
-    The secret used to unsign the header's value. This option is useful when working with signed headers to ensure
-    the integrity and authenticity of the value. Applicable only in the 'BuiltIn' parameter set.
-
-.PARAMETER Strict
-    If specified, the secret is extended using the client's UserAgent and RemoteIPAddress, providing an additional
-    layer of security during the unsigning process. Applicable only in the 'BuiltIn' parameter set.
-
-.PARAMETER Deserialize
-    Indicates that the retrieved header value should be deserialized. When this switch is used, the value will be
-    interpreted based on the provided deserialization options. This parameter is mandatory in the 'Deserialize' parameter set.
-
-.PARAMETER Explode
-    Specifies whether the deserialization process should explode arrays in the header value. This is useful when
-    handling comma-separated values within the header. Applicable only when the `-Deserialize` switch is used.
-
-.PARAMETER Raw
-    If specified, the raw header value will be returned without any processing. This is useful when you want to
-    retrieve the exact string as it was sent in the request.
-
-.EXAMPLE
-    Get-PodeHeader -Name 'X-AuthToken'
-    Retrieves the value of the 'X-AuthToken' header from the request.
-
-.EXAMPLE
-    Get-PodeHeader -Name 'X-SerializedHeader' -Deserialize -Explode
-    Retrieves and deserializes the value of the 'X-SerializedHeader' header, exploding arrays if present.
-
-.EXAMPLE
-    Get-PodeHeader -Name 'X-AuthToken' -Secret 'MySecret' -Strict
-    Retrieves and unsigns the 'X-AuthToken' header using the specified secret, extending it with UserAgent and
-    RemoteIPAddress information for added security.
-
-.NOTES
-    This function should be used within a route's script block in a Pode server. The `-Deserialize` switch enables
-    advanced handling of serialized header values, while the `-Secret` and `-Strict` options provide secure unsigning
-    capabilities for signed headers.
-#>
-function Get-PodeHeader {
-    [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
-    param(
-        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'BuiltIn')]
-        [string]
-        $Name,
-
-        [Parameter(ParameterSetName = 'BuiltIn')]
-        [string]
-        $Secret,
-
-        [Parameter(ParameterSetName = 'BuiltIn')]
-        [switch]
-        $Strict,
-
-        [Parameter(ParameterSetName = 'Deserialize')]
-        [switch]
-        $Explode,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
-        [switch]
-        $Deserialize,
-
-        [Parameter(ParameterSetName = 'BuiltIn')]
-        [switch]
-        $Raw
-    )
-    if ($WebEvent) {
-
-        if ($Deserialize.IsPresent) {
-            # get the value for the header from the request
-            $parsed = ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Raw.Headers[$Name] -Style 'Simple' -Explode:$Explode -ParameterName $Name
-
-            # Filter only if a dictionary and key matches
-            if ($parsed -is [System.Collections.IDictionary] -and $parsed.ContainsKey($Name)) {
-                return $parsed[$Name]
+        # go through each part and check its q-value
+        foreach ($part in $parts) {
+            # default of 1 if no q-value
+            if ($part.IndexOf(';q=') -eq -1) {
+                $qs[$part] = 1.0
+                continue
             }
 
-            return $parsed
+            # parse for q-value
+            $atoms = @($part -isplit ';q=')
+            $qs[$atoms[0]] = [double]$atoms[1]
         }
 
-        if ($Raw) {
-            # return the raw header value
-            return $WebEvent.Raw.Headers[$Name]
-        }
-
-        # get the value for the header from the request
-        $header = $WebEvent.Request.Headers.$Name
-        # if a secret was supplied, attempt to unsign the header's value
-        if (![string]::IsNullOrWhiteSpace($Secret)) {
-            $header = (Invoke-PodeValueUnsign -Value $header -Secret $Secret -Strict:$Strict)
-        }
-
-        return $header
+        return $qs
     }
 }
 
+
 <#
 .SYNOPSIS
-Sets a header on the Response, clearing all current values for the header.
+    Resolves the most appropriate compression encoding for a Pode route based on Accept-Encoding or Content-Encoding headers.
 
 .DESCRIPTION
-Sets a header on the Response, clearing all current values for the header.
+    This function determines the best compression encoding to use for a given route by evaluating the Accept-Encoding or Content-Encoding HTTP headers.
+    It supports quality (q) values and prioritizes encodings based on client preference and route configuration.
+    If no suitable encoding is found, it can optionally throw an HTTP 406 error.
 
-.PARAMETER Name
-The name of the header.
+.PARAMETER Route
+    The route hashtable containing compression configuration.
 
-.PARAMETER Value
-The value to set against the header.
+.PARAMETER AcceptEncoding
+    The Accept-Encoding header value from the client request. Used to negotiate response compression.
 
-.PARAMETER Secret
-If supplied, the secret with which to sign the header's value.
+.PARAMETER ContentEncoding
+    The Content-Encoding header value from the client request. Used to negotiate request decompression.
 
-.PARAMETER Strict
-If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+.PARAMETER ThrowError
+    If specified, throws an HTTP 406 error when no acceptable encoding is found.
+
+.OUTPUTS
+    System.String
+    Returns the resolved encoding name as a string, or an empty string if no encoding is selected.
 
 .EXAMPLE
-Set-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
+    Resolve-PodeCompressionEncoding -AcceptEncoding 'gzip,deflate' -Route $Route
+
+.EXAMPLE
+    Resolve-PodeCompressionEncoding -ContentEncoding 'gzip' -Route $Route
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
 #>
-function Set-PodeHeader {
-    [CmdletBinding()]
+function Resolve-PodeCompressionEncoding {
+    [CmdletBinding(DefaultParameterSetName = 'AcceptEncoding')]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
-        [string]
-        $Name,
+        [Hashtable]
+        $Route,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(mandatory = $true, ParameterSetName = 'AcceptEncoding')]
+        [allowemptystring()]
         [string]
-        $Value,
+        $AcceptEncoding,
 
-        [Parameter()]
-        [string]
-        $Secret,
+        [Parameter(mandatory = $true, ParameterSetName = 'ContentEncoding')]
+        [allowemptystring()]
+        [String]
+        $ContentEncoding,
 
         [switch]
-        $Strict
+        $ThrowError
     )
-
-    # sign the value if we have a secret
-    if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret -Strict:$Strict)
+    # return empty if compression is not enabled
+    if (!$Route.Compression.Enabled -or $Route.Compression.Encodings.Count -eq 0) {
+        return [string]::Empty
     }
 
-    # set the header on the response
-    if ($PodeContext.Server.IsServerless) {
-        $WebEvent.Response.Headers[$Name] = $Value
+    if ($PSCmdlet.ParameterSetName -ieq 'ContentEncoding') {
+
+        if ([string]::IsNullOrWhiteSpace($ContentEncoding) -or !$Route.Compression.Request) {
+            return [string]::Empty
+        }
+        # convert encoding form q-form
+        $encodings = ConvertFrom-PodeHeaderQValue -Value $ContentEncoding
     }
-    else {
-        $WebEvent.Response.Headers.Set($Name, $Value)
+    elseif ($PSCmdlet.ParameterSetName -ieq 'AcceptEncoding') {
+        if ([string]::IsNullOrWhiteSpace($AcceptEncoding) -or !$Route.Compression.Response) {
+            return [string]::Empty
+        }
+        # convert encoding form q-form
+        $encodings = ConvertFrom-PodeHeaderQValue -Value $AcceptEncoding
     }
+
+    if ($encodings.Count -eq 0) {
+        return [string]::Empty
+    }
+
+    # check the encodings for one that matches
+    $normal = @('identity', '*')
+    $valid = @()
+
+    # build up supported and invalid
+    foreach ($encoding in $encodings.Keys) {
+        if (($encoding -iin $Route.Compression.Encodings) -or ($encoding -iin $normal)) {
+            $valid += @{
+                Name  = $encoding
+                Value = $encodings[$encoding]
+            }
+        }
+    }
+
+    # if it's empty, just return empty
+    if ($valid.Length -eq 0) {
+        return [string]::Empty
+    }
+
+    # find the highest ranked match
+    $found = @{}
+    $failOnIdentity = $false
+
+    foreach ($encoding in $valid) {
+        if ($encoding.Value -gt $found.Value) {
+            $found = $encoding
+        }
+
+        if (!$failOnIdentity -and ($encoding.Value -eq 0) -and ($encoding.Name -iin $normal)) {
+            $failOnIdentity = $true
+        }
+    }
+
+    # force found to identity/* if the 0 is not identity - meaning it's still allowed
+    if (($found.Value -eq 0) -and !$failOnIdentity) {
+        $found = @{
+            Name  = 'identity'
+            Value = 1.0
+        }
+    }
+
+    # return invalid, error, or return empty for idenity?
+    if ($found.Value -eq 0) {
+        if ($ThrowError) {
+            throw (New-PodeRequestException -StatusCode 406)
+        }
+    }
+
+    # else, we're safe
+    if ($found.Name -iin $normal) {
+        return [string]::Empty
+    }
+
+    if ($found.Name -ieq 'x-gzip') {
+        return 'gzip'
+    }
+
+    return $found.Name
 }
+
+
 
 <#
 .SYNOPSIS
-Sets multiple headers on the Response, clearing all current values for the header.
+    Parses a range string and converts it into a hashtable array of start and end values.
 
 .DESCRIPTION
-Sets multiple headers on the Response, clearing all current values for the header.
+    This function takes a range string (typically used in HTTP headers) and extracts the relevant start and end values. It supports the 'bytes' unit and handles multiple ranges separated by commas.
 
-.PARAMETER Values
-A hashtable of headers to be set.
+.PARAMETER Range
+    The range string to parse.
 
-.PARAMETER Secret
-If supplied, the secret with which to sign the header values.
+.PARAMETER ThrowError
+    A switch parameter. If specified, the function throws an exception (HTTP status code 416) when encountering invalid range formats.
 
-.PARAMETER Strict
-If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+.OUTPUTS
+    An array of hashtables, each containing 'Start' and 'End' properties representing the parsed ranges.
 
 .EXAMPLE
-Set-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
-#>
-function Set-PodeHeaderBulk {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [hashtable]
-        $Values,
+    Get-PodeRange -Range 'bytes=100-200,300-400'
+    # Returns an array of hashtables:
+    # [
+    #     @{
+    #         Start = 100
+    #         End   = 200
+    #     },
+    #     @{
+    #         Start = 300
+    #         End   = 400
+    #     }
+    # ]
 
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeRange {
+    [CmdletBinding()]
+    [OutputType([long[]])]
+    param(
         [Parameter()]
         [string]
-        $Secret,
+        $Range,
 
         [switch]
-        $Strict
+        $ThrowError
     )
 
-    foreach ($key in $Values.Keys) {
-        $value = $Values[$key]
-
-        # sign the value if we have a secret
-        if (![string]::IsNullOrWhiteSpace($Secret)) {
-            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret -Strict:$Strict)
-        }
-
-        # set the header on the response
-        if ($PodeContext.Server.IsServerless) {
-            $WebEvent.Response.Headers[$key] = $value
-        }
-        else {
-            $WebEvent.Response.Headers.Set($key, $value)
-        }
+    # return if no ranges
+    if ([string]::IsNullOrWhiteSpace($Range)) {
+        return $null
     }
+
+    # split on '='
+    $parts = @($Range -isplit '=').Trim()
+    if (($parts.Length -le 1) -or ([string]::IsNullOrWhiteSpace($parts[1]))) {
+        return $null
+    }
+
+    $unit = $parts[0]
+    if ($unit -ine 'bytes') {
+        if ($ThrowError) {
+            throw (New-PodeRequestException -StatusCode 416)
+        }
+
+        return $null
+    }
+
+    # split on ','
+    $parts = @($parts[1] -isplit ',').Trim()
+
+    # parse into From-To hashtable array
+    $ranges = [long[]]@()
+
+    foreach ($atom in $parts) {
+        if ($atom -inotmatch '(?<start>[\d]+){0,1}\s?\-\s?(?<end>[\d]+){0,1}') {
+            if ($ThrowError) {
+                throw (New-PodeRequestException -StatusCode 416)
+            }
+
+            return $null
+        }
+        $ranges += [long]$Matches['start']
+        $ranges += [long]$Matches['end']
+
+
+    }
+
+    return $ranges
 }
 
-<#
-.SYNOPSIS
-Tests if a header on the Request is validly signed.
-
-.DESCRIPTION
-Tests if a header on the Request is validly signed, by attempting to unsign it using some secret.
-
-.PARAMETER Name
-The name of the header to test.
-
-.PARAMETER Secret
-A secret to use for attempting to unsign the header's value.
-
-.PARAMETER Strict
-If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
-
-.EXAMPLE
-Test-PodeHeaderSigned -Name 'X-Header-Name' -Secret 'hunter2'
-#>
-function Test-PodeHeaderSigned {
-    [CmdletBinding()]
-    [OutputType([bool])]
+function Get-PodeTransferEncoding {
     param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name,
-
         [Parameter()]
         [string]
-        $Secret,
+        $TransferEncoding,
 
         [switch]
-        $Strict
+        $ThrowError
     )
 
-    $header = Get-PodeHeader -Name $Name
-    return Test-PodeValueSigned -Value $header -Secret $Secret -Strict:$Strict
-}
+    # return if no encoding
+    if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+        return [string]::Empty
+    }
 
+    # convert encoding form q-form
+    $encodings = ConvertFrom-PodeHeaderQValue -Value $TransferEncoding
+    if ($encodings.Count -eq 0) {
+        return [string]::Empty
+    }
+
+    # check the encodings for one that matches
+    $normal = @('chunked', 'identity')
+    $invalid = @()
+
+    # if we see a supported one, return immediately. else build up invalid one
+    foreach ($encoding in $encodings.Keys) {
+        if ($encoding -iin $PodeContext.Server.Web.Compression.Encodings) {
+            if ($encoding -ieq 'x-gzip') {
+                return 'gzip'
+            }
+
+            return $encoding
+        }
+
+        if ($encoding -iin $normal) {
+            continue
+        }
+
+        $invalid += $encoding
+    }
+
+    # if we have any invalid, throw a 415 error
+    if ($invalid.Length -gt 0) {
+        if ($ThrowError) {
+            throw (New-PodeRequestException -StatusCode 415)
+        }
+
+        return $invalid[0]
+    }
+
+    # else, we're safe
+    return [string]::Empty
+}
 
 <#
 .SYNOPSIS
-Removes a header from the Response.
+    Extracts the base MIME type from a Content-Type string that may include additional parameters.
 
 .DESCRIPTION
-Removes a header from the Response. If the current context is serverless, then this function removes the key directly; otherwise, it uses the standard removal approach.
+    This function takes a Content-Type string as input and returns only the base MIME type by splitting the string at the semicolon (';') and trimming any excess whitespace.
+    It is useful for handling HTTP headers or other contexts where Content-Type strings include parameters like charset, boundary, etc.
 
-.PARAMETER Name
-The name of the header to remove.
+.PARAMETER ContentType
+    The Content-Type string from which to extract the base MIME type. This string can include additional parameters separated by semicolons.
 
 .EXAMPLE
-Remove-PodeHeader -Name 'X-AuthToken'
+    Split-PodeContentType -ContentType "text/html; charset=UTF-8"
+
+    This example returns 'text/html', stripping away the 'charset=UTF-8' parameter.
+
+.EXAMPLE
+    Split-PodeContentType -ContentType "application/json; charset=utf-8"
+
+    This example returns 'application/json', removing the charset parameter.
 #>
-function Remove-PodeHeader {
-    [CmdletBinding()]
+function Split-PodeContentType {
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [string]
-        $Name
+        $ContentType
     )
-    $WebEvent.Response.Headers.Remove($Name)
+
+    # Check if the input string is null, empty, or consists only of whitespace.
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
+        return [string]::Empty  # Return an empty string if the input is not valid.
+    }
+
+    # Split the Content-Type string by the semicolon, which separates the base MIME type from other parameters.
+    # Trim any leading or trailing whitespace from the resulting MIME type to ensure clean output.
+    return @($ContentType -isplit ';')[0].Trim()
 }

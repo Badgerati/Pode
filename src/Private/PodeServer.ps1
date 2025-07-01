@@ -201,10 +201,7 @@ function Start-PodeWebServer {
                                     }
                                 }
 
-                                # accept/transfer encoding
                                 $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
-                                $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
-                                $WebEvent.Ranges = (Get-PodeRange -Range (Get-PodeHeader -Name 'Range') -ThrowError)
 
                                 # add logging endware for post-request
                                 Add-PodeRequestLogEndware -WebEvent $WebEvent
