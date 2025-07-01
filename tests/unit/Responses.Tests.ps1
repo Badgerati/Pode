@@ -413,6 +413,9 @@ Describe 'Write-PodeHtmlResponse' {
 }
 
 Describe 'Write-PodeTextResponse' {
+    BeforeAll {
+        $PodeContext = @{Server = @{Encoding = [System.Text.UTF8Encoding]::new() } }
+    }
     It 'Does nothing for no value' {
         Write-PodeTextResponse -Value $null | Out-Null
     }
@@ -549,7 +552,7 @@ Describe 'Show-PodeErrorPage' {
 }
 
 
-Describe 'Write-PodeAttachmentResponseInternal Tests' {
+Describe 'Write-PodeFileResponseInternal Tests' {
     BeforeAll {
         Mock Set-PodeResponseStatus {}
         Mock Write-PodeDirectoryResponseInternal {}
@@ -564,21 +567,21 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
     }
 
     BeforeEach {
-        $WebEvent = @{ Response = @{} }
+        $WebEvent = @{ Response = [Pode.PodeResponse]::new(); Path = '/';Streamed=$true; Method = 'Get' }
     }
 
     It 'Sets response status to 404 if file does not exist' {
         Mock Get-Item { return $null } -Verifiable
 
-        Write-PodeAttachmentResponseInternal -Path (Join-Path $pwd 'non-existent.txt') -ContentType 'text/plain' | Should -BeNullOrEmpty
+        Write-PodeFileResponseInternal -Path (Join-Path $pwd 'non-existent.txt') -ContentType 'text/plain' | Should -BeNullOrEmpty
         Should -Invoke Set-PodeResponseStatus -Times 1 -Scope It -ParameterFilter { $Code -eq 404 }
     }
 
     It 'Sets correct content type and downloads file' {
-        Write-PodeAttachmentResponseInternal -Path (Join-Path $src 'Pode.psm1') -ContentType 'text/plain'
+        Write-PodeFileResponseInternal -Path (Join-Path $src 'Pode.psm1') -ContentType 'text/plain'
 
         Should -Invoke Set-PodeHeader -Times 1 -Scope It -ParameterFilter {
-            $Name -eq 'Content-Disposition' -and $Value -like '*filename=Pode.psm1'
+            $Name -eq 'Content-Disposition' -and $Value -like '*filename="Pode.psm1"'
         }
         Should -Invoke Get-PodeContentType -Times 0 -Scope It # ContentType is provided, so it should not attempt to get it
     }
@@ -589,7 +592,7 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
             $dir | Add-Member -Name 'PSIsContainer' -Value $true -MemberType NoteProperty -PassThru
         }
 
-        Write-PodeAttachmentResponseInternal -Path $pwd -FileBrowser
+        Write-PodeFileResponseInternal -Path $pwd -FileBrowser
         Should -Invoke Write-PodeDirectoryResponseInternal -Times 1 -Scope It
     }
 

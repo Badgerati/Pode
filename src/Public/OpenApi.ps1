@@ -282,6 +282,10 @@ function Enable-PodeOpenApi {
             # Set-PodeResponseAttachment -Path
             Add-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=openapi.$format"
         }
+        else {
+            # Set-PodeResponseAttachment -Path
+            Add-PodeHeader -Name 'Content-Disposition' -Value "inline; filename=openapi.$format"
+        }
 
         # generate the openapi definition
         $def = Get-PodeOpenApiDefinitionInternal `
@@ -292,7 +296,7 @@ function Enable-PodeOpenApi {
         # write the openapi definition
         if ($format -ieq 'yaml') {
             if ($mode -ieq 'view') {
-                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth) -ContentType 'application/yaml; charset=utf-8' #Changed to be RFC 9512 compliant
+                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth) -ContentType 'application/yaml' #Changed to be RFC 9512 compliant
             }
             else {
                 Write-PodeYamlResponse -Value $def -Depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
@@ -1945,8 +1949,8 @@ function Enable-PodeOAViewer {
                 DistPath = $meta.DistPath
             }
 
-            $podeRoot = Get-PodeModuleMiscPath
-            Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-swagger-editor.html.pode')) -Data $Data
+            $content = Get-PodeFileContentUsingViewEngine -Path ([System.IO.Path]::Combine((Get-PodeModuleMiscPath), 'default-swagger-editor.html.pode')) -Data $Data
+            Write-PodeTextResponse -Value $content -ContentType 'text/html' -StatusCode 200
         }
 
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
@@ -1990,8 +1994,8 @@ function Enable-PodeOAViewer {
                 $Data["$($type)_path"] = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer[$type]
             }
 
-            $podeRoot = Get-PodeModuleMiscPath
-            Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
+            $content = Get-PodeFileContentUsingViewEngine -Path ([System.IO.Path]::Combine((Get-PodeModuleMiscPath), 'default-doc-bookmarks.html.pode')) -Data $Data
+            Write-PodeTextResponse -Value $content -ContentType 'text/html' -StatusCode 200
         }
 
         if (! $NoAdvertise.IsPresent) {
@@ -2035,15 +2039,16 @@ function Enable-PodeOAViewer {
             -Role $Role -Scope $Scope -Group $Group `
             -ScriptBlock {
             param($meta)
-            $podeRoot = Get-PodeModuleMiscPath
-            if ( $meta.DarkMode) { $Theme = 'dark' } else { $Theme = 'light' }
-            Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
+
+            $data = @{
                 Title    = $meta.Title
                 OpenApi  = $meta.OpenApi
                 DarkMode = $meta.DarkMode
-                Theme    = $Theme
+                Theme    = $(if ( $meta.DarkMode) { 'dark' } else { 'light' })
                 DistPath = $meta.DistPath
             }
+            $content = Get-PodeFileContentUsingViewEngine -Path ([System.IO.Path]::Combine((Get-PodeModuleMiscPath), "default-$($meta.Type).html.pode")) -Data $data
+            Write-PodeTextResponse -Value $content -ContentType 'text/html' -StatusCode 200
         }
     }
 

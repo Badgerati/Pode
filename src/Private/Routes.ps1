@@ -605,6 +605,10 @@ function Find-PodeRouteTransferEncoding {
     # set the default
     $TransferEncoding = $PodeContext.Server.Web.TransferEncoding.Default
 
+    if ( [string]::IsNullOrWhiteSpace($TransferEncoding)) {
+        return [string]::Empty
+    }
+
     # find type by pattern from settings
     $matched = $null
     foreach ($key in $PodeContext.Server.Web.TransferEncoding.Routes.Keys) {

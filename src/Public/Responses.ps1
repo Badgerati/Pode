@@ -26,6 +26,9 @@ If the path is a folder, instead of returning 404, will return A browsable conte
 .PARAMETER NoEscape
 If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
 
+.PARAMETER Inline
+If supplied, the file will be displayed inline in the browser, rather than downloaded as a file.
+
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'downloads/installer.exe'
 
@@ -66,7 +69,11 @@ function Set-PodeResponseAttachment {
         $FileBrowser,
 
         [switch]
-        $NoEscape
+        $NoEscape,
+
+        [Parameter()]
+        [switch]
+        $Inline
     )
     begin {
         $pipelineItemCount = 0
@@ -97,9 +104,8 @@ function Set-PodeResponseAttachment {
         else {
             $_path = Get-PodeRelativePath -Path $Path -JoinRoot
         }
-
-        # call internal Attachment function
-        Write-PodeAttachmentResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser -NoEscape
+        # if the path is a directory, then return a browsable directory response
+        Write-PodeFileResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser -NoEscape -Download:(!$Inline.IsPresent)
     }
 }
 
@@ -128,6 +134,15 @@ The status code to set against the response.
 
 .PARAMETER Cache
 Should the value be cached by browsers, or not?
+
+.PARAMETER Download
+If supplied, the content will be downloaded as a file, rather than displayed in the browser.
+
+.PARAMETER FileName
+The name of the file to download or to visualize in the browser.
+
+.PARAMETER ETag
+An optional ETag value to be set in the response headers. If not provided, it will be generated based on the content.
 
 .EXAMPLE
 Write-PodeTextResponse -Value 'Leeeeeerrrooooy Jeeeenkiiins!'
@@ -164,8 +179,21 @@ function Write-PodeTextResponse {
         [int]
         $StatusCode = 200,
 
+        [Parameter()]
         [switch]
-        $Cache
+        $Download,
+
+        [Parameter()]
+        [string]
+        $FileName,
+
+        [Parameter()]
+        [switch]
+        $Cache,
+
+        [Parameter()]
+        [string]
+        $ETag
     )
 
     begin {
@@ -184,136 +212,99 @@ function Write-PodeTextResponse {
             $Value = $pipelineValue -join "`n"
         }
 
-        $isStringValue = ($PSCmdlet.ParameterSetName -ieq 'string')
-        $isByteValue = ($PSCmdlet.ParameterSetName -ieq 'bytes')
-
         # set the status code of the response, but only if it's not 200 (to prevent overriding)
         if ($StatusCode -ne 200) {
             Set-PodeResponseStatus -Code $StatusCode -NoErrorPage
         }
 
         # if there's nothing to write, return
-        if ($isStringValue -and [string]::IsNullOrEmpty($Value)) {
+        if ($PSCmdlet.ParameterSetName -ieq 'string') {
+
+            if ( [string]::IsNullOrEmpty($Value)) {
+                return
+            }
+            $Bytes = $PodeContext.Server.Encoding.GetBytes($Value)
+        }
+        elseif ( ($null -eq $Bytes) -or ($Bytes.Length -eq 0)) {
             return
         }
-
-        if ($isByteValue -and (($null -eq $Bytes) -or ($Bytes.Length -eq 0))) {
-            return
-        }
-
-        # if the response stream isn't writeable or already sent, return
-        $res = $WebEvent.Response
-        if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite -or $res.Sent))) {
-            return
-        }
-
-        # set a cache value
-        if ($Cache) {
-            Set-PodeHeader -Name 'Cache-Control' -Value "max-age=$($MaxAge), must-revalidate"
-            Set-PodeHeader -Name 'Expires' -Value ([datetime]::UtcNow.AddSeconds($MaxAge).ToString('r', [CultureInfo]::InvariantCulture))
-        }
-
-        # specify the content-type if supplied (adding utf-8 if missing)
-        if (![string]::IsNullOrEmpty($ContentType)) {
-            $charset = 'charset=utf-8'
-            if ($ContentType -inotcontains $charset) {
-                $ContentType = "$($ContentType); $($charset)"
+        try {
+            # if the response stream isn't writeable or already sent, return
+            $res = $WebEvent.Response
+            if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite -or $res.Sent))) {
+                return
             }
 
-            $res.ContentType = $ContentType
-        }
+            $testualMimeType = [Pode.PodeMimeTypes]::IsTextualMimeType($ContentType)
 
-        # if we're serverless, set the string as the body
-        if (!$WebEvent.Streamed) {
-            if ($isStringValue) {
-                $res.Body = $Value
+            if ($testualMimeType) {
+                if ($Download) {
+                    # If the content type is binary, set it to application/octet-stream
+                    # This is useful for files that should be downloaded rather than displayed
+                    $ContentType = 'application/octet-stream'
+                }
+                elseif ($ContentType -notcontains '; charset=') {
+                    # If the content type is textual, ensure it has a charset
+                    $ContentType += "; charset=$($PodeContext.Server.Encoding.WebName)"
+                }
+            }
+            # set the content type of the response
+            $WebEvent.Response.ContentType = $ContentType
+
+            # set the compression type based on the Accept-Encoding header and the content length
+            $compression = if ($null -ne $webEvent.Ranges -and $webEvent.Ranges.Count -eq 0) {
+                [pode.podecompressiontype]::none
             }
             else {
+                Set-PodeCompressionType -Length $Bytes.Count -AcceptEncoding $WebEvent.AcceptEncoding -TestualMimeType $testualMimeType
+            }
+
+            # set the cache header if requested
+            if (Set-PodeCacheHeader -WebEventCache $WebEvent.Cache -Cache:$Cache -MaxAge $MaxAge -ETag $ETag) {
+                Set-PodeResponseStatus -Code 304
+                return
+            }
+
+            # if we're serverless, set the string as the body
+            if (!$WebEvent.Streamed) {
                 $res.Body = $Bytes
+                return
             }
+            if ($WebEvent.Method -eq 'Get') {
 
-            return
-        }
-
-        # otherwise, write the bytes to the response stream
-        if ($isStringValue) {
-            $Bytes = [System.Text.Encoding]::UTF8.GetBytes($Value)
-        }
-
-        # check if we only need a range of the bytes
-        if (($null -ne $WebEvent.Ranges) -and ($WebEvent.Response.StatusCode -eq 200) -and ($StatusCode -eq 200)) {
-            $lengths = @()
-            $size = $Bytes.Length
-
-            $Bytes = @(foreach ($range in $WebEvent.Ranges) {
-                    # ensure range not invalid
-                    if (([int]$range.Start -lt 0) -or ([int]$range.Start -ge $size) -or ([int]$range.End -lt 0)) {
-                        Set-PodeResponseStatus -Code 416 -NoErrorPage
-                        return
+                if ($null -ne $WebEvent.Ranges) {
+                    $WebEvent.Response.WriteBody($Bytes, [long[]] $WebEvent.Ranges, $compression)
+                    return
+                }
+                elseif (![string]::IsNullOrEmpty($FileName)) {
+                    if ($Download) {
+                        # Set the content disposition to attachment for downloading
+                        # This will prompt the browser to download the file instead of displaying it
+                        # If Download is false, it will be treated as inline
+                        Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=""$($FileName)"""
                     }
-
-                    # skip start bytes only
-                    if ([string]::IsNullOrEmpty($range.End)) {
-                        $Bytes[$range.Start..($size - 1)]
-                        $lengths += "$($range.Start)-$($size - 1)/$($size)"
-                    }
-
-                    # end bytes only
-                    elseif ([string]::IsNullOrEmpty($range.Start)) {
-                        if ([int]$range.End -gt $size) {
-                            $range.End = $size
-                        }
-
-                        if ([int]$range.End -gt 0) {
-                            $Bytes[$($size - $range.End)..($size - 1)]
-                            $lengths += "$($size - $range.End)-$($size - 1)/$($size)"
-                        }
-                        else {
-                            $lengths += "0-0/$($size)"
-                        }
-                    }
-
-                    # normal range
                     else {
-                        if ([int]$range.End -ge $size) {
-                            Set-PodeResponseStatus -Code 416 -NoErrorPage
-                            return
-                        }
-
-                        $Bytes[$range.Start..$range.End]
-                        $lengths += "$($range.Start)-$($range.End)/$($size)"
+                        # Set the content disposition to inline for viewing in the browser
+                        # This is useful for images, PDFs, etc., that can be displayed directly
+                        # If Download is true, it will be treated as an attachment
+                        Set-PodeHeader -Name 'Content-Disposition' -Value "inline; filename=""$($FileName)"""
                     }
-                })
-
-            Set-PodeHeader -Name 'Content-Range' -Value "bytes $($lengths -join ', ')"
-            if ($StatusCode -eq 200) {
-                Set-PodeResponseStatus -Code 206 -NoErrorPage
+                }
             }
-        }
-
-        # check if we need to compress the response
-        if ($PodeContext.Server.Web.Compression.Enabled -and ![string]::IsNullOrWhiteSpace($WebEvent.AcceptEncoding)) {
-            # compress the bytes
-            $Bytes = [PodeHelpers]::CompressBytes($Bytes, $WebEvent.AcceptEncoding)
-
-            # set content encoding header
-            Set-PodeHeader -Name 'Content-Encoding' -Value $WebEvent.AcceptEncoding
-        }
-
-        # write the content to the response stream
-        $res.ContentLength64 = $Bytes.Length
-
-        try {
-            $res.OutputStream.Write($Bytes, 0, $Bytes.Length)
+            if ($compression -ne [pode.podecompressiontype]::none) {
+                Set-PodeHeader -Name 'Content-Encoding' -Value $compression.toString()
+            }
+            # write the content to the response stream
+            $WebEvent.Response.WriteBody($Bytes, $compression)
         }
         catch {
             if (Test-PodeValidNetworkFailure -Exception $_.Exception) {
                 return
             }
-
             $_ | Write-PodeErrorLog
             throw
         }
+
     }
 }
 
@@ -432,7 +423,6 @@ function Write-PodeFileResponse {
             StatusCode  = $StatusCode
             Cache       = $Cache
             FileBrowser = $FileBrowser
-            NoEscape    = $NoEscape
         }
 
         # path or file info?
@@ -530,6 +520,9 @@ The status code to set against the response.
 .PARAMETER NoEscape
 If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
 
+.PARAMETER ETag
+An optional ETag value to be set in the response headers. If not provided, it will be generated based on the content.
+
 .EXAMPLE
 Write-PodeCsvResponse -Value "Name`nRick"
 
@@ -561,7 +554,11 @@ function Write-PodeCsvResponse {
 
         [Parameter(ParameterSetName = 'File')]
         [switch]
-        $NoEscape
+        $NoEscape,
+
+        [Parameter()]
+        [string]
+        $ETag
     )
 
     begin {
@@ -606,7 +603,7 @@ function Write-PodeCsvResponse {
             $Value = [string]::Empty
         }
 
-        Write-PodeTextResponse -Value $Value -ContentType 'text/csv' -StatusCode $StatusCode
+        Write-PodeTextResponse -Value $Value -ContentType 'text/csv' -StatusCode $StatusCode -ETag $ETag
     }
 }
 
@@ -628,6 +625,9 @@ The status code to set against the response.
 
 .PARAMETER NoEscape
 If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
+.PARAMETER ETag
+An optional ETag value to be set in the response headers. If not provided, it will be generated based on the content.
 
 .EXAMPLE
 Write-PodeHtmlResponse -Value "Raw HTML can be placed here"
@@ -660,7 +660,11 @@ function Write-PodeHtmlResponse {
 
         [Parameter(ParameterSetName = 'File')]
         [switch]
-        $NoEscape
+        $NoEscape,
+
+        [Parameter()]
+        [string]
+        $ETag
     )
 
     begin {
@@ -696,7 +700,7 @@ function Write-PodeHtmlResponse {
             $Value = [string]::Empty
         }
 
-        Write-PodeTextResponse -Value $Value -ContentType 'text/html' -StatusCode $StatusCode
+        Write-PodeTextResponse -Value $Value -ContentType 'text/html' -StatusCode $StatusCode -ETag $ETag
     }
 }
 
@@ -722,6 +726,9 @@ If supplied, the Markdown will be converted to HTML. (This is only supported in 
 
 .PARAMETER NoEscape
 If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
+.PARAMETER ETag
+An optional ETag value to be set in the response headers. If not provided, and cache is enabled, it will be generated based on the content.
 
 .EXAMPLE
 Write-PodeMarkdownResponse -Value '# Hello, world!' -AsHtml
@@ -754,7 +761,11 @@ function Write-PodeMarkdownResponse {
 
         [Parameter(ParameterSetName = 'File')]
         [switch]
-        $NoEscape
+        $NoEscape,
+
+        [Parameter()]
+        [string]
+        $ETag
     )
     begin {
         $pipelineItemCount = 0
@@ -789,7 +800,7 @@ function Write-PodeMarkdownResponse {
             }
         }
 
-        Write-PodeTextResponse -Value $Value -ContentType $mimeType -StatusCode $StatusCode
+        Write-PodeTextResponse -Value $Value -ContentType $mimeType -StatusCode $StatusCode -ETag $ETag
     }
 }
 
@@ -821,6 +832,9 @@ The JSON document is not compressed (Human readable form)
 
 .PARAMETER NoEscape
 If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
+.PARAMETER ETag
+An optional ETag value to be set in the response headers. If not provided, and cache is enabled, it will be generated based on the content.
 
 .EXAMPLE
 Write-PodeJsonResponse -Value '{"name": "Rick"}'
@@ -869,7 +883,11 @@ function Write-PodeJsonResponse {
 
         [Parameter(ParameterSetName = 'File')]
         [switch]
-        $NoEscape
+        $NoEscape,
+
+        [Parameter()]
+        [string]
+        $ETag
     )
 
     begin {
@@ -907,7 +925,7 @@ function Write-PodeJsonResponse {
             $Value = '{}'
         }
 
-        Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
+        Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode -ETag $ETag
     }
 }
 
@@ -937,6 +955,9 @@ The status code to set against the response.
 
 .PARAMETER NoEscape
 If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
+.PARAMETER ETag
+An optional ETag value to be set in the response headers. If not provided, and cache is enabled, it will be generated based on the content.
 
 .EXAMPLE
 Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
@@ -1001,7 +1022,11 @@ function Write-PodeXmlResponse {
 
         [Parameter(ParameterSetName = 'File')]
         [switch]
-        $NoEscape
+        $NoEscape,
+
+        [Parameter()]
+        [string]
+        $ETag
     )
 
     begin {
@@ -1038,7 +1063,7 @@ function Write-PodeXmlResponse {
             $Value = [string]::Empty
         }
 
-        Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
+        Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode -ETag $ETag
     }
 }
 
@@ -1067,6 +1092,9 @@ The status code to set against the response.
 
 .PARAMETER NoEscape
 If supplied, the path will not be escaped. This is useful for paths that contain expected wildcards, or are already escaped.
+
+.PARAMETER ETag
+An optional ETag value to be set in the response headers. If not provided, and cache is enabled, it will be generated based on the content.
 
 .EXAMPLE
 Write-PodeYamlResponse -Value 'name: "Rick"'
@@ -1112,7 +1140,11 @@ function Write-PodeYamlResponse {
 
         [Parameter(ParameterSetName = 'File')]
         [switch]
-        $NoEscape
+        $NoEscape,
+
+        [Parameter()]
+        [string]
+        $ETag
     )
 
     begin {
@@ -1149,7 +1181,7 @@ function Write-PodeYamlResponse {
             $Value = '[]'
         }
 
-        Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
+        Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode -ETag $ETag
     }
 }
 
