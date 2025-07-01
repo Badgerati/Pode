@@ -1083,7 +1083,7 @@ function Test-PodeValidNetworkFailure {
 
     return ($null -ne $match)
 }
- 
+
 
 function New-PodeRequestException {
     param(
@@ -1285,12 +1285,12 @@ function ConvertFrom-PodeRequestContent {
     }
     # run action for the content type
     switch ($ContentType) {
-        { $_ -ilike '*/json' } {
+         { $_ -ilike '*/json' } {
             if (Test-PodeIsPSCore) {
                 $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
             }
             else {
-                $Result.Data = ConvertTo-PodeHashtable -InputObject ($Content | ConvertFrom-Json)
+                $Result.Data = ($Content | ConvertFrom-Json)
             }
         }
 
