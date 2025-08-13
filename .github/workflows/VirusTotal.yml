@@ -37,7 +37,7 @@ jobs:
         fi
         echo "VIRUSTOTAL_API_KEY is set. Proceeding with the workflow."
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
