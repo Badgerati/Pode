@@ -1,0 +1,10 @@
+name: Packaging Request
+description: Suggest an improvement for the packaging of Pode, such as a new version of software.
+labels: ['packaging :package:']
+body:
+  - type: textarea
+    attributes:
+      label: Describe the Change
+      description: A clear and concise description of what you want to happen.
+    validations:
+      required: true

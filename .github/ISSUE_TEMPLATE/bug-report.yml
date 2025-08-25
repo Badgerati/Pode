@@ -1,0 +1,49 @@
+name: Bug Report
+description: Create a bug report to help us improve
+labels: ['bug :bug:']
+body:
+  - type: textarea
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '…'
+        2. Click on '…'
+        3. Scroll down to '…'
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem.
+  - type: input
+    attributes:
+      label: Operating System
+      placeholder: iOS, Windows
+  - type: input
+    attributes:
+      label: Browser
+      placeholder: Chrome, Safari
+  - type: textarea
+    attributes:
+      label: Versions
+      placeholder: |
+        Pode: v1.7.3
+        PowerShell: PS6.2.1
+  - type: textarea
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.
