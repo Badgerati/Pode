@@ -1,8 +1,6 @@
 name: Bug Report
 description: Create a bug report to help us improve
-title: ''
 labels: ['bug :bug:']
-assignees: ''
 body:
   - type: textarea
     attributes:
