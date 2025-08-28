@@ -182,7 +182,7 @@ function Get-PodeLoggingInbuiltType {
 
                 # build the exception details
                 $row = @(
-                    "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
+                    "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss.fffK'))",
                     "Level: $($item.Level)",
                     "ThreadId: $($item.ThreadId)",
                     "Server: $($item.Server)",
@@ -316,7 +316,7 @@ function Write-PodeRequestLog {
             Size              = '-'
         }
     }
-    
+
     # set size if >0
     if ($Response.ContentLength64 -gt 0) {
         $item.Response.Size = $Response.ContentLength64
