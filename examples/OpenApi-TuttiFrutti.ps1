@@ -162,7 +162,7 @@ Some useful links:
             New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
             New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
             New-PodeOABoolProperty -Name 'complete' |
-            New-PodeOASchemaProperty -Name 'Address' -Reference 'Address' |
+            New-PodeOAComponentSchemaProperty -Name 'Address' -Reference 'Address' |
             New-PodeOAObjectProperty -Name 'Order' -XmlName 'order'  -AdditionalProperties (New-PodeOAStringProperty ) |
             Add-PodeOAComponentSchema -Name 'Order'
 
@@ -196,10 +196,10 @@ Some useful links:
             New-PodeOAObjectProperty -Name 'Pet' -XmlName  'pet'  -Properties  (
                 New-PodeOAIntProperty -Name 'id'-Format Int64 -Example @(10, 2, 4) -ReadOnly |
                     New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
-                    New-PodeOASchemaProperty -Name 'category' -Reference 'Category' |
+                    New-PodeOAComponentSchemaProperty -Name 'category' -Reference 'Category' |
                     New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
                     New-PodeOAStringProperty -Name 'photoUrls' -Array |
-                    New-PodeOASchemaProperty -Name 'tags' -Reference 'Tag' |
+                    New-PodeOAComponentSchemaProperty -Name 'tags' -Reference 'Tag' |
                     New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold')
             ))
 
@@ -226,7 +226,7 @@ Some useful links:
 
         New-PodeOAStringProperty -Name 'name' |
             New-PodeOAStringProperty -Name 'type' |
-            New-PodeOASchemaProperty -Name 'children' -Array -Reference 'StructPart' |
+            New-PodeOAComponentSchemaProperty -Name 'children' -Array -Reference 'StructPart' |
             New-PodeOAObjectProperty |
             Add-PodeOAComponentSchema -Name 'StructPart'
 
@@ -252,10 +252,10 @@ Some useful links:
         New-PodeOAObjectProperty -Name 'Pet' -XmlName  'pet' } -Properties @(
                     (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly),
                         (New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required),
-                        (New-PodeOASchemaProperty -Name 'category' -Component 'Category'),
+                        (New-PodeOAComponentSchemaProperty -Name 'category' -Component 'Category'),
                         (New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required),
                         (New-PodeOAStringProperty -Name 'photoUrls' -Array),
-                        (New-PodeOASchemaProperty -Name 'tags' -Component 'Tag')
+                        (New-PodeOAComponentSchemaProperty -Name 'tags' -Component 'Tag')
                         (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
         )) #>
 
@@ -309,7 +309,7 @@ Some useful links:
             Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
         (  New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
-            Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{  '*/*' = New-PodeOASchemaProperty   -Reference 'Pet' -array }) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{  '*/*' = New-PodeOAComponentSchemaProperty   -Reference 'Pet' -array }) -PassThru |
             Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{  'text/html' = 'ApiResponse' }) -PassThru
 
 
@@ -746,7 +746,7 @@ Some useful links:
                         New-PodeOAStringProperty -name 'id' -format 'uuid' |
                             New-PodeOAObjectProperty -name 'address' -NoProperties |
                             New-PodeOAStringProperty -name 'children' -array |
-                            New-PodeOASchemaProperty -Name 'addresses' -Reference 'Address' -Array |
+                            New-PodeOAComponentSchemaProperty -Name 'addresses' -Reference 'Address' -Array |
                             New-PodeOAObjectProperty
                         }) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru |
                     Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |

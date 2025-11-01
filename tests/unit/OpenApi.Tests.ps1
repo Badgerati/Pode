@@ -1797,7 +1797,7 @@ Describe 'OpenApi' {
     }
 
 
-    Context 'New-PodeOASchemaProperty' {
+    Context 'New-PodeOAComponentSchemaProperty' {
         BeforeEach {
             Add-PodeOAComponentSchema -Name 'Cat' -Schema (
                 New-PodeOAObjectProperty  -Properties  @(
@@ -1807,12 +1807,12 @@ Describe 'OpenApi' {
         }
 
         # Check if the function exists
-        It 'New-PodeOASchemaProperty function exists' {
-            Get-Command New-PodeOASchemaProperty | Should -Not -Be $null
+        It 'New-PodeOAComponentSchemaProperty function exists' {
+            Get-Command New-PodeOAComponentSchemaProperty | Should -Not -Be $null
         }
 
         It 'Standard' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Reference 'Cat'
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Reference 'Cat'
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 0
             $result.type | Should -Be 'schema'
@@ -1821,15 +1821,15 @@ Describe 'OpenApi' {
         }
 
         It 'ArrayNoSwitchesUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat'  `
-                -Example 'Example for New-PodeOASchemaProperty'   -Array  -MinItems 2 -MaxItems 4 -UniqueItems
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat'  `
+                -Example 'Example for New-PodeOAComponentSchemaProperty'   -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 1
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1837,15 +1837,15 @@ Describe 'OpenApi' {
 
         }
         It 'ArrayDeprecatedUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat'  `
-                -Example 'Example for New-PodeOASchemaProperty'   -Deprecated  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat'  `
+                -Example 'Example for New-PodeOAComponentSchemaProperty'   -Deprecated  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 1
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -1853,15 +1853,15 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayNullableUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat'  `
-                -Example 'Example for New-PodeOASchemaProperty'   -Nullable  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat'  `
+                -Example 'Example for New-PodeOAComponentSchemaProperty'   -Nullable  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -1869,15 +1869,15 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayWriteOnlyUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat'  `
-                -Example 'Example for New-PodeOASchemaProperty'   -WriteOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat'  `
+                -Example 'Example for New-PodeOAComponentSchemaProperty'   -WriteOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -1885,15 +1885,15 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayReadOnlyUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' `
-                -Example 'Example for New-PodeOASchemaProperty'   -ReadOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat' `
+                -Example 'Example for New-PodeOAComponentSchemaProperty'   -ReadOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -1902,75 +1902,75 @@ Describe 'OpenApi' {
         }
 
         It 'ArrayNoSwitches' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat'  `
-                -Example 'Example for New-PodeOASchemaProperty'   -Array  -MinItems 2 -MaxItems 4
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat'  `
+                -Example 'Example for New-PodeOAComponentSchemaProperty'   -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 1
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
 
         }
         It 'ArrayDeprecated' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat'   `
-                -Example 'Example for New-PodeOASchemaProperty'   -Deprecated  -Array  -MinItems 2 -MaxItems 4
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat'   `
+                -Example 'Example for New-PodeOAComponentSchemaProperty'   -Deprecated  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 1
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayNullable' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat'   `
-                -Example 'Example for New-PodeOASchemaProperty'   -Nullable  -Array  -MinItems 2 -MaxItems 4
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat'   `
+                -Example 'Example for New-PodeOAComponentSchemaProperty'   -Nullable  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayWriteOnly' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' `
-                -Example 'Example for New-PodeOASchemaProperty'   -WriteOnly  -Array  -MinItems 2 -MaxItems 4
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat' `
+                -Example 'Example for New-PodeOAComponentSchemaProperty'   -WriteOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayReadOnly' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat'  `
-                -Example 'Example for New-PodeOASchemaProperty' -ReadOnly  -Array  -MinItems 2 -MaxItems 4
+            $result = New-PodeOAComponentSchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOAComponentSchemaProperty'  -Reference 'Cat'  `
+                -Example 'Example for New-PodeOAComponentSchemaProperty' -ReadOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
-            $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
-            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result.description | Should -Be 'Test for New-PodeOAComponentSchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOAComponentSchemaProperty'
             $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -3352,10 +3352,10 @@ Describe 'OpenApi' {
             $Pet = New-PodeOAObjectProperty -Name 'Pet' -XmlName 'pet'   -Properties  (
             (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly ),
                 (New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required) ,
-                (New-PodeOASchemaProperty -Name 'category' -Reference 'Category' ),
+                (New-PodeOAComponentSchemaProperty -Name 'category' -Reference 'Category' ),
                 (New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required) ,
                 (New-PodeOAStringProperty -Name 'photoUrls' -Array) ,
-                (New-PodeOASchemaProperty -Name 'tags' -Reference 'Tag') ,
+                (New-PodeOAComponentSchemaProperty -Name 'tags' -Reference 'Tag') ,
                 (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
             )
             $Pet.type | Should -be 'object'
@@ -3407,10 +3407,10 @@ Describe 'OpenApi' {
         It 'By Pipeline' {
             $Pet = New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly |
                 New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
-                New-PodeOASchemaProperty -Name 'category' -Reference 'Category' |
+                New-PodeOAComponentSchemaProperty -Name 'category' -Reference 'Category' |
                 New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
                 New-PodeOAStringProperty -Name 'photoUrls' -Array |
-                New-PodeOASchemaProperty -Name 'tags' -Reference 'Tag' |
+                New-PodeOAComponentSchemaProperty -Name 'tags' -Reference 'Tag' |
                 New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold') |
                 New-PodeOAObjectProperty -Name 'Pet' -XmlName 'pet'
             $Pet.type | Should -be 'object'
