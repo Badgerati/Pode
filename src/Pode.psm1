@@ -75,14 +75,14 @@ try {
     $moduleManifestPath = Join-Path -Path $root -ChildPath 'Pode.psd1'
 
     # Import the module manifest to access its properties
-    $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
+    $PodeManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
 
 
     $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
 
     if ($podeDll) {
-        if ( $moduleManifest.ModuleVersion -ne '$version$') {
-            $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
+        if ( $PodeManifest.ModuleVersion -ne '$version$') {
+            $moduleVersion = ([version]::new($PodeManifest.ModuleVersion + '.0'))
             if ($podeDll.GetName().Version -ne $moduleVersion) {
                 # An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new Powershell/pwsh session and retry.
                 throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion)
@@ -141,6 +141,6 @@ catch {
 }
 finally {
     # Cleanup temporary variables
-    Remove-Variable -Name 'tmpPodeLocale', 'localesPath', 'moduleManifest', 'root', 'version', 'libsPath', 'netFolder', 'podeDll', 'sysfuncs', 'sysaliases', 'funcs', 'aliases', 'moduleManifestPath', 'moduleVersion' -ErrorAction SilentlyContinue
+    Remove-Variable -Name 'tmpPodeLocale', 'localesPath', 'root', 'version', 'libsPath', 'netFolder', 'podeDll', 'sysfuncs', 'sysaliases', 'funcs', 'aliases', 'moduleManifestPath', 'moduleVersion' -ErrorAction SilentlyContinue
 }
 

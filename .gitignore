@@ -9,6 +9,7 @@ docs/[Ff]unctions/
 examples/state.json
 examples/issue-*
 examples/issues/
+examples/State/
 pkg/
 deliverable/
 .vs/
@@ -271,3 +272,4 @@ docs/Getting-Started/Samples.md
 
 # Dump Folder
 Dump
+

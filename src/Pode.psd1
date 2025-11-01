@@ -66,6 +66,8 @@
         'Restore-PodeState',
         'Test-PodeState',
         'Get-PodeStateNames',
+        'ConvertFrom-PodeState',
+        'ConvertTo-PodeState',
 
         # response helpers
         'Set-PodeResponseAttachment',
