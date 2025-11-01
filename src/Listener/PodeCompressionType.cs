@@ -2,7 +2,9 @@ namespace Pode
 {
     public enum PodeCompressionType
     {
-        Gzip,
-        Deflate
+        none,
+        br,
+        gzip,
+        deflate
     }
 }

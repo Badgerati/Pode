@@ -73,6 +73,10 @@ Describe 'REST API Requests' {
                     Write-PodeJsonResponse -Value @{ Username = $WebEvent.Data.username }
                 }
 
+                Add-PodeRoute -Method Post -Path '/contentencoding' -PassThru -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Username = $WebEvent.Data.username }
+                } | Add-PodeRouteCompression -Enable -Direction Request -Encoding gzip
+
                 Add-PodeRoute -Method * -Path '/all' -ScriptBlock {
                     Write-PodeJsonResponse -Value @{ Result = 'OK' }
                 }
@@ -212,6 +216,24 @@ Describe 'REST API Requests' {
         $result.Username | Should -Be 'rick'
     }
 
+    It 'Encoded payload to gzip with Content-Encoding header' {
+        $data = @{ username = 'rick' }
+        $message = ($data | ConvertTo-Json)
+
+        # compress the message using gzip
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($message)
+        $ms = [System.IO.MemoryStream]::new()
+        $gzip = [System.IO.Compression.GZipStream]::new($ms, [IO.Compression.CompressionMode]::Compress, $true)
+        $gzip.Write($bytes, 0, $bytes.Length)
+        $gzip.Close()
+        $ms.Position = 0
+
+        # make the request
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/contentencoding" -Method Post -Body $ms.ToArray() `
+            -ContentType 'application/json' -Headers @{ 'Content-Encoding' = 'gzip' }
+        $result.Username | Should -Be 'rick'
+    }
+    
     It 'works with any method' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/all" -Method Get
         $result.Result | Should -Be 'OK'

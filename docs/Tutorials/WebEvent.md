@@ -16,7 +16,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
     It is advised not to directly alter these values, other than the ones through the documentation that say you can - such as Session Data.
 
 | Name           | Type      | Description                                                                                                                                                           | Docs                                                                     |
-| -------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+|----------------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
 | Auth           | hashtable | Contains the information on the currently authenticated user from the `Add-PodeAuth` methods - the user's details can be further accessed in the sub `.User` property | [link](../Authentication/Overview/#users)                                |
 | ContentType    | string    | The content type of the data in the Request's payload                                                                                                                 | n/a                                                                      |
 | Cookies        | hashtable | Contains all cookies parsed from the Request's headers - it's best to use Pode's Cookie functions to access/change Cookies                                            | [link](../Cookies)                                                       |
@@ -45,7 +45,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 These are the properties available for `$WebEvent.Endpoint`
 
 | Name     | Type   | Description                                                              | Docs                                        |
-| -------- | ------ | ------------------------------------------------------------------------ | ------------------------------------------- |
+|----------|--------|--------------------------------------------------------------------------|---------------------------------------------|
 | Address  | string | The ip/hostname being used for the Request. ie: 127.0.0.1 or example.com | n/a                                         |
 | Name     | string | The name of the Pode Endpoint being used for the Request                 | [link](../Endpoints/Basics/#endpoint-names) |
 | Protocol | string | The protocol being used for the Request. ie: HTTP, HTTPS, WS, WSS, etc.  | n/a                                         |
@@ -55,7 +55,7 @@ These are the properties available for `$WebEvent.Endpoint`
 These are the properties available for `$WebEvent.StaticContent`
 
 | Name       | Type   | Description                                                 | Docs |
-| ---------- | ------ | ----------------------------------------------------------- | ---- |
+|------------|--------|-------------------------------------------------------------|------|
 | IsCachable | bool   | Whether or not the file should be cached on the client side | n/a  |
 | IsDownload | bool   | Whether or not the file should be attached or rendered      | n/a  |
 | Source     | string | The local path, using PSDrives, to the file on the server   | n/a  |
@@ -71,11 +71,12 @@ These are the properties available for `$WebEvent.Request`
     Changing properties on this object could cause errors, unwanted behaviour, or a full server crash. Only edit them if you know what you're doing. Same for calling any methods.
 
 | Name                    | Type                 | Description                                                                                                                                                                                                                          | Example                       |
-| ----------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+|-------------------------|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
 | Address                 | string               | The address being used by the Request. This will favour hostnames over IPs                                                                                                                                                           | -                             |
 | AllowClientCertificate  | bool                 | Whether Pode should expect, and process, and client certificates                                                                                                                                                                     | -                             |
 | AwaitingBody            | bool                 | If the request is chunked, this flags if Pode is still awaiting for the whole body to be sent                                                                                                                                        | -                             |
 | Body                    | string               | The textually encoded version of the RawBody                                                                                                                                                                                         | -                             |
+| Cache                   | hashtable            | Contains any cache data associated with the current request, if caching is enabled.                                                                                                                                                  | -                             |
 | Certificate             | X509Certificate      | The certificate being used for SSL connections. Usually defined from [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint)                                                                                                     | -                             |
 | ClientCertificate       | X509Certificate2     | If being used, the client certificate supplied on the Request                                                                                                                                                                        | -                             |
 | ClientCertificateErrors | SslPolicyErrors      | Contains any errors that might have occurred while validating the client certificate. Pode ignores these by default, so they will need checking the [Client Certificate Authentication](../Authentication/Methods/ClientCertificate) | -                             |
@@ -104,7 +105,8 @@ These are the properties available for `$WebEvent.Request`
 | Scheme                  | string               | The connection scheme being used                                                                                                                                                                                                     | HTTP, HTTPS, etc.             |
 | SslUpgraded             | bool                 | Whether this connection has been upgraded to SSL. Used for implicit connections                                                                                                                                                      | -                             |
 | TlsMode                 | PodeTlsMode          | Whether the connection is using implicit or explicit TLS                                                                                                                                                                             | -                             |
-| TransferEncoding        | string               | The transfer encoding used for the content                                                                                                                                                                                           | gzip, chunked, identity       |
+| TransferEncoding        | string               | The transfer encoding used for the content (Do not use it, as it is not RFC compliant)                                                                                                                                               | gzip, chunked, identity       |
+| ContentEncoding         | string               | The transfer encoding used for the content                                                                                                                                                                                           | gzip, chunked, identity       |
 | Url                     | Uri                  | The whole Request URL that was made                                                                                                                                                                                                  | http://example.com?name=value |
 | UrlReferrer             | string               | The referred of the Request                                                                                                                                                                                                          | -                             |
 | UserAgent               | string               | The user agent of where the Request originated                                                                                                                                                                                       | -                             |
@@ -120,7 +122,7 @@ These are the properties available for `$WebEvent.Response`
     Changing properties on this object could cause errors, unwanted behaviour, or a full server crash. Only edit them if you know what you're doing. Same for calling any methods.
 
 | Name              | Type                | Description                                                                                          | Example             |
-| ----------------- | ------------------- | ---------------------------------------------------------------------------------------------------- | ------------------- |
+|-------------------|---------------------|------------------------------------------------------------------------------------------------------|---------------------|
 | ContentLength64   | long                | The length of the data that is being sent back                                                       | -                   |
 | ContentType       | string              | The content type of the data that's being sent back                                                  | application/json    |
 | Headers           | PodeResponseHeaders | A collection of headers that should be sent back to the client                                       | -                   |

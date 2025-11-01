@@ -7,6 +7,9 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
+    $helperPath = (Split-Path -Parent -Path $PSCommandPath) -ireplace 'unit', 'shared'
+    . "$helperPath/TestHelper.ps1"
+    Import-PodeAssembly -SrcPath $src
 }
 
 Describe 'Get-PodeInbuiltMiddleware' {
@@ -646,11 +649,14 @@ Describe 'Get-PodeQueryMiddleware' {
 }
 
 Describe 'Get-PodePublicMiddleware' {
-    Mock Get-PodeInbuiltMiddleware { return @{
-            'Name'  = $Name
-            'Logic' = $ScriptBlock
-        } }
-
+    BeforeEach {
+        Mock Get-PodeInbuiltMiddleware { return @{
+                'Name'  = $Name
+                'Logic' = $ScriptBlock
+            } }
+        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
+        Mock Write-PodeFileResponseInternal { }
+    }
     It 'Returns a ScriptBlock, invokes true for no static path' {
         $r = Get-PodePublicMiddleware
         $r.Name | Should -Be '__pode_mw_static_content__'
@@ -675,8 +681,6 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
-        Mock Write-PodeFileResponse { }
 
         $WebEvent = @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = ''
@@ -684,7 +688,7 @@ Describe 'Get-PodePublicMiddleware' {
 
         (. $r.Logic) | Should -Be $false
 
-        Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+        Assert-MockCalled Write-PodeFileResponseInternal -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching' {
@@ -702,8 +706,6 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
-        Mock Write-PodeFileResponse { }
 
         $WebEvent = @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = ''
@@ -711,7 +713,7 @@ Describe 'Get-PodePublicMiddleware' {
 
         (. $r.Logic) | Should -Be $false
 
-        Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+        Assert-MockCalled Write-PodeFileResponseInternal -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching from exclude' {
@@ -730,8 +732,6 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
-        Mock Write-PodeFileResponse { }
 
         $WebEvent = @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = ''
@@ -739,7 +739,7 @@ Describe 'Get-PodePublicMiddleware' {
 
         (. $r.Logic) | Should -Be $false
 
-        Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+        Assert-MockCalled Write-PodeFileResponseInternal -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching from include' {
@@ -758,8 +758,6 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
-        Mock Write-PodeFileResponse { }
 
         $WebEvent = @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = ''
@@ -767,7 +765,7 @@ Describe 'Get-PodePublicMiddleware' {
 
         (. $r.Logic) | Should -Be $false
 
-        Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+        Assert-MockCalled Write-PodeFileResponseInternal -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with caching' {
@@ -785,16 +783,13 @@ Describe 'Get-PodePublicMiddleware' {
             }
         }
 
-        Mock Find-PodePublicRoute { return @{ Source = '/'; FileInfo = [System.IO.FileInfo]::new($pwd) } }
-        Mock Write-PodeFileResponse { }
-
         $WebEvent = @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = ''
         }
 
         (. $r.Logic) | Should -Be $false
 
-        Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+        Assert-MockCalled Write-PodeFileResponseInternal -Times 1 -Scope It
     }
 }
 

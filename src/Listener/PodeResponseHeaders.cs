@@ -7,7 +7,7 @@ namespace Pode
     {
         public object this[string name]
         {
-            get => (Headers.ContainsKey(name) ? Headers[name][0] : string.Empty);
+            get => Headers.TryGetValue(name, out IList<object> value) ? value[0] : string.Empty;
             set => Set(name, value);
         }
 
@@ -54,10 +54,7 @@ namespace Pode
 
         public void Remove(string name)
         {
-            if (Headers.ContainsKey(name))
-            {
-                Headers.Remove(name);
-            }
+            Headers.Remove(name);
         }
 
         public void Clear()

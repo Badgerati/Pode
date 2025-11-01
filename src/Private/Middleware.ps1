@@ -202,12 +202,8 @@ function Get-PodePublicMiddleware {
                 return $true
             }
 
-            # check current state of caching
-            $cachable = Test-PodeRouteValidForCaching -Path $WebEvent.Path
-
             # write the file to the response
-            Write-PodeFileResponse -FileInfo $pubRoute.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
-
+            Write-PodeFileResponseInternal -FileInfo $pubRoute.FileInfo
             # public static content found, stop
             return $false
         })
@@ -296,6 +292,11 @@ function Get-PodeRouteValidateMiddleware {
                 $WebEvent.TransferEncoding = $route.TransferEncoding
             }
 
+
+            $WebEvent.AcceptEncoding = (Resolve-PodeCompressionEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -Route $WebEvent.Route -ThrowError) # Accept-Encoding
+            $WebEvent.ContentEncoding = (Resolve-PodeCompressionEncoding -ContentEncoding (Get-PodeHeader -Name 'Content-Encoding') -Route $WebEvent.Route -ThrowError) # Content-Encoding
+            $WebEvent.Ranges = (Get-PodeRange -Range (Get-PodeHeader -Name 'Range') -ThrowError) # Range
+
             # set the content type for any pages for the route if it's not empty
             $WebEvent.ErrorType = $route.ErrorType
 
@@ -309,7 +310,7 @@ function Get-PodeBodyMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_body_parsing__' -ScriptBlock {
             try {
                 # attempt to parse that data
-                $result = ConvertFrom-PodeRequestContent -Request $WebEvent.Request -ContentType $WebEvent.ContentType -TransferEncoding $WebEvent.TransferEncoding
+                $result = ConvertFrom-PodeRequestContent -Request $WebEvent.Request -ContentType $WebEvent.ContentType -TransferEncoding $WebEvent.TransferEncoding -ContentEncoding $WebEvent.ContentEncoding
 
                 # set session data
                 $WebEvent.Data = $result.Data
@@ -319,6 +320,7 @@ function Get-PodeBodyMiddleware {
                 return $true
             }
             catch {
+                $_ | write-PodeErrorLog -Level Verbose
                 Set-PodeResponseStatus -Code 400 -Exception $_
                 return $false
             }

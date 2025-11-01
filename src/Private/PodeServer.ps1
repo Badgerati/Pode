@@ -186,9 +186,11 @@ function Start-PodeWebServer {
                                     Timestamp        = [datetime]::UtcNow
                                     TransferEncoding = $null
                                     AcceptEncoding   = $null
+                                    ContentEncoding  = $null
                                     Ranges           = $null
                                     Sse              = $null
                                     Metadata         = @{}
+                                    Cache            = $null
                                 }
 
                                 # if iis, and we have an app path, alter it
@@ -199,10 +201,7 @@ function Start-PodeWebServer {
                                     }
                                 }
 
-                                # accept/transfer encoding
                                 $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
-                                $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
-                                $WebEvent.Ranges = (Get-PodeRange -Range (Get-PodeHeader -Name 'Range') -ThrowError)
 
                                 # add logging endware for post-request
                                 Add-PodeRequestLogEndware -WebEvent $WebEvent
@@ -238,6 +237,11 @@ function Start-PodeWebServer {
                                         throw $Request.Error
                                     }
 
+                                    if ($null -ne $WebEvent.Route) {
+                                        # set the cache settings for the web event
+                                        $WebEvent.Cache = $WebEvent.Route.Cache
+                                    }
+
                                     if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                                         # has the request been aborted
                                         if ($Request.IsAborted) {
@@ -245,18 +249,21 @@ function Start-PodeWebServer {
                                         }
 
                                         # invoke the route
+                                        # invoke the route
                                         if ($null -ne $WebEvent.StaticContent) {
-                                            $fileBrowser = $WebEvent.Route.FileBrowser
-                                            if ($WebEvent.StaticContent.IsDownload) {
-                                                Write-PodeAttachmentResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -FileBrowser:$fileBrowser
-                                            }
-                                            elseif ($WebEvent.StaticContent.RedirectToDefault) {
-                                                $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
-                                                Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
+                                            if ( ('Get', 'Head') -contains $WebEvent.Method) {
+                                                $fileBrowser = $WebEvent.Route.FileBrowser
+                                                if ($WebEvent.StaticContent.RedirectToDefault) {
+                                                    $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
+                                                    Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
+                                                }
+                                                else {
+                                                    Write-PodeFileResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo `
+                                                        -FileBrowser:$fileBrowser -Download:$WebEvent.StaticContent.IsDownload
+                                                }
                                             }
                                             else {
-                                                $cachable = $WebEvent.StaticContent.IsCachable
-                                                Write-PodeFileResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
+                                                Set-PodeResponseStatus -Code 404
                                             }
                                         }
                                         elseif ($null -ne $WebEvent.Route.Logic) {

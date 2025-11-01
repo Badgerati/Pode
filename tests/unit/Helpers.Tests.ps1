@@ -1366,82 +1366,135 @@ Describe 'ConvertFrom-PodeHeaderQValue' {
     }
 }
 
-Describe 'Get-PodeAcceptEncoding' {
+Describe 'Resolve-PodeCompressionEncoding' {
     BeforeEach {
         Mock New-PodeRequestException { return [System.Net.Http.HttpRequestException]::new() }
 
         $PodeContext = @{
             Server = @{
-                Web         = @{ Compression = @{ Enabled = $true } }
-                Compression = @{ Encodings = @('gzip', 'deflate', 'x-gzip') }
+                Web = @{ Compression = @{ Enabled = $true; Encodings = @('gzip', 'deflate', 'br', 'x-gzip') } }
+            }
+        }
+
+        $Route = @{
+            Compression = @{
+                Enabled   = $true
+                Encodings = @('gzip', 'deflate', 'br', 'x-gzip')
+                Request   = $false
+                Response  = $true
             }
         }
     }
 
     It 'Returns empty for no encoding' {
-        Get-PodeAcceptEncoding -AcceptEncoding '' | Should -Be ''
+        Resolve-PodeCompressionEncoding -AcceptEncoding '' -Route $Route | Should -Be ''
     }
 
-    It 'Returns empty when disabled' {
-        $PodeContext.Server.Web.Compression.Enabled = $false
-        Get-PodeAcceptEncoding -AcceptEncoding '' | Should -Be ''
+    It 'Returns empty when compression disabled' {
+        $Route.Compression.Enabled = $false
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'gzip' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty when response compression disabled' {
+        $Route.Compression.Response = $false
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'gzip' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty when no encodings configured' {
+        $Route.Compression.Encodings = @()
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'gzip' -Route $Route | Should -Be ''
     }
 
     It 'Returns first encoding for all default' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        Get-PodeAcceptEncoding -AcceptEncoding 'gzip,deflate' | Should -Be 'gzip'
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'gzip,deflate' -Route $Route | Should -Be 'gzip'
     }
 
     It 'Returns gzip for older x-gzip' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        Get-PodeAcceptEncoding -AcceptEncoding 'x-gzip' | Should -Be 'gzip'
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'x-gzip' -Route $Route | Should -Be 'gzip'
     }
 
     It 'Returns empty if no encoding matches' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        Get-PodeAcceptEncoding -AcceptEncoding 'br,compress' | Should -Be ''
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'br;q=0,compress' -Route $Route | Should -Be ''
     }
 
-    It 'Returns empty if no encoding matches, and 1 encoding is disabled' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        Get-PodeAcceptEncoding -AcceptEncoding 'br,compress,gzip;q=0' | Should -Be ''
+    It 'Returns br when available and other encodings disabled' {
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'br,compress,gzip;q=0' -Route $Route | Should -Be 'br'
     }
 
-    It 'Returns encoding when no other encoding matches, and 1 encoding matches' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        Get-PodeAcceptEncoding -AcceptEncoding 'br,compress,gzip' | Should -Be 'gzip'
+    It 'Returns encoding when one matches' {
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'br,compress,gzip' -Route $Route | Should -Be 'br'
     }
 
-    It 'Returns highest encoding when weighted' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        Get-PodeAcceptEncoding -AcceptEncoding 'gzip;q=0.1,deflate' | Should -Be 'deflate'
+    It 'Returns highest weighted encoding' {
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'gzip;q=0.1,deflate' -Route $Route | Should -Be 'deflate'
     }
 
-    It 'Returns highest encoding when weighted, and identity disabled' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        Get-PodeAcceptEncoding -AcceptEncoding 'gzip;q=0.1,deflate,identity;q=0' | Should -Be 'deflate'
+    It 'Returns highest weighted encoding when identity disabled' {
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'gzip;q=0.1,deflate,identity;q=0' -Route $Route | Should -Be 'deflate'
     }
 
-    It 'Returns encoding even when none match, and identity disabled' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' | Should -Be ''
+    It 'Returns empty when no matches and identity disabled' {
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'rar,identity;q=0' -Route $Route | Should -Be ''
     }
 
-    It 'Errors when no encoding matches, and identity disabled' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        { Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
+    It 'Errors when no encoding matches and identity disabled with ThrowError' {
+        { Resolve-PodeCompressionEncoding -AcceptEncoding 'compress,identity;q=0' -Route $Route -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
         Assert-MockCalled New-PodeRequestException -Scope It -Times 1
     }
 
-    It 'Errors when no encoding matches, and wildcard disabled' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        { Get-PodeAcceptEncoding -AcceptEncoding 'br,*;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
+    It 'Errors when no encoding matches and wildcard disabled with ThrowError' {
+        { Resolve-PodeCompressionEncoding -AcceptEncoding 'compress,*;q=0' -Route $Route -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
         Assert-MockCalled New-PodeRequestException -Scope It -Times 1
     }
 
-    It 'Returns empty if identity is allowed, but wildcard disabled' {
-        $PodeContext.Server.Web.Compression.Enabled = $true
-        Get-PodeAcceptEncoding -AcceptEncoding 'identity,*;q=0' | Should -Be ''
+    It 'Returns empty if identity is allowed but wildcard disabled' {
+        Resolve-PodeCompressionEncoding -AcceptEncoding 'identity,*;q=0' -Route $Route | Should -Be ''
+    }
+
+    It 'Handles null AcceptEncoding' {
+        Resolve-PodeCompressionEncoding -AcceptEncoding $null -Route $Route | Should -Be ''
+    }
+
+    It 'Handles whitespace AcceptEncoding' {
+        Resolve-PodeCompressionEncoding -AcceptEncoding '   ' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty for ContentEncoding parameter set' {
+        Resolve-PodeCompressionEncoding -ContentEncoding 'gzip' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty for ContentEncoding parameter set' {
+        Resolve-PodeCompressionEncoding -ContentEncoding 'gzip' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty for ContentEncoding with null value' {
+        Resolve-PodeCompressionEncoding -ContentEncoding $null -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty for ContentEncoding with empty value' {
+        Resolve-PodeCompressionEncoding -ContentEncoding '' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty for ContentEncoding with whitespace' {
+        Resolve-PodeCompressionEncoding -ContentEncoding '   ' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty for ContentEncoding with unsupported encoding' {
+        Resolve-PodeCompressionEncoding -ContentEncoding 'compress' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty for ContentEncoding with supported encoding' {
+        Resolve-PodeCompressionEncoding -ContentEncoding 'deflate' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty for ContentEncoding when compression disabled' {
+        $Route.Compression.Enabled = $false
+        Resolve-PodeCompressionEncoding -ContentEncoding 'gzip' -Route $Route | Should -Be ''
+    }
+
+    It 'Returns empty for ContentEncoding when response compression disabled' {
+        $Route.Compression.Response = $false
+        Resolve-PodeCompressionEncoding -ContentEncoding 'gzip' -Route $Route | Should -Be ''
     }
 }
 
@@ -1451,7 +1504,7 @@ Describe 'Get-PodeTransferEncoding' {
 
         $PodeContext = @{
             Server = @{
-                Compression = @{ Encodings = @('gzip', 'deflate', 'x-gzip') }
+                Compression = @{ Encodings = @('gzip', 'deflate','br', 'x-gzip') }
             }
         }
     }
@@ -1483,27 +1536,6 @@ Describe 'Get-PodeTransferEncoding' {
     }
 }
 
-Describe 'Get-PodeEncodingFromContentType' {
-    It 'Return utf8 for no type' {
-        $enc = Get-PodeEncodingFromContentType -ContentType ''
-        $enc.EncodingName | Should -Be 'Unicode (UTF-8)'
-    }
-
-    It 'Return utf8 for no charset in type' {
-        $enc = Get-PodeEncodingFromContentType -ContentType 'application/json'
-        $enc.EncodingName | Should -Be 'Unicode (UTF-8)'
-    }
-
-    It 'Return ascii when charset is set' {
-        $enc = Get-PodeEncodingFromContentType -ContentType 'application/json;charset=ascii'
-        $enc.EncodingName | Should -Be 'US-ASCII'
-    }
-
-    It 'Return utf8 when charset is set' {
-        $enc = Get-PodeEncodingFromContentType -ContentType 'application/json;charset=utf-8'
-        $enc.EncodingName | Should -Be 'Unicode (UTF-8)'
-    }
-}
 
 Describe 'New-PodeCron' {
     It 'Returns a minutely expression' {

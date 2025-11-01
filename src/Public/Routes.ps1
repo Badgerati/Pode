@@ -140,7 +140,7 @@ function Add-PodeRoute {
         $ContentType,
 
         [Parameter()]
-        [ValidateSet('', 'gzip', 'deflate')]
+        [ValidateSet('', 'br', 'gzip', 'deflate')]
         [string]
         $TransferEncoding,
 
@@ -448,6 +448,16 @@ function Add-PodeRoute {
                             StatusCodes = @{}
                         }
                     }
+                    Cache            = @{
+                        Enabled = $false
+                        MaxAge  = 60
+                    }
+                    Compression      = @{
+                        Enabled   = $PodeContext.Server.Web.Compression.Enabled
+                        Encodings = $PodeContext.Server.Web.Compression.Encodings
+                        Request   = $false
+                        Response  = $PodeContext.Server.Web.Compression.Enabled
+                    }
                 }
             })
 
@@ -592,7 +602,7 @@ function Add-PodeStaticRoute {
         $ContentType,
 
         [Parameter()]
-        [ValidateSet('', 'gzip', 'deflate')]
+        [ValidateSet('', 'br', 'gzip', 'deflate')]
         [string]
         $TransferEncoding,
 
@@ -888,6 +898,16 @@ function Add-PodeStaticRoute {
                         StatusCodes = @{}
                     }
                 }
+                Cache             = @{
+                    Enabled = $PodeContext.Server.Web.Static.Cache.Enabled
+                    MaxAge  = $PodeContext.Server.Web.Static.Cache.MaxAge
+                }
+                Compression       = @{
+                    Enabled   = $PodeContext.Server.Web.Compression.Enabled
+                    Encodings = $PodeContext.Server.Web.Compression.Encodings
+                    Request   = $false
+                    Response  = $PodeContext.Server.Web.Compression.Enabled
+                }
             }
         })
 
@@ -1136,7 +1156,7 @@ function Add-PodeRouteGroup {
         $ContentType,
 
         [Parameter()]
-        [ValidateSet('', 'gzip', 'deflate')]
+        [ValidateSet('', 'br', 'gzip', 'deflate')]
         [string]
         $TransferEncoding,
 
@@ -1384,7 +1404,7 @@ function Add-PodeStaticRouteGroup {
         $ContentType,
 
         [Parameter()]
-        [ValidateSet('', 'gzip', 'deflate')]
+        [ValidateSet('', 'br', 'gzip', 'deflate')]
         [string]
         $TransferEncoding,
 
@@ -2806,4 +2826,281 @@ function Test-PodeSignalRoute {
 
     # check for routes
     return (Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address)
+}
+
+
+
+<#
+.SYNOPSIS
+Adds cache settings to Pode route definitions via the pipeline.
+
+.DESCRIPTION
+The Add-PodeCache function allows you to apply HTTP caching behavior to Pode route hashtables. It supports enabling and disabling cache, as well as fine-grained control over directives such as Cache-Control visibility, max-age, ETag generation strategy, and immutability. It only applies caching to routes with GET, HEAD, or Static methods.
+
+.PARAMETER Route
+An array of route hashtables to which cache settings will be applied. These must include a 'Method' key with values like 'Get', 'Head', or 'Static'. Other methods are ignored.
+
+.PARAMETER Enable
+Enable caching for the provided route(s). Must be used with additional options in the 'Cache' parameter set.
+
+.PARAMETER Disable
+Disables all cache behavior for the provided route(s), overriding any other settings. Cannot be combined with other cache parameters.
+
+.PARAMETER Visibility
+Sets the visibility of the Cache-Control directive. Accepts: 'public', 'private', 'no-cache', 'no-store'.
+
+.PARAMETER MaxAge
+Specifies the `max-age` directive in seconds for Cache-Control.
+
+.PARAMETER SharedMaxAge
+Specifies the `s-maxage` directive in seconds for shared (proxy) caches.
+
+.PARAMETER MustRevalidate
+Adds the `must-revalidate` directive to Cache-Control.
+
+.PARAMETER Immutable
+Adds the `immutable` directive to Cache-Control to indicate that the resource will not change.
+
+.PARAMETER ETagMode
+Controls how the ETag should be generated. Valid values:
+- 'none': disables ETag
+- 'auto': chooses 'mtime' for static, 'hash' for dynamic routes
+- 'hash': generates ETag based on content hash
+- 'mtime': generates ETag based on file modification time
+- 'manual': allows manual ETag setting via the ETag parameter of Write-PodeTextResponse, Write-PodeYamlResponse, Write-PodeJsonResponse, Write-PodeCsvResponse,
+   Write-PodeHtmlResponse, and Write-PodexmlResponse cmdlets.
+
+.PARAMETER WeakValidation
+If specified, the ETag is returned in weak form (prefixed with W/).
+
+.PARAMETER PassThru
+If specified, the function outputs the modified route(s) back to the pipeline.
+
+.EXAMPLE
+$routes | Add-PodeCache -Enable -MaxAge 3600 -ETagMode auto -Visibility public -PassThru
+
+Enables caching with a max age of 1 hour, automatic ETag strategy, and public visibility for all GET/HEAD routes in the $routes array.
+
+.EXAMPLE
+$routes | Add-PodeCache -Disable
+
+Disables cache headers and ETag generation on all GET/HEAD routes.
+
+.NOTES
+This function is intended to be used during route configuration in Pode, and will be ignored for unsupported methods.
+#>
+
+function Add-PodeRouteCache {
+    [CmdletBinding(DefaultParameterSetName = 'Cache')]
+    [OutputType([hashtable[]])]
+    param(
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter(ParameterSetName = 'Cache', Mandatory = $true)]
+        [switch]
+        $Enable,
+
+        [Parameter(ParameterSetName = 'Cache')]
+        [ValidateSet('public', 'private', 'no-cache', 'no-store')]
+        [string]
+        $Visibility,
+
+        [Parameter(ParameterSetName = 'Cache')]
+        [int]
+        $MaxAge,
+
+        [Parameter(ParameterSetName = 'Cache')]
+        [int]
+        $SharedMaxAge,
+
+        [Parameter(ParameterSetName = 'Cache')]
+        [switch]
+        $MustRevalidate,
+
+        [Parameter(ParameterSetName = 'Cache')]
+        [switch]
+        $Immutable,
+
+        [Parameter(ParameterSetName = 'Disabled')]
+        [switch]
+        $Disable,
+
+        [Parameter(ParameterSetName = 'Cache')]
+        [ValidateSet('None', 'Auto', 'Hash', 'Mtime', 'Manual')]
+        [string]
+        $ETagMode = 'None',
+
+        [Parameter(ParameterSetName = 'Cache')]
+        [switch]
+        $WeakValidation,
+
+        [Parameter()]
+        [switch]
+        $PassThru
+    )
+
+    process {
+        foreach ($r in $Route) {
+            # Skip if Method is not GET or HEAD
+            if (  'Get', 'Static', 'Head' -notcontains $r.Method) {
+                if ($PassThru) { $r }
+                continue
+            }
+
+            if ($Disable) {
+                $r.cache.Enabled = $false
+            }
+            elseif ($Enable) {
+                $r.Cache.Enabled = $true
+                if ($Visibility) { $r.Cache.Visibility = $Visibility }
+                if ($MaxAge -gt 0) { $r.Cache.MaxAge = $MaxAge }
+                if ($SharedMaxAge -gt 0) { $r.Cache.SharedMaxAge = $SharedMaxAge }
+                if ($MustRevalidate) { $r.Cache.MustRevalidate = $true }
+                if ($Immutable) { $r.Cache.Immutable = $true }
+                if ($ETagMode -ne 'None') {
+                    $r.Cache.ETag = @{
+                        Mode = $ETagMode
+                        Weak = $WeakValidation.isPresent
+                    }
+                }
+            }
+
+
+            if ($PassThru) {
+                $r
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Enables or disables response compression for one or more Pode route hashtables.
+
+.DESCRIPTION
+The Add-PodeRouteCompression function allows you to configure compression behavior on Pode routes.
+It modifies route hashtables passed through the pipeline by setting their `.Compression` property.
+
+You can enable or disable compression explicitly. When enabled, you may optionally specify the allowed encoding methods
+(e.g., gzip, deflate, br). This affects whether Pode compresses the response payload based on the client's Accept-Encoding
+and the route’s configuration.
+
+This function is intended for use during server setup when constructing or importing route configurations.
+
+.PARAMETER Route
+One or more route hashtables to modify. Must not be null or empty. Accepts pipeline input.
+
+.PARAMETER Enable
+Enables compression on the specified routes. Required when enabling compression.
+
+.PARAMETER Disable
+Disables compression on the specified routes. Required when disabling compression.
+
+.PARAMETER Encoding
+Specifies one or more compression algorithms to allow. Valid values are: 'gzip', 'deflate', and 'br'.
+This parameter is only valid when compression is being enabled.
+
+.PARAMETER PassThru
+Returns the updated route hashtables to the pipeline.
+
+.PARAMETER Direction
+Specifies the direction of compression. Valid values are: 'Request', 'Response', and 'Both'.
+The default is 'Response'. This determines whether the route will compress incoming requests, outgoing responses, or both.
+
+
+.OUTPUTS
+System.Collections.Hashtable[]
+If -PassThru is specified, the modified route objects are returned.
+
+.EXAMPLE
+Add-PodeStaticRoute -Method Get -Path '/compress' -Source './' -PassThru | Add-PodeRouteCompression -Enable -Encoding gzip,br
+
+Enables gzip and Brotli compression on the given route(s).
+
+.EXAMPLE
+$route | Add-PodeRouteCompression -Disable
+
+Disables response compression on the given route(s).
+
+.EXAMPLE
+$routes = Get-Routes | Add-PodeRouteCompression -Enable -Encoding gzip
+
+Enables gzip compression and captures the updated route hashtables.
+
+.NOTES
+This function is part of the Pode web framework.
+Compression decisions at runtime depend on request headers and server capabilities.
+#>
+function Add-PodeRouteCompression {
+    [CmdletBinding(DefaultParameterSetName = 'Enable')]
+    [OutputType([hashtable[]])]
+    param(
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter(ParameterSetName = 'Enable', Mandatory = $true)]
+        [switch]
+        $Enable,
+
+        [Parameter(ParameterSetName = 'Disabled')]
+        [switch]
+        $Disable,
+
+        [Parameter(ParameterSetName = 'Enable')]
+        [ValidateSet('gzip', 'deflate', 'br')]
+        [string[]]
+        $Encoding,
+
+        [Parameter(ParameterSetName = 'Enable')]
+        [ValidateSet('Request', 'Response', 'Both')]
+        [string]
+        $Direction = 'Response',
+
+        [Parameter()]
+        [switch]
+        $PassThru
+    )
+
+    process {
+        foreach ($r in $Route) {
+            if ($Disable) {
+                $r.Compression.Enabled = $false
+                $r.Compression.Request = $false
+                $r.Compression.Response = $false
+            }
+            elseif ($Enable) {
+                $r.Compression.Enabled = $true
+                if ($Encoding) { $r.Compression.Encodings = @($Encoding) }
+
+                switch ($Direction) {
+                    'Request' {
+                        $r.Compression.Request = $true
+                        $r.Compression.Response = $false
+                    }
+                    'Response' {
+                        $r.Compression.Request = $false
+                        $r.Compression.Response = $true
+                    }
+                    'Both' {
+                        $r.Compression.Request = $true
+                        $r.Compression.Response = $true
+                    }
+                    default {
+                        # This should never happen, but just in case
+                        $r.Compression.Request = $false
+                        $r.Compression.Response = $false
+                    }
+                }
+            }
+
+            if ($PassThru) {
+                $r
+            }
+        }
+    }
 }

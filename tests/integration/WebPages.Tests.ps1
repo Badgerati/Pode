@@ -66,13 +66,13 @@ Describe 'Web Page Requests' {
         $result = Invoke-WebRequest -Uri "$($Endpoint)/attachment" -Method Get
         $result.StatusCode | Should -Be 200
         $result.Headers['Content-Type'] | Should -Be 'image/png'
-        $result.Headers['Content-Disposition'] | Should -Be 'attachment; filename=ruler.png'
+        $result.Headers['Content-Disposition'] | Should -Be 'attachment; filename="ruler.png"'
     }
 
     It 'responds with public static content' {
         $result = Invoke-WebRequest -Uri "$($Endpoint)/ruler.png" -Method Get
         $result.StatusCode | Should -Be 200
-        $result.Headers['Content-Type'] | Should -Be 'image/png; charset=utf-8'
+        $result.Headers['Content-Type'] | Should -Be 'image/png'
     }
 
     It 'responds with 404 for non-public static content' {
@@ -82,6 +82,6 @@ Describe 'Web Page Requests' {
     It 'responds with custom static content' {
         $result = Invoke-WebRequest -Uri "$($Endpoint)/custom-images/custom_ruler.png" -Method Get
         $result.StatusCode | Should -Be 200
-        $result.Headers['Content-Type'] | Should -Be 'image/png; charset=utf-8'
+        $result.Headers['Content-Type'] | Should -Be 'image/png'
     }
 }

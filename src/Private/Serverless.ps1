@@ -86,16 +86,13 @@ function Start-PodeAzFuncServer {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
                         $fileBrowser = $WebEvent.Route.FileBrowser
-                        if ($WebEvent.StaticContent.IsDownload) {
-                            Write-PodeAttachmentResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -FileBrowser:$fileBrowser
-                        }
-                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
+                        if ($WebEvent.StaticContent.RedirectToDefault) {
                             $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
                             Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
                         }
                         else {
-                            $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
+                            Write-PodeFileResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo `
+                                -FileBrowser:$fileBrowser -Download:$WebEvent.StaticContent.IsDownload
                         }
                     }
                     else {
@@ -206,16 +203,13 @@ function Start-PodeAwsLambdaServer {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
                         $fileBrowser = $WebEvent.Route.FileBrowser
-                        if ($WebEvent.StaticContent.IsDownload) {
-                            Write-PodeAttachmentResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -FileBrowser:$fileBrowser
-                        }
-                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
+                        if ($WebEvent.StaticContent.RedirectToDefault) {
                             $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
                             Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
                         }
                         else {
-                            $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
+                            Write-PodeFileResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo `
+                                -FileBrowser:$fileBrowser -Download:$WebEvent.StaticContent.IsDownload
                         }
                     }
                     else {

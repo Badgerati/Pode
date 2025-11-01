@@ -1051,7 +1051,7 @@ Describe 'Find-PodeRouteTransferEncoding' {
     }
 
     It 'Returns a path match' {
-        $PodeContext.Server = @{ Web = @{ TransferEncoding = @{ Routes = @{
+        $PodeContext.Server = @{ Web = @{ TransferEncoding = @{Default = 'text/yml' ; Routes = @{
                         '/users' = 'text/json'
                     }
                 }
@@ -1154,5 +1154,300 @@ Describe 'ConvertTo-PodeMiddleware' {
         $converted.Length | Should -Be 2
         $converted[0].Logic.ToString() | Should -Be ($middleware1.Logic.ToString())
         $converted[1].Logic.ToString() | Should -Be ($middleware2.ToString())
+    }
+}
+
+Describe 'Add-PodeRouteCompression' {
+    BeforeEach {
+        # Create a sample route hashtable that mimics the structure from Add-PodeRoute
+        $sampleRoute = @{
+            Logic       = { Write-Host 'Test' }
+            Method      = 'Get'
+            Path        = '/test'
+            Compression = @{
+                Enabled   = $false
+                Encodings = @()
+                Request   = $false
+                Response  = $false
+            }
+        }
+
+        # Create a sample static route hashtable
+        $sampleStaticRoute = @{
+            Method      = 'Static'
+            Path        = '/static'
+            Source      = './assets'
+            IsStatic    = $true
+            Compression = @{
+                Enabled   = $false
+                Encodings = @()
+                Request   = $false
+                Response  = $false
+            }
+        }
+    }
+
+    It 'Enables compression with default response direction' {
+        $result = @($sampleRoute) | Add-PodeRouteCompression -Enable -PassThru
+
+        $result.Compression.Enabled | Should -Be $true
+        $result.Compression.Request | Should -Be $false
+        $result.Compression.Response | Should -Be $true
+    }
+
+    It 'Enables compression with gzip encoding' {
+        $result = @($sampleRoute) | Add-PodeRouteCompression -Enable -Encoding 'gzip' -PassThru
+
+        $result.Compression.Enabled | Should -Be $true
+        $result.Compression.Encodings | Should -Contain 'gzip'
+        $result.Compression.Encodings.Length | Should -Be 1
+    }
+
+    It 'Enables compression with multiple encodings' {
+        $result = @($sampleRoute) | Add-PodeRouteCompression -Enable -Encoding 'gzip', 'deflate', 'br' -PassThru
+
+        $result.Compression.Enabled | Should -Be $true
+        $result.Compression.Encodings | Should -Contain 'gzip'
+        $result.Compression.Encodings | Should -Contain 'deflate'
+        $result.Compression.Encodings | Should -Contain 'br'
+        $result.Compression.Encodings.Length | Should -Be 3
+    }
+
+    It 'Enables compression for request direction only' {
+        $result = @($sampleRoute) | Add-PodeRouteCompression -Enable -Direction 'Request' -PassThru
+
+        $result.Compression.Enabled | Should -Be $true
+        $result.Compression.Request | Should -Be $true
+        $result.Compression.Response | Should -Be $false
+    }
+
+    It 'Enables compression for both request and response directions' {
+        $result = @($sampleRoute) | Add-PodeRouteCompression -Enable -Direction 'Both' -PassThru
+
+        $result.Compression.Enabled | Should -Be $true
+        $result.Compression.Request | Should -Be $true
+        $result.Compression.Response | Should -Be $true
+    }
+
+    It 'Disables compression' {
+        # First enable compression
+        $sampleRoute.Compression.Enabled = $true
+        $sampleRoute.Compression.Request = $true
+        $sampleRoute.Compression.Response = $true
+
+        $result = @($sampleRoute) | Add-PodeRouteCompression -Disable -PassThru
+
+        $result.Compression.Enabled | Should -Be $false
+        $result.Compression.Request | Should -Be $false
+        $result.Compression.Response | Should -Be $false
+    }
+
+    It 'Works with static routes' {
+        $result = @($sampleStaticRoute) | Add-PodeRouteCompression -Enable -Encoding 'gzip' -PassThru
+
+        $result.Compression.Enabled | Should -Be $true
+        $result.Compression.Encodings | Should -Contain 'gzip'
+    }
+
+    It 'Processes multiple routes' {
+        $route1 = $sampleRoute.Clone()
+        $route2 = $sampleStaticRoute.Clone()
+
+        $results = @($route1, $route2) | Add-PodeRouteCompression -Enable -Encoding 'deflate' -PassThru
+
+        $results.Length | Should -Be 2
+        $results[0].Compression.Enabled | Should -Be $true
+        $results[1].Compression.Enabled | Should -Be $true
+        $results[0].Compression.Encodings | Should -Contain 'deflate'
+        $results[1].Compression.Encodings | Should -Contain 'deflate'
+    }
+
+    It 'Returns nothing when PassThru is not specified' {
+        $result = @($sampleRoute) | Add-PodeRouteCompression -Enable
+        $result | Should -Be $null
+    }
+
+    It 'Modifies original route object' {
+        @($sampleRoute) | Add-PodeRouteCompression -Enable -Encoding 'br'
+
+        $sampleRoute.Compression.Enabled | Should -Be $true
+        $sampleRoute.Compression.Encodings | Should -Contain 'br'
+    }
+}
+
+Describe 'Add-PodeRouteCache' {
+    BeforeEach {
+        # Create sample route hashtables that mimic the structure from Add-PodeRoute and Add-PodeStaticRoute
+        $sampleGetRoute = @{
+            Logic  = { Write-Host 'Test' }
+            Method = 'Get'
+            Path   = '/test'
+            Cache  = @{
+                Enabled = $false
+                MaxAge  = 60
+            }
+        }
+
+        $sampleHeadRoute = @{
+            Logic  = { Write-Host 'Test' }
+            Method = 'Head'
+            Path   = '/head'
+            Cache  = @{
+                Enabled = $false
+                MaxAge  = 60
+            }
+        }
+
+        $sampleStaticRoute = @{
+            Method   = 'Static'
+            Path     = '/static'
+            Source   = './assets'
+            IsStatic = $true
+            Cache    = @{
+                Enabled = $false
+                MaxAge  = 60
+            }
+        }
+
+        $samplePostRoute = @{
+            Logic  = { Write-Host 'Test' }
+            Method = 'Post'
+            Path   = '/post'
+            Cache  = @{
+                Enabled = $false
+                MaxAge  = 60
+            }
+        }
+    }
+
+    It 'Enables cache for GET route' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+    }
+
+    It 'Enables cache for HEAD route' {
+        $result = @($sampleHeadRoute) | Add-PodeRouteCache -Enable -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+    }
+
+    It 'Enables cache for Static route' {
+        $result = @($sampleStaticRoute) | Add-PodeRouteCache -Enable -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+    }
+
+    It 'Skips cache for POST route' {
+        $result = @($samplePostRoute) | Add-PodeRouteCache -Enable -PassThru
+
+        $result.Cache.Enabled | Should -Be $false
+    }
+
+    It 'Sets cache visibility' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable -Visibility 'public' -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+        $result.Cache.Visibility | Should -Be 'public'
+    }
+
+    It 'Sets cache max age' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable -MaxAge 3600 -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+        $result.Cache.MaxAge | Should -Be 3600
+    }
+
+    It 'Sets shared max age' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable -SharedMaxAge 1800 -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+        $result.Cache.SharedMaxAge | Should -Be 1800
+    }
+
+    It 'Sets must revalidate flag' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable -MustRevalidate -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+        $result.Cache.MustRevalidate | Should -Be $true
+    }
+
+    It 'Sets immutable flag' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable -Immutable -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+        $result.Cache.Immutable | Should -Be $true
+    }
+
+    It 'Sets ETag mode and validation' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable -ETagMode 'Hash' -WeakValidation -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+        $result.Cache.ETag.Mode | Should -Be 'Hash'
+        $result.Cache.ETag.Weak | Should -Be $true
+    }
+
+    It 'Sets multiple cache properties' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable -Visibility 'private' -MaxAge 7200 -SharedMaxAge 3600 -MustRevalidate -Immutable -ETagMode 'Mtime' -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+        $result.Cache.Visibility | Should -Be 'private'
+        $result.Cache.MaxAge | Should -Be 7200
+        $result.Cache.SharedMaxAge | Should -Be 3600
+        $result.Cache.MustRevalidate | Should -Be $true
+        $result.Cache.Immutable | Should -Be $true
+        $result.Cache.ETag.Mode | Should -Be 'Mtime'
+        $result.Cache.ETag.Weak | Should -Be $false
+    }
+
+    It 'Disables cache' {
+        # First enable cache
+        $sampleGetRoute.Cache.Enabled = $true
+
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Disable -PassThru
+
+        $result.Cache.Enabled | Should -Be $false
+    }
+
+    It 'Does not set ETag when mode is None' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable -ETagMode 'None' -PassThru
+
+        $result.Cache.Enabled | Should -Be $true
+        $result.Cache.ETag | Should -Be $null
+    }
+
+    It 'Processes multiple routes' {
+        $route1 = $sampleGetRoute.Clone()
+        $route2 = $sampleStaticRoute.Clone()
+        $route3 = $samplePostRoute.Clone()
+
+        $results = @($route1, $route2, $route3) | Add-PodeRouteCache -Enable -MaxAge 1200 -PassThru
+
+        $results.Length | Should -Be 3
+        $results[0].Cache.Enabled | Should -Be $true  # GET route
+        $results[0].Cache.MaxAge | Should -Be 1200
+        $results[1].Cache.Enabled | Should -Be $true  # Static route
+        $results[1].Cache.MaxAge | Should -Be 1200
+        $results[2].Cache.Enabled | Should -Be $false # POST route (skipped)
+    }
+
+    It 'Returns nothing when PassThru is not specified' {
+        $result = @($sampleGetRoute) | Add-PodeRouteCache -Enable
+        $result | Should -Be $null
+    }
+
+    It 'Modifies original route object' {
+        @($sampleGetRoute) | Add-PodeRouteCache -Enable -MaxAge 2400
+
+        $sampleGetRoute.Cache.Enabled | Should -Be $true
+        $sampleGetRoute.Cache.MaxAge | Should -Be 2400
+    }
+
+    It 'Validates visibility parameter accepts valid values' {
+        { @($sampleGetRoute) | Add-PodeRouteCache -Enable -Visibility 'invalid' } | Should -Throw
+    }
+
+    It 'Validates ETagMode parameter accepts valid values' {
+        { @($sampleGetRoute) | Add-PodeRouteCache -Enable -ETagMode 'invalid' } | Should -Throw
     }
 }
