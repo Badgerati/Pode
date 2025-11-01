@@ -1569,7 +1569,7 @@ function ConvertFrom-PodeRequestContent {
                 $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
             }
             else {
-                $Result.Data = ($Content | ConvertFrom-Json)
+                $Result.Data = ConvertTo-PodeHashtable -PSObject ($Content | ConvertFrom-Json)
             }
         }
 
@@ -4007,6 +4007,169 @@ function ConvertTo-PodeSleep {
 #>
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
+}
+
+
+
+
+<#
+.SYNOPSIS
+    Checks if two arrays have any common elements.
+
+.DESCRIPTION
+    This function takes two arrays as input parameters and checks if they share any common elements.
+    It returns $true if there is at least one common element, and $false otherwise.
+
+.PARAMETER ReferenceArray
+    The first array to compare.
+
+.PARAMETER DifferenceArray
+    The second array to compare.
+
+.EXAMPLE
+    $array1 = @('a', 'b', 'c')
+    $array2 = @('c', 'd', 'e')
+    Test-PodeArraysHaveCommonElement -ReferenceArray $array1 -DifferenceArray $array2
+    # Output: True
+
+.EXAMPLE
+    $array1 = @('a', 'b', 'c')
+    $array2 = @('d', 'e', 'f')
+    Test-PodeArraysHaveCommonElement -ReferenceArray $array1 -DifferenceArray $array2
+    # Output: False
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeArraysHaveCommonElement {
+    param (
+        [array]$ReferenceArray, # The first array to compare
+        [array]$DifferenceArray    # The second array to compare
+    )
+
+    # Iterate through each item in the DifferenceArray
+    foreach ($item in $DifferenceArray) {
+        # Check if the item exists in the ReferenceArray
+        if ($ReferenceArray -contains $item) {
+            # Return true if a common element is found
+            return $true
+        }
+    }
+    # Return false if no common elements are found
+    return $false
+}
+
+<#
+.SYNOPSIS
+    Converts a PSCustomObject to a hashtable recursively.
+
+.DESCRIPTION
+    The ConvertTo-PodeHashtable function takes a PSCustomObject as input and recursively converts it into a hashtable.
+    This is useful for transforming structured data from JSON or other sources into a native PowerShell hashtable.
+
+.PARAMETER PSObject
+    The PSCustomObject to convert to a hashtable. This parameter is mandatory.
+
+.EXAMPLE
+    $psObject = [PSCustomObject]@{
+        Name = "John Doe"
+        Age = 30
+        Address = [PSCustomObject]@{
+            Street = "123 Main St"
+            City = "Anytown"
+            State = "CA"
+        }
+        PhoneNumbers = @(
+            [PSCustomObject]@{ Type = "home"; Number = "123-456-7890" },
+            [PSCustomObject]@{ Type = "work"; Number = "987-654-3210" }
+        )
+    }
+
+    $hashtable = ConvertTo-PodeHashtable -PSObject $psObject
+    $hashtable
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertTo-PodeHashtable {
+    param (
+        [Parameter(Mandatory = $true)]
+        [PSObject]$PSObject
+    )
+
+    # Initialize an empty hashtable
+    $hashtable = @{}
+
+    # Iterate over each property of the PSObject
+    foreach ($property in $PSObject.PSObject.Properties) {
+
+        # If the property value is a PSCustomObject, recursively convert it to a hashtable
+        if ($property.Value -is [PSCustomObject]) {
+            $hashtable[$property.Name] = ConvertTo-PodeHashtable -PSObject $property.Value
+
+            # If the property value is an enumerable collection (excluding strings)
+        }
+        elseif ($property.Value -is [System.Collections.IEnumerable] -and !($property.Value -is [string])) {
+
+            # Initialize an array list to hold the converted items
+            $arrayList = @()
+
+            # Iterate over each item in the collection
+            foreach ($item in $property.Value) {
+
+                # If the item is a PSCustomObject, recursively convert it and add to the array list
+                if ($item -is [PSCustomObject]) {
+                    $arrayList += (ConvertTo-PodeHashtable -PSObject $item)
+
+                    # Otherwise, add the item directly to the array list
+                }
+                else {
+                    $arrayList += $item
+                }
+            }
+
+            # Add the array list to the hashtable under the current property name
+            $hashtable[$property.Name] = $arrayList
+
+            # If the property value is neither a PSCustomObject nor a collection, add it directly to the hashtable
+        }
+        else {
+            $hashtable[$property.Name] = $property.Value
+        }
+    }
+
+    # Return the resulting hashtable
+    return $hashtable
+}
+
+<#
+.SYNOPSIS
+    Formats a given DateTime object to the ISO 8601 format used in Pode.
+
+.DESCRIPTION
+    The `Format-PodeDateToIso8601` function takes a DateTime object and returns
+    a string formatted as `yyyy-MM-ddTHH:mm:ss.fffffffZ`, which is the ISO 8601 format
+    with seven fractional seconds, suitable for Pode async route tasks.
+
+.PARAMETER Date
+    The DateTime object to format.
+
+.EXAMPLE
+    $completedTime = Get-Date
+    $formattedDate = Format-PodeDateToIso8601 -Date $completedTime
+    Write-Output $formattedDate
+
+    This example formats the current date and time to the ISO 8601 format.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Format-PodeDateToIso8601 {
+    param (
+        [DateTime]$Date
+    )
+
+    return $Date.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
 }
 
 <#

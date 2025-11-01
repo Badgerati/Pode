@@ -19,6 +19,7 @@
             Default             = 'application/html'
             Routes              = @{
                 '/john' = 'application/json'
+                '/auth' = 'application/json'
             }
         }
         Compression = @{
@@ -62,6 +63,19 @@
         Debug          = @{
             Breakpoints = @{
                 Enable = $true
+            }
+        }
+        AsyncRoutes = @{
+            UserFieldIdentifier = 'Id'
+            HouseKeeping        = @{
+                TimerInterval    = 30
+                RetentionMinutes = 10
+            }
+        }
+        Tasks       = @{
+            HouseKeeping = @{
+                TimerInterval    = 30
+                RetentionMinutes = 1
             }
         }
         AllowedActions = @{
