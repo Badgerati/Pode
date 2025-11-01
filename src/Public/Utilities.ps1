@@ -1361,8 +1361,8 @@ Gets the version of the Pode module.
 .DESCRIPTION
 The Get-PodeVersion function checks the version of the Pode module specified in the module manifest. If the module version is not a placeholder value ('$version$'), it returns the actual version prefixed with 'v.'. If the module version is the placeholder value, indicating the development branch, it returns '[develop branch]'.
 
-.PARAMETER None
-This function does not accept any parameters.
+.PARAMETER Raw
+If this switch is set, the function will return the raw version number as a [version] object instead of a string.
 
 .OUTPUTS
 System.String
@@ -1385,9 +1385,22 @@ This function assumes that $moduleManifest is a hashtable representing the loade
 
 #>
 function Get-PodeVersion {
+    param(
+        [switch]
+        $Raw
+    )
     $moduleManifest = Get-PodeModuleManifest
     if ($moduleManifest.ModuleVersion -ne '$version$') {
-        return "v$($moduleManifest.ModuleVersion)"
+        $version = if ( $Raw) {
+            $moduleManifest.ModuleVersion
+        }
+        else {
+            "v$($moduleManifest.ModuleVersion)"
+        }
+        if ($moduleManifest.PrivateData.PSData.Prerelease) {
+            return "$version-$($moduleManifest.PrivateData.PSData.Prerelease)"
+        }
+        return $version
     }
     else {
         return '[dev]'
