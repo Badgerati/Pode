@@ -176,27 +176,6 @@ function Get-PodePSVersionTable {
     return $PSVersionTable
 }
 
-function Test-PodeIsAdminUser {
-    # check the current platform, if it's unix then return true
-    if (Test-PodeIsUnix) {
-        return $true
-    }
-
-    try {
-        $principal = [System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent())
-        if ($null -eq $principal) {
-            return $false
-        }
-
-        return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-    }
-    catch [exception] {
-        Write-PodeHost 'Error checking user administrator priviledges' -ForegroundColor Red
-        Write-PodeHost $_.Exception.Message -ForegroundColor Red
-        return $false
-    }
-}
-
 function Get-PodeHostIPRegex {
     param(
         [Parameter(Mandatory = $true)]
@@ -3805,10 +3784,10 @@ function Resolve-PodeObjectArray {
     # Changes to $clonedObject will not affect $originalObject and vice versa.
 
 .NOTES
-    This function uses the System.Management.Automation.PSSerializer class, which is available in
-    PowerShell 5.1 and later versions. The default depth parameter is set to 10 to handle nested
-    objects appropriately, but it can be customized via the -Deep parameter.
-    This is an internal function and may change in future releases of Pode.
+    - This function uses the System.Management.Automation.PSSerializer class, which is available in
+        PowerShell 5.1 and later versions. The default depth parameter is set to 10 to handle nested
+        objects appropriately, but it can be customized via the -Deep parameter.
+    - This is an internal function and may change in future releases of Pode.
 #>
 function Copy-PodeObjectDeepClone {
     param (
@@ -4007,6 +3986,376 @@ function ConvertTo-PodeSleep {
 #>
 function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
+}
+
+
+<#
+.SYNOPSIS
+    Tests if the current user has administrative privileges on Windows or root/sudo privileges on Linux/macOS.
+
+.DESCRIPTION
+    This function checks the current user's privileges. On Windows, it checks if the user is an Administrator.
+    If the session is not elevated, you can optionally check if the user has the potential to elevate using the -Elevate switch.
+    On Linux and macOS, it checks if the user is either root or has sudo (Linux) or admin (macOS) privileges.
+    You can also check if the user has the potential to elevate by belonging to the sudo or admin group using the -Elevate switch.
+
+.PARAMETER Elevate
+    The -Elevate switch allows you to check if the current user has the potential to elevate to administrator/root privileges,
+    even if the session is not currently elevated.
+
+.PARAMETER Console
+    The -Console switch will output errors to the console if an exception occurs.
+    Otherwise, the errors will be written to the Pode error log.
+
+.EXAMPLE
+    Test-PodeAdminPrivilege
+
+    If the user has administrative privileges, it returns $true. If not, it returns $false.
+
+.EXAMPLE
+    Test-PodeAdminPrivilege -Elevate
+
+    This will check if the user has administrative/root/sudo privileges or the potential to elevate,
+    even if the session is not currently elevated.
+
+.EXAMPLE
+    Test-PodeAdminPrivilege -Elevate -Console
+
+    This will check for admin privileges or potential to elevate and will output errors to the console if any occur.
+
+.OUTPUTS
+    [bool]
+    Returns $true if the user has administrative/root/sudo/admin privileges or the potential to elevate,
+    otherwise returns $false.
+
+.NOTES
+    - This function works across multiple platforms: Windows, Linux, and macOS.
+        On Linux/macOS, it checks for root, sudo, or admin group memberships, and optionally checks for elevation potential
+        if the -Elevate switch is used.
+    - This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeAdminPrivilege {
+    param(
+        [switch]
+        $Elevate,
+        [switch]
+        $Console
+    )
+    try {
+        # Check if the operating system is Windows
+        if (Test-PodeIsWindows) {
+
+            # Retrieve the current Windows identity and token
+            $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+            $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+
+            if ($null -eq $principal) {
+                return $false
+            }
+
+            $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+            if ($isAdmin) {
+                return $true
+            }
+
+            # Check if the token is elevated
+            if ($identity.IsSystem -or $identity.IsAuthenticated -and $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+                return $true
+            }
+
+            if ($Elevate.IsPresent) {
+                # Use 'whoami /groups' to check if the user has the potential to elevate
+                $groups = whoami /groups
+                if ($groups -match 'S-1-5-32-544') {
+                    return $true
+                }
+            }
+            return $false
+        }
+        else {
+            # Check if the operating system is Linux or macOS (both are Unix-like)
+
+            # Check if the user is root (UID 0)
+            $isRoot = [int](id -u)
+            if ($isRoot -eq 0) {
+                return $true
+            }
+
+            if ($Elevate.IsPresent) {
+                # Check if the user has sudo privileges by checking sudo group membership
+                $user = whoami
+                $groups = (groups $user)
+                Write-Verbose "User:$user Groups: $( $groups -join ',')"
+                # macOS typically uses 'admin' group for sudo privileges
+                return ($groups -match '\bwheel\b' -or $groups -match '\badmin\b' -or $groups -match '\bsudo\b' -or $groups -match '\badm\b')
+            }
+            return $false
+        }
+    }
+    catch [exception] {
+        if ($Console.IsPresent) {
+            Write-PodeHost 'Error checking user privileges' -ForegroundColor Red
+            Write-PodeHost $_.Exception.Message -ForegroundColor Red
+        }
+        else {
+            $_ | Write-PodeErrorLog
+        }
+        return $false
+    }
+}
+
+<#
+.SYNOPSIS
+    Starts a command with elevated privileges if the current session is not already elevated.
+
+.DESCRIPTION
+    This function checks if the current PowerShell session is running with administrator privileges.
+    If not, it re-launches the command as an elevated process. If the session is already elevated,
+    it will execute the command directly and return the result of the command.
+
+.PARAMETER Command
+    The PowerShell command to be executed. This can be any valid PowerShell command, script, or executable.
+
+.PARAMETER Arguments
+    The arguments to be passed to the command. This can be any valid argument list for the command or script.
+
+.EXAMPLE
+    Invoke-PodeWinElevatedCommand -Command "Get-Service" -Arguments "-Name 'W32Time'"
+
+    This will run the `Get-Service` command with elevated privileges, pass the `-Name 'W32Time'` argument, and return the result.
+
+.EXAMPLE
+    Invoke-PodeWinElevatedCommand -Command "C:\Scripts\MyScript.ps1" -Arguments "-Param1 'Value1' -Param2 'Value2'"
+
+    This will run the script `MyScript.ps1` with elevated privileges, pass the parameters `-Param1` and `-Param2`, and return the result.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Invoke-PodeWinElevatedCommand {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
+    param (
+        [string]
+        $Command,
+        [string]
+        $Arguments,
+        [PSCredential] $Credential
+    )
+
+
+    # Check if the current session is elevated
+    $isElevated = ([Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+
+    if (-not $isElevated) {
+
+        # Escape the arguments by replacing " with `" (escaping quotes)
+        $escapedArguments = $Arguments -replace '"', '"""'
+        $psCredential = ''
+
+        # Combine command and arguments into a string to pass for elevated execution
+        #   $escapedCommand = "`"$Command`" $Arguments"
+        if ($Credential) {
+            $password = Convertfrom-SecureString $Credential.Password
+            $psCredential = "-Credential ([pscredential]::new('$($Credential.UserName)', `$('$password'|ConvertTo-SecureString)))"
+        }
+
+        # Combine command and arguments into a string for elevated execution
+        $escapedCommand = "$Command $psCredential $escapedArguments"
+        # Start elevated process with properly escaped command and arguments
+        $result = Start-Process -FilePath ((Get-Process -Id $PID).Path) `
+            -ArgumentList '-NoProfile', '-ExecutionPolicy Bypass', "-Command & {$escapedCommand}" `
+            -Verb RunAs -Wait -PassThru
+
+        return $result
+    }
+
+    # Run the command directly with arguments if elevated and capture the output
+    return Invoke-Expression "$Command $Arguments"
+}
+
+<#
+.SYNOPSIS
+    Determines the OS architecture for the current system.
+
+.DESCRIPTION
+    This function detects the operating system's architecture and maps it to a format compatible with
+    PowerShell installation requirements. It works on both Windows and Unix-based systems, translating
+    various architecture identifiers (e.g., 'amd64', 'x86_64') into standardized PowerShell-supported names
+    like 'x64', 'x86', 'arm64', and 'arm32'. On Linux, the function also checks for musl libc to provide
+    an architecture-specific identifier.
+
+.OUTPUTS
+    [string] - The architecture string, such as 'x64', 'x86', 'arm64', 'arm32', or 'musl-x64'.
+
+.EXAMPLE
+    $arch = Get-PodeOSPwshArchitecture
+    Write-Host "Current architecture: $arch"
+
+.NOTES
+    - For Windows, architecture is derived from the `PROCESSOR_ARCHITECTURE` environment variable.
+    - For Unix-based systems, architecture is determined using the `uname -m` command.
+    - The function adds support for identifying musl libc on Linux, returning 'musl-x64' if detected.
+    - If the architecture is not supported, the function returns an empty string.
+#>
+function Get-PodeOSPwshArchitecture {
+    # Initialize an empty variable for storing the detected architecture
+    $arch = [string]::Empty
+
+    # Detect architecture on Unix-based systems (Linux/macOS)
+    if ($IsLinux -or $IsMacOS) {
+        # Use the 'uname -m' command to determine the system architecture
+        $arch = uname -m
+    }
+    else {
+        # For Windows, use the environment variable 'PROCESSOR_ARCHITECTURE'
+        $arch = $env:PROCESSOR_ARCHITECTURE
+    }
+
+    # Map the detected architecture to PowerShell-compatible formats
+    switch ($arch.ToLowerInvariant()) {
+        'amd64' { $arch = 'x64' }          # 64-bit AMD architecture
+        'x86' { $arch = 'x86' }            # 32-bit Intel architecture
+        'x86_64' { $arch = 'x64' }         # 64-bit Intel architecture
+        'armv7*' { $arch = 'arm32' }       # 32-bit ARM architecture (v7 series)
+        'aarch64*' { $arch = 'arm64' }     # 64-bit ARM architecture (aarch64 series)
+        'arm64' { $arch = 'arm64' }        # Explicit ARM64
+        'arm64*' { $arch = 'arm64' }       # Pattern matching for ARM64
+        'armv8*' { $arch = 'arm64' }       # ARM v8 series
+        default { return '' }              # Unsupported architectures, return empty string
+    }
+
+    # Additional check for musl libc on Linux systems
+    if ($IsLinux) {
+        if ($arch -eq 'x64') {
+            # Check if musl libc is present
+            if (Get-Command ldd -ErrorAction SilentlyContinue) {
+                $lddOutput = ldd --version 2>&1
+                if ($lddOutput -match 'musl') {
+                    # Append 'musl-' prefix to architecture
+                    $arch = 'musl-x64'
+                }
+            }
+        }
+    }
+
+    # Return the final architecture string
+    return $arch
+}
+
+<#
+.SYNOPSIS
+    Tests whether the current session can bind to one or more privileged ports.
+
+.DESCRIPTION
+    Attempts to bind to each port in the specified list using the provided IP address.
+
+    Behavior:
+      - Returns $true if any port can be successfully bound.
+      - Returns $false if a privilege error (AccessDenied) occurs and $CheckAdmin is enabled.
+      - Returns $false if all test ports are in use but no privilege error occurs.
+      - If -ThrowError is used:
+        • Throws a localized exception if a privilege error is detected and -CheckAdmin is also set.
+        • Throws a custom SocketException with a descriptive message when the port is already in use.
+        • Throws the raw exception for all other socket or unexpected errors.
+
+.PARAMETER IP
+    The IP address to bind to. Defaults to the loopback address (127.0.0.1).
+
+.PARAMETER Port
+    A single port number or an array of ports to test. Defaults to a set of typically unused privileged ports.
+
+.PARAMETER ThrowError
+    If specified, exceptions will be thrown instead of returning values for error conditions.
+
+.PARAMETER CheckAdmin
+    If specified, only privilege-related binding failures will result in a return value of $false;
+    otherwise, AccessDenied will return $true (to allow non-admin flows to continue).
+
+.OUTPUTS
+    [bool] $true  — Binding was successful on at least one port.
+    [bool] $false — Privilege error occurred (with CheckAdmin), or a single port is in use.
+    [bool] $false — All ports were in use, but no privilege issue was detected.
+
+.EXAMPLE
+    Test-PodeBindToPrivilegedPort
+
+.EXAMPLE
+    Test-PodeBindToPrivilegedPort -IP '0.0.0.0' -Port 80
+
+.EXAMPLE
+    Test-PodeBindToPrivilegedPort -ThrowError -CheckAdmin
+#>
+
+function Test-PodeBindToPrivilegedPort {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [string]$IP = '127.0.0.1',
+
+        [Parameter()]
+        [int[]]$Port = @(1, 7, 9, 13, 19, 37, 79, 100),
+
+        [switch]
+        $ThrowError,
+
+        [switch]
+        $CheckAdmin
+    )
+
+    foreach ($p in $Port) {
+        try {
+            $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse($IP), $p)
+            $listener.Start()
+            $listener.Stop()
+            Write-Verbose "Successfully bound to $($IP):$p"
+            return $true
+        }
+        catch [System.Net.Sockets.SocketException] {
+            switch ($_.Exception.SocketErrorCode) {
+                'AccessDenied' {
+                    Write-Debug "Access denied on $($IP):$p"
+                    if ($ThrowError) {
+                        if (!$CheckAdmin) { return }
+                        throw ($PodeLocale.mustBeRunningWithAdminPrivilegesExceptionMessage)
+                    }
+                    if ($CheckAdmin) {
+                        return $false
+                    }
+                    return $true
+
+                }
+                'AddressAlreadyInUse' {
+                    Write-Debug "Port $p is already in use on $IP"
+
+                    if ($Port.Count -gt 1) {
+                        continue
+                    }
+                    if ($ThrowError) {
+                        throw  ($PodeLocale.cannotBindPortInUseExceptionMessage -f $IP, $p)
+                    }
+                    return $false
+                }
+                default {
+                    #    Write-Debug "Unhandled socket error on $($IP):$p — $($_.Exception.SocketErrorCode)"
+                    if ($ThrowError) {
+                        throw  $_
+                    }
+                    return $false
+                }
+            }
+        }
+        catch {
+            #Write-Debug "Unexpected error on $($IP):$p — $($_.Exception.Message)"
+            if ($ThrowError) {
+                throw  $_
+            }
+            return $false
+        }
+    }
+
+    Write-Debug "All test ports on $IP were in use, but no privilege error detected"
+    return $false
 }
 
 <#

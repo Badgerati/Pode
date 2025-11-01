@@ -292,6 +292,14 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
     localEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."
+    serviceAlreadyRegisteredException                                 = "Usługa '{0}' jest już zarejestrowana."
+    serviceIsNotRegisteredException                                   = "Usługa '{0}' nie jest zarejestrowana."
+    serviceCommandFailedException                                     = "Polecenie serwisu '{0}' nie powiodło się w serwisie '{1}'."
+    serviceRegistrationException                                      = "Rejestracja usługi '{0}' nie powiodła się."
+    serviceIsRunningException                                         = "Usługa '{0}' jest uruchomiona. Użyj parametru -Force, aby wymusić zatrzymanie."
+    serviceUnRegistrationException                                    = "Nie udało się wyrejestrować usługi '{0}'."
+    passwordRequiredForServiceUserException                           = "Wymagane jest hasło podczas określania użytkownika usługi w systemie Windows. Podaj prawidłowe hasło dla użytkownika '{0}'."
+    featureNotSupportedException                                      = '{0} jest obsługiwane tylko w systemie Windows.'
     suspendingMessage                                                 = 'Wstrzymywanie'
     resumingMessage                                                   = 'Wznawianie'
     serverControlCommandsTitle                                        = 'Polecenia sterowania serwerem:'
@@ -326,4 +334,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Reguła limitu szybkości o nazwie '{0}' nie istnieje."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Reguła limitu dostępu o nazwie '{0}' już istnieje."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Reguła limitu dostępu o nazwie '{0}' nie istnieje."
+    cannotBindPortInUseExceptionMessage                               = 'Nie można powiązać z {0}:{1} — port jest już używany przez inny proces.'
 }

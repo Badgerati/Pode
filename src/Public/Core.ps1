@@ -222,7 +222,9 @@ function Start-PodeServer {
     end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
-        }    # Store the name of the current runspace
+        }
+
+        # Store the name of the current runspace
         $previousRunspaceName = Get-PodeCurrentRunspaceName
         # Sets the name of the current runspace
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
@@ -230,6 +232,33 @@ function Start-PodeServer {
         # ensure the session is clean
         $Script:PodeContext = $null
         $ShowDoneMessage = $true
+
+        # check if podeWatchdog is configured
+        if ($PodeService) {
+            if ($null -ne $PodeService.DisableTermination -or
+                $null -ne $PodeService.Quiet -or
+                $null -ne $PodeService.PipeName -or
+                $null -ne $PodeService.DisableConsoleInput
+            ) {
+                $DisableTermination = [switch]$PodeService.DisableTermination
+                $Quiet = [switch]$PodeService.Quiet
+                $DisableConsoleInput = [switch]$PodeService.DisableConsoleInput
+                $IgnoreServerConfig = [switch]$PodeService.IgnoreServerConfig
+
+                if (!([string]::IsNullOrEmpty($PodeService.ConfigFile)) -and !$PodeService.IgnoreServerConfig) {
+                    $ConfigFile = $PodeService.ConfigFile
+                }
+
+                $monitorService = @{
+                    DisableTermination  = $PodeService.DisableTermination
+                    Quiet               = $PodeService.Quiet
+                    PipeName            = $PodeService.PipeName
+                    DisableConsoleInput = $PodeService.DisableConsoleInput
+                    ConfigFile          = $PodeService.ConfigFile
+                    IgnoreServerConfig  = $PodeService.IgnoreServerConfig
+                }
+                Write-PodeHost $PodeService -Explode -Force            }
+        }
 
         try {
             # if we have a filepath, resolve it - and extract a root path from it
@@ -268,6 +297,7 @@ function Start-PodeServer {
                 EnableBreakpoints    = $EnableBreakpoints
                 IgnoreServerConfig   = $IgnoreServerConfig
                 ConfigFile           = $ConfigFile
+                Service              = $monitorService
                 Daemon               = $Daemon
             }
 

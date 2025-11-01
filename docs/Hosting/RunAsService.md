@@ -1,141 +1,275 @@
-# Service
+# Using Pode as a Service
 
-Rather than having to manually invoke your Pode server script each time, it's best if you can have it start automatically when your computer/server starts. Below you'll see how to set your script to run as either a Windows or a Linux service.
+Pode provides built-in functions to easily manage services across platforms (Windows, Linux, macOS). These functions allow you to register, start, stop, suspend, resume, query, and unregister Pode services in a cross-platform way.
 
-!!! Note
-    When running Pode as a service, it is recommended to use `Start-PodeServer` with the `-Daemon` parameter. This ensures the server operates in a detached and background-friendly mode suitable for long-running processes. The `-Daemon` parameter optimizes Pode's behavior for service execution by suppressing interactive output and allowing the process to run seamlessly in the background.
+---
 
-## Windows
+## Registering a Service
 
-To run your Pode server as a Windows service, we recommend using the [`NSSM`](https://nssm.cc) tool. To install on Windows you can use Chocolatey:
+The `Register-PodeService` function creates the necessary service files and configurations for your system.
 
-```powershell
-choco install nssm -y
-```
-
-Once installed, you'll need to set the location of the `pwsh` or `powershell` executables as a variable:
+#### Example:
 
 ```powershell
-$exe = (Get-Command pwsh.exe).Source
-
-# or
-
-$exe = (Get-Command powershell.exe).Source
+Register-PodeService -Name "HelloService" -Description "Example Pode Service" -ParameterString "-Verbose" -Start
 ```
 
-Next, define the name of the Windows service; as well as the full file path to your Pode server script, and the arguments to be supplied to PowerShell:
+This registers a service named "HelloService" and starts it immediately after registration. The service runs your Pode script with the specified parameters.
+
+### `Register-PodeService` Parameters
+
+The `Register-PodeService` function offers several parameters to customize your service registration:
+
+- **`-Name`** *(string)*:
+  The name of the service to register.
+  **Mandatory**.
+
+- **`-Description`** *(string)*:
+  A brief description of the service. Defaults to `"This is a Pode service."`.
+
+- **`-DisplayName`** *(string)*:
+  The display name for the service (Windows only). Defaults to `"Pode Service($Name)"`.
+
+- **`-StartupType`** *(string)*:
+  Specifies the startup type of the service (`'Automatic'` or `'Manual'`). Defaults to `'Automatic'`.
+
+- **`-ParameterString`** *(string)*:
+  Additional parameters to pass to the worker script when the service is run. Defaults to an empty string.
+
+- **`-LogServicePodeHost`** *(switch)*:
+  Enables logging for the Pode service host.
+
+- **`-ShutdownWaitTimeMs`** *(int)*:
+  Maximum time in milliseconds to wait for the service to shut down gracefully before forcing termination. Defaults to `30,000 ms`.
+
+- **`-StartMaxRetryCount`** *(int)*:
+  Maximum number of retries to start the PowerShell process before giving up. Defaults to `3`.
+
+- **`-StartRetryDelayMs`** *(int)*:
+  Delay in milliseconds between retry attempts to start the PowerShell process. Defaults to `5,000 ms`.
+
+- **`-WindowsUser`** *(string)*:
+  Specifies the username under which the service will run. Defaults to the current user (Windows only).
+
+- **`-LinuxUser`** *(string)*:
+  Specifies the username under which the service will run. Defaults to the current user (Linux Only).
+
+- **`-Agent`** *(switch)*:
+    Create an Agent instead of a Daemon in MacOS (MacOS Only).
+
+- **`-Start`** *(switch)*:
+  Starts the service immediately after registration.
+
+- **`-Password`** *(securestring)*:
+  A secure password for the service account (Windows only). If omitted, the service account will be `'NT AUTHORITY\SYSTEM'`.
+
+- **`-SecurityDescriptorSddl`** *(string)*:
+  A security descriptor in SDDL format specifying the permissions for the service (Windows only).
+
+- **`-SettingsPath`** *(string)*:
+  Directory to store the service configuration file (`<name>_svcsettings.json`). Defaults to a directory under the script path.
+
+- **`-LogPath`** *(string)*:
+  Path for the service log files. Defaults to a directory under the script path.
+
+---
+
+## Starting a Service
+
+You can start a registered service using the `Start-PodeService` function.
+
+#### Example:
 
 ```powershell
-$name = 'Pode Web Server'
-$file = 'C:\Pode\Server.ps1'
-$arg = "-ExecutionPolicy Bypass -NoProfile -Command `"$($file)`""
+Start-PodeService -Name "HelloService"
 ```
 
-Finally, install and start the service:
+This returns `$true` if the service starts successfully, `$false` otherwise.
+
+---
+
+## Stopping a Service
+
+To stop a running service, use the `Stop-PodeService` function.
+
+#### Example:
 
 ```powershell
-nssm install $name $exe $arg
-nssm start $name
+Stop-PodeService -Name "HelloService"
 ```
 
-!!! info
-    You can now navigate to your server, ie: `http://localhost:8080`.
+This returns `$true` if the service stops successfully, `$false` otherwise.
 
-To stop (or remove) the service afterwards, you can use the following:
+---
+
+## Suspending a Service
+
+Suspend a running service (Windows only) with the `Suspend-PodeService` function.
+
+#### Example:
 
 ```powershell
-nssm stop $name
-nssm remove $name confirm
+Suspend-PodeService -Name "HelloService"
 ```
 
-## Linux
+This pauses the service, returning `$true` if successful.
 
-To run your Pode server as a Linux service you just need to create a `<name>.service` file at `/etc/systemd/system`. The following is example content for an example `pode-server.service` file, which run PowerShell Core (`pwsh`), as well as you script:
+---
 
-```bash
-sudo vim /etc/systemd/system/pode-server.service
-```
+## Resuming a Service
 
-```bash
-[Unit]
-Description=Pode Web Server
-After=network.target
+Resume a suspended service (Windows only) using the `Resume-PodeService` function.
 
-[Service]
-ExecStart=/usr/bin/pwsh -c /usr/src/pode/server.ps1 -nop -ep Bypass
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-Alias=pode-server.service
-```
-
-Finally, start the service:
+#### Example:
 
 ```powershell
-sudo systemctl start pode-server
+Resume-PodeService -Name "HelloService"
 ```
 
-!!! info
-    You can now navigate to your server, ie: `http://localhost:8080`.
+This resumes the service, returning `$true` if successful.
 
-To stop the service afterwards, you can use the following:
+---
+
+## Querying a Service
+
+To check the status of a service, use the `Get-PodeService` function.
+
+#### Example:
 
 ```powershell
-sudo systemctl stop pode-server
+Get-PodeService -Name "HelloService"
 ```
-### Using Ports Below 1024
 
-#### Introduction
+This returns a hashtable with the service details:
 
-Traditionally in Linux, binding to ports below 1024 requires root privileges. This is a security measure, as these low-numbered ports are considered privileged. However, running applications as the root user poses significant security risks. This article explores methods to use these privileged ports with PowerShell (`pwsh`) in Linux, without running it as the root user.
-There are different methods to achieve the goals.
-Reverse Proxy is the right approach for a production environment, primarily if the server is connected directly to the internet.
-The other solutions are reasonable after an in-depth risk analysis.
+```powershell
+Name                           Value
+----                           -----
+Status                         Running
+Pid                            17576
+Name                           HelloService
+Sudo                           True
+```
 
-#### Using a Reverse Proxy
+---
 
-A reverse proxy like Nginx can listen on the privileged port and forward requests to your application running on an unprivileged port.
+## Restarting a Service
 
-**Configuration:**
+Restart a running service using the `Restart-PodeService` function.
 
-* Configure Nginx to listen on port 443 and forward requests to the port where your PowerShell script is listening.
-* This method is widely used in web applications for its additional benefits like load balancing and SSL termination.
+#### Example:
 
-#### iptables Redirection
+```powershell
+Restart-PodeService -Name "HelloService"
+```
 
-Using iptables, you can redirect traffic from a privileged port to a higher, unprivileged port.
+This stops and starts the service, returning `$true` if successful.
 
-**Implementation:**
+---
 
-* Set up an iptables rule to redirect traffic from, say, port 443 to a higher port where your PowerShell script is listening.
-* `sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8080`
+## Unregistering a Service
 
-**Benefits:**
+When you no longer need a service, unregister it with the `Unregister-PodeService` function.
 
-* This approach doesn't require changing the privileges of the PowerShell executable or script.
+#### Example:
 
-#### Using `setcap` Command
+```powershell
+Unregister-PodeService -Name "HelloService" -Force
+```
 
-The `setcap` utility can grant specific capabilities to an executable, like `pwsh`, enabling it to bind to privileged ports.
+This forcefully stops and removes the service, returning `$true` if successful.
 
-**How it Works:**
+---
 
-* Run `sudo setcap 'cap_net_bind_service=+ep' $(which pwsh)`. This command sets the `CAP_NET_BIND_SERVICE` capability on the PowerShell executable, allowing it to bind to any port below 1024.
+## Alternative Methods for Windows and Linux
 
-**Security Consideration:**
+If the Pode functions are unavailable or you prefer manual management, you can use traditional methods to configure Pode as a service.
 
-* This method enhances security by avoiding running PowerShell as root, but it still grants significant privileges to the PowerShell process.
+### Windows (NSSM)
 
-#### Utilizing Authbind
+To use NSSM for Pode as a Windows service:
 
-Authbind is a tool that allows a non-root user to bind to privileged ports.
+1. Install NSSM using Chocolatey:
 
-**Setup:**
+   ```powershell
+   choco install nssm -y
+   ```
 
-* Install Authbind, configure it to allow the desired port, and then start your PowerShell script using Authbind.
-* For instance, `authbind --deep pwsh yourscript.ps1` allows the script to bind to a privileged port.
+2. Configure the service:
 
-**Advantages:**
+   ```powershell
+   $exe = (Get-Command pwsh.exe).Source
+   $name = 'Pode Web Server'
+   $file = 'C:\Pode\Server.ps1'
+   $arg = "-ExecutionPolicy Bypass -NoProfile -Command `"$($file)`""
+   nssm install $name $exe $arg
+   nssm start $name
+   ```
 
-* It provides a finer-grained control over port access and doesn't require setting special capabilities on the PowerShell binary itself.
+3. Stop or remove the service:
+
+   ```powershell
+   nssm stop $name
+   nssm remove $name confirm
+   ```
+
+---
+
+### Linux (systemd)
+
+To configure Pode as a Linux service:
+
+1. Create a service file:
+
+   ```bash
+   sudo vim /etc/systemd/system/pode-server.service
+   ```
+
+2. Add the following configuration:
+
+   ```bash
+   [Unit]
+   Description=Pode Web Server
+   After=network.target
+
+   [Service]
+   ExecStart=/usr/bin/pwsh -c /usr/src/pode/server.ps1 -nop -ep Bypass
+   Restart=always
+
+   [Install]
+   WantedBy=multi-user.target
+   Alias=pode-server.service
+   ```
+
+3. Start and stop the service:
+
+   ```bash
+   sudo systemctl start pode-server
+   sudo systemctl stop pode-server
+   ```
+
+---
+
+## Using Ports Below 1024
+
+For privileged ports, consider:
+
+1. **Reverse Proxy:** Use Nginx to forward traffic from port 443 to an unprivileged port.
+
+2. **iptables Redirection:** Redirect port 443 to an unprivileged port:
+
+   ```bash
+   sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8080
+   ```
+
+3. **setcap Command:** Grant PowerShell permission to bind privileged ports:
+
+   ```bash
+   sudo setcap 'cap_net_bind_service=+ep' $(which pwsh)
+   ```
+
+4. **Authbind:** Configure Authbind to allow binding to privileged ports:
+
+   ```bash
+   authbind --deep pwsh yourscript.ps1
+   ```
