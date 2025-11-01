@@ -11,4 +11,4 @@ Start-PodeServer -Threads 2 {
 The number of threads supplied only applies to Web, SMTP, and TCP servers. If `-Threads` is not supplied, or is <=0 then the number of threads is forced to the default of 1.
 
 ## Behavior of excess requests
-If all threads are currently processing a request, and new requests hit the server, then they will be blocked/queued until a thread is available to process the request. If the request is blocked for >30s (customisable via request  [`Timeout`](../Tutorials/RequestLimits/#timeout) in the [`server.psd1`](../Tutorials/Configuration/) file) then the server will timeout/terminate the request and respond with an HTTP 408 status code.
+If all threads are currently processing a request, and new requests hit the server, then they will be blocked/queued until a thread is available to process the request. If the request is blocked for >30s (customisable via request  [`Timeout`](../../Tutorials/RequestLimits/#timeout) in the [`server.psd1`](../../Tutorials/Configuration/) file) then the server will timeout/terminate the request and respond with an HTTP 408 status code.
