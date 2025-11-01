@@ -1608,6 +1608,3 @@ function Start-PodeSleep {
         Start-Sleep -Milliseconds $sleepInterval
     }
 }
-
-
-
