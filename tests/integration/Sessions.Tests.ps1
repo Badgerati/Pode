@@ -5,13 +5,16 @@ param()
 Describe 'Session Requests' {
 
     BeforeAll {
+        $helperPath = (Split-Path -Parent -Path $PSCommandPath) -ireplace 'integration', 'shared'
+        . "$helperPath/TestHelper.ps1"
+
         $Port = 8080
         $Endpoint = "http://127.0.0.1:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
 
-            Start-PodeServer -Quiet -ScriptBlock {
+            Start-PodeServer   -Daemon -ScriptBlock {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
@@ -41,7 +44,7 @@ Describe 'Session Requests' {
             }
         }
 
-        Start-Sleep -Seconds 10
+        Wait-ForWebServer -Port $Port
     }
 
     AfterAll {

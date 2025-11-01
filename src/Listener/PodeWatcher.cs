@@ -52,7 +52,7 @@ namespace Pode
         protected override void Close()
         {
             // dispose watchers
-            PodeHelpers.WriteErrorMessage($"Closing file watchers", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closing file watchers", this, PodeLoggingLevel.Verbose);
 
             foreach (var _watcher in FileWatchers.ToArray())
             {
@@ -60,10 +60,10 @@ namespace Pode
             }
 
             FileWatchers.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed file watchers", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closed file watchers", this, PodeLoggingLevel.Verbose);
 
             // dispose existing file events
-            PodeHelpers.WriteErrorMessage($"Closing file events", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closing file events", this, PodeLoggingLevel.Verbose);
 
             foreach (var _evt in FileEvents.ToArray())
             {
@@ -71,7 +71,7 @@ namespace Pode
             }
 
             FileEvents.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed file events", this, PodeLoggingLevel.Verbose);
+            PodeLogger.LogMessage($"Closed file events", this, PodeLoggingLevel.Verbose);
         }
     }
 }

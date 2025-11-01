@@ -622,6 +622,9 @@ function Close-PodeServerInternal {
     # PodeContext doesn't exist return
     if ($null -eq $PodeContext) { return }
     try {
+        #Disable Logging before closing
+        Disable-PodeLog
+
         # ensure the token is cancelled
         Write-Verbose 'Cancelling main cancellation token'
         Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
@@ -4009,6 +4012,101 @@ function Test-PodeIsISEHost {
     return ((Test-PodeIsWindows) -and ('Windows PowerShell ISE Host' -eq $Host.Name))
 }
 
+
+<#
+.SYNOPSIS
+  Converts a PSCustomObject to an ordered hashtable.
+
+.DESCRIPTION
+  This function recursively converts a given PSCustomObject into an ordered hashtable.
+  It ensures that properties maintain their order and that nested PSCustomObjects and
+  collections are also converted appropriately.
+
+.PARAMETER InputObject
+  Specifies the PSCustomObject to be converted into an ordered hashtable.
+  This parameter is mandatory and accepts pipeline input.
+
+.OUTPUTS
+  [System.Collections.Specialized.OrderedDictionary]
+  Returns an ordered hashtable representing the original PSCustomObject.
+
+.EXAMPLE
+  $object = [PSCustomObject]@{
+      Name = "John"
+      Age  = 30
+      Address = [PSCustomObject]@{
+          City  = "New York"
+          State = "NY"
+      }
+  }
+
+  Convert-PsCustomObjectToOrderedHashtable -InputObject $object
+
+  This example converts the PSCustomObject `$object` into an ordered hashtable.
+
+.EXAMPLE
+  $object | Convert-PsCustomObjectToOrderedHashtable
+
+  This example demonstrates using the function with pipeline input.
+
+.NOTES
+  Internal helper function `Convert-ObjectRecursively` is used to process nested objects
+  and collections recursively.
+#>
+
+function Convert-PsCustomObjectToOrderedHashtable {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [PSCustomObject]$InputObject
+    )
+    begin {
+        # Define a recursive function within the process block
+        function Convert-ObjectRecursively {
+            param (
+                [Parameter(Mandatory = $true)]
+                [System.Object]
+                $InputObject
+            )
+
+            # Initialize an ordered dictionary
+            $orderedHashtable = [ordered]@{}
+
+            # Loop through each property of the PSCustomObject
+            foreach ($property in $InputObject.PSObject.Properties) {
+                # Check if the property value is a PSCustomObject
+                if ($property.Value -is [PSCustomObject]) {
+                    # Recursively convert the nested PSCustomObject
+                    $orderedHashtable[$property.Name] = Convert-ObjectRecursively -InputObject $property.Value
+                }
+                elseif ($property.Value -is [System.Collections.IEnumerable] -and -not ($property.Value -is [string])) {
+                    # If the value is a collection, check each element
+                    $convertedCollection = @()
+                    foreach ($item in $property.Value) {
+                        if ($item -is [PSCustomObject]) {
+                            $convertedCollection += Convert-ObjectRecursively -InputObject $item
+                        }
+                        else {
+                            $convertedCollection += $item
+                        }
+                    }
+                    $orderedHashtable[$property.Name] = $convertedCollection
+                }
+                else {
+                    # Add the property name and value to the ordered hashtable
+                    $orderedHashtable[$property.Name] = $property.Value
+                }
+            }
+
+            # Return the resulting ordered hashtable
+            return $orderedHashtable
+        }
+    }
+    process {
+        # Call the recursive helper function for each input object
+        Convert-ObjectRecursively -InputObject $InputObject
+    }
+}
 <#
 .SYNOPSIS
     Determines the MIME type of an image from its binary header.

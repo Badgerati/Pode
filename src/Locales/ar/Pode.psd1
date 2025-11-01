@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "لم يتم توفير معلمة باسم '{0}' في الطلب أو لا توجد بيانات متاحة."
     cacheStorageNotFoundForSetExceptionMessage                        = "لم يتم العثور على مخزن ذاكرة التخزين المؤقت بالاسم '{0}' عند محاولة تعيين العنصر المخزن مؤقتًا '{1}'"
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: تم التعريف بالفعل.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'تم تمكين تسجيل الأخطاء بالفعل.'
     valueForUsingVariableNotFoundExceptionMessage                     = "لم يتم العثور على قيمة لـ '`$using:{0}'."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = 'أداة الوثائق RapidPdf لا تدعم OpenAPI 3.1'
     oauth2ClientSecretRequiredExceptionMessage                        = 'تتطلب OAuth2 سر العميل عند عدم استخدام PKCE.'
@@ -281,10 +280,12 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "تتطلب الخطة '{0}' المقدمة لمحقق المصادقة '{1}' ScriptBlock صالح."
     sseFailedToBroadcastExceptionMessage                              = 'فشل بث SSE بسبب مستوى البث SSE المحدد لـ {0}: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'وحدة Active Directory متاحة فقط على نظام Windows.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'تم تمكين تسجيل الطلبات بالفعل.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
     renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
+    loggingAlreadyEnabledExceptionMessage                             = "تم تمكين تسجيل '{0}' بالفعل."
+    invalidEncodingExceptionMessage                                   = 'ترميز غير صالح: {0}'
+    syslogProtocolExceptionMessage                                    = 'يمكن لبروتوكول Syslog استخدام RFC3164 أو RFC5424 فقط.'
     taskProcessDoesNotExistExceptionMessage                           = 'عملية المهمة غير موجودة: {0}'
     scheduleProcessDoesNotExistExceptionMessage                       = 'عملية الجدول الزمني غير موجودة: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
@@ -292,6 +293,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
     localEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
+    deprecatedFunctionWarningMessage                                  = "تحذير: الدالة '{0}' مهملة وستتم إزالتها في الإصدارات المستقبلية. يُرجى استخدام الدالة '{1}' بدلاً منها."
     suspendingMessage                                                 = 'تعليق'
     resumingMessage                                                   = 'استئناف'
     serverControlCommandsTitle                                        = 'أوامر التحكم بالخادم:'
@@ -326,4 +328,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = 'قاعدة الحد الأقصى للمعدل غير موجودة: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = 'تم تعريف قاعدة الحد الأقصى للوصول بالفعل: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = 'قاعدة الحد الأقصى للوصول غير موجودة: {0}'
+    loggerDoesNotExistExceptionMessage                                = "المسجل '{0}' غير موجود."
 }

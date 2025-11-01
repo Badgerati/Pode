@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "Un paramètre nommé '{0}' n'a pas été fourni dans la demande ou aucune donnée n'est disponible."
     cacheStorageNotFoundForSetExceptionMessage                        = "Le stockage de cache nommé '{0}' est introuvable lors de la tentative de définition de l'élément mis en cache '{1}'."
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1} : Déjà défini.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'La journalisation des erreurs est déjà activée.'
     valueForUsingVariableNotFoundExceptionMessage                     = "Valeur pour '`$using:{0}' introuvable."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = "L'outil de documentation RapidPdf ne prend pas en charge OpenAPI 3.1"
     oauth2ClientSecretRequiredExceptionMessage                        = "OAuth2 nécessite un Client Secret lorsque PKCE n'est pas utilisé."
@@ -281,10 +280,12 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "Le schéma '{0}' fourni pour le validateur d'authentification '{1}' nécessite un ScriptBlock valide."
     sseFailedToBroadcastExceptionMessage                              = 'SSE a échoué à diffuser en raison du niveau de diffusion SSE défini pour {0} : {1}.'
     adModuleWindowsOnlyExceptionMessage                               = 'Le module Active Directory est uniquement disponible sur Windows.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'La journalisation des requêtes est déjà activée.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La définition OpenAPI nommée {0} existe déjà.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
+    loggingAlreadyEnabledExceptionMessage                             = "La journalisation '{0}' a déjà été activée."
+    invalidEncodingExceptionMessage                                   = 'Encodage invalide : {0}'
+    syslogProtocolExceptionMessage                                    = 'Le protocole Syslog ne peut utiliser que RFC3164 ou RFC5424.'
     taskProcessDoesNotExistExceptionMessage                           = "Le processus de la tâche '{0}' n'existe pas."
     scheduleProcessDoesNotExistExceptionMessage                       = "Le processus de l'horaire '{0}' n'existe pas."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
@@ -292,6 +293,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = "La compression de flux {0} n'est pas prise en charge."
     localEndpointConflictExceptionMessage                             = "Les deux '{0}' et '{1}' sont définis comme des points de terminaison locaux pour OpenAPI, mais un seul point de terminaison local est autorisé par définition d'API."
+    deprecatedFunctionWarningMessage                                  = "AVERTISSEMENT : La fonction '{0}' est obsolète et sera supprimée dans les versions futures. Veuillez utiliser la fonction '{1}' à la place."
     suspendingMessage                                                 = 'Suspension'
     resumingMessage                                                   = 'Reprise'
     serverControlCommandsTitle                                        = 'Commandes de contrôle du serveur :'
@@ -326,4 +328,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "La règle de limite de taux '{0}' n'existe pas."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Une règle de limite d'accès nommée '{0}' existe déjà."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La règle de limite d'accès '{0}' n'existe pas."
+    loggerDoesNotExistExceptionMessage                                = "Le journaliseur '{0}' n'existe pas."
 }

@@ -184,7 +184,7 @@ namespace Pode
             catch (Exception ex)
             {
                 // Log the error and return false to indicate failure.
-                PodeHelpers.WriteErrorMessage($"Error decoding WebSocket frame: {ex.Message}", Context.Listener, PodeLoggingLevel.Error, Context);
+                PodeLogger.LogMessage($"Error decoding WebSocket frame: {ex.Message}", Context.Listener, PodeLoggingLevel.Error, Context);
                 throw;
             }
             finally
@@ -252,7 +252,7 @@ namespace Pode
             if (disposing)
             {
                 // Log a message indicating the WebSocket is being closed.
-                PodeHelpers.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
+                PodeLogger.LogMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
 
                 // Send a Close frame to the client and wait for the operation to complete.
                 Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close).Wait();

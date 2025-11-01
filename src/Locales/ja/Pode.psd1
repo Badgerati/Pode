@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "リクエストに '{0}' という名前のパラメータが提供されていないか、データがありません。"
     cacheStorageNotFoundForSetExceptionMessage                        = "キャッシュされたアイテム '{1}' を設定しようとしたときに、名前 '{0}' のキャッシュストレージが見つかりません。"
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: 既に定義されています。'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'エラーロギングは既に有効になっています。'
     valueForUsingVariableNotFoundExceptionMessage                     = "'`$using:{0}'の値が見つかりませんでした。"
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = 'ドキュメントツール RapidPdf は OpenAPI 3.1 をサポートしていません'
     oauth2ClientSecretRequiredExceptionMessage                        = 'PKCEを使用しない場合、OAuth2にはクライアントシークレットが必要です。'
@@ -281,10 +280,12 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "'{1}'認証バリデーターのために提供された'{0}'スキームには有効なScriptBlockが必要です。"
     sseFailedToBroadcastExceptionMessage                              = '{0}のSSEブロードキャストレベルが定義されているため、SSEのブロードキャストに失敗しました: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Active DirectoryモジュールはWindowsでのみ利用可能です。'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'リクエストロギングは既に有効になっています。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
+    loggingAlreadyEnabledExceptionMessage                             = "ログ記録 '{0}' は既に有効になっています。"
+    invalidEncodingExceptionMessage                                   = '無効なエンコーディング: {0}'
+    syslogProtocolExceptionMessage                                    = 'SyslogプロトコルはRFC3164またはRFC5424のみを使用できます。'
     taskProcessDoesNotExistExceptionMessage                           = 'タスクプロセスが存在しません: {0}'
     scheduleProcessDoesNotExistExceptionMessage                       = 'スケジュールプロセスが存在しません: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
@@ -292,6 +293,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
     localEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
+    deprecatedFunctionWarningMessage                                  = "警告: 関数 '{0}' は廃止され、将来のリリースで削除されます。代わりに '{1}' 関数を使用してください。"
     suspendingMessage                                                 = '停止'
     resumingMessage                                                   = '再開'
     serverControlCommandsTitle                                        = 'サーバーコントロールコマンド:'
@@ -326,4 +328,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "名前が '{0}' のレート制限ルールは存在しません。"
     accessLimitRuleAlreadyExistsExceptionMessage                      = "名前が '{0}' のアクセス制限ルールは既に存在します。"
     accessLimitRuleDoesNotExistExceptionMessage                       = "名前が '{0}' のアクセス制限ルールは存在しません。"
+    loggerDoesNotExistExceptionMessage                                = "ロガー '{0}' は存在しません。"
 }

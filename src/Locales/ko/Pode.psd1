@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "요청에 '{0}'라는 이름의 매개변수가 제공되지 않았거나 데이터가 없습니다."
     cacheStorageNotFoundForSetExceptionMessage                        = "캐시된 항목 '{1}'을(를) 설정하려고 할 때 이름이 '{0}'인 캐시 스토리지를 찾을 수 없습니다."
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: 이미 정의되었습니다.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = '오류 로깅이 이미 활성화되었습니다.'
     valueForUsingVariableNotFoundExceptionMessage                     = "'`$using:{0}'에 대한 값을 찾을 수 없습니다."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = '문서 도구 RapidPdf는 OpenAPI 3.1을 지원하지 않습니다.'
     oauth2ClientSecretRequiredExceptionMessage                        = 'PKCE를 사용하지 않을 때 OAuth2에는 클라이언트 비밀이 필요합니다.'
@@ -281,10 +280,12 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "'{1}' 인증 검증기에 제공된 '{0}' 스킴에는 유효한 ScriptBlock이 필요합니다."
     sseFailedToBroadcastExceptionMessage                              = '{0}에 대해 정의된 SSE 브로드캐스트 수준으로 인해 SSE 브로드캐스트에 실패했습니다: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory 모듈은 Windows에서만 사용할 수 있습니다.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = '요청 로깅이 이미 활성화되었습니다.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '잘못된 Access-Control-Max-Age 기간이 제공되었습니다: {0}. 0보다 커야 합니다.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '이름이 {0}인 OpenAPI 정의가 이미 존재합니다.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag은 Select-PodeOADefinition 'ScriptBlock' 내에서 사용할 수 없습니다."
+    loggingAlreadyEnabledExceptionMessage                             = "로그 '{0}'이(가) 이미 활성화되었습니다."
+    invalidEncodingExceptionMessage                                   = '잘못된 인코딩: {0}'
+    syslogProtocolExceptionMessage                                    = 'Syslog 프로토콜은 RFC3164 또는 RFC5424만 사용할 수 있습니다.'
     taskProcessDoesNotExistExceptionMessage                           = '작업 프로세스가 존재하지 않습니다: {0}'
     scheduleProcessDoesNotExistExceptionMessage                       = '스케줄 프로세스가 존재하지 않습니다: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
@@ -292,6 +293,7 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "함수 '{0}'은(는) 배열을 파이프라인 입력으로 받지 않습니다."
     unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
     localEndpointConflictExceptionMessage                             = "'{0}' 와 '{1}' 는 OpenAPI 로컬 엔드포인트로 정의되었지만, API 정의당 하나의 로컬 엔드포인트만 허용됩니다."
+    deprecatedFunctionWarningMessage                                  = "경고: 함수 '{0}'는 더 이상 지원되지 않으며, 향후 릴리스에서 제거될 예정입니다. 대신 '{1}' 함수를 사용하세요."
     suspendingMessage                                                 = '중단'
     resumingMessage                                                   = '재개'
     serverControlCommandsTitle                                        = '서버 제어 명령:'
@@ -326,4 +328,5 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "이름이 '{0}'인 비율 제한 규칙이 존재하지 않습니다."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "이름이 '{0}'인 액세스 제한 규칙이 이미 존재합니다."
     accessLimitRuleDoesNotExistExceptionMessage                       = "이름이 '{0}'인 액세스 제한 규칙이 존재하지 않습니다."
+    loggerDoesNotExistExceptionMessage                                = "로거 '{0}'가 존재하지 않습니다."
 }
