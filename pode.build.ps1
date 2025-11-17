@@ -465,7 +465,7 @@ function Invoke-PodeBuildDotnetBuild {
         $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
     }
     else {
-        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-PodeBuildTargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
+        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-PodeBuildTargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
     }
     # Map target frameworks to minimum SDK versions
 
