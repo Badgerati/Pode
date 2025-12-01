@@ -30,6 +30,7 @@ function Close-PodeDisposable {
         [switch]
         $CheckNetwork
     )
+
     process {
         if ($null -eq $Disposable) {
             return
@@ -499,7 +500,7 @@ Resolves a query, and returns a value based on the response.
 Resolves a query, and returns a value based on the response.
 
 .PARAMETER Check
-The query, or variable, to evalulate.
+The query, or variable, to evaluate.
 
 .PARAMETER TrueValue
 The value to use if evaluated to True.
@@ -959,7 +960,7 @@ function Write-PodeHost {
                 }
             }
             else {
-                $type = $Object.gettype().FullName
+                $type = $Object.GetType().FullName
                 $Object = $Object | Out-String
                 if ($ShowType) {
                     $Object = "`tTypeName: $type`n$Object"
@@ -1125,7 +1126,7 @@ This is an array of Minutes that the expression should use between 0-59.
 This is an array of Hours that the expression should use between 0-23.
 
 .PARAMETER Date
-This is an array of Dates in the monnth that the expression should use between 1-31.
+This is an array of Dates in the month that the expression should use between 1-31.
 
 .PARAMETER Month
 This is an array of Months that the expression should use between January-December.
@@ -1224,7 +1225,7 @@ function New-PodeCron {
     # convert month/day to numbers
     if ($Month.Length -gt 0) {
         $MonthInts = @(foreach ($item in $Month) {
-            (@{
+                (@{
                     January   = 1
                     February  = 2
                     March     = 3
@@ -1243,7 +1244,7 @@ function New-PodeCron {
 
     if ($Day.Length -gt 0) {
         $DayInts = @(foreach ($item in $Day) {
-            (@{
+                (@{
                     Sunday    = 0
                     Monday    = 1
                     Tuesday   = 2
@@ -1450,11 +1451,15 @@ function ConvertFrom-PodeXml {
         [switch]
         $KeepAttributes
     )
+
     process {
         #if option set, we skip the Document element
-        if ($node.DocumentElement -and !($ShowDocElement.IsPresent))
-        { $node = $node.DocumentElement }
+        if ($node.DocumentElement -and !($ShowDocElement.IsPresent)) {
+            $node = $node.DocumentElement
+        }
+
         $oHash = [ordered] @{ } # start with an ordered hashtable.
+
         #The order of elements is always significant regardless of what they are
         if ($null -ne $node.Attributes  ) {
             #if there are elements
@@ -1463,6 +1468,7 @@ function ConvertFrom-PodeXml {
                 $oHash.$("$Prefix$($_.FirstChild.parentNode.LocalName)") = $_.FirstChild.value
             }
         }
+
         # check to see if there is a pseudo-array. (more than one
         # child-node with the same name that must be handled as an array)
         $node.ChildNodes | #we just group the names and create an empty
@@ -1471,13 +1477,15 @@ function ConvertFrom-PodeXml {
             ForEach-Object {
                 $oHash.($_.Name) = @() <# create an empty array for each one#>
             }
+
         foreach ($child in $node.ChildNodes) {
             #now we look at each node in turn.
             $childName = $child.LocalName
             if ($child -is [system.xml.xmltext]) {
                 # if it is simple XML text
-                $oHash.$childname += $child.InnerText
+                $oHash.$childName += $child.InnerText
             }
+
             # if it has a #text child we may need to cope with attributes
             elseif ($child.FirstChild.Name -eq '#text' -and $child.ChildNodes.Count -eq 1) {
                 if ($null -ne $child.Attributes -and $KeepAttributes ) {
@@ -1490,30 +1498,31 @@ function ConvertFrom-PodeXml {
                     }
                     #now we add the text with an explicit name
                     $aHash.'#text' += $child.'#text'
-                    $oHash.$childname += $aHash
+                    $oHash.$childName += $aHash
                 }
                 else {
                     #phew, just a simple text attribute.
-                    $oHash.$childname += $child.FirstChild.InnerText
+                    $oHash.$childName += $child.FirstChild.InnerText
                 }
             }
             elseif ($null -ne $child.'#cdata-section' ) {
                 # if it is a data section, a block of text that isnt parsed by the parser,
                 # but is otherwise recognized as markup
-                $oHash.$childname = $child.'#cdata-section'
+                $oHash.$childName = $child.'#cdata-section'
             }
             elseif ($child.ChildNodes.Count -gt 1 -and
-                        ($child | Get-Member -MemberType Property).Count -eq 1) {
-                $oHash.$childname = @()
+                ($child | Get-Member -MemberType Property).Count -eq 1) {
+                $oHash.$childName = @()
                 foreach ($grandchild in $child.ChildNodes) {
-                    $oHash.$childname += (ConvertFrom-PodeXml $grandchild)
+                    $oHash.$childName += (ConvertFrom-PodeXml $grandchild)
                 }
             }
             else {
                 # create an array as a value  to the hashtable element
-                $oHash.$childname += (ConvertFrom-PodeXml $child)
+                $oHash.$childName += (ConvertFrom-PodeXml $child)
             }
         }
+
         return $oHash
     }
 }

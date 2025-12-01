@@ -25,23 +25,7 @@ function Start-PodeWebServer {
     $endpoints = @()
     $endpointsMap = @{}
 
-    # Variable to track if a default endpoint is already defined for the current type.
-    # This ensures that only one default endpoint can be assigned per protocol type (e.g., HTTP, HTTPS).
-    # If multiple default endpoints are detected, an error will be thrown to prevent configuration issues.
-    $defaultEndpoint = $false
-
     @(Get-PodeEndpointByProtocolType -Type Http, Ws) | ForEach-Object {
-
-        # Enforce unicity: only one default endpoint is allowed per type.
-        if ($defaultEndpoint -and $_.Default) {
-            # A default endpoint for the type '{0}' is already set. Only one default endpoint is allowed per type. Please check your configuration.
-            throw ($Podelocale.defaultEndpointAlreadySetExceptionMessage -f $($_.Type))
-        }
-        else {
-            # Assign the current endpoint's Default value for tracking.
-            $defaultEndpoint = $_.Default
-        }
-
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
@@ -55,21 +39,22 @@ function Start-PodeWebServer {
 
         # the endpoint
         $_endpoint = @{
-            Name                   = $_.Name
-            Key                    = "$($_ip):$($_.Port)"
-            Address                = $addrs
-            Hostname               = $_.HostName
-            IsIPAddress            = $_.IsIPAddress
-            Port                   = $_.Port
-            Certificate            = $_.Certificate.Raw
-            AllowClientCertificate = $_.Certificate.AllowClientCertificate
-            Url                    = $_.Url
-            Protocol               = $_.Protocol
-            Type                   = $_.Type
-            Pool                   = $_.Runspace.PoolName
-            SslProtocols           = $_.Ssl.Protocols
-            DualMode               = $_.DualMode
-            Default                = $_.Default
+            Name                    = $_.Name
+            Key                     = "$($_ip):$($_.Port)"
+            Address                 = $addrs
+            Hostname                = $_.HostName
+            IsIPAddress             = $_.IsIPAddress
+            Port                    = $_.Port
+            Certificate             = $_.Certificate.Raw
+            AllowClientCertificate  = $_.Certificate.AllowClientCertificate
+            Url                     = $_.Url
+            Protocol                = $_.Protocol
+            Type                    = $_.Type
+            Pool                    = $_.Runspace.PoolName
+            SslProtocols            = $_.Ssl.Protocols
+            DualMode                = $_.DualMode
+            Default                 = $_.Default
+            NoAutoUpgradeWebSockets = $_.WebSockets.NoAutoUpgrade
         }
 
         # add endpoint to list
@@ -79,10 +64,8 @@ function Start-PodeWebServer {
         if (!$endpointsMap.ContainsKey($_endpoint.Key)) {
             $endpointsMap[$_endpoint.Key] = @{ Type = $_.Type }
         }
-        else {
-            if ($endpointsMap[$_endpoint.Key].Type -ine $_.Type) {
-                $endpointsMap[$_endpoint.Key].Type = 'HttpAndWs'
-            }
+        elseif ($endpointsMap[$_endpoint.Key].Type -ine $_.Type) {
+            $endpointsMap[$_endpoint.Key].Type = 'HttpAndWs'
         }
     }
 
@@ -93,6 +76,7 @@ function Start-PodeWebServer {
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
     $listener.ShowServerDetails = [bool]$PodeContext.Server.Security.ServerDetails
+    $listener.TrackClientConnectionEvents = (Test-PodeSseEvent -Type Connected, Disconnected) -or (Test-PodeSignalEvent -Type Connected, Disconnected)
 
     try {
         # register endpoints on the listener
@@ -112,6 +96,7 @@ function Start-PodeWebServer {
             # Initialize a new listener socket with splatting
             $socket = & $("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket") @socketParams
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
+            $socket.NoAutoUpgradeWebSockets = $_.NoAutoUpgradeWebSockets
 
             if (!$_.IsIPAddress) {
                 $socket.Hostnames.Add($_.HostName)
@@ -122,8 +107,6 @@ function Start-PodeWebServer {
 
         $listener.Start()
         $PodeContext.Listeners += $listener
-        $PodeContext.Server.Signals.Enabled = $true
-        $PodeContext.Server.Signals.Listener = $listener
         $PodeContext.Server.Http.Listener = $listener
     }
     catch {
@@ -145,11 +128,13 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
+
             # Waits for the Pode server to fully start before proceeding with further operations.
             Wait-PodeCancellationTokenRequest -Type Start
+
             do {
                 try {
-                    while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                    while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate, Cancellation -Match All)) {
                         # get request and response
                         $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
@@ -188,6 +173,7 @@ function Start-PodeWebServer {
                                     AcceptEncoding   = $null
                                     Ranges           = $null
                                     Sse              = $null
+                                    Signal           = $null
                                     Metadata         = @{}
                                 }
 
@@ -213,22 +199,23 @@ function Start-PodeWebServer {
                                 }
 
                                 # if we have an sse clientId, verify it and then set details in WebEvent
-                                if ($WebEvent.Request.HasSseClientId) {
+                                if ($null -ne $WebEvent.Request.ServerEvent) {
                                     if (!(Test-PodeSseClientIdValid)) {
-                                        throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
+                                        throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.ServerEvent.ClientId)")
                                     }
 
-                                    if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
-                                        throw [Pode.PodeRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)", 404)
+                                    # setup the SSE property, as a reference to the request's ServerEvent
+                                    $WebEvent.Sse = $WebEvent.Request.ServerEvent
+                                }
+
+                                # if we have a signal clientId, verify it and then set details in WebEvent
+                                if ($null -ne $WebEvent.Request.Signal) {
+                                    if (!(Test-PodeSignalClientIdValid)) {
+                                        throw [Pode.PodeRequestException]::new("The X-PODE-SIGNAL-CLIENT-ID value is not valid: $($WebEvent.Request.Signal.ClientId)")
                                     }
 
-                                    $WebEvent.Sse = @{
-                                        Name        = $WebEvent.Request.SseClientName
-                                        Group       = $WebEvent.Request.SseClientGroup
-                                        ClientId    = $WebEvent.Request.SseClientId
-                                        LastEventId = $null
-                                        IsLocal     = $false
-                                    }
+                                    # setup the Signal property, as a reference to the request's Signal
+                                    $WebEvent.Signal = $WebEvent.Request.Signal
                                 }
 
                                 # invoke global and route middleware
@@ -289,7 +276,7 @@ function Start-PodeWebServer {
                                 Update-PodeServerRequestMetric -WebEvent $WebEvent
                             }
 
-                            # invoke endware specifc to the current web event
+                            # invoke endware specific to the current web event
                             $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
                             Invoke-PodeEndware -Endware $_endware
                         }
@@ -321,87 +308,6 @@ function Start-PodeWebServer {
 
     # only if WS endpoint
     if (Test-PodeEndpointByProtocolType -Type Ws) {
-        # script to write messages back to the client(s)
-        $signalScript = {
-            param(
-                [Parameter(Mandatory = $true)]
-                $Listener
-            )
-            # Waits for the Pode server to fully start before proceeding with further operations.
-            Wait-PodeCancellationTokenRequest -Type Start
-
-            do {
-                try {
-                    while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
-                        $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
-
-                        try {
-                            # get the sockets for the message
-                            $sockets = @()
-
-                            # by clientId
-                            if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
-                                $sockets = @($Listener.Signals[$message.ClientId])
-                            }
-                            else {
-                                $sockets = @($Listener.Signals.Values)
-
-                                # by path
-                                if (![string]::IsNullOrWhiteSpace($message.Path)) {
-                                    $sockets = @(foreach ($socket in $sockets) {
-                                            if ($socket.Path -ieq $message.Path) {
-                                                $socket
-                                            }
-                                        })
-                                }
-                            }
-
-                            # do nothing if no socket found
-                            if (($null -eq $sockets) -or ($sockets.Length -eq 0)) {
-                                continue
-                            }
-
-                            # send the message to all found sockets
-                            foreach ($socket in $sockets) {
-                                try {
-                                    $null = Wait-PodeTask -Task $socket.Context.Response.SendSignal($message)
-                                }
-                                catch {
-                                    $null = $Listener.Signals.Remove($socket.ClientId)
-                                }
-                            }
-                        }
-                        catch [System.OperationCanceledException] {
-                            $_ | Write-PodeErrorLog -Level Debug
-                        }
-                        catch {
-                            $_ | Write-PodeErrorLog
-                            $_.Exception | Write-PodeErrorLog -CheckInnerException
-                        }
-                        finally {
-                            Close-PodeDisposable -Disposable $message
-                        }
-                    }
-                }
-                catch [System.OperationCanceledException] {
-                    $_ | Write-PodeErrorLog -Level Debug
-                }
-                catch {
-                    $_ | Write-PodeErrorLog
-                    $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    throw $_.Exception
-                }
-
-                # end do-while
-            } while (Test-PodeSuspensionToken) # Check for suspension token and wait for the debugger to reset if active
-
-        }
-
-        Add-PodeRunspace -Type Signals -Name 'Listener' -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
-    }
-
-    # only if WS endpoint
-    if (Test-PodeEndpointByProtocolType -Type Ws) {
         # script to queue messages from clients to send back to other clients from the server
         $clientScript = {
             param(
@@ -418,7 +324,7 @@ function Start-PodeWebServer {
 
             do {
                 try {
-                    while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                    while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate, Cancellation -Match All)) {
                         $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
                         try {
@@ -435,6 +341,7 @@ function Start-PodeWebServer {
                                     Path     = [System.Web.HttpUtility]::UrlDecode($payload.path)
                                     Message  = $payload.message
                                     ClientId = $payload.clientId
+                                    Group    = $payload.group
                                     Direct   = [bool]$payload.direct
                                 }
                                 Endpoint  = @{
@@ -488,8 +395,13 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Signals -Name 'Broadcaster' -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+            Add-PodeRunspace -Type Signals -Name 'Listener' -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
+    }
+
+    # only if tracking client connection events
+    if ($listener.TrackClientConnectionEvents) {
+        Start-PodeWebConnectionEventsRunspace
     }
 
     # script to keep web server listening until cancelled
@@ -518,13 +430,12 @@ function Start-PodeWebServer {
         }
     }
 
+    $rsType = 'Web'
+    if (Test-PodeEndpointByProtocolType -Type Ws) {
+        $rsType = 'Signals'
+    }
 
-    if (Test-PodeEndpointByProtocolType -Type Http) {
-        Add-PodeRunspace -Type 'Web' -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
-    }
-    else {
-        Add-PodeRunspace -Type 'Signals' -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
-    }
+    Add-PodeRunspace -Type $rsType -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # browse to the first endpoint, if flagged
     if ($Browse) {
@@ -533,11 +444,13 @@ function Start-PodeWebServer {
 
     return @(foreach ($endpoint in $endpoints) {
             @{
+                Protocol = $endpoint.Protocol
                 Url      = $endpoint.Url
                 Pool     = $endpoint.Pool
                 DualMode = $endpoint.DualMode
                 Name     = $endpoint.Name
                 Default  = $endpoint.Default
+                Order    = ($endpoint.Protocol | Get-PodeEndpointProtocolOrder)
             }
         })
 }
@@ -551,7 +464,7 @@ function New-PodeListener {
         $CancellationToken
     )
 
-    return [PodeListener]::new($CancellationToken)
+    return [PodeListener]::new([PodeConnectorType]::Web, $CancellationToken)
 }
 
 function New-PodeListenerSocket {
@@ -591,4 +504,63 @@ function New-PodeListenerSocket {
     )
 
     return [PodeSocket]::new($Name, $Address, $Port, $SslProtocols, $Type, $Certificate, $AllowClientCertificate, 'Implicit', $DualMode.IsPresent)
+}
+
+function Start-PodeWebConnectionEventsRunspace {
+    # script to handle client connection events
+    $connectionEventScript = {
+        param(
+            [Parameter(Mandatory = $true)]
+            $Listener
+        )
+
+        # Waits for the Pode server to fully start before proceeding with further operations.
+        Wait-PodeCancellationTokenRequest -Type Start
+
+        do {
+            try {
+                while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate, Cancellation -Match All)) {
+                    $evt = (Wait-PodeTask -Task $Listener.GetClientConnectionEventAsync($PodeContext.Tokens.Cancellation.Token))
+
+                    try {
+                        switch ("$($evt.Connection.ConnectionType)".ToLowerInvariant()) {
+                            'sse' {
+                                Invoke-PodeSseEvent -Name $evt.Connection.Name -Type $evt.EventType -Connection $evt.Connection.ToHashtable()
+                            }
+                            'signal' {
+                                Invoke-PodeSignalEvent -Name $evt.Connection.Name -Type $evt.EventType -Connection $evt.Connection.ToHashtable()
+                            }
+                        }
+                    }
+                    catch [System.OperationCanceledException] {
+                        $_ | Write-PodeErrorLog -Level Debug
+                    }
+                    catch {
+                        $_ | Write-PodeErrorLog
+                        $_.Exception | Write-PodeErrorLog -CheckInnerException
+                    }
+                    finally {
+                        Close-PodeDisposable -Disposable $evt
+                        $evt = $null
+                    }
+                }
+            }
+            catch [System.OperationCanceledException] {
+                $_ | Write-PodeErrorLog -Level Debug
+            }
+            catch {
+                $_ | Write-PodeErrorLog
+                $_.Exception | Write-PodeErrorLog -CheckInnerException
+                throw $_.Exception
+            }
+        } while (Test-PodeSuspensionToken) # Check for suspension token and wait for the debugger to reset if active
+    }
+
+    # create and run the runspace
+    $rsType = 'Web'
+    if (Test-PodeEndpointByProtocolType -Type Ws) {
+        $rsType = 'Signals'
+    }
+
+    Add-PodeRunspace -Type $rsType -Name 'ConnectionEvents' -ScriptBlock $connectionEventScript -Parameters @{ 'Listener' = $PodeContext.Server.Http.Listener }
 }

@@ -535,12 +535,13 @@ function Get-PodeBuildPwshEOL {
     try {
         $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
         return @{
-            eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
-            supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
+            eol       = ($eol | Where-Object { $_.eol -and ([datetime]$_.eol -lt [datetime]::Now) }).cycle -join ','
+            supported = ($eol | Where-Object { !$_.eol -or ([datetime]$_.eol -ge [datetime]::Now) }).cycle -join ','
         }
     }
     catch {
-        Write-Warning "Invoke-RestMethod to $uri failed: $($_.ErrorDetails.Message)"
+        $_ | Out-Default
+        Write-Warning "Invoke-RestMethod to $($uri) failed: $($_.ErrorDetails.Message)"
         return  @{
             eol       = ''
             supported = ''
@@ -1278,6 +1279,44 @@ Add-BuildTask PackageFolder Build, {
     $files | ForEach-Object {
         Copy-Item -Path "./$($_)" -Destination $path -Force | Out-Null
     }
+}
+
+Add-BuildTask ShowNonExportedFunctions {
+    # load the current psd1
+    $psDataFile = Import-PowerShellDataFile 'src/Pode.psd1'
+    $funcs = $psDataFile.FunctionsToExport
+
+    # load all public ps1 files and get functions
+    $sysFuncs = Get-ChildItem Function:
+    Get-ChildItem 'src/Public/*.ps1' | ForEach-Object { . $_ }
+
+    # find any missing public functions
+    Get-ChildItem Function: |
+        Where-Object {
+            ($sysFuncs -inotcontains $_) -and ($_.Name -inotin $funcs)
+        } |
+        ForEach-Object {
+            Write-Host $_.Name -ForegroundColor Yellow
+        }
+}
+
+Add-BuildTask ShowNonExportedAliases {
+    # load the current psd1
+    $psDataFile = Import-PowerShellDataFile 'src/Pode.psd1'
+    $aliases = $psDataFile.AliasesToExport
+
+    # load all public ps1 files and get aliases
+    $sysAliases = Get-ChildItem Alias:
+    Get-ChildItem 'src/Public/*.ps1' | ForEach-Object { . $_ }
+
+    # find any missing public aliases
+    Get-ChildItem Alias: |
+        Where-Object {
+            ($sysAliases -inotcontains $_) -and ($_.Name -inotin $aliases)
+        } |
+        ForEach-Object {
+            Write-Host $_.Name -ForegroundColor Yellow
+        }
 }
 
 

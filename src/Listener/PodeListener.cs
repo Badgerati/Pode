@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
@@ -8,12 +7,11 @@ namespace Pode
 {
     public class PodeListener : PodeConnector
     {
-        private IList<PodeSocket> Sockets;
-
-        public IDictionary<string, PodeSignal> Signals { get; private set; }
-        public IDictionary<string, IDictionary<string, PodeServerEvent>> ServerEvents { get; private set; }
+        private readonly List<PodeSocket> Sockets;
+        public PodeClientConnectionNestedMap<PodeSignal> Signals { get; private set; }
+        public PodeClientConnectionNestedMap<PodeServerEvent> ServerEvents { get; private set; }
         public PodeItemQueue<PodeContext> Contexts { get; private set; }
-        public PodeItemQueue<PodeServerSignal> ServerSignals { get; private set; }
+        public PodeItemQueue<PodeClientConnectionEvent> ClientConnectionEvents { get; private set; }
         public PodeItemQueue<PodeClientSignal> ClientSignals { get; private set; }
 
         private int _requestTimeout = 30;
@@ -26,13 +24,14 @@ namespace Pode
             }
         }
 
-        private int _requestBodySize = 104857600; // 100MB
+        private const int DEFAULT_MAX_REQUEST_BODY_SIZE = 104857600; // 100MB
+        private int _requestBodySize = DEFAULT_MAX_REQUEST_BODY_SIZE;
         public int RequestBodySize
         {
             get => _requestBodySize;
             set
             {
-                _requestBodySize = value <= 0 ? 104857600 : value;
+                _requestBodySize = value <= 0 ? DEFAULT_MAX_REQUEST_BODY_SIZE : value;
             }
         }
 
@@ -46,15 +45,25 @@ namespace Pode
             }
         }
 
-        public PodeListener(CancellationToken cancellationToken = default)
-            : base(cancellationToken)
+        private bool _trackClientConnectionEvents = false;
+        public bool TrackClientConnectionEvents
+        {
+            get => _trackClientConnectionEvents;
+            set
+            {
+                _trackClientConnectionEvents = value;
+            }
+        }
+
+        public PodeListener(PodeConnectorType type, CancellationToken cancellationToken = default)
+            : base(type, cancellationToken)
         {
             Sockets = new List<PodeSocket>();
-            Signals = new Dictionary<string, PodeSignal>();
-            ServerEvents = new Dictionary<string, IDictionary<string, PodeServerEvent>>();
+            Signals = new PodeClientConnectionNestedMap<PodeSignal>(this);
+            ServerEvents = new PodeClientConnectionNestedMap<PodeServerEvent>(this);
 
             Contexts = new PodeItemQueue<PodeContext>();
-            ServerSignals = new PodeItemQueue<PodeServerSignal>();
+            ClientConnectionEvents = new PodeItemQueue<PodeClientConnectionEvent>(trackProcessing: false);
             ClientSignals = new PodeItemQueue<PodeClientSignal>();
         }
 
@@ -68,6 +77,7 @@ namespace Pode
             else
             {
                 foundSocket.Merge(socket);
+                socket = null;
             }
         }
 
@@ -97,138 +107,84 @@ namespace Pode
             Contexts.RemoveProcessing(context);
         }
 
-        public void AddSignal(PodeSignal signal)
+        public void AddSignalConnection(PodeSignal signal)
         {
-            lock (Signals)
-            {
-                if (Signals.ContainsKey(signal.ClientId))
-                {
-                    Signals[signal.ClientId] = signal;
-                }
-                else
-                {
-                    Signals.Add(signal.ClientId, signal);
-                }
-            }
+            Signals.Add(signal);
+        }
+
+        public void RemoveSignalConnection(PodeSignal signal)
+        {
+            Signals.Remove(signal);
+        }
+
+        public void SendSignalMessage(string name, string[] groups, string[] clientIds, string message)
+        {
+            Signals.Send(name, groups, clientIds, new PodeSignalEnvelope(message));
+        }
+
+        public void CloseSignalConnection(string name, string[] groups, string[] clientIds)
+        {
+            Signals.Close(name, groups, clientIds);
+        }
+
+        public PodeSignal GetSignalConnection(string name, string[] groups, string clientId)
+        {
+            return Signals.Get(name, groups, clientId);
+        }
+
+        public bool TestSignalConnectionExists(string name, string[] groups, string clientId)
+        {
+            return Signals.Exists(name, groups, clientId);
         }
 
         public void AddSseConnection(PodeServerEvent sse)
         {
-            lock (ServerEvents)
-            {
-                // add sse name
-                if (!ServerEvents.ContainsKey(sse.Name))
-                {
-                    ServerEvents.Add(sse.Name, new Dictionary<string, PodeServerEvent>());
-                }
+            ServerEvents.Add(sse);
+        }
 
-                // add sse connection
-                if (ServerEvents[sse.Name].ContainsKey(sse.ClientId))
-                {
-                    ServerEvents[sse.Name][sse.ClientId]?.Dispose();
-                    ServerEvents[sse.Name][sse.ClientId] = sse;
-                }
-                else
-                {
-                    ServerEvents[sse.Name].Add(sse.ClientId, sse);
-                }
-            }
+        public void RemoveSseConnection(PodeServerEvent sse)
+        {
+            ServerEvents.Remove(sse);
         }
 
         public void SendSseEvent(string name, string[] groups, string[] clientIds, string eventType, string data, string id = null)
         {
-            Task.Run(async () =>
-            {
-                if (!ServerEvents.ContainsKey(name))
-                {
-                    return;
-                }
-
-                if (clientIds == default(string[]) || clientIds.Length == 0)
-                {
-                    clientIds = ServerEvents[name].Keys.ToArray();
-                }
-
-                foreach (var clientId in clientIds)
-                {
-                    if (!ServerEvents[name].ContainsKey(clientId))
-                    {
-                        continue;
-                    }
-
-                    if (ServerEvents[name][clientId].IsForGroup(groups))
-                    {
-                        await ServerEvents[name][clientId].Context.Response.SendSseEvent(eventType, data, id).ConfigureAwait(false);
-                    }
-                }
-            }, CancellationToken);
+            ServerEvents.Send(name, groups, clientIds, new PodeServerEventEnvelope(data, eventType, id));
         }
 
         public void CloseSseConnection(string name, string[] groups, string[] clientIds)
         {
-            Task.Run(async () =>
-            {
-                if (!ServerEvents.ContainsKey(name))
-                {
-                    return;
-                }
-
-                if (clientIds == default(string[]) || clientIds.Length == 0)
-                {
-                    clientIds = ServerEvents[name].Keys.ToArray();
-                }
-
-                foreach (var clientId in clientIds)
-                {
-                    if (!ServerEvents[name].ContainsKey(clientId))
-                    {
-                        continue;
-                    }
-
-                    if (ServerEvents[name][clientId].IsForGroup(groups))
-                    {
-                        await ServerEvents[name][clientId].Context.Response.CloseSseConnection().ConfigureAwait(false);
-                    }
-                }
-            }, CancellationToken);
+            ServerEvents.Close(name, groups, clientIds);
         }
 
-        public bool TestSseConnectionExists(string name, string clientId)
+        public PodeServerEvent GetSseConnection(string name, string[] groups, string clientId)
         {
-            // check name
-            if (!ServerEvents.TryGetValue(name, out IDictionary<string, PodeServerEvent> value))
+            return ServerEvents.Get(name, groups, clientId);
+        }
+
+        public bool TestSseConnectionExists(string name, string[] groups, string clientId)
+        {
+            return ServerEvents.Exists(name, groups, clientId);
+        }
+
+        public PodeClientConnectionEvent GetClientConnectionEvent(CancellationToken cancellationToken = default)
+        {
+            return ClientConnectionEvents.Get(cancellationToken);
+        }
+
+        public Task<PodeClientConnectionEvent> GetClientConnectionEventAsync(CancellationToken cancellationToken = default)
+        {
+            return ClientConnectionEvents.GetAsync(cancellationToken);
+        }
+
+        public void AddClientConnectionEvent(PodeClientConnection connection, PodeClientConnectionEventType type)
+        {
+            if (!connection.TrackEvents)
             {
-                return false;
+                return;
             }
 
-            // check clientId
-            if (!string.IsNullOrEmpty(clientId) && !value.ContainsKey(clientId))
-            {
-                return false;
-            }
-
-            // exists
-            return true;
-        }
-
-        public PodeServerSignal GetServerSignal(CancellationToken cancellationToken = default)
-        {
-            return ServerSignals.Get(cancellationToken);
-        }
-
-        public Task<PodeServerSignal> GetServerSignalAsync(CancellationToken cancellationToken = default)
-        {
-            return ServerSignals.GetAsync(cancellationToken);
-        }
-
-        public void AddServerSignal(string value, string path, string clientId)
-        {
-            ServerSignals.Add(new PodeServerSignal(value, path, clientId, this));
-        }
-
-        public void RemoveProcessingServerSignal(PodeServerSignal signal)
-        {
-            ServerSignals.RemoveProcessing(signal);
+            ClientConnectionEvents.Add(new PodeClientConnectionEvent(connection, type));
         }
 
         public PodeClientSignal GetClientSignal(CancellationToken cancellationToken = default)
@@ -271,32 +227,27 @@ namespace Pode
                 _context.Dispose(true);
             }
 
-            Contexts.Clear();
+            Contexts.Dispose();
             PodeHelpers.WriteErrorMessage($"Closed contexts", this, PodeLoggingLevel.Verbose);
 
             // close connected signals
             PodeHelpers.WriteErrorMessage($"Closing signals", this, PodeLoggingLevel.Verbose);
-            foreach (var _signal in Signals.Values.ToArray())
+            foreach (var _signal in Signals.ToArray())
             {
                 _signal.Dispose();
             }
 
-            Signals.Clear();
+            Signals.Dispose();
             PodeHelpers.WriteErrorMessage($"Closed signals", this, PodeLoggingLevel.Verbose);
 
             // close connected server events
             PodeHelpers.WriteErrorMessage($"Closing server events", this, PodeLoggingLevel.Verbose);
-            foreach (var _sseName in ServerEvents.Values.ToArray())
+            foreach (var _sse in ServerEvents.ToArray())
             {
-                foreach (var _sse in _sseName.Values.ToArray())
-                {
-                    _sse.Dispose();
-                }
-
-                _sseName.Clear();
+                _sse.Dispose();
             }
 
-            ServerEvents.Clear();
+            ServerEvents.Dispose();
             PodeHelpers.WriteErrorMessage($"Closed server events", this, PodeLoggingLevel.Verbose);
 
             // shutdown the sockets

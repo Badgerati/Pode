@@ -1,9 +1,7 @@
 using System;
 using System.Collections;
 using System.IO;
-using System.Net.Http;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -38,11 +36,20 @@ namespace Pode
         // Data storage for request-specific metadata.
         public Hashtable Data { get; private set; }
 
+        // The SSE client connection, if applicable.
+        public PodeServerEvent SSE { get; private set; }
+
+        // The WebSocket signal, if applicable.
+        public PodeSignal Signal { get; private set; }
+
         // The name of the endpoint associated with the socket.
         public string EndpointName => PodeSocket.Name;
 
         // Object used for thread-safety.
-        private object _lockable = new object();
+        private readonly object Lockable = new object();
+
+        // Flag indicating whether the context has been disposed.
+        private bool IsDisposed = false;
 
         // State of the context.
         private PodeContextState _state;
@@ -63,7 +70,7 @@ namespace Pode
         public bool CloseImmediately => State == PodeContextState.Error
                 || State == PodeContextState.Closing
                 || State == PodeContextState.Timeout
-                || Request.CloseImmediately;
+                || (Request?.CloseImmediately ?? true);
 
         // Determines if the context is associated with a WebSocket.
         public new bool IsWebSocket => base.IsWebSocket || (IsUnknown && PodeSocket.IsWebSocket);
@@ -75,13 +82,27 @@ namespace Pode
         // Determines if the context is associated with HTTP.
         public new bool IsHttp => base.IsHttp || (IsUnknown && PodeSocket.IsHttp);
 
+        // Determines if this context is associated with an SSE connection.
+        public bool IsSSE => IsHttp && SSE != default;
+
         // Strongly typed request properties for different protocols.
         public PodeSmtpRequest SmtpRequest => (PodeSmtpRequest)Request;
         public PodeHttpRequest HttpRequest => (PodeHttpRequest)Request;
         public PodeSignalRequest SignalRequest => (PodeSignalRequest)Request;
 
         // Determines if the connection should be kept alive.
-        public bool IsKeepAlive => (Request.IsKeepAlive && Response.SseScope != PodeSseScope.Local) || Response.SseScope == PodeSseScope.Global;
+        public bool IsKeepAlive
+        {
+            get
+            {
+                if (IsSSE)
+                {
+                    return SSE?.IsGlobal ?? false;
+                }
+
+                return Request?.IsKeepAlive ?? false;
+            }
+        }
 
         // Flags for different context states.
         public bool IsErrored => State == PodeContextState.Error;
@@ -91,7 +112,7 @@ namespace Pode
 
         // Token and timer for managing request timeouts.
         public CancellationTokenSource ContextTimeoutToken { get; private set; }
-        private Timer TimeoutTimer;
+        private Timer TimeoutTimer = null;
 
         /// <summary>
         /// Initializes a new PodeContext with the given socket, PodeSocket, and listener.
@@ -132,7 +153,7 @@ namespace Pode
             {
                 PodeHelpers.WriteErrorMessage("TimeoutCallback triggered", Listener, PodeLoggingLevel.Debug, this);
 
-                if (Response.SseEnabled || Request.IsWebSocket)
+                if (IsSSE || Request.IsWebSocket)
                 {
                     PodeHelpers.WriteErrorMessage("Timeout ignored due to SSE/WebSocket", Listener, PodeLoggingLevel.Debug, this);
                     return;
@@ -309,7 +330,7 @@ namespace Pode
             {
                 PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = PodeContextState.Error;
-                await PodeSocket.HandleContext(this).ConfigureAwait(false);
+                await Handle().ConfigureAwait(false);
             }
         }
 
@@ -326,7 +347,80 @@ namespace Pode
                 Response.StatusCode = 400;
             }
 
-            await PodeSocket.HandleContext(this).ConfigureAwait(false);
+            await Handle().ConfigureAwait(false);
+        }
+
+        private async Task Handle()
+        {
+            try
+            {
+                // Determine if the context should be processed.
+                var process = true;
+
+                // If the context should be closed immediately, dispose it.
+                if (CloseImmediately)
+                {
+                    // Check if the request is aborted with a non-StatusCode of 408 (Request Timeout).
+                    if (Request?.IsAborted ?? false)
+                    {
+                        PodeHelpers.WriteException(Request.Error, Listener, Request.Error.LoggingLevel);
+                    }
+
+                    Dispose(true);
+                    process = false;
+                }
+                else if (IsWebSocket) // Handle WebSocket upgrade and context disposal.
+                {
+                    if (!PodeSocket.NoAutoUpgradeWebSockets && !IsWebSocketUpgraded)
+                    {
+                        await UpgradeToWebSocket(PodeClientConnectionScope.Global, string.Empty, HttpRequest.Url.AbsolutePath, string.Empty, Listener.TrackClientConnectionEvents).ConfigureAwait(false);
+                        process = false;
+                        Dispose();
+                    }
+                    else if (!Request.IsProcessable)
+                    {
+                        process = false;
+                        Dispose();
+                    }
+                }
+                else if (IsSmtp) // Handle SMTP context disposal.
+                {
+                    if (!Request.IsProcessable)
+                    {
+                        process = false;
+                        Dispose();
+                    }
+                }
+                else if (IsHttp) // Handle HTTP context disposal if awaiting body.
+                {
+                    if (HttpRequest.AwaitingBody)
+                    {
+                        process = false;
+                        Dispose();
+                    }
+                }
+
+                // Add the context for processing.
+                if (process)
+                {
+                    if (IsWebSocketUpgraded)
+                    {
+                        PodeHelpers.WriteErrorMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, this);
+                        Listener.AddClientSignal(SignalRequest.NewClientSignal());
+                        Dispose();
+                    }
+                    else
+                    {
+                        PodeHelpers.WriteErrorMessage($"Received request", Listener, PodeLoggingLevel.Verbose, this);
+                        Listener.AddContext(this);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log any exceptions that occur while handling the context.
+                PodeHelpers.WriteException(ex, Listener);
+            }
         }
 
         /// <summary>
@@ -341,59 +435,90 @@ namespace Pode
         }
 
         /// <summary>
-        /// Upgrades the connection to a WebSocket.
+        /// Upgrades the connection to a Server-Sent Events (SSE) connection.
         /// </summary>
-        /// <param name="clientId">The client identifier for the WebSocket connection.</param>
-        /// <returns>A Task representing the async operation.</returns>
-        /// <exception cref="PodeRequestException">Thrown if the request cannot be upgraded to a WebSocket.</exception>
-        public async Task UpgradeWebSocket(string clientId = null)
+        public async Task<PodeServerEvent> UpgradeToSSE(PodeClientConnectionScope scope, string clientId, string name, string group, bool trackEvents, int retry, bool allowAllOrigins)
         {
-            PodeHelpers.WriteErrorMessage($"Upgrading Websocket", Listener, PodeLoggingLevel.Verbose, this);
-
-            if (!IsWebSocket)
+            // if no scope, skip. If SSE already upgraded, skip
+            if (scope == PodeClientConnectionScope.None || IsSSE)
             {
-                throw new PodeRequestException("Cannot upgrade a non-websocket request", 412);
+                return null;
             }
 
-            // Set a default clientId if none is provided.
+            PodeHelpers.WriteErrorMessage($"Upgrading SSE", Listener, PodeLoggingLevel.Verbose, this);
+
+            if (!IsHttp)
+            {
+                throw new PodeRequestException("Cannot upgrade a non-HTTP request to SSE", 412);
+            }
+
+            // cancel the timeout timer before upgrading
+            CancelTimeout();
+
+            // ensure we have a clientId
             if (string.IsNullOrWhiteSpace(clientId))
             {
                 clientId = PodeHelpers.NewGuid();
             }
 
-            // Set the status of the response to indicate protocol switching.
-            Response.StatusCode = 101;
-            Response.StatusDescription = "Switching Protocols";
-
-            // Get the socket key from the request.
-            var socketKey = $"{HttpRequest.Headers["Sec-WebSocket-Key"]}".Trim();
-
-            // Create the socket accept hash.
-            var crypto = SHA1.Create();
-            var socketHash = Convert.ToBase64String(crypto.ComputeHash(System.Text.Encoding.UTF8.GetBytes($"{socketKey}{PodeHelpers.WEB_SOCKET_MAGIC_KEY}")));
-
-            // Compile headers for the response.
-            Response.Headers.Clear();
-            Response.Headers.Set("Connection", "Upgrade");
-            Response.Headers.Set("Upgrade", "websocket");
-            Response.Headers.Set("Sec-WebSocket-Accept", socketHash);
-
-            if (!string.IsNullOrWhiteSpace(clientId))
+            // setup the SSE client connection, and open it
+            SSE = new PodeServerEvent(this, name, group, clientId, scope, trackEvents, retry, allowAllOrigins);
+            if (!await SSE.Open().ConfigureAwait(false))
             {
-                Response.Headers.Set("X-Pode-ClientId", clientId);
+                throw new IOException("SSE client connection failed to open, connection could be closed/disposed");
             }
 
-            // Send response to upgrade to WebSocket.
-            await Response.Send().ConfigureAwait(false);
+            // add it to the listener
+            Listener.AddSseConnection(SSE);
+
+            // return the SSE connection
+            PodeHelpers.WriteErrorMessage($"SSE upgraded for client {clientId}", Listener, PodeLoggingLevel.Verbose, this);
+            return SSE;
+        }
+
+        /// <summary>
+        /// Upgrades the connection to a WebSocket.
+        /// </summary>
+        public async Task<PodeSignal> UpgradeToWebSocket(PodeClientConnectionScope scope, string clientId, string name, string group, bool trackEvents)
+        {
+            // if no scope, skip. If WebSocket already upgraded, skip
+            if (scope == PodeClientConnectionScope.None || IsWebSocketUpgraded)
+            {
+                return null;
+            }
+
+            PodeHelpers.WriteErrorMessage($"Upgrading Websocket", Listener, PodeLoggingLevel.Verbose, this);
+
+            if (!IsWebSocket)
+            {
+                throw new PodeRequestException("Cannot upgrade a non-WebSocket request", 412);
+            }
 
             // Cancel the timeout timer before upgrading.
             CancelTimeout();
 
-            // Add the upgraded WebSocket to the listener.
-            var signal = new PodeSignal(this, HttpRequest.Url.AbsolutePath, clientId);
-            Request = new PodeSignalRequest(HttpRequest, signal);
-            Listener.AddSignal(SignalRequest.Signal);
-            PodeHelpers.WriteErrorMessage($"Websocket upgraded", Listener, PodeLoggingLevel.Verbose, this);
+            // ensure we have a clientId
+            if (string.IsNullOrWhiteSpace(clientId))
+            {
+                clientId = PodeHelpers.NewGuid();
+            }
+
+            // setup the WebSocket client connection, and open it
+            Signal = new PodeSignal(this, name, group, clientId, scope, trackEvents);
+            if (!await Signal.Open().ConfigureAwait(false))
+            {
+                throw new IOException("WebSocket client connection failed to open, connection could be closed/disposed");
+            }
+
+            // add it to the listener
+            Listener.AddSignalConnection(Signal);
+
+            // set the request to be a SignalRequest
+            Request = new PodeSignalRequest(HttpRequest, Signal);
+
+            // return the Signal
+            PodeHelpers.WriteErrorMessage($"WebSocket upgraded for client {clientId}", Listener, PodeLoggingLevel.Verbose, this);
+            return Signal;
         }
 
         /// <summary>
@@ -411,17 +536,38 @@ namespace Pode
         /// <param name="force">Whether to force the disposal of resources.</param>
         public void Dispose(bool force)
         {
-            lock (_lockable)
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            lock (Lockable)
             {
                 PodeHelpers.WriteErrorMessage($"Disposing Context", Listener, PodeLoggingLevel.Verbose, this);
                 Listener.RemoveProcessingContext(this);
 
                 if (IsClosed)
                 {
-                    PodeSocket.RemovePendingSocket(Socket);
-                    Request?.Dispose();
-                    Response?.Dispose();
-                    DisposeTimeoutResources();
+                    if (!IsDisposed)
+                    {
+                        IsDisposed = true;
+                        PodeSocket.RemovePendingSocket(Socket);
+
+                        SSE?.Dispose();
+                        SSE = null;
+
+                        Signal?.Dispose();
+                        Signal = null;
+
+                        Request?.Dispose();
+                        Request = null;
+
+                        Response?.Dispose();
+                        Response = null;
+
+                        DisposeTimeoutResources();
+                    }
+
                     return;
                 }
 
@@ -467,18 +613,22 @@ namespace Pode
                     if (!_awaitingBody && (!IsKeepAlive || force))
                     {
                         State = PodeContextState.Closed;
+                        IsDisposed = true;
 
-                        if (Response.SseEnabled)
-                        {
-                            Response.CloseSseConnection().Wait();
-                        }
+                        SSE?.Dispose();
+                        SSE = null;
 
-                        Request.Dispose();
+                        Signal?.Dispose();
+                        Signal = null;
+
+                        Request?.Dispose();
+                        Request = null;
                     }
 
-                    if (!IsWebSocket || force)
+                    if ((!IsWebSocket && !IsSSE) || force)
                     {
-                        Response.Dispose();
+                        Response?.Dispose();
+                        Response = null;
                     }
                 }
                 catch (Exception ex)
@@ -488,7 +638,7 @@ namespace Pode
                 finally
                 {
                     // Handle re-receiving or socket clean-up.
-                    if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout && !Response.SseEnabled)) && !force)
+                    if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout && !IsSSE)) && !force)
                     {
                         PodeHelpers.WriteErrorMessage($"Re-receiving Request", Listener, PodeLoggingLevel.Verbose, this);
                         StartReceive();
@@ -507,8 +657,9 @@ namespace Pode
         private void DisposeTimeoutResources()
         {
             ContextTimeoutToken?.Dispose();
-            TimeoutTimer?.Dispose();
             ContextTimeoutToken = null;
+
+            TimeoutTimer?.Dispose();
             TimeoutTimer = null;
         }
     }

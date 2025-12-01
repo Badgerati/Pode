@@ -10,7 +10,7 @@ namespace Pode
         public string Name { get; private set; }
         public byte[] Bytes => _stream.ToArray();
 
-        private MemoryStream _stream;
+        private readonly MemoryStream _stream;
 
         public PodeFormFile(string fileName, MemoryStream stream, string name, string contentType)
         {
@@ -31,6 +31,7 @@ namespace Pode
         public void Dispose()
         {
             _stream.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }
