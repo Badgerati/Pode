@@ -471,9 +471,7 @@ function Invoke-PodeBuildDotnetBuild {
     Write-Host "Target Framework: $($target) requires SDK version: $($requiredSdkVersion)"
 
     # Determine if the target framework is compatible
-    $isCompatible = $majorVersions -ge $requiredSdkVersion
-
-    if ($isCompatible) {
+    if ($dotnetVersion -ge $requiredSdkVersion) {
         Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
     }
     else {
