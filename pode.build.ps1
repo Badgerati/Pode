@@ -403,10 +403,10 @@ function Get-PodeBuildTargetFramework {
     )
 
     switch ($TargetFrameworks) {
-        'netstandard2.0' { return  2 }
+        'netstandard2.0' { return 2 }
         'net8.0' { return 8 }
-        'net9.0' { return  9 }
-        'net10.0' { return  10 }
+        'net9.0' { return 9 }
+        'net10.0' { return 10 }
         default {
             Write-Warning "$TargetFrameworks is not a valid Framework. Rollback to netstandard2.0"
             return 2
@@ -454,26 +454,21 @@ function Get-PodeBuildTargetFrameworkName {
     }
 }
 
+function Get-PodeBuildAvailableDotnetSdkVersion {
+    $dnVersion = ([version](dotnet --version)).Major
+    Write-Host "Dotnet Version: $($dnVersion)"
+    return $dnVersion
+}
+
 function Invoke-PodeBuildDotnetBuild {
     param (
         [string]$target
     )
 
     # Retrieve the installed SDK versions
-    $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-    if ([string]::IsNullOrEmpty($AvailableSdkVersion)) {
-        $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
-    }
-    else {
-        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-PodeBuildTargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
-    }
-    # Map target frameworks to minimum SDK versions
-
-    if ($null -eq $majorVersions) {
-        Write-Error "The requested '$AvailableSdkVersion' framework is not available."
-        return
-    }
+    $dotnetVersion = Get-PodeBuildAvailableDotnetSdkVersion
     $requiredSdkVersion = Get-PodeBuildTargetFramework -TargetFrameworks $target
+    Write-Host "Target Framework: $($target) requires SDK version: $($requiredSdkVersion)"
 
     # Determine if the target framework is compatible
     $isCompatible = $majorVersions -ge $requiredSdkVersion
@@ -979,34 +974,31 @@ Add-BuildTask BuildDeps {
     }
 
     try {
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        $dotnetVersion = Get-PodeBuildAvailableDotnetSdkVersion
+        if ($dotnetVersion -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+            throw "The current .NET SDK version '$dotnetVersion' is less than the required '$SdkVersion'"
+        }
     }
     catch {
         Invoke-PodeBuildInstall $dotnet $SdkVersion
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        $dotnetVersion = Get-PodeBuildAvailableDotnetSdkVersion
     }
-    $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-    $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
 
-    if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
-        Invoke-PodeBuildInstall $dotnet $SdkVersion
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-        $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-        $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
+    $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName -Version $dotnetVersion
 
-        if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
-            Write-Error "The requested framework '$SdkVersion' is not available."
-            return
-        }
+    if ($dotnetVersion -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+        Write-Error "The requested framework '$SdkVersion' is not available."
+        return
     }
-    elseif ($majorVersions -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+
+    if ($dotnetVersion -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
         Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
     }
 
+    # install yarn
     if (!(Test-PodeBuildCommand 'yarn')) {
         Invoke-PodeBuildInstall 'yarn' $Versions.Yarn
     }
-
 }
 
 # Synopsis: Install dependencies for running tests

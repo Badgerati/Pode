@@ -999,9 +999,8 @@ function Merge-PodeAuth {
     # ensure all the auth methods exist
     foreach ($authName in $Authentication) {
         if (!(Test-PodeAuthExists -Name $authName)) {
-            # Authentication method does not exist for merging: $($authName)
-            #TODO: this should just be authMethodNotFoundExceptionMessage
-            throw ($PodeLocale.authMethodNotExistForMergingExceptionMessage -f $authName)
+            # Authentication method does not exist: $($authName)
+            throw ($PodeLocale.authMethodNotFoundExceptionMessage -f $authName)
         }
     }
 
