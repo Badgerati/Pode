@@ -1491,24 +1491,23 @@ function Test-PodeAuthInternal {
         IsAuthenticated = $true
         IsAuthorised    = $true
         Store           = !$auth.Sessionless
-        Name            = $result.Auth
+    }
+
+    # successful auth
+    if ($auth.Merged -and !$auth.PassOne) {
+        $WebEvent.Auth.Name = $Name
+    }
+    else {
+        $WebEvent.Auth.Name = @($result.Auth)[0]
     }
 
     # trigger successful auth event
     Invoke-PodeAuthEvent -Name $WebEvent.Auth.Name -Type Login -User $WebEvent.Auth.User
 
-    # successful auth
-    $authName = $null
-    if ($auth.Merged -and !$auth.PassOne) {
-        $authName = $Name
-    }
-    else {
-        $authName = @($result.Auth)[0]
-    }
-
+    # set the status to success
     return Set-PodeAuthStatus `
         -Headers $result.Headers `
-        -Name $authName `
+        -Name $WebEvent.Auth.Name `
         -LoginRoute:$Login
 }
 

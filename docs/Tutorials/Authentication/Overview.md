@@ -164,7 +164,7 @@ The `Auth` object will also contain:
 | IsAuthenticated | States if the request is for an authenticated user, can be `$true`, `$false` or `$null`                                                                                                                                                         |
 | Store           | States whether the authentication is for a session, and will be stored as a cookie                                                                                                                                                              |
 | IsAuthorised    | If using [Authorisation](../../Authorisation/Overview), this value will be `$true` or `$false` depending on whether or not the authenticated user is authorised to access the Route. If not using Authorisation this value will just be `$true` |
-| Name            | The name(s) of the Authentication methods which passed - useful if you're using merged Authentications and you want to know which one(s) passed                                                                                                 |
+| Name            | The name of the Authentication method which passed                                                                                                                                                                                              |
 
 The following example gets the user's name from the `Auth` object:
 
