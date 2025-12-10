@@ -199,8 +199,6 @@ function Start-PodeInternalServer {
 
         # run running event hooks
         Invoke-PodeEvent -Type Running
-
-
     }
     catch {
         throw

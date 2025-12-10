@@ -54,12 +54,12 @@ Start-PodeServer -Threads 3 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error
 
     # register a connect event
-    Register-PodeSignalEvent -Name '/msg' -Type Connected -EventName 'SignalConnected' -ScriptBlock {
+    Register-PodeSignalEvent -Name '/msg' -Type Connect -EventName 'SignalConnected' -ScriptBlock {
         "Connected: $($TriggeredEvent.Connection.Name) ($($TriggeredEvent.Connection.ClientId))" | Out-Default
     }
 
     # register a disconnect event
-    Register-PodeSignalEvent -Name '/msg' -Type Disconnected -EventName 'SignalDisconnected' -ScriptBlock {
+    Register-PodeSignalEvent -Name '/msg' -Type Disconnect -EventName 'SignalDisconnected' -ScriptBlock {
         "Disconnected: $($TriggeredEvent.Connection.Name) ($($TriggeredEvent.Connection.ClientId))" | Out-Default
     }
 

@@ -2,24 +2,47 @@
 
 Pode lets you register scripts to be run when certain server events are triggered. The following types of events can have scripts registered:
 
-* Start
-* Starting
-* Terminate
-* Restarting
-* Restart
-* Browser
-* Crash
-* Stop
-* Running
-* Suspending
-* Suspend
-* Resume
-* Enable
-* Disable
+| Event      | Description                                                                                        | Runspaces Open? |
+| ---------- | -------------------------------------------------------------------------------------------------- | --------------- |
+| Starting   | Triggered during the initialization phase of the server, just after configuration has been loaded. | No              |
+| Start      | Triggered just after the server's `-ScriptBlock`  has been invoked.                                | No              |
+| Running    | Triggered after all runspaces have been opened and are running.                                    | Yes             |
+| Restarting | Triggered just after a server restarted is initiated, but just before clean-up has begun.          | Yes             |
+| Restart    | Triggered after the server restarts, after the clean-up has occurred.                              | Yes             |
+| Terminate  | Triggered just before the server terminates.                                                       | Yes             |
+| Crash      | Triggered if the server terminates due to an unhandled exception being thrown.                     | Unstable        |
+| Stop       | Triggered when the server stops - after either a Terminate or Crash.                               | Yes             |
+| Suspending | Triggered when the server begins the suspension process.                                           | Yes             |
+| Suspend    | Triggered when the server completes the suspension process.                                        | Yes             |
+| Resuming   | Triggered when the server begins the resuming process after suspension                             | Yes             |
+| Resume     | Triggered when the server resumes operation after suspension.                                      | Yes             |
+| Enable     | Triggered when the server is enabled.                                                              | Yes             |
+| Disable    | Triggered when the server is disabled.                                                             | No              |
+| Browser    | Triggered when the server is told to open in a browser.                                            | Yes             |
 
 And these events are triggered in the following order:
 
-![event_flow](../../images/event-flow.png)
+```mermaid
+graph TD
+    Launch((Launch)) --> Starting(Starting)
+    Starting --> Start(Start)
+    Start --> Running(Running)
+    Running --natural stop --> Terminate(Terminate)
+    Running --unhandled exception --> Crash(Crash)
+    Running -- internal restart --> Restarting(Restarting)
+    Running -- open --> Browser(Browser)
+    Running --> Suspending(Suspending) --> Suspend(Suspend)
+    Suspend --> Resuming(Resuming) --> Resume([Resume])
+    Running --> Disable(Disable) --> Enable([Enable])
+    Restarting --> Restart(Restart)
+    Restart --> Starting
+    Terminate --> Stop(Stop)
+    Crash --> Stop
+    Stop --> End((End))
+```
+
+!!! note
+    Resume and Enable both end up back at the "Running" state, but will not trigger the Running event.
 
 ## Overview
 
@@ -41,65 +64,10 @@ The scriptblock supplied to `Register-PodeEvent` also supports `$using:` variabl
 $evt = Get-PodeEvent -Type Start -Name '<name>'
 ```
 
-## Types
+## Other Events
 
-### Start
+The events listed above are Server related events, you can find various other events for other functionality listed below:
 
-Scripts registered to the `Start` event will all be invoked just after the `-ScriptBlock` supplied to [`Start-PodeServer`](../../Functions/Core/Start-PodeServer) has been invoked, and just before the runspaces for Pode have been opened.
-
-If you need the runspaces to be opened, you'll want to look at the `Running` event below.
-
-These scripts will also be re-invoked after a server restart has occurred.
-
-### Starting
-
-Scripts registered to the `Starting` event will all be invoked during the initialization phase of the server, before the `Start` event is triggered.
-
-### Terminate
-
-Scripts registered to the `Terminate` event will all be invoked just before the server terminates. Ie, when the `Terminating...` message usually appears in the terminal, the script will run just after this and just before the `Done` message. Runspaces at this point will still be open.
-
-### Restarting
-
-Scripts registered to the `Restarting` event will all be invoked when the server begins the restart process. This occurs before the `Restart` event.
-
-### Restart
-
-Scripts registered to the `Restart` event will all be invoked whenever an internal server restart occurs. This could be due to file monitoring, auto-restarting, `Ctrl+R`, or [`Restart-PodeServer`](../../Functions/Core/Restart-PodeServer). They will be invoked just after the `Restarting...` message appears in the terminal, and just before the `Done` message. Runspaces at this point will still be open.
-
-### Browser
-
-Scripts registered to the `Browser` event will all be invoked whenever the server is told to open a browser, ie: when `Ctrl+B` is pressed. Runspaces at this point will still be open.
-
-### Crash
-
-Scripts registered to the `Crash` event will all be invoked if the server ever terminates due to an exception being thrown. If a Crash event is triggered, then Terminate will not be triggered. Runspaces at this point will still be open, but there could be a chance not all of them will be available as the crash could have occurred from a runspace error.
-
-### Stop
-
-Scripts registered to the `Stop` event will all be invoked when the server stops and closes. This event will be fired after either the Terminate or Crash events - whichever one causes the server to ultimately stop. Runspaces at this point will still be open.
-
-### Running
-
-Scripts registered to the `Running` event will all be run soon after the `Start` event, even after a `Restart`. At this point all of the runspaces will have been opened and available for use.
-
-### Suspending
-
-Scripts registered to the `Suspending` event will all be invoked when the server begins the suspension process.
-
-### Suspend
-
-Scripts registered to the `Suspend` event will all be invoked when the server completes the suspension process.
-
-### Resume
-
-Scripts registered to the `Resume` event will all be invoked when the server resumes operation after suspension.
-
-### Enable
-
-Scripts registered to the `Enable` event will all be invoked when the server is enabled.
-
-### Disable
-
-Scripts registered to the `Disable` event will all be invoked when the server is disabled.
-
+* [Authentication](../Authentication/Overview#events)
+* [Signals](../WebSockets/Endpoints#events)
+* [SSE](../Routes/Utilities/SSE#events)

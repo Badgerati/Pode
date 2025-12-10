@@ -1421,11 +1421,11 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
                 $line = $_
 
-                while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(] | $))') {
+                while ($line -imatch '(?<func>\[`(?<name>[a-z]+\-pode[a-z]+)`\])([^(])') {
                     $updated = $true
+                    $func = $Matches['func']
                     $name = $Matches['name']
-                    $char = $Matches['char']
-                    $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
+                    $line = $line.Replace($func, "$($func)($('../' * $depth)Functions/$($map[$name])/$($name))")
                 }
 
                 $line

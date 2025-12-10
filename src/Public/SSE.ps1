@@ -91,17 +91,17 @@ function ConvertTo-PodeSseConnection {
     $ClientId = New-PodeSseClientId -ClientId $ClientId
 
     # set and send SSE headers
-    $trackEvents = Test-PodeSseEvent -Name $Name -Type Connected, Disconnected
+    $trackEvents = Test-PodeSseEvent -Name $Name -Type Connect, Disconnect
     $sseConnection = Wait-PodeTask -Task $WebEvent.Request.Context.UpgradeToSSE($Scope, $ClientId, $Name, $Group, $trackEvents, $RetryDuration, $AllowAllOrigins.IsPresent)
 
     # create SSE property on WebEvent, as a reference to the SSE connection
     $WebEvent.Sse = $sseConnection
 
     # add local SSE endware to trigger disconnect event
-    if ($WebEvent.Sse.IsLocal -and (Test-PodeSseEvent -Name $Name -Type Disconnected)) {
+    if ($WebEvent.Sse.IsLocal -and (Test-PodeSseEvent -Name $Name -Type Disconnect)) {
         $WebEvent.OnEnd += @{
             Logic = {
-                Invoke-PodeSseEvent -Name $WebEvent.Sse.Name -Type Disconnected -Connection $WebEvent.Sse.ToHashtable()
+                Invoke-PodeSseEvent -Name $WebEvent.Sse.Name -Type Disconnect -Connection $WebEvent.Sse.ToHashtable()
             }
         }
     }
@@ -836,7 +836,7 @@ Register an event for one or more SSE connections, allowing custom scriptblocks 
 The Name(s) of the SSE connection(s) to register the event for.
 
 .PARAMETER Type
-The Type of event to register, either Connected or Disconnected.
+The Type of event to register, either Connect or Disconnect.
 
 .PARAMETER EventName
 The name of the event to register.
@@ -848,7 +848,7 @@ The ScriptBlock to execute when the event is triggered.
 An optional array of Arguments to pass to the ScriptBlock when executed.
 
 .EXAMPLE
-Register-PodeSseEvent -Name 'Actions' -Type Connected -EventName 'OnConnect' -ScriptBlock {
+Register-PodeSseEvent -Name 'Actions' -Type Connect -EventName 'OnConnect' -ScriptBlock {
     "SSE Connection established: $($TriggeredEvent.Connection.Name) - $($TriggeredEvent.Connection.ClientId)" | Out-Default
 }
 #>
@@ -924,13 +924,13 @@ Unregister an event for one or more SSE connections.
 The Name(s) of the SSE connection(s) to unregister the event for.
 
 .PARAMETER Type
-The Type of event to unregister, either Connected or Disconnected.
+The Type of event to unregister, either Connect or Disconnect.
 
 .PARAMETER EventName
 The name of the event to unregister.
 
 .EXAMPLE
-Unregister-PodeSseEvent -Name 'Actions' -Type Connected -EventName 'OnConnect'
+Unregister-PodeSseEvent -Name 'Actions' -Type Connect -EventName 'OnConnect'
 #>
 function Unregister-PodeSseEvent {
     [CmdletBinding()]
@@ -972,16 +972,16 @@ Test if one or more SSE events are registered.
 An optional Name(s) of the SSE connection(s) to test.
 
 .PARAMETER Type
-The Type(s) of event to test, either Connected or Disconnected.
+The Type(s) of event to test, either Connect or Disconnect.
 
 .PARAMETER EventName
 An optional name(s) of the event to test.
 
 .EXAMPLE
-if (Test-PodeSseEvent -Name 'Actions' -Type Connected -EventName 'OnConnect') { ... }
+if (Test-PodeSseEvent -Name 'Actions' -Type Connect -EventName 'OnConnect') { ... }
 
 .EXAMPLE
-if (Test-PodeSseEvent -Type Disconnected) { ... }
+if (Test-PodeSseEvent -Type Disconnect) { ... }
 #>
 function Test-PodeSseEvent {
     [CmdletBinding()]
@@ -1015,16 +1015,16 @@ Retrieve one or more SSE events.
 An optional Name(s) of the SSE connection(s) to retrieve events for.
 
 .PARAMETER Type
-The Type(s) of event to retrieve, either Connected or Disconnected.
+The Type(s) of event to retrieve, either Connect or Disconnect.
 
 .PARAMETER EventName
 An optional name(s) of the event to retrieve.
 
 .EXAMPLE
-$events = Get-PodeSseEvent -Name 'Actions' -Type Connected -EventName 'OnConnect'
+$events = Get-PodeSseEvent -Name 'Actions' -Type Connect -EventName 'OnConnect'
 
 .EXAMPLE
-$events = Get-PodeSseEvent -Type Disconnected
+$events = Get-PodeSseEvent -Type Disconnect
 #>
 function Get-PodeSseEvent {
     [CmdletBinding()]

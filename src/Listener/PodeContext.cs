@@ -526,7 +526,7 @@ namespace Pode
         /// </summary>
         public void Dispose()
         {
-            Dispose(Request.Error != default(PodeRequestException));
+            Dispose(Request?.Error != default(PodeRequestException));
             GC.SuppressFinalize(this);
         }
 

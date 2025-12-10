@@ -45,7 +45,7 @@ namespace Pode
             // if local connection, just trigger event and return
             if (conn.IsLocal)
             {
-                Listener.AddClientConnectionEvent(conn, PodeClientConnectionEventType.Connected);
+                Listener.AddClientConnectionEvent(conn, PodeClientConnectionEventType.Connect);
                 return;
             }
 
@@ -53,7 +53,7 @@ namespace Pode
             Add(conn.Name, conn.ClientId, conn);
 
             // trigger the connected event
-            Listener.AddClientConnectionEvent(conn, PodeClientConnectionEventType.Connected);
+            Listener.AddClientConnectionEvent(conn, PodeClientConnectionEventType.Connect);
         }
 
         public bool Remove(T conn)
@@ -64,7 +64,7 @@ namespace Pode
             }
 
             PodeHelpers.WriteErrorMessage($"Removed {conn.ConnectionType} client connection, ClientId: {conn.ClientId}, Name: {conn.Name}, Group: {conn.Group}", Listener, PodeLoggingLevel.Debug, conn.Context);
-            Listener.AddClientConnectionEvent(conn, PodeClientConnectionEventType.Disconnected);
+            Listener.AddClientConnectionEvent(conn, PodeClientConnectionEventType.Disconnect);
             return true;
         }
 

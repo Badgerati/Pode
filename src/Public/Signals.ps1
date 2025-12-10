@@ -63,17 +63,17 @@ function ConvertTo-PodeSignalConnection {
     $ClientId = New-PodeSignalClientId -ClientId $ClientId
 
     # set and send WebSocket headers
-    $trackEvents = Test-PodeSignalEvent -Name $Name -Type Connected, Disconnected
+    $trackEvents = Test-PodeSignalEvent -Name $Name -Type Connect, Disconnect
     $signalConnection = Wait-PodeTask -Task $WebEvent.Request.Context.UpgradeToWebSocket($Scope, $ClientId, $Name, $Group, $trackEvents)
 
     # create Signal property on WebEvent
     $WebEvent.Signal = $signalConnection
 
     # add local Signal endware to trigger disconnect event
-    if ($WebEvent.Signal.IsLocal -and (Test-PodeSignalEvent -Name $Name -Type Disconnected)) {
+    if ($WebEvent.Signal.IsLocal -and (Test-PodeSignalEvent -Name $Name -Type Disconnect)) {
         $WebEvent.OnEnd += @{
             Logic = {
-                Invoke-PodeSignalEvent -Name $WebEvent.Signal.Name -Type Disconnected -Connection $WebEvent.Signal.ToHashtable()
+                Invoke-PodeSignalEvent -Name $WebEvent.Signal.Name -Type Disconnect -Connection $WebEvent.Signal.ToHashtable()
             }
         }
     }
@@ -817,7 +817,7 @@ Registers an event for one or more Signal connections, allowing custom scriptblo
 The Name of the Signal connection(s) to register the event for.
 
 .PARAMETER Type
-The Type of event to register, either Connected or Disconnected.
+The Type of event to register, either Connect or Disconnect.
 
 .PARAMETER EventName
 The name of the event being registered.
@@ -829,7 +829,7 @@ The ScriptBlock to execute when the event is triggered.
 An optional array of arguments to pass to the ScriptBlock when executed.
 
 .EXAMPLE
-Register-PodeSignalEvent -Name 'Metrics' -Type Connected -EventName 'OnConnect' -ScriptBlock {
+Register-PodeSignalEvent -Name 'Metrics' -Type Connect -EventName 'OnConnect' -ScriptBlock {
     "Client connected: $($TriggeredEvent.Connection.ClientId)" | Out-Default
 }
 #>
@@ -904,13 +904,13 @@ Unregister an event for one or more Signal connections.
 The Name of the Signal connection(s) to unregister the event for.
 
 .PARAMETER Type
-The Type of event to unregister, either Connected or Disconnected.
+The Type of event to unregister, either Connect or Disconnect.
 
 .PARAMETER EventName
 The name of the event being unregistered.
 
 .EXAMPLE
-Unregister-PodeSignalEvent -Name 'Metrics' -Type Connected -EventName 'OnConnect'
+Unregister-PodeSignalEvent -Name 'Metrics' -Type Connect -EventName 'OnConnect'
 #>
 function Unregister-PodeSignalEvent {
     [CmdletBinding()]
@@ -952,16 +952,16 @@ Test if one or more Signal connection events exist.
 An optional Name of the Signal connection(s) to test.
 
 .PARAMETER Type
-The Type of event to test, either Connected or Disconnected.
+The Type of event to test, either Connect or Disconnect.
 
 .PARAMETER EventName
 An optional name of the event being tested.
 
 .EXAMPLE
-if (Test-PodeSignalEvent -Name 'Metrics' -Type Connected -EventName 'OnConnect') { ... }
+if (Test-PodeSignalEvent -Name 'Metrics' -Type Connect -EventName 'OnConnect') { ... }
 
 .EXAMPLE
-if (Test-PodeSignalEvent -Type Disconnected) { ... }
+if (Test-PodeSignalEvent -Type Disconnect) { ... }
 #>
 function Test-PodeSignalEvent {
     [CmdletBinding()]
@@ -995,16 +995,16 @@ Retrieve one or more Signal connection events.
 An optional Name of the Signal connection(s) to retrieve events for.
 
 .PARAMETER Type
-The Type of event to retrieve, either Connected or Disconnected.
+The Type of event to retrieve, either Connect or Disconnect.
 
 .PARAMETER EventName
 An optional name of the event being retrieved.
 
 .EXAMPLE
-$events = Get-PodeSignalEvent -Name 'Metrics' -Type Connected -EventName 'OnConnect'
+$events = Get-PodeSignalEvent -Name 'Metrics' -Type Connect -EventName 'OnConnect'
 
 .EXAMPLE
-$events = Get-PodeSignalEvent -Type Disconnected
+$events = Get-PodeSignalEvent -Type Disconnect
 #>
 function Get-PodeSignalEvent {
     [CmdletBinding()]
