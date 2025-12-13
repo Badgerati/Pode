@@ -465,7 +465,7 @@ namespace Pode
             SSE = new PodeServerEvent(this, name, group, clientId, scope, trackEvents, retry, allowAllOrigins);
             if (!await SSE.Open().ConfigureAwait(false))
             {
-                throw new IOException("SSE client connection failed to open, connection could be closed/disposed");
+                throw new PodeRequestException("SSE client connection failed to open, connection could be closed/disposed", 421);
             }
 
             // add it to the listener
@@ -507,7 +507,7 @@ namespace Pode
             Signal = new PodeSignal(this, name, group, clientId, scope, trackEvents);
             if (!await Signal.Open().ConfigureAwait(false))
             {
-                throw new IOException("WebSocket client connection failed to open, connection could be closed/disposed");
+                throw new PodeRequestException("WebSocket client connection failed to open, connection could be closed/disposed", 421);
             }
 
             // add it to the listener

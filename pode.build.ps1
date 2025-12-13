@@ -1406,6 +1406,9 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
     $path = './docs/Functions'
     $map = @{}
 
+    Remove-Item -Path $path -Recurse -Force -ErrorAction Ignore | Out-Null
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+
     (Get-Module Pode).ExportedFunctions.Keys | ForEach-Object {
         $type = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path -Leaf -Path (Get-Command $_ -Module Pode).ScriptBlock.File))
         New-MarkdownHelp -Command $_ -OutputFolder (Join-Path $path $type) -Force -Metadata @{ PodeType = $type } -AlphabeticParamsOrder | Out-Null

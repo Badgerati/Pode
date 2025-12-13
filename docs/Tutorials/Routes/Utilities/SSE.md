@@ -163,6 +163,10 @@ sse.addEventListener('pode.close', (e) => {
 });
 ```
 
+#### Ping
+
+Periodically Pode will send a `pode.ping` event to SSE connections, if this fails then the connection is assumed to have been closed by the client. When a closed connection is detected Pode will dispose of the connection server side, and free up the resources.
+
 ## Send Events
 
 To send an event from the server to one or more connected clients, you can use [`Send-PodeSseEvent`](../../../../Functions/SSE/Send-PodeSseEvent). Using the `-Data` parameter, you can either send a raw string value, or a more complex hashtable/psobject which will be auto-converted into a JSON string.

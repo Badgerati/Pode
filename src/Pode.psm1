@@ -29,13 +29,11 @@
         throw
     }
     The import statement is within a try/catch block.
-    This way, if the module fails to load, your script won’t proceed, preventing possible errors or unexpected behavior.
+    This way, if the module fails to load, your script won’t proceed, preventing possible errors or unexpected behaviour.
 
     .NOTES
     This is the entry point for the Pode module.
-
 #>
-
 param(
     [string]$UICulture
 )
@@ -77,7 +75,7 @@ try {
     # Import the module manifest to access its properties
     $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
 
-
+    # Check if Pode.dll is already loaded
     $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
 
     if ($podeDll) {
@@ -115,32 +113,48 @@ try {
     Get-ChildItem "$($root)/Private/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
 
     # only import public functions
-    $sysfuncs = Get-ChildItem Function:
+    $sysFuncs = Get-ChildItem Function:
 
     # only import public alias
-    $sysaliases = Get-ChildItem Alias:
+    $sysAliases = Get-ChildItem Alias:
 
     # load public functions
     Get-ChildItem "$($root)/Public/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
 
     # get functions from memory and compare to existing to find new functions added
-    $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
-    $aliases = Get-ChildItem Alias: | Where-Object { $sysaliases -notcontains $_ }
-    # export the module's public functions
+    $funcs = Get-ChildItem Function: | Where-Object { $sysFuncs -notcontains $_ }
+    $aliases = Get-ChildItem Alias: | Where-Object { $sysAliases -notcontains $_ }
+
+    # export the module's public functions/aliases
     if ($funcs) {
         if ($aliases) {
-            Export-ModuleMember -Function ($funcs.Name) -Alias $aliases.Name
+            Export-ModuleMember -Function $funcs.Name -Alias $aliases.Name
         }
         else {
-            Export-ModuleMember -Function ($funcs.Name)
+            Export-ModuleMember -Function $funcs.Name
         }
     }
 }
 catch {
-    throw ("Failed to load the Pode module. $_")
+    throw "Failed to load the Pode module: $($_.Exception.Message)`n$($_.Exception.StackTrace)"
 }
 finally {
     # Cleanup temporary variables
-    Remove-Variable -Name 'tmpPodeLocale', 'localesPath', 'moduleManifest', 'root', 'version', 'libsPath', 'netFolder', 'podeDll', 'sysfuncs', 'sysaliases', 'funcs', 'aliases', 'moduleManifestPath', 'moduleVersion' -ErrorAction SilentlyContinue
+    Remove-Variable -ErrorAction SilentlyContinue -Name @(
+        'tmpPodeLocale',
+        'localesPath',
+        'moduleManifest',
+        'root',
+        'version',
+        'libsPath',
+        'netFolder',
+        'podeDll',
+        'sysFuncs',
+        'sysAliases',
+        'funcs',
+        'aliases',
+        'moduleManifestPath',
+        'moduleVersion'
+    )
 }
 
