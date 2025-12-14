@@ -256,7 +256,6 @@ function Start-PodeWebServer {
                                 $_ | Write-PodeErrorLog -Level Debug
                             }
                             catch [Pode.PodeRequestException] {
-                                $_.Exception | Out-Default
                                 $_.Exception | Write-PodeErrorLog -Level "$($_.Exception.LoggingLevel)" -CheckInnerException:($_.Exception.IsServerError)
 
                                 $code = $_.Exception.StatusCode

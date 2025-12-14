@@ -112,6 +112,7 @@ function Start-PodeStopwatch {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         try {
             $watch = [System.Diagnostics.Stopwatch]::StartNew()
             . $ScriptBlock
@@ -828,10 +829,13 @@ Outputs an object to the main Host.
 
 .DESCRIPTION
 Due to Pode's use of runspaces, this will output a given object back to the main Host.
-It's advised to use this function, so that any output respects the -Quiet flag of the server.
+It's advised to use this function over Out-Default, so that any output respects the -Quiet flag of the server.
 
 .PARAMETER InputObject
 The object to output.
+
+.PARAMETER Force
+Overrides the -Quiet flag of the server.
 
 .EXAMPLE
 'Hello, world!' | Out-PodeHost
@@ -844,8 +848,12 @@ function Out-PodeHost {
     param(
         [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [object]
-        $InputObject
+        $InputObject,
+
+        [switch]
+        $Force
     )
+
     begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
@@ -857,19 +865,18 @@ function Out-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Console.Quiet) {
+        if ($PodeContext.Server.Console.Quiet -and !$Force) {
             return
         }
+
         # Set InputObject to the array of values
         if ($pipelineValue.Count -gt 1) {
-            $InputObject = $pipelineValue
-            $InputObject | Out-Default
+            $pipelineValue | Out-Default
         }
         else {
             Out-Default -InputObject $InputObject
         }
     }
-
 }
 
 <#
@@ -877,8 +884,9 @@ function Out-PodeHost {
 Writes an object to the Host.
 
 .DESCRIPTION
-Writes an object to the Host.
-It's advised to use this function, so that any output respects the -Quiet flag of the server.
+Writes an object to the Host - this does not fully respect Pode's different runspaces, so may at times not output as expected.
+If you want to write from a runspace, it's recommended to use Out-PodeHost.
+It's advised to use this function over Write-Host, so that any output respects the -Quiet flag of the server.
 
 .PARAMETER Object
 The object to write.
@@ -894,6 +902,9 @@ Show the object content
 
 .PARAMETER ShowType
 Show the Object Type
+
+.PARAMETER Timestamp
+Show a timestamp for the object
 
 .PARAMETER Label
 Show a label for the object
@@ -919,21 +930,26 @@ function Write-PodeHost {
         [switch]
         $NoNewLine,
 
-        [Parameter( Mandatory = $true, ParameterSetName = 'object')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'object')]
         [switch]
         $Explode,
 
-        [Parameter( Mandatory = $false, ParameterSetName = 'object')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'object')]
         [switch]
         $ShowType,
 
-        [Parameter( Mandatory = $false, ParameterSetName = 'object')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'object')]
+        [switch]
+        $Timestamp,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'object')]
         [string]
         $Label,
 
         [switch]
         $Force
     )
+
     begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
@@ -945,48 +961,67 @@ function Write-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Console.Quiet -and !($Force.IsPresent)) {
+        if ($PodeContext.Server.Console.Quiet -and !$Force) {
             return
         }
+
         # Set Object to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Object = $pipelineValue
         }
 
-        if ($Explode.IsPresent ) {
-            if ($null -eq $Object) {
-                if ($ShowType) {
-                    $Object = "`tNull Value"
-                }
-            }
-            else {
-                $type = $Object.GetType().FullName
-                $Object = $Object | Out-String
-                if ($ShowType) {
-                    $Object = "`tTypeName: $type`n$Object"
-                }
-            }
+        # explode object if needed
+        if ($Explode) {
+            $strObject = ($Object | Out-String).TrimEnd()
+            $meta = @()
+
+            # add label if needed
             if ($Label) {
-                $Object = "`tName: $Label $Object"
+                $meta += "Name: $($Label)"
             }
 
+            # add type info if needed
+            if ($ShowType) {
+                if ($null -eq $Object) {
+                    $type = 'Null'
+                }
+                else {
+                    $type = $Object.GetType().FullName
+                }
+
+                $meta += "TypeName: $($type)"
+            }
+
+            # add timestamp if needed
+            if ($Timestamp) {
+                $time = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+                $meta += "Timestamp: $($time)"
+            }
+
+            # $Object = $strObject
+            if ($meta.Length -gt 0) {
+                $Object = "[$($meta -join '; ')]`n$strObject"
+            }
+            else {
+                $Object = $strObject
+            }
+        }
+
+        # write to host via splatting
+        $params = @{
+            NoNewline = $NoNewLine
         }
 
         if ($ForegroundColor) {
-            if ($pipelineValue.Count -gt 1) {
-                $Object | Write-Host -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
-            }
-            else {
-                Write-Host -Object $Object -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
-            }
+            $params.ForegroundColor = $ForegroundColor
+        }
+
+        if ($pipelineValue.Count -gt 1) {
+            $Object | Write-Host @params
         }
         else {
-            if ($pipelineValue.Count -gt 1) {
-                $Object | Write-Host -NoNewline:$NoNewLine
-            }
-            else {
-                Write-Host -Object $Object -NoNewline:$NoNewLine
-            }
+            $params.Object = $Object
+            Write-Host @params
         }
     }
 }

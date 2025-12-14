@@ -136,7 +136,8 @@ try {
     }
 }
 catch {
-    throw "Failed to load the Pode module: $($_.Exception.Message)`n$($_.Exception.StackTrace)"
+    $errMessage = "Failed to load the Pode module: $($_.Exception.Message)`n$($_.Exception.StackTrace)"
+    throw $errMessage
 }
 finally {
     # Cleanup temporary variables
