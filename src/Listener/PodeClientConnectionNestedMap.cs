@@ -42,15 +42,11 @@ namespace Pode
                 return;
             }
 
-            // if local connection, just trigger event and return
-            if (conn.IsLocal)
+            // add the connection to the map if not a local connection
+            if (!conn.IsLocal)
             {
-                Listener.AddClientConnectionEvent(conn, PodeClientConnectionEventType.Connect);
-                return;
+                Add(conn.Name, conn.ClientId, conn);
             }
-
-            // add the connection to the map
-            Add(conn.Name, conn.ClientId, conn);
 
             // trigger the connected event
             Listener.AddClientConnectionEvent(conn, PodeClientConnectionEventType.Connect);

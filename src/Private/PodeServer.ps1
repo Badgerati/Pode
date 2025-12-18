@@ -76,7 +76,7 @@ function Start-PodeWebServer {
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
     $listener.ShowServerDetails = [bool]$PodeContext.Server.Security.ServerDetails
-    $listener.TrackClientConnectionEvents = (Test-PodeSseEvent -Type Connect, Disconnect) -or (Test-PodeSignalEvent -Type Connect, Disconnect)
+    $listener.TrackClientConnectionEvents = Test-PodeSignalEvent -Type Connect, Disconnect
 
     try {
         # register endpoints on the listener
@@ -398,7 +398,7 @@ function Start-PodeWebServer {
     }
 
     # only if tracking client connection events
-    if ($listener.TrackClientConnectionEvents) {
+    if ((Test-PodeSseEvent -Type Connect, Disconnect) -or (Test-PodeSignalEvent -Type Connect, Disconnect)) {
         Start-PodeWebConnectionEventsRunspace
     }
 

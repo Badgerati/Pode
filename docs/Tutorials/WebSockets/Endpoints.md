@@ -36,7 +36,7 @@ Add-PodeEndpoint -Address * -Port 8091 -Certificate './path/cert.pfx' -Certifica
 
 ### Convert Request
 
-To convert a request into a WebSocket connection use [`ConvertTo-PodeSignalConnection`]. This will automatically send back the appropriate HTTP response headers to the client, converting it into a WebSocket connection; allowing the connection to be kept open, and for messages to be streamed back to the client - and vice-versa. A `-Name` must be supplied during the conversion, allowing for easier reference to all connections later on, and allowing for different connection groups (of which, you can also have `-Group` within a Name as well).
+To convert a request into a WebSocket connection use [`ConvertTo-PodeSignalConnection`](../../../Functions/Signals/ConvertTo-PodeSignalConnection). This will automatically send back the appropriate HTTP response headers to the client, converting it into a WebSocket connection; allowing the connection to be kept open, and for messages to be streamed back to the client - and vice-versa. A `-Name` must be supplied during the conversion, allowing for easier reference to all connections later on, and allowing for different connection groups (of which, you can also have `-Group` within a Name as well).
 
 For example, any requests to the following Route will be converted to a globally scoped WebSocket connection, and be available under the `ResponseTimes` name:
 
@@ -46,7 +46,7 @@ Add-PodeRoute -Method Get -Path '/response-times' -ScriptBlock {
 }
 ```
 
-You could then use [`Send-PodeSignal`] in a Schedule (more info [below](#send-messages)) to broadcast a message, every minute, to all connected clients within the `ResponseTimes` name:
+You could then use [`Send-PodeSignal`](../../../Functions/Signals/Send-PodeSignal) in a Schedule (more info [below](#send-messages)) to broadcast a message, every minute, to all connected clients within the `ResponseTimes` name:
 
 ```powershell
 Add-PodeSchedule -Name 'Example' -Cron (New-PodeCron -Every Minute) -ScriptBlock {
@@ -54,7 +54,7 @@ Add-PodeSchedule -Name 'Example' -Cron (New-PodeCron -Every Minute) -ScriptBlock
 }
 ```
 
-Once [`ConvertTo-PodeSignalConnection`] has been called, the `$WebEvent` object will be extended to include a new `Signal` property. This new property will have the following items:
+Once [`ConvertTo-PodeSignalConnection`](../../../Functions/Signals/ConvertTo-PodeSignalConnection) has been called, the `$WebEvent` object will be extended to include a new `Signal` property. This new property will have the following items:
 
 | Name     | Description                                                                                             |
 | -------- | ------------------------------------------------------------------------------------------------------- |
@@ -82,7 +82,7 @@ Add-PodeRoute -Method Get -Path '/response-times' -ScriptBlock {
 
 #### ClientIds
 
-ClientIds created by [`ConvertTo-PodeSignalConnection`] will be a GUID by default however, you can supply your own IDs via the `-ClientId` parameter:
+ClientIds created by [`ConvertTo-PodeSignalConnection`](../../../Functions/Signals/ConvertTo-PodeSignalConnection) will be a GUID by default however, you can supply your own IDs via the `-ClientId` parameter:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/response-times' -ScriptBlock {
@@ -97,7 +97,7 @@ You can also [sign clientIds](#signing-clientids) as well.
 
 The default scope for a new WebSocket connection is "Global", which means the connection will be stored internally and can be used outside of the converting Route to stream messages back to the client.
 
-The default scope for new WebSocket connections can be altered by using [`Set-PodeSignalDefaultScope`]. For example, if you wanted all new WebSocket connections to instead default to a Local scope:
+The default scope for new WebSocket connections can be altered by using [`Set-PodeSignalDefaultScope`](../../../Functions/Signals/Set-PodeSignalDefaultScope). For example, if you wanted all new WebSocket connections to instead default to a Local scope:
 
 ```powershell
 Set-PodeSignalDefaultScope -Scope Local
@@ -105,12 +105,12 @@ Set-PodeSignalDefaultScope -Scope Local
 
 ##### Global
 
-A Globally scoped WebSocket connection is the default (unless altered via [`Set-PodeSignalDefaultScope`]). A Global connection has the following features:
+A Globally scoped WebSocket connection is the default (unless altered via [`Set-PodeSignalDefaultScope`](../../../Functions/Signals/Set-PodeSignalDefaultScope)). A Global connection has the following features:
 
 * They are kept open, even after the Route that converted the request has finished.
 * The connection is stored internally, so that messages can be streamed to the clients from other Routes, Timers, etc.
 * You can send messages to a specific connection if you know the Name and ClientId for the connection.
-* Global connections can be closed via [`Close-PodeSignalConnection`].
+* Global connections can be closed via [`Close-PodeSignalConnection`](../../../Functions/Signals/Close-PodeSignalConnection).
 
 For example, the following will convert requests to `/response-times` into global WebSocket connections, and then a Schedule will send messages to them every minute:
 
@@ -135,7 +135,7 @@ A Local connection has the following features:
 
 * When the Route that converted the request has finished, the connection will be closed - the same as HTTP requests.
 * The connection is **not** stored internally, it is only available for the lifecycle of the HTTP request.
-* You can send messages back to the connection from within the converting Route's scriptblock, but not from Timers, etc. When sending messages back for local connections you'll need to supply the Name of the connection to [`Send-PodeSignal`], this will automatically detect it's a local connection and use the socket via the current `$WebEvent`.
+* You can send messages back to the connection from within the converting Route's scriptblock, but not from Timers, etc. When sending messages back for local connections you'll need to supply the Name of the connection to [`Send-PodeSignal`](../../../Functions/Signals/Send-PodeSignal), this will automatically detect it's a local connection and use the socket via the current `$WebEvent`.
 
 For example, the following will convert requests to `/response-times` into local WebSocket connections, and two messages will be sent back to the client before the connection is closed:
 
@@ -155,7 +155,7 @@ Start-PodeServer {
 
 ### Send Messages
 
-To send a message from the server to one or more connected clients, you can use [`Send-PodeSignal`]. Using the `-Data` parameter, you can either send a raw string value, or a more complex hashtable/psobject which will be auto-converted into a JSON string.
+To send a message from the server to one or more connected clients, you can use [`Send-PodeSignal`](../../../Functions/Signals/Send-PodeSignal). Using the `-Data` parameter, you can either send a raw string value, or a more complex hashtable/psobject which will be auto-converted into a JSON string.
 
 For example, to broadcast a message to all clients on a "ResponseTimes" Signal connection:
 
@@ -203,7 +203,7 @@ Start-PodeServer {
 }
 ```
 
-### Signal Event
+#### Signal Event
 
 When using custom Signal Routes the `$SignalEvent` is a HashTable that is available for you to use - much like the `$WebEvent` object for normal Routes.
 
@@ -225,9 +225,9 @@ This `$SignalEvent` object has the following properties:
 
 By default, Pode will allow the broadcasting of messages to all clients for a WebSocket connection Name, Group, or a specific ClientId.
 
-You can supply a custom broadcasting level for specific WebSocket connection names (or all), limiting broadcasting to requiring a specific ClientId for example, by using [`Set-PodeSignalBroadcastLevel`]. If a `-Name` is not supplied then the level type is applied to all WebSocket connections.
+You can supply a custom broadcasting level for specific WebSocket connection names (or all), limiting broadcasting to requiring a specific ClientId for example, by using [`Set-PodeSignalBroadcastLevel`](../../../Functions/Signals/Set-PodeSignalBroadcastLevel). If a `-Name` is not supplied then the level type is applied to all WebSocket connections.
 
-For example, the following will only allow messages to be broadcast to a WebSocket connection name if a ClientId is also specified on [`Send-PodeSignal`] - preventing accidentally broadcasting to every connected client:
+For example, the following will only allow messages to be broadcast to a WebSocket connection name if a ClientId is also specified on [`Send-PodeSignal`](../../../Functions/Signals/Send-PodeSignal) - preventing accidentally broadcasting to every connected client:
 
 ```powershell
 # apply to all WebSocket connections
@@ -247,23 +247,23 @@ The following levels are available:
 
 ### Signing ClientIds
 
-Similar to Sessions and Cookies, you can sign WebSocket connection ClientIds. This can be done by calling [`Enable-PodeSignalSigning`] and supplying a `-Secret` to sign the ClientIds.
+Similar to Sessions and Cookies, you can sign WebSocket connection ClientIds. This can be done by calling [`Enable-PodeSignalSigning`](../../../Functions/Signals/Enable-PodeSignalSigning) and supplying a `-Secret` to sign the ClientIds.
 
 !!! tip
-    You can use the inbuilt [`Get-PodeServerDefaultSecret`] function to retrieve an internal Pode server secret which can be used. However, be warned that this secret is regenerated to a random value on every server start/restart.
+    You can use the inbuilt [`Get-PodeServerDefaultSecret`](../../../Functions/Core/Get-PodeServerDefaultSecret) function to retrieve an internal Pode server secret which can be used. However, be warned that this secret is regenerated to a random value on every server start/restart.
 
 ```powershell
 Enable-PodeSignalSigning -Secret 'super-secret'
 Enable-PodeSignalSigning -Secret (Get-PodeServerDefaultSecret)
 ```
 
-When signing is enabled, all clientIds will be signed regardless if they're an internally generated random GUID or supplied via `-ClientId` on [`ConvertTo-PodeSignalConnection`]. A signed clientId will look as follows, and have the structure `s:<clientId>.<signature>`:
+When signing is enabled, all clientIds will be signed regardless if they're an internally generated random GUID or supplied via `-ClientId` on [`ConvertTo-PodeSignalConnection`](../../../Functions/Signals/ConvertTo-PodeSignalConnection). A signed clientId will look as follows, and have the structure `s:<clientId>.<signature>`:
 
 ```plain
 s:5d12f974-7b1a-4524-ab93-6afbf42c4ffa.uvG49LcojTMuJ0l4yzBzr6jCqEV8gGC/0YgsYU1QEuQ=
 ```
 
-You can also supply the `-Strict` switch to [`Enable-PodeSignalSigning`], which will extend the secret during signing with the client's IP Address and User Agent.
+You can also supply the `-Strict` switch to [`Enable-PodeSignalSigning`](../../../Functions/Signals/Enable-PodeSignalSigning), which will extend the secret during signing with the client's IP Address and User Agent.
 
 ### Request Headers
 
@@ -354,7 +354,7 @@ Similar to [Server Events](../../Events) there are also events which you can reg
 
 ### Register
 
-To register a scriptblock for a Signal connection event you use [`Register-PodeSignalEvent`](../../../Functions/Signals/Register-PodeSignalEvent).  You'll need to supply the Name of the Signal connection - from [`ConvertTo-PodeSignalConnection`](../../../Functions/Signals/ConvertTo-PodeSignalConnection),  or the URI path if using auto-upgrade - which you're registering the event against, as well as the type of the event, and a name for the event registration - and of course the scriptblock itself.
+To register a scriptblock for a Signal connection event you use [`Register-PodeSignalEvent`](../../../Functions/Signals/Register-PodeSignalEvent). You'll need to supply the Name of the Signal connection - from [`ConvertTo-PodeSignalConnection`](../../../Functions/Signals/ConvertTo-PodeSignalConnection), or the URI path if using auto-upgrade - which you're registering the event against, as well as the type of the event, and a name for the event registration - and of course the scriptblock itself.
 
 For example, to register for the Connect event of a Signal connection, to write the Client ID to the CLI, you would do:
 
@@ -369,6 +369,9 @@ Add-PodeRoute -Method Get -Path '/signal' -ScriptBlock {
     ConvertTo-PodeSignalConnection -Name 'Example'
 }
 ```
+
+!!! note
+    For those using the legacy auto-upgrade approach, the `-Name` supplied to `Register-PodeSignalEvent` will be the URI path your WebSocket connected to. For example, if you connected to `ws://localhost:8080/messages` then you'll pass `/messages` to `-Name`.
 
 #### Event Data
 

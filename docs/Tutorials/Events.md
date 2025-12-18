@@ -44,24 +44,43 @@ graph TD
 !!! note
     Resume and Enable both end up back at the "Running" state, but will not trigger the Running event.
 
-## Overview
+## Register
 
-You can use [`Register-PodeEvent`](../../Functions/Events/Register-PodeEvent) to register a script that can be run when an event within Pode is triggered. Each event can have multiple scripts registered, and you can unregister a script at any point using [`Unregister-PodeEvent`](../../Functions/Events/Unregister-PodeEvent):
+You can use [`Register-PodeEvent`](../../Functions/Events/Register-PodeEvent) to register a scriptblock that can be run when a server level event within Pode is triggered. Each event can have multiple scripts registered.
+
+For example, to register for when the server Starts:
 
 ```powershell
-# register:
-Register-PodeEvent -Type Start -Name '<name>' -ScriptBlock {
+Register-PodeEvent -Type Start -Name 'OnStart' -ScriptBlock {
     # inform a portal, write a log, etc
 }
-
-# unregister:
-Unregister-PodeEvent -Type Start -Name '<name>'
 ```
 
 The scriptblock supplied to `Register-PodeEvent` also supports `$using:` variables. You can retrieve a registered script using [`Get-PodeEvent`](../../Functions/Events/Get-PodeEvent):
 
 ```powershell
-$evt = Get-PodeEvent -Type Start -Name '<name>'
+$evt = Get-PodeEvent -Type Start -Name 'OnStart'
+```
+
+### Event Data
+
+Various metadata about the server event is supplied to your scriptblock, under the `$TriggeredEvent` variable:
+
+| Property  | Description                                                                           |
+| --------- | ------------------------------------------------------------------------------------- |
+| Lockable  | A global lockable value you can use for `Lock-PodeObject`                             |
+| Metadata  | Any additional metadata about the event, you can add your own properties here as well |
+| Type      | The type of event triggered - Start, Running, Restart, etc.                           |
+| Timestamp | When the event was triggered, in UTC                                                  |
+
+## Unregister
+
+To unregister an previous event registration, simply use [`Unregister-PodeEvent`](../../Functions/Events/Unregister-PodeEvent):
+
+
+```powershell
+# to remove the Start event from above:
+Unregister-PodeEvent -Type Start -Name 'OnStart'
 ```
 
 ## Other Events
