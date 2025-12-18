@@ -5,6 +5,13 @@ param()
 Describe 'OpenAPI integration tests' {
 
     BeforeAll {
+        $winPwshParams = @{}
+        if ($PSVersionTable.Major -eq 5) {
+            $winPwshParams = @{
+                UseBasicParsing = $true
+            }
+        }
+
         $mindyCommonHeaders = @{
             'accept'        = 'application/json'
             'X-API-KEY'     = 'test2-api-key'
@@ -16,6 +23,7 @@ Describe 'OpenAPI integration tests' {
             'X-API-KEY'     = 'test-api-key'
             'Authorization' = 'Basic bW9ydHk6cGlja2xl'
         }
+
         $PortV3 = 8080
         $PortV3_1 = 8081
         $scriptPath = "$($PSScriptRoot)\..\..\examples\OpenApi-TuttiFrutti.ps1"
@@ -93,7 +101,7 @@ Describe 'OpenAPI integration tests' {
             function Compare-Value($value1, $value2) {
                 # Check if both values are hashtables
                 if ((($value1 -is [hashtable] -or $value1 -is [System.Collections.Specialized.OrderedDictionary]) -and
-            ($value2 -is [hashtable] -or $value2 -is [System.Collections.Specialized.OrderedDictionary]))) {
+                        ($value2 -is [hashtable] -or $value2 -is [System.Collections.Specialized.OrderedDictionary]))) {
                     return Compare-Hashtable -Hashtable1 $value1 -Hashtable2 $value2
                 }
                 # Check if both values are arrays
@@ -164,7 +172,7 @@ Describe 'OpenAPI integration tests' {
             Start-Sleep -Seconds 10
             $fileContent = Get-Content -Path "$PSScriptRoot/specs/OpenApi-TuttiFrutti_3.0.3.json"
 
-            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3)/docs/openapi/v3.0" -Method Get
+            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3)/docs/openapi/v3.0" -Method Get @winPwshParams
             $json = $webResponse.Content
             if (   $PSVersionTable.PSEdition -eq 'Desktop') {
                 $expected = $fileContent | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
@@ -182,7 +190,7 @@ Describe 'OpenAPI integration tests' {
         it 'Open API v3.1.0' {
             $fileContent = Get-Content -Path "$PSScriptRoot/specs/OpenApi-TuttiFrutti_3.1.0.json"
 
-            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3_1)/docs/openapi/v3.1" -Method Get
+            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3_1)/docs/openapi/v3.1" -Method Get @winPwshParams
             $json = $webResponse.Content
             if (  $PSVersionTable.PSEdition -eq 'Desktop') {
                 $expected = $fileContent | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
