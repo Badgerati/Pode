@@ -13,3 +13,10 @@ updates:
       interval: "daily"
     labels:
       - "packaging :package:"
+
+  - package-ecosystem: "nuget"
+    directory: "/src/Listener"
+    schedule:
+      interval: "daily"
+    labels:
+      - "packaging :package:"
