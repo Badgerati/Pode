@@ -164,6 +164,7 @@ namespace Pode
         public void Dispose()
         {
             Disconnect(PodeWebSocketCloseFrom.Client).Wait();
+            GC.SuppressFinalize(this);
         }
     }
 }

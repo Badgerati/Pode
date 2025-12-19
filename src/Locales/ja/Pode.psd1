@@ -326,4 +326,14 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "名前が '{0}' のレート制限ルールは存在しません。"
     accessLimitRuleAlreadyExistsExceptionMessage                      = "名前が '{0}' のアクセス制限ルールは既に存在します。"
     accessLimitRuleDoesNotExistExceptionMessage                       = "名前が '{0}' のアクセス制限ルールは存在しません。"
+    sseConnectionNameNotFoundExceptionMessage                         = "名前が '{0}' のSSE接続は見つかりませんでした。"
+    signalConnectionNameNotFoundExceptionMessage                      = "名前が '{0}' のSignal接続は見つかりませんでした。"
+    signalFailedToBroadcastExceptionMessage                           = 'Signalは、{0}のために定義されたSignalブロードキャストレベルにより、ブロードキャストに失敗しました: {1}'
+    authMethodNotFoundExceptionMessage                                = "名前が '{0}' の認証メソッドは見つかりませんでした。"
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "名前が '{0}' の認証メソッドイベントは既に登録されています。"
+    authMethodEventNotRegisteredExceptionMessage                      = "名前が '{0}' の認証メソッドイベントは登録されていません。"
+    signalEventAlreadyRegisteredExceptionMessage                      = "名前が '{0}' のSignalイベントは既に登録されています。"
+    signalEventNotRegisteredExceptionMessage                          = "名前が '{0}' のSignalイベントは登録されていません。"
+    sseEventAlreadyRegisteredExceptionMessage                         = "名前が '{0}' のSSEイベントは既に登録されています。"
+    sseEventNotRegisteredExceptionMessage                             = "名前が '{0}' のSSEイベントは登録されていません。"
 }

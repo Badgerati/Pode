@@ -191,7 +191,7 @@ function Test-PodeIsAdminUser {
         return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
     }
     catch [exception] {
-        Write-PodeHost 'Error checking user administrator priviledges' -ForegroundColor Red
+        Write-PodeHost 'Error checking user administrator privileges' -ForegroundColor Red
         Write-PodeHost $_.Exception.Message -ForegroundColor Red
         return $false
     }
@@ -247,9 +247,9 @@ function Get-PodeEndpointInfo {
 
     # validate that we have a valid ip/host:port address
     if (!(
-        ($Address -imatch "^$($cmbdRgx)$") -or
-        ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or
-        (!$Address.Contains('.') -and $Address -imatch "[\:]{0,1}$($portRgx)$")
+            ($Address -imatch "^$($cmbdRgx)$") -or
+            ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or
+            (!$Address.Contains('.') -and $Address -imatch "[\:]{0,1}$($portRgx)$")
         )) {
         throw ($PodeLocale.failedToParseAddressExceptionMessage -f $Address)#"Failed to parse '$($Address)' as a valid IP/Host:Port address"
     }
@@ -620,11 +620,13 @@ function Get-PodeSubnetRange {
 
 function Close-PodeServerInternal {
     # PodeContext doesn't exist return
-    if ($null -eq $PodeContext) { return }
+    if ($null -eq $PodeContext) {
+        return
+    }
+
     try {
         # ensure the token is cancelled
         Write-Verbose 'Cancelling main cancellation token'
-        Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
 
         # stop all current runspaces
         Write-Verbose 'Closing runspaces'
@@ -637,10 +639,10 @@ function Close-PodeServerInternal {
         try {
             # remove all the cancellation tokens
             Write-Verbose 'Disposing cancellation tokens'
-            Close-PodeCancellationToken #-Type Cancellation, Terminate, Restart, Suspend, Resume, Start
+            Close-PodeCancellationToken
 
             # dispose mutex/semaphores
-            Write-Verbose 'Diposing mutex and semaphores'
+            Write-Verbose 'Disposing mutex and semaphores'
             Clear-PodeMutexes
             Clear-PodeSemaphores
         }
@@ -1186,7 +1188,7 @@ function Get-PodeAcceptEncoding {
         }
     }
 
-    # return invalid, error, or return empty for idenity?
+    # return invalid, error, or return empty for identity?
     if ($found.Value -eq 0) {
         if ($ThrowError) {
             throw (New-PodeRequestException -StatusCode 406)
@@ -1773,7 +1775,7 @@ function Get-PodeCount {
     A switch to indicate that the function should return false if the path is a directory.
 
 .PARAMETER Force
-    A switch to indicate that the file with the hidden attribute has to be includede
+    A switch to indicate that the file with the hidden attribute has to be included
 
 .PARAMETER ReturnItem
     Return the item file item itself instead of true or false
@@ -3606,9 +3608,9 @@ function ConvertTo-PodeYamlInternal {
                     $needsQuote = ($string -match '^[\-?:,\[\]{}#&*!|>''"%@`]') -or
                     $string.StartsWith(' ') -or # leading space
                     $string.EndsWith(' ') -or # trailing space
-                        ($string -match ':\s') -or # contains ": "
-                        ($string -match '^(?:~|null|true|false)$') -or # bare null/boolean
-                        ($string -match '^-?\d+(\.\d+)?$')                # integer or float
+                    ($string -match ':\s') -or # contains ": "
+                    ($string -match '^(?:~|null|true|false)$') -or # bare null/boolean
+                    ($string -match '^-?\d+(\.\d+)?$')                # integer or float
 
                     if ($needsQuote) {
                         # single-quote style: double any internal ' to ''

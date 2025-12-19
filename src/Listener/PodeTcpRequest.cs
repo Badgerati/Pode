@@ -15,7 +15,7 @@ namespace Pode
             {
                 if (RawBody != default(byte[]) && RawBody.Length > 0)
                 {
-                    _body = Encoding.GetString(RawBody).Trim();
+                    _body = PodeHelpers.Encoding.GetString(RawBody).Trim();
                 }
 
                 return _body;

@@ -24,7 +24,7 @@ BeforeDiscovery {
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-    
+
     # Import Pode Assembly
     $helperPath = (Split-Path -Parent -Path $path) -ireplace 'unit', 'shared'
     . "$helperPath/TestHelper.ps1"
@@ -35,16 +35,16 @@ BeforeAll {
     $sysAliases = Get-ChildItem Alias:
 
     Get-ChildItem "$($src)/Public/*.ps1" | ForEach-Object { . $_ }
-    $publicFuncs = Get-ChildItem Function: | Where-Object { $sysFuncs -notcontains $_ }
-    $publicAliases = Get-ChildItem Alias: | Where-Object { $sysAliases -notcontains $_ }
+    $publicFuncs = Get-ChildItem Function: | Where-Object { $sysFuncs -inotcontains $_ }
+    $publicAliases = Get-ChildItem Alias: | Where-Object { $sysAliases -inotcontains $_ }
 
     # private functions
     $sysFuncs = Get-ChildItem Function:
     $sysAliases = Get-ChildItem Alias:
 
     Get-ChildItem "$($src)/Private/*.ps1" | ForEach-Object { . $_ }
-    $privateFuncs = Get-ChildItem Function: | Where-Object { $sysFuncs -notcontains $_ }
-    $privateAliases = Get-ChildItem Alias: | Where-Object { $sysAliases -notcontains $_ }
+    $privateFuncs = Get-ChildItem Function: | Where-Object { $sysFuncs -inotcontains $_ }
+    $privateAliases = Get-ChildItem Alias: | Where-Object { $sysAliases -inotcontains $_ }
 }
 
 Describe 'Exported Functions' {
@@ -76,7 +76,7 @@ Describe 'Exported Functions' {
             }
         }
 
-        $missing | SHould -Be @()
+        $missing | Should -Be @()
     }
 }
 
@@ -92,7 +92,7 @@ Describe 'Exported Aliases' {
             }
         }
 
-        $missing | SHould -Be @()
+        $missing | Should -Be @()
     }
 }
 

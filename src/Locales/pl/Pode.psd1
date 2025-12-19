@@ -326,4 +326,14 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Reguła limitu szybkości o nazwie '{0}' nie istnieje."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Reguła limitu dostępu o nazwie '{0}' już istnieje."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Reguła limitu dostępu o nazwie '{0}' nie istnieje."
+    sseConnectionNameNotFoundExceptionMessage                         = "Nie znaleziono połączenia SSE o nazwie '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "Nie znaleziono połączenia Signal o nazwie '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal nie mógł zostać nadany z powodu zdefiniowanego poziomu nadawania Signal dla {0}: {1}.'
+    authMethodNotFoundExceptionMessage                                = "Nie znaleziono metody uwierzytelniania o nazwie '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "Zdarzenie metody uwierzytelniania o nazwie '{0}' jest już zarejestrowane."
+    authMethodEventNotRegisteredExceptionMessage                      = "Zdarzenie metody uwierzytelniania o nazwie '{0}' nie jest zarejestrowane."
+    signalEventAlreadyRegisteredExceptionMessage                      = "Zdarzenie Signal o nazwie '{0}' jest już zarejestrowane."
+    signalEventNotRegisteredExceptionMessage                          = "Zdarzenie Signal o nazwie '{0}' nie jest zarejestrowane."
+    sseEventAlreadyRegisteredExceptionMessage                         = "Zdarzenie SSE o nazwie '{0}' jest już zarejestrowane."
+    sseEventNotRegisteredExceptionMessage                             = "Zdarzenie SSE o nazwie '{0}' nie jest zarejestrowane."
 }

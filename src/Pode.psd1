@@ -88,7 +88,6 @@
         'Test-PodeRequestFile',
         'Set-PodeViewEngine',
         'Use-PodePartialView',
-        'Send-PodeSignal',
         'Add-PodeViewFolder',
         'Send-PodeResponse',
 
@@ -108,6 +107,37 @@
         'Get-PodeSseDefaultScope',
         'Test-PodeSseName',
         'Test-PodeSseClientId',
+        'Get-PodeSseClientIdList',
+        'Get-PodeSseGroupList',
+        'Get-PodeSseNameList',
+        'Get-PodeSseEvent',
+        'Register-PodeSseEvent',
+        'Test-PodeSseEvent',
+        'Unregister-PodeSseEvent',
+
+        # signals
+        'Send-PodeSignal',
+        'Close-PodeSignalConnection',
+        'ConvertTo-PodeSignalConnection',
+        'Disable-PodeSignalSigning',
+        'Enable-PodeSignalSigning',
+        'Get-PodeSignalBroadcastLevel',
+        'Get-PodeSignalClientIdList',
+        'Get-PodeSignalDefaultScope',
+        'Get-PodeSignalGroupList',
+        'Get-PodeSignalNameList',
+        'New-PodeSignalClientId',
+        'Set-PodeSignalBroadcastLevel',
+        'Set-PodeSignalDefaultScope',
+        'Test-PodeSignalBroadcastLevel',
+        'Test-PodeSignalClientId',
+        'Test-PodeSignalClientIdSigned',
+        'Test-PodeSignalClientIdValid',
+        'Test-PodeSignalName',
+        'Get-PodeSignalEvent',
+        'Register-PodeSignalEvent',
+        'Test-PodeSignalEvent',
+        'Unregister-PodeSignalEvent',
 
         # utility helpers
         'Close-PodeDisposable',
@@ -268,6 +298,10 @@
         'Get-PodeAuthUser',
         'Add-PodeAuthSession',
         'New-PodeAuthKeyTab',
+        'Get-PodeAuthEvent',
+        'Register-PodeAuthEvent',
+        'Test-PodeAuthEvent',
+        'Unregister-PodeAuthEvent',
 
         # access
         'New-PodeAccessScheme',
@@ -385,6 +419,9 @@
         'Get-PodeServerSignalMetric',
         'Get-PodeServerActiveRequestMetric',
         'Get-PodeServerActiveSignalMetric',
+        'Get-PodeServerActiveSignalClientMetric',
+        'Get-PodeServerActiveSseClientMetric',
+        'Get-PodeServerActiveSseMetric',
 
         # AutoImport
         'Export-PodeModule',
