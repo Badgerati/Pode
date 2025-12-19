@@ -1533,7 +1533,7 @@ Reads data from a TCP socket stream.
 An optional Timeout in milliseconds.
 
 .PARAMETER CheckBytes
-An optional array of bytes to check at the end of a receievd data stream, to determine if the data is complete.
+An optional array of bytes to check at the end of a received data stream, to determine if the data is complete.
 
 .PARAMETER CRLFMessageEnd
 If supplied, the CheckBytes will be set to 13 and 10 to make sure a message ends with CR and LF.
@@ -1869,122 +1869,6 @@ function Use-PodePartialView {
 
         # run any engine logic
         return (Get-PodeFileContentUsingViewEngine -FileInfo $fileInfo -Data $Data)
-    }
-}
-
-<#
-.SYNOPSIS
-Broadcasts a message to connected WebSocket clients.
-
-.DESCRIPTION
-Broadcasts a message to all, or some, connected WebSocket clients. You can specify a path to send messages to, or a specific ClientId.
-
-.PARAMETER Value
-A String, PSObject, or HashTable value. For non-string values, they will be converted to JSON.
-
-.PARAMETER Path
-The Path of connected clients to send the message.
-
-.PARAMETER ClientId
-A specific ClientId of a connected client to send a message. Not currently used.
-
-.PARAMETER Depth
-The Depth to generate the JSON document - the larger this value the worse performance gets.
-
-.PARAMETER Mode
-The Mode to broadcast a message: Auto, Broadcast, Direct. (Default: Auto)
-
-.PARAMETER IgnoreEvent
-If supplied, if a SignalEvent is available it's data, such as path/clientId, will be ignored.
-
-.EXAMPLE
-Send-PodeSignal -Value @{ Message = 'Hello, world!' }
-
-.EXAMPLE
-Send-PodeSignal -Value @{ Data = @(123, 100, 101) } -Path '/response-charts'
-#>
-function Send-PodeSignal {
-    [CmdletBinding()]
-    param(
-        [Parameter(ValueFromPipeline = $true, Position = 0 )]
-        $Value,
-
-        [Parameter()]
-        [string]
-        $Path,
-
-        [Parameter()]
-        [string]
-        $ClientId,
-
-        [Parameter()]
-        [int]
-        $Depth = 10,
-
-        [Parameter()]
-        [ValidateSet('Auto', 'Broadcast', 'Direct')]
-        [string]
-        $Mode = 'Auto',
-
-        [switch]
-        $IgnoreEvent
-    )
-    begin {
-        $pipelineItemCount = 0
-    }
-
-    process {
-        $pipelineItemCount++
-    }
-
-    end {
-        if ($pipelineItemCount -gt 1) {
-            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
-        }
-
-        # error if not configured
-        if (!$PodeContext.Server.Signals.Enabled) {
-            # WebSockets have not been configured to send signal messages
-            throw ($PodeLocale.websocketsNotConfiguredForSignalMessagesExceptionMessage)
-        }
-
-        # do nothing if no value
-        if (($null -eq $Value) -or ([string]::IsNullOrEmpty($Value))) {
-            return
-        }
-
-        # jsonify the value
-        if ($Value -isnot [string]) {
-            if ($Depth -le 0) {
-                $Value = (ConvertTo-Json -InputObject $Value -Compress)
-            }
-            else {
-                $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress)
-            }
-        }
-
-        # check signal event
-        if (!$IgnoreEvent -and ($null -ne $SignalEvent)) {
-            if ([string]::IsNullOrWhiteSpace($Path)) {
-                $Path = $SignalEvent.Data.Path
-            }
-
-            if ([string]::IsNullOrWhiteSpace($ClientId)) {
-                $ClientId = $SignalEvent.Data.ClientId
-            }
-
-            if (($Mode -ieq 'Auto') -and ($SignalEvent.Data.Direct -or ($SignalEvent.ClientId -ieq $SignalEvent.Data.ClientId))) {
-                $Mode = 'Direct'
-            }
-        }
-
-        # broadcast or direct?
-        if ($Mode -iin @('Auto', 'Broadcast')) {
-            $PodeContext.Server.Signals.Listener.AddServerSignal($Value, $Path, $ClientId)
-        }
-        else {
-            $SignalEvent.Response.Write($Value)
-        }
     }
 }
 

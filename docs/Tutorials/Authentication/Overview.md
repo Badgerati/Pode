@@ -164,7 +164,7 @@ The `Auth` object will also contain:
 | IsAuthenticated | States if the request is for an authenticated user, can be `$true`, `$false` or `$null`                                                                                                                                                         |
 | Store           | States whether the authentication is for a session, and will be stored as a cookie                                                                                                                                                              |
 | IsAuthorised    | If using [Authorisation](../../Authorisation/Overview), this value will be `$true` or `$false` depending on whether or not the authenticated user is authorised to access the Route. If not using Authorisation this value will just be `$true` |
-| Name            | The name(s) of the Authentication methods which passed - useful if you're using merged Authentications and you want to know which one(s) passed                                                                                                 |
+| Name            | The name of the Authentication method which passed                                                                                                                                                                                              |
 
 The following example gets the user's name from the `Auth` object:
 
@@ -387,4 +387,58 @@ For example, the below would use the inbuilt Windows AD authentication method:
 Start-PodeServer {
     New-PodeAuthScheme -Basic | Add-PodeAuthWindowsAd -Name 'Login'
 }
+```
+
+## Events
+
+Similar to [Server Events](../../Events) there are also events which you can register scriptblocks to for Authentication. Currently the following events are supported:
+
+| Event  | Description                                      |
+| ------ | ------------------------------------------------ |
+| Login  | Triggered when a user successfully authenticates |
+| Logout | Triggered when a user logs out                   |
+
+### Register
+
+To register a scriptblock to an Authentication event you use [`Register-PodeAuthEvent`](../../../Functions/Authentication/Register-PodeAuthEvent). You'll need to supply the Name of the Authentication Method which you're registering the event against, as well as the type of the event, and a name for the event registration - and of course the scriptblock itself.
+
+For example, to register for the Login event of a basic Authentication Method, to write the username to the CLI, you would do:
+
+```powershell
+# create the basic authentication method
+New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Example' -Sessionless -ScriptBlock { }
+
+# register for the Login event
+Register-PodeAuthEvent -Name 'Example' -Type Login -EventName 'OnLogin' -ScriptBlock {
+    "User logged in: $($TriggeredEvent.User.Name)" | Out-Default
+}
+```
+
+#### Event Data
+
+Various metadata which triggered the Authentication event is supplied to your scriptblock, under the `$TriggeredEvent` variable - including the User object, the same one typically found under `$WebEvent.Auth.User`:
+
+| Property  | Description                                                                           |
+| --------- | ------------------------------------------------------------------------------------- |
+| Lockable  | A global lockable value you can use for `Lock-PodeObject`                             |
+| Metadata  | Any additional metadata about the event, you can add your own properties here as well |
+| Name      | The Name of the Authentication Method which triggered the event (see more info below) |
+| Type      | The type of event triggered - Login, Logout                                           |
+| Timestamp | When the event was triggered, in UTC                                                  |
+| User      | The User object itself, potentially containing the username, email, etc.              |
+
+!!! info
+    When registering an event against a standard `Add-PodeAuth` method, the `Name` property in `$TriggeredEvent` will always be the name of that Authentication Method.
+
+    However, in the case of `Merge-PodeAuth` methods, the event will be triggered for the child Authentication Method which caused the event to be successful; it will then also be called for each "merge" parent of that child Authentication method.
+
+    For example, if you have two Authentication methods: "Basic" and "API", and then you merge this into one "OR" Authentication method "MergedAuth", then if "API" caused the Login event to be successful the event will be triggered for "API" but then also for "MergedAuth" (assuming any event registrations exist).
+
+### Unregister
+
+To unregister an previous event registration, simply use [`Unregister-PodeAuthEvent`](../../../Functions/Authentication/Unregister-PodeAuthEvent):
+
+```powershell
+# to remove the Login event for the Basic authentication method above:
+Unregister-PodeAuthEvent -Name 'Example' -Type Login -EventName 'OnLogin'
 ```

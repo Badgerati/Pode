@@ -8,7 +8,6 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.IO;
-using System.Net.Http;
 
 namespace Pode
 {
@@ -59,6 +58,9 @@ namespace Pode
         // Property to determine if hostnames are set.
         public bool HasHostnames => Hostnames.Count != 0;
         public string Hostname => HasHostnames ? Hostnames[0] : Endpoints[0].IPAddress.ToString();
+
+        // Property to control automatic WebSocket upgrades.
+        public bool NoAutoUpgradeWebSockets { get; set; } = false;
 
         /// <summary>
         /// Initializes a new instance of the PodeSocket class.
@@ -294,83 +296,6 @@ namespace Pode
         }
 
         /// <summary>
-        /// Handles the context, processing and disposing it if needed.
-        /// </summary>
-        /// <param name="context">The PodeContext representing the connection context.</param>
-        public async Task HandleContext(PodeContext context)
-        {
-            try
-            {
-                // Determine if the context should be processed.
-                var process = true;
-
-                // If the context should be closed immediately, dispose it.
-                if (context.CloseImmediately)
-                {
-                    // Check if the request is aborted with a non-StatusCode of 408 (Request Timeout).
-                    if (context.Request.IsAborted)
-                    {
-                        PodeHelpers.WriteException(context.Request.Error, Listener, context.Request.Error.LoggingLevel);
-                    }
-
-                    context.Dispose(true);
-                    process = false;
-                }
-                else if (context.IsWebSocket) // Handle WebSocket upgrade and context disposal.
-                {
-                    if (!context.IsWebSocketUpgraded)
-                    {
-                        await context.UpgradeWebSocket().ConfigureAwait(false);
-                        process = false;
-                        context.Dispose();
-                    }
-                    else if (!context.Request.IsProcessable)
-                    {
-                        process = false;
-                        context.Dispose();
-                    }
-                }
-                else if (context.IsSmtp) // Handle SMTP context disposal.
-                {
-                    if (!context.Request.IsProcessable)
-                    {
-                        process = false;
-                        context.Dispose();
-                    }
-                }
-                else if (context.IsHttp) // Handle HTTP context disposal if awaiting body.
-                {
-                    if (context.HttpRequest.AwaitingBody)
-                    {
-                        process = false;
-                        context.Dispose();
-                    }
-                }
-
-                // Add the context for processing.
-                if (process)
-                {
-                    if (context.IsWebSocket)
-                    {
-                        PodeHelpers.WriteErrorMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, context);
-                        Listener.AddClientSignal(context.SignalRequest.NewClientSignal());
-                        context.Dispose();
-                    }
-                    else
-                    {
-                        PodeHelpers.WriteErrorMessage($"Received request", Listener, PodeLoggingLevel.Verbose, context);
-                        Listener.AddContext(context);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log any exceptions that occur while handling the context.
-                PodeHelpers.WriteException(ex, Listener);
-            }
-        }
-
-        /// <summary>
         /// Creates a new instance of SocketAsyncEventArgs for accepting connections.
         /// </summary>
         /// <returns>A new SocketAsyncEventArgs instance.</returns>
@@ -456,6 +381,7 @@ namespace Pode
                 }
 
                 Endpoints.Clear();
+                Endpoints = null;
 
                 // Close all pending sockets.
                 try
@@ -491,6 +417,13 @@ namespace Pode
                 Hostnames.AddRange(socket.Hostnames);
             }
 
+            // Update any base properties as needed.
+            if (socket.NoAutoUpgradeWebSockets)
+            {
+                NoAutoUpgradeWebSockets = socket.NoAutoUpgradeWebSockets;
+            }
+
+            // Dispose of the merged socket.
             socket.Dispose();
         }
 

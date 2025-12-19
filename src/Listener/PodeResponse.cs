@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -11,22 +9,14 @@ namespace Pode
 {
     public class PodeResponse : IDisposable
     {
-        protected const int MAX_FRAME_SIZE = 8192;
-
         public PodeResponseHeaders Headers { get; private set; }
         public int StatusCode = 200;
         public bool SendChunked = false;
         public MemoryStream OutputStream { get; private set; }
         public bool IsDisposed { get; private set; }
 
-        private PodeContext Context;
+        public PodeContext Context { get; private set; }
         private PodeRequest Request { get => Context.Request; }
-
-        public PodeSseScope SseScope { get; private set; } = PodeSseScope.None;
-        public bool SseEnabled
-        {
-            get => SseScope != PodeSseScope.None;
-        }
 
         public bool SentHeaders { get; private set; }
         public bool SentBody { get; private set; }
@@ -78,8 +68,6 @@ namespace Pode
             get => $"{((PodeHttpRequest)Request).Protocol} {StatusCode} {StatusDescription}{PodeHelpers.NEW_LINE}";
         }
 
-        private static readonly UTF8Encoding Encoding = new UTF8Encoding();
-
         public PodeResponse(PodeContext context)
         {
             Headers = new PodeResponseHeaders();
@@ -89,7 +77,7 @@ namespace Pode
 
         public async Task Send()
         {
-            if (Sent || IsDisposed || (SentHeaders && SseEnabled))
+            if (Sent || IsDisposed || (SentHeaders && Context.IsSSE))
             {
                 return;
             }
@@ -153,7 +141,7 @@ namespace Pode
 
         private async Task SendHeaders(bool timeout)
         {
-            if (SentHeaders || !Request.InputStream.CanWrite)
+            if (SentHeaders)
             {
                 return;
             }
@@ -167,23 +155,20 @@ namespace Pode
             SetDefaultHeaders();
 
             // stream response output
-            var buffer = Encoding.GetBytes(BuildHeaders(Headers));
-            await Request.InputStream.WriteAsync(buffer, 0, buffer.Length, Context.Listener.CancellationToken).ConfigureAwait(false);
-            buffer = default;
-            SentHeaders = true;
+            SentHeaders = await Write(PodeHelpers.Encoding.GetBytes(BuildHeaders(Headers)));
         }
 
         private async Task SendBody(bool timeout)
         {
-            if (SentBody || SseEnabled || !Request.InputStream.CanWrite)
+            if (SentBody || Context.IsSSE)
             {
                 return;
             }
 
             // stream response output
-            if (!timeout && OutputStream.Length > 0)
+            if (!timeout)
             {
-                await Task.Run(() => OutputStream.WriteTo(Request.InputStream), Context.Listener.CancellationToken).ConfigureAwait(false);
+                await Request.Write(OutputStream, Context.Listener.CancellationToken).ConfigureAwait(false);
             }
 
             SentBody = true;
@@ -191,26 +176,15 @@ namespace Pode
 
         public async Task Flush()
         {
-            if (Request.InputStream.CanWrite)
-            {
-                await Request.InputStream.FlushAsync().ConfigureAwait(false);
-            }
+            await Request.Flush().ConfigureAwait(false);
         }
 
-        public async Task<string> SetSseConnection(PodeSseScope scope, string clientId, string name, string group, int retry, bool allowAllOrigins)
+        public async Task SendSSEHeaders(string clientId, string name, string group, bool allowAllOrigins)
         {
-            // do nothing for no scope
-            if (scope == PodeSseScope.None)
-            {
-                return null;
-            }
-
-            // cancel timeout
-            Context.CancelTimeout();
-            SseScope = scope;
+            // clear headers, we only need the SSE headers
+            Headers.Clear();
 
             // set appropriate SSE headers
-            Headers.Clear();
             ContentType = "text/event-stream";
             Headers.Add("Cache-Control", "no-cache");
             Headers.Add("Connection", "keep-alive");
@@ -220,184 +194,55 @@ namespace Pode
                 Headers.Add("Access-Control-Allow-Origin", "*");
             }
 
-            // generate clientId
-            if (string.IsNullOrEmpty(clientId))
-            {
-                clientId = PodeHelpers.NewGuid();
-            }
-
+            // set Pode specific SSE headers
             Headers.Set("X-Pode-Sse-Client-Id", clientId);
             Headers.Set("X-Pode-Sse-Name", name);
 
-            if (!string.IsNullOrEmpty(group))
+            if (!string.IsNullOrWhiteSpace(group))
             {
                 Headers.Set("X-Pode-Sse-Group", group);
             }
 
-            // send headers, and open event
+            // send initial headers
             await Send().ConfigureAwait(false);
-            await SendSseRetry(retry).ConfigureAwait(false);
-            await SendSseEvent("pode.open", $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\"}}").ConfigureAwait(false);
-
-            // if global, cache connection in listener
-            if (scope == PodeSseScope.Global)
-            {
-                Context.Listener.AddSseConnection(new PodeServerEvent(Context, name, group, clientId));
-            }
-
-            // return clientId
-            return clientId;
         }
 
-        public async Task CloseSseConnection()
+        public async Task SendWebSocketHeaders(string clientId, string name, string group, string acceptHandshakeKey)
         {
-            await SendSseEvent("pode.close", string.Empty).ConfigureAwait(false);
+            // set the status code and description
+            StatusCode = 101;
+            StatusDescription = "Switching Protocols";
+
+            // clear headers, we only need the WebSocket headers
+            Headers.Clear();
+
+            // set appropriate WebSocket headers
+            Headers.Add("Upgrade", "websocket");
+            Headers.Add("Connection", "Upgrade");
+            Headers.Add("Sec-WebSocket-Accept", acceptHandshakeKey);
+
+            // set Pode specific WebSocket headers
+            Headers.Set("X-Pode-Signal-Client-Id", clientId);
+            Headers.Set("X-Pode-Signal-Name", name);
+
+            if (!string.IsNullOrWhiteSpace(group))
+            {
+                Headers.Set("X-Pode-Signal-Group", group);
+            }
+
+            // send initial headers
+            await Send().ConfigureAwait(false);
         }
 
-        public async Task SendSseEvent(string eventType, string data, string id = null)
+        public async Task<bool> WriteLine(string message, bool flush = false)
         {
-            if (!string.IsNullOrEmpty(id))
-            {
-                await WriteLine($"id: {id}").ConfigureAwait(false);
-            }
-
-            if (!string.IsNullOrEmpty(eventType))
-            {
-                await WriteLine($"event: {eventType}").ConfigureAwait(false);
-            }
-
-            await WriteLine($"data: {data}{PodeHelpers.NEW_LINE}", true).ConfigureAwait(false);
-        }
-
-        public async Task SendSseRetry(int retry)
-        {
-            if (retry <= 0)
-            {
-                return;
-            }
-
-            await WriteLine($"retry: {retry}", true).ConfigureAwait(false);
-        }
-
-        public async Task SendSignal(PodeServerSignal signal)
-        {
-            if (!string.IsNullOrEmpty(signal.Value))
-            {
-                await Write(signal.Value).ConfigureAwait(false);
-            }
-        }
-
-        public async Task Write(string message, bool flush = false)
-        {
-            // simple messages
-            if (!Context.IsWebSocket)
-            {
-                await Write(Encoding.GetBytes(message), flush).ConfigureAwait(false);
-            }
-
-            // web socket message
-            else
-            {
-                await WriteFrame(message, PodeWsOpCode.Text, flush).ConfigureAwait(false);
-            }
-        }
-
-        public async Task WriteFrame(string message, PodeWsOpCode opCode = PodeWsOpCode.Text, bool flush = false)
-        {
-            if (IsDisposed)
-            {
-                return;
-            }
-
-            var msgBytes = Encoding.GetBytes(message);
-            var msgLength = msgBytes.Length;
-            var offset = 0;
-            var firstFrame = true;
-
-            while (offset < msgLength || (msgLength == 0 && firstFrame))
-            {
-                var frameSize = Math.Min(msgLength - offset, MAX_FRAME_SIZE);
-                var frame = new byte[frameSize];
-                Array.Copy(msgBytes, offset, frame, 0, frameSize);
-
-                // fin bit and op code
-                var isFinal = offset + frameSize >= msgLength;
-                var finBit = (byte)(isFinal ? 0x80 : 0x00);
-                var opCodeByte = (byte)(firstFrame ? opCode : PodeWsOpCode.Continuation);
-
-                // build the frame buffer
-                var buffer = new List<byte> { (byte)(finBit | opCodeByte) };
-
-                if (frameSize < 126)
-                {
-                    buffer.Add((byte)((byte)0x00 | (byte)frameSize));
-                }
-                else if (frameSize <= UInt16.MaxValue)
-                {
-                    buffer.Add((byte)((byte)0x00 | (byte)126));
-                    buffer.Add((byte)((frameSize >> 8) & (byte)255));
-                    buffer.Add((byte)(frameSize & (byte)255));
-                }
-                else
-                {
-                    buffer.Add((byte)((byte)0x00 | (byte)127));
-                    buffer.Add((byte)((frameSize >> 56) & (byte)255));
-                    buffer.Add((byte)((frameSize >> 48) & (byte)255));
-                    buffer.Add((byte)((frameSize >> 40) & (byte)255));
-                    buffer.Add((byte)((frameSize >> 32) & (byte)255));
-                    buffer.Add((byte)((frameSize >> 24) & (byte)255));
-                    buffer.Add((byte)((frameSize >> 16) & (byte)255));
-                    buffer.Add((byte)((frameSize >> 8) & (byte)255));
-                    buffer.Add((byte)(frameSize & (byte)255));
-                }
-
-                // add the payload
-                buffer.AddRange(frame);
-
-                // send
-                await Write(buffer.ToArray(), flush).ConfigureAwait(false);
-                offset += frameSize;
-                firstFrame = false;
-            }
-        }
-
-        public async Task WriteLine(string message, bool flush = false)
-        {
-            await Write(Encoding.GetBytes($"{message}{PodeHelpers.NEW_LINE}"), flush).ConfigureAwait(false);
+            return await Write(PodeHelpers.Encoding.GetBytes($"{message}{PodeHelpers.NEW_LINE}"), flush).ConfigureAwait(false);
         }
 
         // write a byte array to the actual client stream
-        public async Task Write(byte[] buffer, bool flush = false)
+        public async Task<bool> Write(byte[] buffer, bool flush = false)
         {
-            if (Request.IsDisposed || !Request.InputStream.CanWrite)
-            {
-                return;
-            }
-
-            try
-            {
-#if NETCOREAPP2_1_OR_GREATER
-                await Request.InputStream.WriteAsync(buffer.AsMemory(), Context.Listener.CancellationToken).ConfigureAwait(false);
-#else
-                await Request.InputStream.WriteAsync(buffer, 0, buffer.Length, Context.Listener.CancellationToken).ConfigureAwait(false);
-#endif
-
-                if (flush)
-                {
-                    await Flush().ConfigureAwait(false);
-                }
-            }
-            catch (OperationCanceledException) { }
-            catch (IOException) { }
-            catch (AggregateException aex)
-            {
-                PodeHelpers.HandleAggregateException(aex, Context.Listener);
-            }
-            catch (Exception ex)
-            {
-                PodeHelpers.WriteException(ex, Context.Listener);
-                throw;
-            }
+            return await Request.Write(buffer, Context.Listener.CancellationToken, flush);
         }
 
         public void WriteFile(string path)
@@ -427,7 +272,7 @@ namespace Pode
         private void SetDefaultHeaders()
         {
             // ensure content length (remove for 1xx responses, ensure added otherwise)
-            if (StatusCode < 200 || SseEnabled)
+            if (StatusCode < 200 || Context.IsSSE)
             {
                 Headers.Remove("Content-Length");
             }
@@ -472,7 +317,7 @@ namespace Pode
             Headers.Add("X-Pode-ContextId", Context.ID);
 
             // close the connection, only if request didn't specify keep-alive
-            if (!Context.IsKeepAlive && !Context.IsWebSocket && !SseEnabled)
+            if (!Context.IsKeepAlive && !Context.IsWebSocket && !Context.IsSSE)
             {
                 if (Headers.ContainsKey("Connection"))
                 {
@@ -515,6 +360,7 @@ namespace Pode
                 OutputStream = default;
             }
 
+            GC.SuppressFinalize(this);
             PodeHelpers.WriteErrorMessage($"Response disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
         }
     }
