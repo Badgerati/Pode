@@ -5,7 +5,7 @@
 .DESCRIPTION
     This function initializes and starts a Pode server based on the provided configuration.
     It supports both inline script blocks and external files for defining server logic.
-    The server's behavior, console output, and various features can be customized using parameters.
+    The server's behaviour, console output, and various features can be customized using parameters.
     Additionally, it manages server termination, cancellation, and cleanup processes.
 
 .PARAMETER ScriptBlock
@@ -290,7 +290,7 @@ function Start-PodeServer {
             # Call the function using splatting
             Set-PodeConsoleOverrideConfiguration @ConfigParameters
 
-            # start the file monitor for interally restarting
+            # start the file monitor for internally restarting
             Start-PodeFileMonitor
 
             # start the server
@@ -335,6 +335,7 @@ function Start-PodeServer {
             throw
         }
         finally {
+            # trigger stop event
             Invoke-PodeEvent -Type Stop
 
             # set output values
@@ -346,11 +347,13 @@ function Start-PodeServer {
             # clean the runspaces and tokens
             Close-PodeServerInternal
 
+            # output termination info
             Show-PodeConsoleInfo
 
             # Restore the name of the current runspace
             Set-PodeCurrentRunspaceName -Name $previousRunspaceName
 
+            # show done message
             if (($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless)) {
                 Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
             }
@@ -376,7 +379,7 @@ function Close-PodeServer {
     [CmdletBinding()]
     param()
 
-    Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
+    Close-PodeCancellationTokenRequest -Type Terminate
 }
 
 <#
@@ -393,7 +396,7 @@ function Restart-PodeServer {
     [CmdletBinding()]
     param()
 
-    # Only if the Restart feature is anabled
+    # Only if the Restart feature is enabled
     if ($PodeContext.Server.AllowedActions.Restart) {
         Close-PodeCancellationTokenRequest -Type Restart
     }
@@ -422,15 +425,18 @@ function Resume-PodeServer {
         [int]
         $Timeout
     )
-    # Only if the Suspend feature is anabled
-    if ($PodeContext.Server.AllowedActions.Suspend) {
-        if ($Timeout) {
-            $PodeContext.Server.AllowedActions.Timeout.Resume = $Timeout
-        }
 
-        if ((Test-PodeServerState -State Suspended)) {
-            Set-PodeResumeToken
-        }
+    # Only if the Suspend feature is enabled
+    if (!$PodeContext.Server.AllowedActions.Suspend) {
+        return
+    }
+
+    if ($Timeout) {
+        $PodeContext.Server.AllowedActions.Timeout.Resume = $Timeout
+    }
+
+    if ((Test-PodeServerState -State Suspended)) {
+        Set-PodeResumeToken
     }
 }
 
@@ -457,14 +463,18 @@ function Suspend-PodeServer {
         [int]
         $Timeout
     )
-    # Only if the Suspend feature is anabled
-    if ($PodeContext.Server.AllowedActions.Suspend) {
-        if ($Timeout) {
-            $PodeContext.Server.AllowedActions.Timeout.Suspend = $Timeout
-        }
-        if (!(Test-PodeServerState -State Suspended)) {
-            Set-PodeSuspendToken
-        }
+
+    # Only if the Suspend feature is enabled
+    if (!$PodeContext.Server.AllowedActions.Suspend) {
+        return
+    }
+
+    if ($Timeout) {
+        $PodeContext.Server.AllowedActions.Timeout.Suspend = $Timeout
+    }
+
+    if (!(Test-PodeServerState -State Suspended)) {
+        Set-PodeSuspendToken
     }
 }
 

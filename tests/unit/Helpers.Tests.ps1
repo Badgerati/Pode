@@ -1081,11 +1081,20 @@ Describe 'Close-PodeServerInternal' {
         Mock Close-PodeCancellationTokenRequest {}
     }
 
-
     It 'Closes out pode, but with no done flag' {
-        $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }
+        $PodeContext = @{
+            'Server' = @{
+                'Types' = 'Server'
+            }
+            'Tokens' = @{
+                'Restart' = $null
+                'Resume'  = $null
+            }
+        }
+
         Close-PodeServerInternal
         Assert-MockCalled Write-PodeHost -Times 0 -Scope It
+        Assert-MockCalled Close-PodeDisposable -Times 2 -Scope It
     }
 
 }

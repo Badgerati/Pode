@@ -1,0 +1,37 @@
+<html>
+    <head>
+        <title>WebSockets</title>
+        <link rel="stylesheet" type="text/css" href="/styles/websockets.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script type="text/javascript" src="/scripts/websockets.js"></script>
+    </head>
+    <body>
+        <h1>Example of using a WebSockets</h1>
+
+        $(
+            if ($data.IsSecure) {
+                "<form action='/logout' method='post'>
+                    <div>
+                        <input type='submit' value='Logout'/>
+                    </div>
+                </form>"
+            }
+        )
+
+        $(
+            if ($data.IsSecure) {
+                "<p>Clicking the below button will temporarily transmit messages over a locally scoped WebSocket connection.</p>"
+                "<p>The messages will only be received by the current client.</p>"
+                "<button id='local'>Connect Locally</button>"
+            }
+        )
+
+        <p>Clicking submit will broadcast the message to all connected clients - try opening this page on multiple, and different, browsers!</p>
+        <form id='bc-form'>
+            <input type='text' name='message' id='bc-message' placeholder='Enter any random text' />
+            <input type='submit' value='Broadcast!' />
+        </form>
+
+        <div id='messages'></div>
+    </body>
+</html>
