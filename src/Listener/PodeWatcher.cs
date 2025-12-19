@@ -1,18 +1,17 @@
 using System.Collections.Generic;
 using System.Threading;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Pode
 {
     public class PodeWatcher : PodeConnector
     {
-        private IList<PodeFileWatcher> FileWatchers;
+        private readonly List<PodeFileWatcher> FileWatchers;
 
         public PodeItemQueue<PodeFileEvent> FileEvents { get; private set; }
 
-        public PodeWatcher(CancellationToken cancellationToken = default)
-            : base(cancellationToken)
+        public PodeWatcher(PodeConnectorType type, CancellationToken cancellationToken = default)
+            : base(type, cancellationToken)
         {
             FileWatchers = new List<PodeFileWatcher>();
             FileEvents = new PodeItemQueue<PodeFileEvent>();
@@ -70,7 +69,7 @@ namespace Pode
                 _evt.Dispose();
             }
 
-            FileEvents.Clear();
+            FileEvents.Dispose();
             PodeHelpers.WriteErrorMessage($"Closed file events", this, PodeLoggingLevel.Verbose);
         }
     }

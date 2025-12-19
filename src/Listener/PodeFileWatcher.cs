@@ -7,7 +7,7 @@ namespace Pode
     public class PodeFileWatcher
     {
         public PodeWatcher Watcher;
-        private RecoveringFileSystemWatcher FileWatcher;
+        private readonly RecoveringFileSystemWatcher FileWatcher;
 
         public string Name { get; private set; }
         public ISet<PodeFileWatcherChangeType> EventsRegistered { get; private set; }

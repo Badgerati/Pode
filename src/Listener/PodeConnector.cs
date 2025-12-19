@@ -10,9 +10,12 @@ namespace Pode
         public bool ErrorLoggingEnabled { get; set; }
         public string[] ErrorLoggingLevels { get; set; }
         public CancellationToken CancellationToken { get; private set; }
+        public PodeConnectorType Type { get; private set; }
 
-        public PodeConnector(CancellationToken cancellationToken = default(CancellationToken))
+        public PodeConnector(PodeConnectorType type, CancellationToken cancellationToken = default(CancellationToken))
         {
+            Type = type;
+
             CancellationToken = cancellationToken == default(CancellationToken)
                 ? cancellationToken
                 : new CancellationTokenSource().Token;
@@ -40,6 +43,7 @@ namespace Pode
 
             // disposed
             IsDisposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -387,62 +387,22 @@ function Get-PodeEndpointByName {
     return $null
 }
 
-<#
-.SYNOPSIS
-    Organizes the Pode server's endpoint list based on protocol and URL.
-
-.DESCRIPTION
-    This internal utility function arranges an array of endpoint hashtables, sorting them
-    first by protocol in a predefined order and then alphabetically by URL. It ensures
-    a consistent structure for subsequent processing or display.
-
-.PARAMETER EndpointsInfo
-    An array of hashtables representing endpoint details, with fields such as `Url`,
-    `DualMode`, and `Pool`.
-
-.OUTPUTS
-    An array of endpoints organized for consistency.
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-#>
-function Get-PodeSortedEndpointsInfo {
+function Get-PodeEndpointProtocolOrder {
     param(
-        [Parameter(Mandatory = $true)]
-        [array]
-        $EndpointsInfo
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [string]
+        $Protocol
     )
 
-    #$PodeContext.Server.EndpointsInfo
-
-    # Define protocol sorting order
-    $protocolOrder = @{
-        'HTTP'  = 1
-        'HTTPS' = 2
-        'WS'    = 3
-        'WSS'   = 4
-        'SMTP'  = 5
-        'SMTPS' = 6
-        'TCP'   = 7
-        'TCPS'  = 8
+    switch ($Protocol.ToLowerInvariant()) {
+        'http' { return 1 }
+        'https' { return 2 }
+        'ws' { return 3 }
+        'wss' { return 4 }
+        'smtp' { return 5 }
+        'smtps' { return 6 }
+        'tcp' { return 7 }
+        'tcps' { return 8 }
+        default { return 99 }
     }
-
-    # Add protocol field to each endpoint for sorting
-    $formattedEndpoints = $EndpointsInfo | ForEach-Object {
-        $protocol = ($_.Url -split ':')[0].ToUpper()
-        @{
-            Protocol = $protocol
-            DualMode = $_.DualMode
-            Pool     = $_.Pool
-            Url      = $_.Url
-            Name     = $_.Name
-            Default  = $_.Default
-            Order    = $protocolOrder[$protocol] -as [int]
-
-        }
-    }
-
-    # Sort endpoints by protocol order and then by URL
-    return $formattedEndpoints | Sort-Object -Property @{Expression = 'Order'; Ascending = $true }, @{Expression = 'Url'; Ascending = $true }
-
 }

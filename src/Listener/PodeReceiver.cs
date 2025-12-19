@@ -8,12 +8,12 @@ namespace Pode
 {
     public class PodeReceiver : PodeConnector
     {
-        private IDictionary<string, PodeWebSocket> WebSockets;
+        private readonly IDictionary<string, PodeWebSocket> WebSockets;
 
         public PodeItemQueue<PodeWebSocketRequest> Requests { get; private set; }
 
-        public PodeReceiver(CancellationToken cancellationToken = default(CancellationToken))
-            : base(cancellationToken)
+        public PodeReceiver(PodeConnectorType type, CancellationToken cancellationToken = default(CancellationToken))
+            : base(type, cancellationToken)
         {
             WebSockets = new Dictionary<string, PodeWebSocket>();
             Requests = new PodeItemQueue<PodeWebSocketRequest>();
@@ -40,19 +40,19 @@ namespace Pode
 
         public PodeWebSocket GetWebSocket(string name)
         {
-            return WebSockets.ContainsKey(name) ? WebSockets[name] : default;
+            return WebSockets.TryGetValue(name, out PodeWebSocket value) ? value : default;
         }
 
         public void DisconnectWebSocket(string name)
         {
             lock (WebSockets)
             {
-                if (!WebSockets.ContainsKey(name))
+                if (!WebSockets.TryGetValue(name, out PodeWebSocket value))
                 {
                     return;
                 }
 
-                WebSockets[name].Dispose();
+                value.Dispose();
             }
         }
 
@@ -60,12 +60,12 @@ namespace Pode
         {
             lock (WebSockets)
             {
-                if (!WebSockets.ContainsKey(name))
+                if (!WebSockets.TryGetValue(name, out PodeWebSocket value))
                 {
                     return;
                 }
 
-                WebSockets[name].Dispose();
+                value.Dispose();
                 WebSockets.Remove(name);
             }
         }
@@ -111,7 +111,7 @@ namespace Pode
                 _req.Dispose();
             }
 
-            Requests.Clear();
+            Requests.Dispose();
             PodeHelpers.WriteErrorMessage($"Closed client web requests", this, PodeLoggingLevel.Verbose);
         }
     }

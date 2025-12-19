@@ -5,7 +5,6 @@ using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,10 +30,13 @@ namespace Pode
         // Flags indicating request characteristics and handling status
         public virtual bool CloseImmediately => false;
         public virtual bool IsProcessable => true;
+
         // Input stream for incoming request data
         public Stream InputStream { get; private set; }
         public PodeStreamState State { get; private set; }
         public bool IsOpen => State == PodeStreamState.Open;
+        public bool IsWriteable => InputStream != null && InputStream.CanWrite;
+        public bool IsReadable => InputStream != null && InputStream.CanRead;
 
         // Certificate properties
         public X509Certificate Certificate { get; private set; }
@@ -56,10 +58,7 @@ namespace Pode
 
         // Socket and Context associated with the request
         private Socket Socket;
-        protected PodeContext Context;
-
-        // Encoding and buffer for handling incoming data
-        protected static readonly UTF8Encoding Encoding = new UTF8Encoding();
+        public PodeContext Context { get; private set; }
 
         // A fixed buffer used to temporarily store data read from the input stream.
         // This buffer is readonly to prevent reassignment and reduce memory allocations.
@@ -273,30 +272,20 @@ namespace Pode
                             break;
                         }
 
-                        int read = 0;
-                        try
-                        {
-                            // Read data from the input stream
+                        // Read data from the input stream
 #if NETCOREAPP2_1_OR_GREATER
-                            read = await InputStream.ReadAsync(localBuffer.AsMemory(0, MAX_BUFFER_SIZE), cancellationToken).ConfigureAwait(false);
+                        int read = await InputStream.ReadAsync(localBuffer.AsMemory(0, MAX_BUFFER_SIZE), cancellationToken).ConfigureAwait(false);
 #else
-                            read = await InputStream.ReadAsync(localBuffer, 0, MAX_BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
+                        int read = await InputStream.ReadAsync(localBuffer, 0, MAX_BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
 #endif
-                        }
-                        catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException)
-                        {
-                            if (Context.Listener.IsConnected)
-                            {
-                                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
-                            }
-                            break;
-                        }
 
+                        // Check for end of stream
                         if (read <= 0)
                         {
                             break;
                         }
 
+                        // Write the data to the buffer stream
 #if NETCOREAPP2_1_OR_GREATER
                         await BufferStream.WriteAsync(localBuffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
 #else
@@ -328,7 +317,25 @@ namespace Pode
             }
             catch (IOException ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                if (Context.Listener.IsConnected)
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                }
+            }
+            catch (ObjectDisposedException ex)
+            {
+                if (Context.Listener.IsConnected)
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                }
+            }
+            catch (NullReferenceException ex)
+            {
+                if (Context.Listener.IsConnected)
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                    Error = new PodeRequestException(ex, 500);
+                }
             }
             catch (PodeRequestException ex)
             {
@@ -344,6 +351,7 @@ namespace Pode
             {
                 PartialDispose();
             }
+
             return false;
         }
 
@@ -398,7 +406,7 @@ namespace Pode
                     break;
                 }
 
-                return Encoding.GetString(bufferStream.ToArray()).Trim();
+                return PodeHelpers.Encoding.GetString(bufferStream.ToArray()).Trim();
             }
         }
 
@@ -459,6 +467,71 @@ namespace Pode
             return true;
         }
 
+        public async Task Flush()
+        {
+            if (IsDisposed || !IsWriteable)
+            {
+                return;
+            }
+
+            await InputStream.FlushAsync().ConfigureAwait(false);
+        }
+
+        public async Task Write(MemoryStream stream, CancellationToken cancellationToken)
+        {
+            if (IsDisposed || !IsWriteable || stream == default || stream.Length == 0)
+            {
+                return;
+            }
+
+            await Task.Run(() =>
+            {
+                stream.WriteTo(InputStream);
+            }, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<bool> Write(byte[] buffer, CancellationToken cancellationToken, bool flush = false)
+        {
+            if (IsDisposed || !IsWriteable || buffer == default || buffer.Length == 0)
+            {
+                return false;
+            }
+
+            try
+            {
+#if NETCOREAPP2_1_OR_GREATER
+                await InputStream.WriteAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
+#else
+                await InputStream.WriteAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#endif
+
+                if (flush)
+                {
+                    await Flush().ConfigureAwait(false);
+                }
+
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (AggregateException aex)
+            {
+                PodeHelpers.HandleAggregateException(aex, Context.Listener);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                PodeHelpers.WriteException(ex, Context.Listener);
+                throw;
+            }
+        }
+
         /// <summary>
         /// Partially disposes resources used during request processing.
         /// </summary>
@@ -491,7 +564,10 @@ namespace Pode
         /// <param name="disposing">Indicates if disposing is called manually or by garbage collection.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (IsDisposed) return;
+            if (IsDisposed)
+            {
+                return;
+            }
 
             IsDisposed = true;
 
@@ -511,6 +587,7 @@ namespace Pode
                 }
 
                 PartialDispose();
+                PodeHelpers.WriteErrorMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
             }
         }
 

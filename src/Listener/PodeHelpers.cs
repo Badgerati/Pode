@@ -18,6 +18,8 @@ namespace Pode
         public const string WEB_SOCKET_MAGIC_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         public readonly static char[] NEW_LINE_ARRAY = new char[] { '\r', '\n' };
         public readonly static char[] SPACE_ARRAY = new char[] { ' ' };
+        public readonly static char[] COMMA_ARRAY = new char[] { ',' };
+        public readonly static UTF8Encoding Encoding = new UTF8Encoding();
         public const string NEW_LINE = "\r\n";
         public const string NEW_LINE_UNIX = "\n";
         public const int BYTE_SIZE = sizeof(byte);
@@ -104,6 +106,13 @@ namespace Pode
                 return;
             }
 
+            // return if no connector, and level is not error or higher
+            if (connector == default(PodeConnector) && level != PodeLoggingLevel.Error)
+            {
+                return;
+            }
+
+            // write the message to terminal
             if (context == default(PodeContext))
             {
                 Console.WriteLine($"[{level}]: {message}");
@@ -238,7 +247,7 @@ namespace Pode
             }
 
             // convert the bytes to a string
-            var str = Encoding.UTF8.GetString(bytes);
+            var str = Encoding.GetString(bytes);
 
             // remove new lines if needed
             if (removeNewLines)
@@ -260,7 +269,7 @@ namespace Pode
             // set the encoding if not provided
             if (encoding == default(Encoding))
             {
-                encoding = Encoding.UTF8;
+                encoding = Encoding;
             }
 
             // read the stream to the end

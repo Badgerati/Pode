@@ -64,6 +64,7 @@ namespace Pode
             IsDisposed = true;
             PodeSocket.CloseSocket(Socket);
             Socket = default;
+            GC.SuppressFinalize(this);
         }
 
         public new bool Equals(object obj)
