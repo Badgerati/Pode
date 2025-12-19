@@ -326,4 +326,14 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "La regola di limitazione del tasso con il nome '{0}' non esiste."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Una regola di limitazione dell'accesso con il nome '{0}' esiste già."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La regola di limitazione dell'accesso con il nome '{0}' non esiste."
+    sseConnectionNameNotFoundExceptionMessage                         = "Nessuna connessione SSE trovata con il nome '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "Nessuna connessione Signal trovata con il nome '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal fallito durante la trasmissione a causa del livello di trasmissione Signal definito per {0}: {1}.'
+    authMethodNotFoundExceptionMessage                                = "Nessuna metodo di autenticazione trovata con il nome '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "L'événement '{0}' est déjà enregistré pour le méthode d'authentification '{1}'."
+    authMethodEventNotRegisteredExceptionMessage                      = "L'événement '{0}' n'est pas enregistré pour le méthode d'authentification '{1}'."
+    signalEventAlreadyRegisteredExceptionMessage                      = "L'événement '{0}' est déjà enregistré pour la connexion Signal '{1}'."
+    signalEventNotRegisteredExceptionMessage                          = "L'événement '{0}' n'est pas enregistré pour la connexion Signal '{1}'."
+    sseEventAlreadyRegisteredExceptionMessage                         = "L'événement '{0}' est déjà enregistré pour la connexion SSE '{1}'."
+    sseEventNotRegisteredExceptionMessage                             = "L'événement '{0}' n'est pas enregistré pour la connexion SSE '{1}'."
 }

@@ -159,13 +159,17 @@ function New-PodeContext {
         ReceiveTimeout = 100
     }
 
-    $ctx.Server.Signals = @{
-        Enabled  = $false
+    $ctx.Server.Http = @{
         Listener = $null
     }
 
-    $ctx.Server.Http = @{
-        Listener = $null
+    $ctx.Server.Signals = @{
+        Signed         = $false
+        Secret         = $null
+        Strict         = $false
+        DefaultScope   = 'Global'
+        BroadcastLevel = @{}
+        Connections    = @{}
     }
 
     $ctx.Server.Sse = @{
@@ -174,6 +178,7 @@ function New-PodeContext {
         Strict         = $false
         DefaultScope   = 'Global'
         BroadcastLevel = @{}
+        Connections    = @{}
     }
 
     $ctx.Server.WebSockets = @{
@@ -517,14 +522,9 @@ function New-PodeContext {
     $ctx.Runspaces = @()
 
     # setup events
-    $ctx.Server.Events = @{
-        Start     = [ordered]@{}
-        Terminate = [ordered]@{}
-        Restart   = [ordered]@{}
-        Browser   = [ordered]@{}
-        Crash     = [ordered]@{}
-        Stop      = [ordered]@{}
-        Running   = [ordered]@{}
+    $ctx.Server.Events = @{}
+    foreach ($eventType in [System.Enum]::GetValues([Pode.PodeServerEventType])) {
+        $ctx.Server.Events[$eventType.ToString()] = [ordered]@{}
     }
 
     # modules
@@ -617,7 +617,7 @@ function New-PodeRunspacePool {
     # web runspace - if we have any http/s endpoints
     if (Test-PodeEndpointByProtocolType -Type Http) {
         $PodeContext.RunspacePools.Web = @{
-            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
             State  = 'Waiting'
             LastId = 0
         }

@@ -50,6 +50,7 @@ namespace Pode
         {
             FileWatcher.Watcher.RemoveProcessingFileEvent(this);
             FileWatcher = null;
+            GC.SuppressFinalize(this);
         }
     }
 }
