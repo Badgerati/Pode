@@ -885,7 +885,7 @@ function Register-PodeSseEvent {
         }
 
         # error if event already registered
-        if ($PodeContext.Server.Signals.Connections[$n].Events.ContainsKey($Type.ToString()) -and
+        if ($PodeContext.Server.Sse.Connections[$n].Events.ContainsKey($Type.ToString()) -and
             $PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()].Contains($EventName)) {
             # "$($Type) event already registered for SSE connection $($n): $($EventName)"
             throw ($PodeLocale.sseEventAlreadyRegisteredExceptionMessage -f $Type, $n, $EventName)
@@ -898,8 +898,8 @@ function Register-PodeSseEvent {
         $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
         # add event
-        if (!$PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()].ContainsKey($EventName)) {
-            $PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()][$EventName] = [ordered]@{}
+        if (!$PodeContext.Server.Sse.Connections[$n].Events.ContainsKey($Type.ToString())) {
+            $PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()] = [ordered]@{}
         }
 
         $PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()][$EventName] = @{
