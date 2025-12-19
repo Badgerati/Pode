@@ -10,7 +10,7 @@ namespace Pode
         public string ContentEncoding { get; private set; }
         public byte[] Bytes => _stream.ToArray();
 
-        private MemoryStream _stream;
+        private readonly MemoryStream _stream;
 
         public PodeSmtpAttachment(string name, MemoryStream stream, string contentType, string contentEncoding)
         {
@@ -36,6 +36,7 @@ namespace Pode
         public void Dispose()
         {
             _stream.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

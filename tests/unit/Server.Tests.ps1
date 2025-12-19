@@ -167,11 +167,12 @@ Describe 'Restart-PodeInternalServer' {
                     }
                 }
                 Signals         = @{
-                    Listeners = @()
-                    Queues    = @{
-                        Sockets     = @{}
-                        Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
-                    }
+                    BroadcastLevel = @{}
+                    Connections    = @{}
+                }
+                Sse             = @{
+                    BroadcastLevel = @{}
+                    Connections    = @{}
                 }
                 Http            = @{
                     Listener = $null

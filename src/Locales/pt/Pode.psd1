@@ -326,4 +326,14 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "A regra de limite de taxa com o nome '{0}' não existe."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "A regra de limite de acesso com o nome '{0}' já existe."
     accessLimitRuleDoesNotExistExceptionMessage                       = "A regra de limite de acesso com o nome '{0}' não existe."
+    sseConnectionNameNotFoundExceptionMessage                         = "Nenhuma conexão SSE encontrada com o nome '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "Nenhuma conexão Signal encontrada com o nome '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal falhou ao transmitir devido ao nível de transmissão de Signal definido para {0}: {1}.'
+    authMethodNotFoundExceptionMessage                                = "Nenhuma método de autenticação encontrada com o nome '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "Evento de método de autenticação com o nome '{0}' já está registrado."
+    authMethodEventNotRegisteredExceptionMessage                      = "Evento de método de autenticação com o nome '{0}' não está registrado."
+    signalEventAlreadyRegisteredExceptionMessage                      = "Evento Signal com o nome '{0}' já está registrado."
+    signalEventNotRegisteredExceptionMessage                          = "Evento Signal com o nome '{0}' não está registrado."
+    sseEventAlreadyRegisteredExceptionMessage                         = "Evento SSE com o nome '{0}' já está registrado."
+    sseEventNotRegisteredExceptionMessage                             = "Evento SSE com o nome '{0}' não está registrado."
 }

@@ -326,4 +326,14 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "A Rate Limit Rule with the name '{0}' does not exist."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "An Access Limit Rule with the name '{0}' already exists."
     accessLimitRuleDoesNotExistExceptionMessage                       = "An Access Limit Rule with the name '{0}' does not exist."
+    sseConnectionNameNotFoundExceptionMessage                         = "No SSE connection found with the name '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "No Signal connection found with the name '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal failed to broadcast due to defined Signal broadcast level for {0}: {1}'
+    authMethodNotFoundExceptionMessage                                = "No Authentication method found with the name '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = '{0} event already registered for Authentication method {1}: {2}'
+    authMethodEventNotRegisteredExceptionMessage                      = '{0} event not registered for Authentication method {1}: {2}'
+    signalEventAlreadyRegisteredExceptionMessage                      = '{0} event already registered for Signal connection {1}: {2}'
+    signalEventNotRegisteredExceptionMessage                          = '{0} event not registered for Signal connection {1}: {2}'
+    sseEventAlreadyRegisteredExceptionMessage                         = '{0} event already registered for SSE connection {1}: {2}'
+    sseEventNotRegisteredExceptionMessage                             = '{0} event not registered for SSE connection {1}: {2}'
 }

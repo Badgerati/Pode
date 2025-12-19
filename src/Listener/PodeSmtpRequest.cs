@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Linq;
@@ -103,7 +102,7 @@ namespace Pode
             }
 
             // get the raw string for headers
-            var content = Encoding.GetString(bytes, 0, bytes.Length);
+            var content = PodeHelpers.Encoding.GetString(bytes, 0, bytes.Length);
 
             // empty
             if (string.IsNullOrWhiteSpace(content))
@@ -523,7 +522,7 @@ namespace Pode
         protected override void Dispose(bool disposing)
         {
             if (IsDisposed) return;
-            
+
             if (disposing)
             {
                 // Custom cleanup logic for PodeSmtpRequest

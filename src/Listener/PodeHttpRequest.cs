@@ -35,12 +35,40 @@ namespace Pode
         private bool IsRequestLineValid;
         private MemoryStream BodyStream;
 
-        public string SseClientId { get; private set; }
-        public string SseClientName { get; private set; }
-        public string SseClientGroup { get; private set; }
-        public bool HasSseClientId
+        private PodeServerEvent _serverEvent;
+        public PodeServerEvent ServerEvent
         {
-            get => !string.IsNullOrEmpty(SseClientId);
+            get
+            {
+                if (_serverEvent == default(PodeServerEvent))
+                {
+                    return Context.SSE;
+                }
+
+                return _serverEvent;
+            }
+            private set
+            {
+                _serverEvent = value;
+            }
+        }
+
+        private PodeSignal _signal;
+        public PodeSignal Signal
+        {
+            get
+            {
+                if (_signal == default(PodeSignal))
+                {
+                    return Context.Signal;
+                }
+
+                return _signal;
+            }
+            private set
+            {
+                _signal = value;
+            }
         }
 
         private string _body = string.Empty;
@@ -50,7 +78,7 @@ namespace Pode
             {
                 if (RawBody != default(byte[]) && RawBody.Length > 0)
                 {
-                    _body = Encoding.GetString(RawBody);
+                    _body = PodeHelpers.Encoding.GetString(RawBody);
                 }
 
                 return _body;
@@ -100,7 +128,7 @@ namespace Pode
             // is the request line valid?
             if (!IsRequestLineValid)
             {
-                var reqLine = Encoding.GetString(bytes, 0, index).Trim();
+                var reqLine = PodeHelpers.Encoding.GetString(bytes, 0, index).Trim();
                 var reqMeta = reqLine.Split(PodeHelpers.SPACE_ARRAY, StringSplitOptions.RemoveEmptyEntries);
 
                 if (reqMeta.Length != 3)
@@ -154,7 +182,7 @@ namespace Pode
             var bodyIndex = 0;
             if (!AwaitingBody)
             {
-                var content = Encoding.GetString(bytes, 0, bytes.Length);
+                var content = PodeHelpers.Encoding.GetString(bytes, 0, bytes.Length);
                 var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
                 content = string.Empty;
 
@@ -293,12 +321,46 @@ namespace Pode
                 Type = PodeProtocolType.Ws;
             }
 
-            // do we have an SSE ClientId?
-            SseClientId = Headers["X-Pode-Sse-Client-Id"]?.ToString();
-            if (HasSseClientId)
+            // do we have a reference SSE Client?
+            var sseClientId = $"{Headers["X-Pode-Sse-Client-Id"]}";
+            if (!string.IsNullOrEmpty(sseClientId))
             {
-                SseClientName = Headers["X-Pode-Sse-Name"]?.ToString();
-                SseClientGroup = Headers["X-Pode-Sse-Group"]?.ToString();
+                var sseName = $"{Headers["X-Pode-Sse-Name"]}";
+                var sseGroup = $"{Headers["X-Pode-Sse-Group"]}".Split(PodeHelpers.COMMA_ARRAY, StringSplitOptions.RemoveEmptyEntries);
+
+                // if we have a clientId, then we must have a name
+                if (string.IsNullOrEmpty(sseName))
+                {
+                    throw new PodeRequestException("Invalid SSE headers supplied, missing required X-Pode-Sse-Name HTTP header", 400);
+                }
+
+                if (!Context.Listener.TestSseConnectionExists(sseName, sseGroup, sseClientId))
+                {
+                    throw new PodeRequestException($"The SSE client connection being referenced does not exist, Name: {sseName}, Group: {string.Join(",", sseGroup)}, ClientId: {sseClientId}", 404);
+                }
+
+                ServerEvent = Context.Listener.GetSseConnection(sseName, sseGroup, sseClientId);
+            }
+
+            // do we have a reference Signal Client?
+            var signalClientId = $"{Headers["X-Pode-Signal-Client-Id"]}";
+            if (!string.IsNullOrEmpty(signalClientId))
+            {
+                var signalName = $"{Headers["X-Pode-Signal-Name"]}";
+                var signalGroup = $"{Headers["X-Pode-Signal-Group"]}".Split(PodeHelpers.COMMA_ARRAY, StringSplitOptions.RemoveEmptyEntries);
+
+                // if we have a clientId, then we must have a name
+                if (string.IsNullOrEmpty(signalName))
+                {
+                    throw new PodeRequestException("Invalid Signal headers supplied, missing required X-Pode-Signal-Name HTTP header", 400);
+                }
+
+                if (!Context.Listener.TestSignalConnectionExists(signalName, signalGroup, signalClientId))
+                {
+                    throw new PodeRequestException($"The Signal client connection being referenced does not exist, Name: {signalName}, Group: {string.Join(",", signalGroup)}, ClientId: {signalClientId}", 404);
+                }
+
+                Signal = Context.Listener.GetSignalConnection(signalName, signalGroup, signalClientId);
             }
 
             // keep-alive?
@@ -341,7 +403,7 @@ namespace Pode
                     // get index of newline char, read start>index bytes as HEX for length
                     c_index = Array.IndexOf(bytes, (byte)newline[0], start);
                     c_hexBytes = PodeHelpers.Slice(bytes, start, c_index - start);
-                    c_hex = Encoding.GetString(c_hexBytes.ToArray());
+                    c_hex = PodeHelpers.Encoding.GetString(c_hexBytes.ToArray());
 
                     // if no length, continue
                     c_length = Convert.ToInt32(c_hex, 16);
