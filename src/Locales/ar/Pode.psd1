@@ -326,4 +326,14 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = 'قاعدة الحد الأقصى للمعدل غير موجودة: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = 'تم تعريف قاعدة الحد الأقصى للوصول بالفعل: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = 'قاعدة الحد الأقصى للوصول غير موجودة: {0}'
+    sseConnectionNameNotFoundExceptionMessage                         = "لم يتم العثور على اتصال SSE بالاسم '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "لم يتم العثور على اتصال Signal بالاسم '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'فشل Signal في البث بسبب مستوى بث Signal المحدد لـ {0}: {1}'
+    authMethodNotFoundExceptionMessage                                = 'لم يتم العثور على طريقة المصادقة: {0}'
+    authMethodEventAlreadyRegisteredExceptionMessage                  = '{0} حدث مسجل بالفعل لطريقة المصادقة {1}: {2}'
+    authMethodEventNotRegisteredExceptionMessage                      = '{0} حدث غير مسجل لطريقة المصادقة {1}: {2}'
+    signalEventAlreadyRegisteredExceptionMessage                      = '{0} حدث مسجل بالفعل لاتصال Signal {1}: {2}'
+    signalEventNotRegisteredExceptionMessage                          = '{0} حدث غير مسجل لاتصال Signal {1}: {2}'
+    sseEventAlreadyRegisteredExceptionMessage                         = '{0} حدث مسجل بالفعل لاتصال SSE {1}: {2}'
+    sseEventNotRegisteredExceptionMessage                             = '{0} حدث غير مسجل لاتصال SSE {1}: {2}'
 }

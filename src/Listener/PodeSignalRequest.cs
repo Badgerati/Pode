@@ -37,23 +37,8 @@ namespace Pode
         // Total length of the content/body.
         public int ContentLength { get; private set; }
 
-        // Private field to hold the WebSocket close status.
-        private WebSocketCloseStatus _closeStatus = WebSocketCloseStatus.Empty;
-
-        // Public property exposing the close status.
-        public WebSocketCloseStatus CloseStatus
-        {
-            get => _closeStatus;
-        }
-
-        // Private field to hold the close description.
-        private string _closeDescription = string.Empty;
-
-        // Public property exposing the close description.
-        public string CloseDescription
-        {
-            get => _closeDescription;
-        }
+        public WebSocketCloseStatus CloseStatus { get; private set; } = WebSocketCloseStatus.Empty;
+        public string CloseDescription { get; private set; } = string.Empty;
 
         // Indicates whether the connection should be closed immediately.
         // For WebSocket, this is true if the received op-code is 'Close'.
@@ -117,7 +102,7 @@ namespace Pode
         /// <returns>A new PodeClientSignal instance.</returns>
         public PodeClientSignal NewClientSignal()
         {
-            return new PodeClientSignal(Signal, Body, Context.Listener);
+            return new PodeClientSignal(Signal, Body);
         }
 
         protected override bool ValidateInput(byte[] bytes)
@@ -201,15 +186,15 @@ namespace Pode
             }
 
             ContentLength = RawBody.Length;
-            Body = Encoding.GetString(RawBody);
+            Body = PodeHelpers.Encoding.GetString(RawBody);
 
             // Process the frame based on its operation code.
             switch (OpCode)
             {
                 // For a Close frame, extract the close status and description.
                 case PodeWsOpCode.Close:
-                    _closeStatus = WebSocketCloseStatus.Empty;
-                    _closeDescription = string.Empty;
+                    CloseStatus = WebSocketCloseStatus.Empty;
+                    CloseDescription = string.Empty;
 
                     if (ContentLength >= 2)
                     {
@@ -218,7 +203,7 @@ namespace Pode
                         var code = (int)BitConverter.ToUInt16(RawBody, 0);
 
                         // Validate and assign the close status.
-                        _closeStatus = Enum.IsDefined(typeof(WebSocketCloseStatus), code)
+                        CloseStatus = Enum.IsDefined(typeof(WebSocketCloseStatus), code)
                             ? (WebSocketCloseStatus)code
                             : WebSocketCloseStatus.Empty;
 
@@ -226,17 +211,22 @@ namespace Pode
                         if (descCount > 0)
                         {
                             // Extract the close description text, if available.
-                            _closeDescription = Encoding.GetString(RawBody, 2, descCount);
+                            CloseDescription = PodeHelpers.Encoding.GetString(RawBody, 2, descCount);
                         }
                     }
                     break;
 
                 // For a Ping frame, send back a Pong frame.
                 case PodeWsOpCode.Ping:
-                    await Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Pong).ConfigureAwait(false);
+                    await Context.Signal.Pong().ConfigureAwait(false);
+                    break;
+
+                // For a Pong frame, do nothing.
+                case PodeWsOpCode.Pong:
                     break;
             }
 
+            Signal.Activity();
             return true;
         }
 
@@ -247,18 +237,16 @@ namespace Pode
         /// <param name="disposing">Indicates whether the method is called explicitly or by the garbage collector.</param>
         protected override void Dispose(bool disposing)
         {
-            if (IsDisposed) return;
+            if (IsDisposed)
+            {
+                return;
+            }
 
             if (disposing)
             {
                 // Log a message indicating the WebSocket is being closed.
                 PodeHelpers.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
-
-                // Send a Close frame to the client and wait for the operation to complete.
-                Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close).Wait();
-
-                // Remove the associated client signal from the listener's collection.
-                Context.Listener.Signals.Remove(Signal.ClientId);
+                Signal.Close().Wait();
             }
 
             // Call the base class Dispose to clean up other resources.

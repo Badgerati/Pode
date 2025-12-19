@@ -41,6 +41,7 @@ namespace Pode
             WebSocket.Receiver.RemoveProcessingWebSocketRequest(this);
             RawBody = default;
             _body = string.Empty;
+            GC.SuppressFinalize(this);
         }
 
     }
