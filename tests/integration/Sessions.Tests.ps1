@@ -8,13 +8,6 @@ Describe 'Session Requests' {
         $Port = 8080
         $Endpoint = "http://127.0.0.1:$($Port)"
 
-        $winPwshParams = @{}
-        if ($PSVersionTable.Major -eq 5) {
-            $winPwshParams = @{
-                UseBasicParsing = $true
-            }
-        }
-
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
 
@@ -48,6 +41,44 @@ Describe 'Session Requests' {
             }
         }
 
+        Mock Invoke-WebRequest {
+            param($Uri, [string]$Method, $Headers)
+
+            $handler = [System.Net.Http.HttpClientHandler]::new()
+            $client = [System.Net.Http.HttpClient]::new($handler)
+
+            $request = [System.Net.Http.HttpRequestMessage]::new($Method, $Uri)
+
+            if ($null -ne $Headers) {
+                foreach ($key in $Headers.Keys) {
+                    $request.Headers.Add($key, $Headers[$key])
+                }
+            }
+
+            $response = $client.SendAsync($request).GetAwaiter().GetResult()
+            $content = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+
+            $webResponse = @{
+                Content    = $content
+                StatusCode = $response.StatusCode.value__
+                Headers    = @{}
+            }
+
+            if ($null -ne $response.Headers) {
+                foreach ($header in $response.Headers.GetEnumerator()) {
+                    $webResponse.Headers[$header.Key] = $header.Value -join ', '
+                }
+            }
+
+            if ($null -ne $response.Content.Headers) {
+                foreach ($header in $response.Content.Headers.GetEnumerator()) {
+                    $webResponse.Headers[$header.Key] = $header.Value -join ', '
+                }
+            }
+
+            return $webResponse
+        }
+
         Start-Sleep -Seconds 10
     }
 
@@ -57,9 +88,8 @@ Describe 'Session Requests' {
         Get-Job -Name 'Pode' | Remove-Job -Force
     }
 
-
     It 'returns ok for valid creds' {
-        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' } @winPwshParams
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
         $content = ($result.Content | ConvertFrom-Json)
 
         $content.Result | Should -Be 'OK'
@@ -72,7 +102,7 @@ Describe 'Session Requests' {
     }
 
     It 'returns ok for session requests' {
-        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' } @winPwshParams
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
         $content = ($result.Content | ConvertFrom-Json)
 
         $content.Result | Should -Be 'OK'
@@ -80,13 +110,13 @@ Describe 'Session Requests' {
         $result.Headers['pode.sid'] | Should -Not -BeNullOrEmpty
 
         $session = ($result.Headers['pode.sid'] | Select-Object -First 1)
-        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session } @winPwshParams
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session }
         $content = ($result.Content | ConvertFrom-Json)
         $content.Result | Should -Be 'OK'
         $content.Views | Should -Be 2
 
         $session = ($result.Headers['pode.sid'] | Select-Object -First 1)
-        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session } @winPwshParams
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session }
         $content = ($result.Content | ConvertFrom-Json)
         $content.Result | Should -Be 'OK'
         $content.Views | Should -Be 3
@@ -97,7 +127,7 @@ Describe 'Session Requests' {
     }
 
     It 'returns 401 for session timeout' {
-        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' } @winPwshParams
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
         $content = ($result.Content | ConvertFrom-Json)
 
         $content.Result | Should -Be 'OK'
@@ -105,7 +135,7 @@ Describe 'Session Requests' {
         $result.Headers['pode.sid'] | Should -Not -BeNullOrEmpty
 
         $session = ($result.Headers['pode.sid'] | Select-Object -First 1)
-        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session } @winPwshParams
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session }
         $content = ($result.Content | ConvertFrom-Json)
         $content.Result | Should -Be 'OK'
         $content.Views | Should -Be 2

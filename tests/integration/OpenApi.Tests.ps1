@@ -5,13 +5,6 @@ param()
 Describe 'OpenAPI integration tests' {
 
     BeforeAll {
-        $winPwshParams = @{}
-        if ($PSVersionTable.Major -eq 5) {
-            $winPwshParams = @{
-                UseBasicParsing = $true
-            }
-        }
-
         $mindyCommonHeaders = @{
             'accept'        = 'application/json'
             'X-API-KEY'     = 'test2-api-key'
@@ -157,6 +150,44 @@ Describe 'OpenAPI integration tests' {
             return $true
         }
 
+        Mock Invoke-WebRequest {
+            param($Uri, [string]$Method, $Headers)
+
+            $handler = [System.Net.Http.HttpClientHandler]::new()
+            $client = [System.Net.Http.HttpClient]::new($handler)
+
+            $request = [System.Net.Http.HttpRequestMessage]::new($Method, $Uri)
+
+            if ($null -ne $Headers) {
+                foreach ($key in $Headers.Keys) {
+                    $request.Headers.Add($key, $Headers[$key])
+                }
+            }
+
+            $response = $client.SendAsync($request).GetAwaiter().GetResult()
+            $content = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+
+            $webResponse = @{
+                Content    = $content
+                StatusCode = $response.StatusCode.value__
+                Headers    = @{}
+            }
+
+            if ($null -ne $response.Headers) {
+                foreach ($header in $response.Headers.GetEnumerator()) {
+                    $webResponse.Headers[$header.Key] = $header.Value -join ', '
+                }
+            }
+
+            if ($null -ne $response.Content.Headers) {
+                foreach ($header in $response.Content.Headers.GetEnumerator()) {
+                    $webResponse.Headers[$header.Key] = $header.Value -join ', '
+                }
+            }
+
+            return $webResponse
+        }
+
         Start-Sleep -Seconds 5
     }
 
@@ -172,9 +203,9 @@ Describe 'OpenAPI integration tests' {
             Start-Sleep -Seconds 10
             $fileContent = Get-Content -Path "$PSScriptRoot/specs/OpenApi-TuttiFrutti_3.0.3.json"
 
-            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3)/docs/openapi/v3.0" -Method Get @winPwshParams
+            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3)/docs/openapi/v3.0" -Method Get
             $json = $webResponse.Content
-            if (   $PSVersionTable.PSEdition -eq 'Desktop') {
+            if ($PSVersionTable.PSEdition -eq 'Desktop') {
                 $expected = $fileContent | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
                 $response = $json | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
             }
@@ -190,9 +221,9 @@ Describe 'OpenAPI integration tests' {
         it 'Open API v3.1.0' {
             $fileContent = Get-Content -Path "$PSScriptRoot/specs/OpenApi-TuttiFrutti_3.1.0.json"
 
-            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3_1)/docs/openapi/v3.1" -Method Get @winPwshParams
+            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3_1)/docs/openapi/v3.1" -Method Get
             $json = $webResponse.Content
-            if (  $PSVersionTable.PSEdition -eq 'Desktop') {
+            if ($PSVersionTable.PSEdition -eq 'Desktop') {
                 $expected = $fileContent | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
                 $response = $json | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
             }
