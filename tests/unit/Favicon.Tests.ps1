@@ -93,7 +93,7 @@ Describe 'Add-PodeFavicon' {
 
     Context 'Invalid endpoint' {
         It 'throws if endpoint name does not exist' {
-            { Add-PodeFavicon -Binary @(0x01) -EndpointName 'bad-endpoint' } | Should -Throw  ($Podelocale.endpointNameNotExistExceptionMessage -f 'bad-endpoint')
+            { Add-PodeFavicon -Binary @(0x01) -EndpointName 'bad-endpoint' } | Should -Throw  ($PodeLocale.endpointNameNotExistExceptionMessage -f 'bad-endpoint')
         }
     }
 }
@@ -143,7 +143,7 @@ Describe 'Test-PodeFavicon' {
         }
 
         It 'throws if the endpoint does not exist' {
-            { Test-PodeFavicon -EndpointName 'bad-endpoint' } | Should -Throw  ($Podelocale.endpointNameNotExistExceptionMessage -f 'bad-endpoint')
+            { Test-PodeFavicon -EndpointName 'bad-endpoint' } | Should -Throw  ($PodeLocale.endpointNameNotExistExceptionMessage -f 'bad-endpoint')
         }
     }
 
@@ -213,7 +213,7 @@ Describe 'Get-PodeFavicon' {
         }
 
         It 'throws if the endpoint does not exist' {
-            { Get-PodeFavicon -EndpointName 'not-found' } | Should -Throw  ($Podelocale.endpointNameNotExistExceptionMessage -f 'not-found')
+            { Get-PodeFavicon -EndpointName 'not-found' } | Should -Throw  ($PodeLocale.endpointNameNotExistExceptionMessage -f 'not-found')
         }
     }
 
@@ -303,7 +303,7 @@ Describe 'Remove-PodeFavicon' {
 
     Context 'Invalid endpoint name' {
         It 'throws if the endpoint does not exist' {
-            { Remove-PodeFavicon -EndpointName 'invalid' } | Should -Throw  ($Podelocale.endpointNameNotExistExceptionMessage -f 'invalid')
+            { Remove-PodeFavicon -EndpointName 'invalid' } | Should -Throw  ($PodeLocale.endpointNameNotExistExceptionMessage -f 'invalid')
         }
     }
 }

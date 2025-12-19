@@ -326,4 +326,14 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Die Rate-Limit-Regel mit dem Namen '{0}' existiert nicht."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert bereits."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert nicht."
+    sseConnectionNameNotFoundExceptionMessage                         = "Keine SSE-Verbindung mit dem Namen '{0}' gefunden."
+    signalConnectionNameNotFoundExceptionMessage                      = "Keine Signalverbindung mit dem Namen '{0}' gefunden."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal konnte aufgrund des definierten Signalübertragungsniveaus für {0}: {1} nicht übertragen werden.'
+    authMethodNotFoundExceptionMessage                                = 'Keine Authentifizierungsmethode mit dem Namen {0} gefunden.'
+    authMethodEventAlreadyRegisteredExceptionMessage                  = 'Das Ereignis {0} ist bereits für die Authentifizierungsmethode {1} registriert.'
+    authMethodEventNotRegisteredExceptionMessage                      = 'Das Ereignis {0} ist nicht für die Authentifizierungsmethode {1} registriert.'
+    signalEventAlreadyRegisteredExceptionMessage                      = 'Das Ereignis {0} ist bereits für die Signalverbindung {1} registriert.'
+    signalEventNotRegisteredExceptionMessage                          = 'Das Ereignis {0} ist nicht für die Signalverbindung {1} registriert.'
+    sseEventAlreadyRegisteredExceptionMessage                         = 'Das Ereignis {0} ist bereits für die SSE-Verbindung {1} registriert.'
+    sseEventNotRegisteredExceptionMessage                             = 'Das Ereignis {0} ist nicht für die SSE-Verbindung {1} registriert.'
 }

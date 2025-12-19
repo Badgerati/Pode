@@ -20,7 +20,7 @@ function New-PodeWebSocketReceiver {
     }
 
     try {
-        $receiver = [PodeReceiver]::new($PodeContext.Tokens.Cancellation.Token)
+        $receiver = [PodeReceiver]::new([PodeConnectorType]::WebSocket, $PodeContext.Tokens.Cancellation.Token)
         $receiver.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
         $receiver.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
         $PodeContext.Server.WebSockets.Receiver = $receiver
@@ -55,7 +55,7 @@ function Start-PodeWebSocketRunspace {
 
         do {
             try {
-                while ($Receiver.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                while ($Receiver.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate, Cancellation -Match All)) {
                     # get request
                     $request = (Wait-PodeTask -Task $Receiver.GetWebSocketRequestAsync($PodeContext.Tokens.Cancellation.Token))
 
@@ -129,8 +129,6 @@ function Start-PodeWebSocketRunspace {
             while ($Receiver.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
                 Start-Sleep -Seconds 1
             }
-
-
         }
         catch [System.OperationCanceledException] {
             $_ | Write-PodeErrorLog -Level Debug

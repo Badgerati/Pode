@@ -42,7 +42,8 @@ function Register-PodeEvent {
 
     # error if already registered
     if (Test-PodeEvent -Type $Type -Name $Name) {
-        throw ($PodeLocale.eventAlreadyRegisteredExceptionMessage -f $Type, $Name) # "$($Type) event already registered: $($Name)"
+        # "$($Type) event already registered: $($Name)"
+        throw ($PodeLocale.eventAlreadyRegisteredExceptionMessage -f $Type, $Name)
     }
 
     # check for scoped vars
@@ -51,6 +52,7 @@ function Register-PodeEvent {
     # add event
     $PodeContext.Server.Events[$Type.ToString()][$Name] = @{
         Name           = $Name
+        Type           = $Type.ToString()
         ScriptBlock    = $ScriptBlock
         UsingVariables = $usingVars
         Arguments      = $ArgumentList
@@ -59,10 +61,10 @@ function Register-PodeEvent {
 
 <#
 .SYNOPSIS
-Unregisters an event that has been registered with the specified Name.
+Unregister an event that has been registered with the specified Name.
 
 .DESCRIPTION
-Unregisters an event that has been registered with the specified Name.
+Unregister an event that has been registered with the specified Name.
 
 .PARAMETER Type
 The Type of the event to unregister.
@@ -87,7 +89,8 @@ function Unregister-PodeEvent {
 
     # error if not registered
     if (!(Test-PodeEvent -Type $Type -Name $Name)) {
-        throw ($PodeLocale.noEventRegisteredExceptionMessage -f $Type, $Name) # "No $($Type) event registered: $($Name)"
+        # "No $($Type) event registered: $($Name)"
+        throw ($PodeLocale.noEventRegisteredExceptionMessage -f $Type, $Name)
     }
 
     # remove event
@@ -96,64 +99,102 @@ function Unregister-PodeEvent {
 
 <#
 .SYNOPSIS
-Tests if an event has been registered with the specified Name.
+Tests if an event type has been registered.
 
 .DESCRIPTION
-Tests if an event has been registered with the specified Name.
+Tests if an event type has been registered, and optionally with a specified Name.
 
 .PARAMETER Type
-The Type of the event to test.
+One or more event Types to test. If multiple are supplied, will return true if any are found.
 
 .PARAMETER Name
-The Name of the event to test.
+An optional list of event Names to test.
+
+.EXAMPLE
+Test-PodeEvent -Type Start
 
 .EXAMPLE
 Test-PodeEvent -Type Start -Name 'Event1'
+
+.EXAMPLE
+Test-PodeEvent -Type Start, Stop
+
+.EXAMPLE
+Test-PodeEvent -Type Start, Stop -Name 'Event1', 'Event2'
 #>
 function Test-PodeEvent {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
-        [Pode.PodeServerEventType]
+        [Pode.PodeServerEventType[]]
         $Type,
 
-        [Parameter(Mandatory = $true)]
-        [string]
+        [Parameter()]
+        [string[]]
         $Name
     )
 
-    return $PodeContext.Server.Events[$Type.ToString()].Contains($Name)
+    $evts = Get-PodeEvent -Type $Type -Name $Name
+    return (($null -ne $evts) -and ($evts.Count -gt 0))
 }
 
 <#
 .SYNOPSIS
-Retrieves an event.
+Retrieves one or more events of a specified Type.
 
 .DESCRIPTION
-Retrieves an event.
+Retrieves one or more events of a specified Type, and optionally by Name.
 
 .PARAMETER Type
-The Type of event to retrieve.
+One of more event Types to retrieve.
 
 .PARAMETER Name
-The Name of the event to retrieve.
+AN optional list of event Names to retrieve.
 
 .EXAMPLE
 Get-PodeEvent -Type Start -Name 'Event1'
+
+.EXAMPLE
+Get-PodeEvent -Type Start, Stop
+
+.EXAMPLE
+Get-PodeEvent -Type Start, Stop -Name 'Event1', 'Event2'
 #>
 function Get-PodeEvent {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
-        [Pode.PodeServerEventType]
+        [ValidateNotNullOrEmpty()]
+        [Pode.PodeServerEventType[]]
         $Type,
 
-        [Parameter(Mandatory = $true)]
-        [string]
+        [Parameter()]
+        [string[]]
         $Name
     )
 
-    return $PodeContext.Server.Events[$Type.ToString()][$Name]
+    if ($null -eq $PodeContext.Server.Events) {
+        return $null
+    }
+
+    # get events by type
+    $evts = @(foreach ($t in $Type) {
+            $PodeContext.Server.Events[$t.ToString()].Values
+        })
+
+    # filter by names if specified
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $evts = @(foreach ($e in $evts) {
+                if ($Name -icontains $e.Name) {
+                    $e
+                }
+            })
+    }
+
+    # return events
+    return $evts
 }
 
 <#

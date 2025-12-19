@@ -403,10 +403,10 @@ function Get-PodeBuildTargetFramework {
     )
 
     switch ($TargetFrameworks) {
-        'netstandard2.0' { return  2 }
+        'netstandard2.0' { return 2 }
         'net8.0' { return 8 }
-        'net9.0' { return  9 }
-        'net10.0' { return  10 }
+        'net9.0' { return 9 }
+        'net10.0' { return 10 }
         default {
             Write-Warning "$TargetFrameworks is not a valid Framework. Rollback to netstandard2.0"
             return 2
@@ -454,31 +454,24 @@ function Get-PodeBuildTargetFrameworkName {
     }
 }
 
+function Get-PodeBuildAvailableDotnetSdkVersion {
+    $dnVersion = ([version](dotnet --version)).Major
+    Write-Host "Dotnet Version: $($dnVersion)"
+    return $dnVersion
+}
+
 function Invoke-PodeBuildDotnetBuild {
     param (
         [string]$target
     )
 
     # Retrieve the installed SDK versions
-    $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-    if ([string]::IsNullOrEmpty($AvailableSdkVersion)) {
-        $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
-    }
-    else {
-        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-PodeBuildTargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
-    }
-    # Map target frameworks to minimum SDK versions
-
-    if ($null -eq $majorVersions) {
-        Write-Error "The requested '$AvailableSdkVersion' framework is not available."
-        return
-    }
+    $dotnetVersion = Get-PodeBuildAvailableDotnetSdkVersion
     $requiredSdkVersion = Get-PodeBuildTargetFramework -TargetFrameworks $target
+    Write-Host "Target Framework: $($target) requires SDK version: $($requiredSdkVersion)"
 
     # Determine if the target framework is compatible
-    $isCompatible = $majorVersions -ge $requiredSdkVersion
-
-    if ($isCompatible) {
+    if ($dotnetVersion -ge $requiredSdkVersion) {
         Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
     }
     else {
@@ -535,12 +528,13 @@ function Get-PodeBuildPwshEOL {
     try {
         $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
         return @{
-            eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
-            supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
+            eol       = ($eol | Where-Object { $_.eol -and ([datetime]$_.eol -lt [datetime]::Now) }).cycle -join ','
+            supported = ($eol | Where-Object { !$_.eol -or ([datetime]$_.eol -ge [datetime]::Now) }).cycle -join ','
         }
     }
     catch {
-        Write-Warning "Invoke-RestMethod to $uri failed: $($_.ErrorDetails.Message)"
+        $_ | Out-Default
+        Write-Warning "Invoke-RestMethod to $($uri) failed: $($_.ErrorDetails.Message)"
         return  @{
             eol       = ''
             supported = ''
@@ -978,34 +972,31 @@ Add-BuildTask BuildDeps {
     }
 
     try {
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        $dotnetVersion = Get-PodeBuildAvailableDotnetSdkVersion
+        if ($dotnetVersion -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+            throw "The current .NET SDK version '$dotnetVersion' is less than the required '$SdkVersion'"
+        }
     }
     catch {
         Invoke-PodeBuildInstall $dotnet $SdkVersion
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        $dotnetVersion = Get-PodeBuildAvailableDotnetSdkVersion
     }
-    $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-    $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
 
-    if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
-        Invoke-PodeBuildInstall $dotnet $SdkVersion
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-        $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-        $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
+    $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName -Version $dotnetVersion
 
-        if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
-            Write-Error "The requested framework '$SdkVersion' is not available."
-            return
-        }
+    if ($dotnetVersion -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+        Write-Error "The requested framework '$SdkVersion' is not available."
+        return
     }
-    elseif ($majorVersions -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+
+    if ($dotnetVersion -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
         Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
     }
 
+    # install yarn
     if (!(Test-PodeBuildCommand 'yarn')) {
         Invoke-PodeBuildInstall 'yarn' $Versions.Yarn
     }
-
 }
 
 # Synopsis: Install dependencies for running tests
@@ -1280,6 +1271,44 @@ Add-BuildTask PackageFolder Build, {
     }
 }
 
+Add-BuildTask ShowNonExportedFunctions {
+    # load the current psd1
+    $psDataFile = Import-PowerShellDataFile 'src/Pode.psd1'
+    $funcs = $psDataFile.FunctionsToExport
+
+    # load all public ps1 files and get functions
+    $sysFuncs = Get-ChildItem Function:
+    Get-ChildItem 'src/Public/*.ps1' | ForEach-Object { . $_ }
+
+    # find any missing public functions
+    Get-ChildItem Function: |
+        Where-Object {
+            ($sysFuncs -inotcontains $_) -and ($_.Name -inotin $funcs)
+        } |
+        ForEach-Object {
+            Write-Host $_.Name -ForegroundColor Yellow
+        }
+}
+
+Add-BuildTask ShowNonExportedAliases {
+    # load the current psd1
+    $psDataFile = Import-PowerShellDataFile 'src/Pode.psd1'
+    $aliases = $psDataFile.AliasesToExport
+
+    # load all public ps1 files and get aliases
+    $sysAliases = Get-ChildItem Alias:
+    Get-ChildItem 'src/Public/*.ps1' | ForEach-Object { . $_ }
+
+    # find any missing public aliases
+    Get-ChildItem Alias: |
+        Where-Object {
+            ($sysAliases -inotcontains $_) -and ($_.Name -inotin $aliases)
+        } |
+        ForEach-Object {
+            Write-Host $_.Name -ForegroundColor Yellow
+        }
+}
+
 
 <#
 # Testing
@@ -1377,6 +1406,9 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
     $path = './docs/Functions'
     $map = @{}
 
+    Remove-Item -Path $path -Recurse -Force -ErrorAction Ignore | Out-Null
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+
     (Get-Module Pode).ExportedFunctions.Keys | ForEach-Object {
         $type = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path -Leaf -Path (Get-Command $_ -Module Pode).ScriptBlock.File))
         New-MarkdownHelp -Command $_ -OutputFolder (Join-Path $path $type) -Force -Metadata @{ PodeType = $type } -AlphabeticParamsOrder | Out-Null
@@ -1392,11 +1424,11 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
                 $line = $_
 
-                while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(] | $))') {
+                while ($line -imatch '(?<func>\[`(?<name>[a-z]+\-pode[a-z]+)`\])([^(])') {
                     $updated = $true
+                    $func = $Matches['func']
                     $name = $Matches['name']
-                    $char = $Matches['char']
-                    $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
+                    $line = $line.Replace($func, "$($func)($('../' * $depth)Functions/$($map[$name])/$($name))")
                 }
 
                 $line

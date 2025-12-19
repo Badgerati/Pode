@@ -65,7 +65,7 @@ namespace Pode
         /// </summary>
         ///
         Resuming,
-        
+
         /// <summary>
         /// Triggered when the server resumes operation after suspension.
         /// </summary>
