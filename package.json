@@ -6,7 +6,7 @@
   "license": "MIT",
   "dependencies": {
     "@highlightjs/cdn-assets": "11.11.1",
-    "@stoplight/elements": "9.0.1",
+    "@stoplight/elements": "9.0.11",
     "bootstrap": "5.3.8",
     "openapi-explorer": "2.4.780",
     "rapidoc": "9.3.8",
