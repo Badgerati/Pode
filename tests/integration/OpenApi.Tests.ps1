@@ -16,6 +16,7 @@ Describe 'OpenAPI integration tests' {
             'X-API-KEY'     = 'test-api-key'
             'Authorization' = 'Basic bW9ydHk6cGlja2xl'
         }
+
         $PortV3 = 8080
         $PortV3_1 = 8081
         $scriptPath = "$($PSScriptRoot)\..\..\examples\OpenApi-TuttiFrutti.ps1"
@@ -93,7 +94,7 @@ Describe 'OpenAPI integration tests' {
             function Compare-Value($value1, $value2) {
                 # Check if both values are hashtables
                 if ((($value1 -is [hashtable] -or $value1 -is [System.Collections.Specialized.OrderedDictionary]) -and
-            ($value2 -is [hashtable] -or $value2 -is [System.Collections.Specialized.OrderedDictionary]))) {
+                        ($value2 -is [hashtable] -or $value2 -is [System.Collections.Specialized.OrderedDictionary]))) {
                     return Compare-Hashtable -Hashtable1 $value1 -Hashtable2 $value2
                 }
                 # Check if both values are arrays
@@ -149,6 +150,44 @@ Describe 'OpenAPI integration tests' {
             return $true
         }
 
+        Mock Invoke-WebRequest {
+            param($Uri, [string]$Method, $Headers)
+
+            $handler = [System.Net.Http.HttpClientHandler]::new()
+            $client = [System.Net.Http.HttpClient]::new($handler)
+
+            $request = [System.Net.Http.HttpRequestMessage]::new($Method, $Uri)
+
+            if ($null -ne $Headers) {
+                foreach ($key in $Headers.Keys) {
+                    $request.Headers.Add($key, $Headers[$key])
+                }
+            }
+
+            $response = $client.SendAsync($request).GetAwaiter().GetResult()
+            $content = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+
+            $webResponse = @{
+                Content    = $content
+                StatusCode = $response.StatusCode.value__
+                Headers    = @{}
+            }
+
+            if ($null -ne $response.Headers) {
+                foreach ($header in $response.Headers.GetEnumerator()) {
+                    $webResponse.Headers[$header.Key] = $header.Value -join ', '
+                }
+            }
+
+            if ($null -ne $response.Content.Headers) {
+                foreach ($header in $response.Content.Headers.GetEnumerator()) {
+                    $webResponse.Headers[$header.Key] = $header.Value -join ', '
+                }
+            }
+
+            return $webResponse
+        }
+
         Start-Sleep -Seconds 5
     }
 
@@ -166,7 +205,7 @@ Describe 'OpenAPI integration tests' {
 
             $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3)/docs/openapi/v3.0" -Method Get
             $json = $webResponse.Content
-            if (   $PSVersionTable.PSEdition -eq 'Desktop') {
+            if ($PSVersionTable.PSEdition -eq 'Desktop') {
                 $expected = $fileContent | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
                 $response = $json | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
             }
@@ -184,7 +223,7 @@ Describe 'OpenAPI integration tests' {
 
             $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3_1)/docs/openapi/v3.1" -Method Get
             $json = $webResponse.Content
-            if (  $PSVersionTable.PSEdition -eq 'Desktop') {
+            if ($PSVersionTable.PSEdition -eq 'Desktop') {
                 $expected = $fileContent | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
                 $response = $json | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
             }

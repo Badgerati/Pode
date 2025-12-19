@@ -10,24 +10,7 @@ function Start-PodeSmtpServer {
     # work out which endpoints to listen on
     $endpoints = @()
 
-    # Variable to track if a default endpoint is already defined for the current type.
-    # This ensures that only one default endpoint can be assigned per protocol type (e.g., HTTP, HTTPS).
-    # If multiple default endpoints are detected, an error will be thrown to prevent configuration issues.
-    $defaultEndpoint = $false
-
     @(Get-PodeEndpointByProtocolType -Type Smtp) | ForEach-Object {
-
-
-        # Enforce unicity: only one default endpoint is allowed per type.
-        if ($defaultEndpoint -and $_.Default) {
-            # A default endpoint for the type '{0}' is already set. Only one default endpoint is allowed per type. Please check your configuration.
-            throw ($Podelocale.defaultEndpointAlreadySetExceptionMessage -f $($_.Type))
-        }
-        else {
-            # Assign the current endpoint's Default value for tracking.
-            $defaultEndpoint = $_.Default
-        }
-
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
@@ -65,7 +48,7 @@ function Start-PodeSmtpServer {
     }
 
     # create the listener
-    $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
+    $listener = [PodeListener]::new([PodeConnectorType]::Smtp, $PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -112,7 +95,7 @@ function Start-PodeSmtpServer {
 
         do {
             try {
-                while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate, Cancellation -Match All)) {
                     # get email
                     $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
@@ -234,11 +217,13 @@ function Start-PodeSmtpServer {
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {
             @{
+                Protocol = $endpoint.Protocol
                 Url      = $endpoint.Url
                 Pool     = $endpoint.Pool
                 DualMode = $endpoint.DualMode
                 Name     = $endpoint.Name
                 Default  = $endpoint.Default
+                Order    = ($endpoint.Protocol | Get-PodeEndpointProtocolOrder)
             }
         })
 }

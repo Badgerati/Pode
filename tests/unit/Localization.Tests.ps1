@@ -55,7 +55,7 @@ Describe 'Localization Check' {
     }
 
     It "Check 'throw' is not using a static string in [<_>]" -ForEach  ($sourceFiles) {
-        ( Get-Content -Path $_ -Raw) -match 'throw\s*["\'']' | Should -BeFalse
+        (Get-Content -Path $_ -Raw) -match 'throw\s*["\'']' | Should -BeFalse
     }
 
     Describe  'Verifying Language [<_>]' -ForEach  ($languageDirs) {

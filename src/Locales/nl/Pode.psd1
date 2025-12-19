@@ -326,4 +326,14 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Rate Limit-regel met de naam '{0}' bestaat niet."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Toegangslimietregel met de naam '{0}' bestaat al."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Toegangslimietregel met de naam '{0}' bestaat niet."
+    sseConnectionNameNotFoundExceptionMessage                         = "Er is geen SSE-verbinding gevonden met de naam '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "Geen Signal-verbinding gevonden met de naam '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal kon niet worden uitgezonden vanwege het gedefinieerde Signal-uitzendniveau voor {0}: {1}.'
+    authMethodNotFoundExceptionMessage                                = "Geen authenticatiemethode gevonden met de naam '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "Authenticatie-evenement met de naam '{0}' is al geregistreerd."
+    authMethodEventNotRegisteredExceptionMessage                      = "Authenticatie-evenement met de naam '{0}' is niet geregistreerd."
+    signalEventAlreadyRegisteredExceptionMessage                      = "Signal-evenement met de naam '{0}' is al geregistreerd."
+    signalEventNotRegisteredExceptionMessage                          = "Signal-evenement met de naam '{0}' is niet geregistreerd."
+    sseEventAlreadyRegisteredExceptionMessage                         = "SSE-evenement met de naam '{0}' is al geregistreerd."
+    sseEventNotRegisteredExceptionMessage                             = "SSE-evenement met de naam '{0}' is niet geregistreerd."
 }
