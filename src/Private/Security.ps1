@@ -589,7 +589,7 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
         Protect-PodeContentSecurityKeyword -Name 'base-uri' -Value $Params.BaseUri -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'form-action' -Value $Params.FormAction -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'frame-ancestors' -Value $Params.FrameAncestor -Append:$Append
-        Protect-PodeContentSecurityKeyword -Name 'fenched-frame-src' -Value $Params.FencedFrame -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'fenced-frame-src' -Value $Params.FencedFrame -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'prefetch-src' -Value $Params.Prefetch -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'script-src-attr' -Value $Params.ScriptAttr -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'script-src-elem' -Value $Params.ScriptElem -Append:$Append
