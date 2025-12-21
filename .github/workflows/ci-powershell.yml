@@ -46,7 +46,7 @@ jobs:
       shell: powershell
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
 
     - name: Run Pester Tests
       shell: powershell

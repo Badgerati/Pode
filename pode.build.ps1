@@ -345,12 +345,13 @@ function Invoke-PodeBuildInstall($name, $version) {
 #>
 function Install-PodeBuildModule($name) {
     if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions[$name] })) {
+        Write-Host "$($name) v$($Versions[$name]) is already installed."
         return
     }
 
     Write-Host "Installing $($name) v$($Versions[$name])"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
+    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck -AllowClobber
 }
 
 <#
