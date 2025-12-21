@@ -1,8 +1,8 @@
 # CLI
 
-Pode has some commands that you can utilise from a PowerShell terminal, or `pwsh` session. These commands help you to initialise, start, test, build, or install any packages for your repo/server.
+Pode has some inbuilt commands that you can utilise from the PowerShell CLI. These commands help you to initialise, start, test, build, or install any packages for your repo/server.
 
-All of these commands are centered around the `package.json` format - similar to that of Node.js and Yarn.
+All of these commands are centred around the `package.json` format - similar to that of Node.js and Yarn.
 
 !!! info
     At the moment, Pode only uses the `start`, `test`, `build` and `install` properties of the `scripts` section in your `package.json`. You can still have others, like `dependencies` for Yarn
@@ -26,7 +26,7 @@ pode init
 ```
 
 !!! tip
-    By default, Pode will pre-populate the  `test`, `build` and `install` values using `yarn`, `psake` and `pester` respectively
+    By default, Pode will pre-populate the `test`, `build` and `install` values using `yarn`, `psake` and `pester` respectively
 
 ### Install
 

@@ -49,17 +49,17 @@ if ([string]::IsNullOrEmpty($UICulture)) {
 
 try {
     try {
-        #The list of all available supported culture is available here https://azuliadesigns.com/c-sharp-tutorials/list-net-culture-country-codes/
-
-        # ErrorAction:SilentlyContinue is not sufficient to avoid Import-LocalizedData to generate an exception when the Culture file is not the right format
-        Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory $localesPath -UICulture $UICulture -ErrorAction:SilentlyContinue
+        # The list of all available supported culture is available here https://azuliadesigns.com/c-sharp-tutorials/list-net-culture-country-codes/
+        # ErrorAction SilentlyContinue is not sufficient to avoid Import-LocalizedData to generate an exception when the Culture file is not the right format
+        Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory $localesPath -UICulture $UICulture -ErrorAction SilentlyContinue
         if ($null -eq $tmpPodeLocale) {
             $UICulture = 'en'
-            Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory $localesPath -UICulture $UICulture -ErrorAction:Stop
+            Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory $localesPath -UICulture $UICulture -ErrorAction Stop
         }
     }
     catch {
-        throw ("Failed to Import Localized Data $(Join-Path -Path $localesPath -ChildPath  $UICulture -AdditionalChildPath 'Pode.psd1') $_")
+        $errMessage = "Failed to Import Localized Data $(Join-Path -Path $localesPath -ChildPath $UICulture -AdditionalChildPath 'Pode.psd1') $_"
+        throw $errMessage
     }
 
     # Create the global msgTable read-only variable
@@ -79,7 +79,7 @@ try {
     $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
 
     if ($podeDll) {
-        if ( $moduleManifest.ModuleVersion -ne '$version$') {
+        if ($moduleManifest.ModuleVersion -ne '$version$') {
             $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
             if ($podeDll.GetName().Version -ne $moduleVersion) {
                 # An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new Powershell/pwsh session and retry.

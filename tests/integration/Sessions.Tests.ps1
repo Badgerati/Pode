@@ -17,6 +17,10 @@ Describe 'Session Requests' {
                     Close-PodeServer
                 }
 
+                Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Result = 'Pong' }
+                }
+
                 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 5 -Extend -UseHeaders
 
                 New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Auth' -ScriptBlock {
@@ -79,7 +83,25 @@ Describe 'Session Requests' {
             return $webResponse
         }
 
-        Start-Sleep -Seconds 10
+        # wait for ping to be available
+        Start-Sleep -Seconds 5
+
+        $count = 0
+        while ($true) {
+            try {
+                $count++
+                $ping = Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Get -TimeoutSec 1 -ErrorAction Stop
+                if ($ping.Result -ieq 'Pong') {
+                    break
+                }
+            }
+            catch {
+                Start-Sleep -Seconds 1
+                if ($count -ge 10) {
+                    throw "Ping to $($Endpoint)/ping did not respond with 'Pong' within the expected time."
+                }
+            }
+        }
     }
 
     AfterAll {

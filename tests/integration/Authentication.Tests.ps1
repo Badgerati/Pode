@@ -1,11 +1,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseUsingScopeModifierInNewRunspaces', '')]
 param()
-BeforeAll {
-    $path = $PSCommandPath
-    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/src/'
-    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-}
+
 Describe 'Authentication Requests' {
 
     BeforeAll {
@@ -21,6 +17,10 @@ Describe 'Authentication Requests' {
                 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
+                }
+
+                Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Result = 'Pong' }
                 }
 
                 # BASIC
@@ -106,12 +106,28 @@ Describe 'Authentication Requests' {
                 Add-PodeRoute -Method Get -Path '/auth/apikey/jwt/signed' -Authentication 'ApiKeySignedJwtAuth' -ScriptBlock {
                     Write-PodeJsonResponse -Value @{ Result = 'OK' }
                 }
-
-                # FORM (Monocle?)
             }
         }
 
-        Start-Sleep -Seconds 10
+        # wait for ping to be available
+        Start-Sleep -Seconds 5
+
+        $count = 0
+        while ($true) {
+            try {
+                $count++
+                $ping = Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Get -TimeoutSec 1 -ErrorAction Stop
+                if ($ping.Result -ieq 'Pong') {
+                    break
+                }
+            }
+            catch {
+                Start-Sleep -Seconds 1
+                if ($count -ge 10) {
+                    throw "Ping to $($Endpoint)/ping did not respond with 'Pong' within the expected time."
+                }
+            }
+        }
     }
 
     AfterAll {
