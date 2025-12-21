@@ -704,7 +704,7 @@ function Install-PodeBuildPwshWindows {
     }
 
     # Copy the new PowerShell files to the installation folder
-    Copy-Item -Path "$($Target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
+    Copy-Item -Path "$($Target)\" -Destination "$($installFolder)\" -Recurse -Force -ErrorAction Stop
 }
 
 
@@ -1617,12 +1617,12 @@ Add-BuildTask SetupPowerShell {
     # download the package to a temp location
     $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
     $downloadParams = @{
-        Uri         = $urls.New
-        OutFile     = $outputFile
-        ErrorAction = 'Stop'
+        Uri     = $urls.New
+        OutFile = $outputFile
     }
 
     Write-Host "Output file: $($outputFile)"
+    Add-Type -AssemblyName System.Net.Http
 
     # retry the download 6 times, with a sleep of 10s between each attempt, and altering between old and new URLs
     $counter = 0
@@ -1643,7 +1643,28 @@ Add-BuildTask SetupPowerShell {
 
             # download the package
             Write-Host "Attempting download of $($packageName) from $($downloadParams.Uri)"
-            Invoke-WebRequest @downloadParams
+
+            try {
+                $handler = [System.Net.Http.HttpClientHandler]::new()
+                $handler.AutomaticDecompression = [System.Net.DecompressionMethods]::GZip -bor [System.Net.DecompressionMethods]::Deflate
+
+                $client = [System.Net.Http.HttpClient]::new($handler)
+                $response = $client.GetAsync($downloadParams.Uri, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).Result
+                $null = $response.EnsureSuccessStatusCode()
+
+                try {
+                    $fileStream = [System.IO.File]::Open($outputFile, [System.IO.FileMode]::Create)
+                    $response.Content.CopyToAsync($fileStream).Wait()
+                }
+                finally {
+                    $fileStream.Close()
+                }
+            }
+            finally {
+                $response.Dispose()
+                $client.Dispose()
+                $handler.Dispose()
+            }
 
             $success = $true
             Write-Host "Downloaded $($packageName) successfully"
