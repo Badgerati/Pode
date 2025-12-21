@@ -24,7 +24,7 @@ on:
     - '*.dockerfile'
 
 env:
-  INVOKE_BUILD_VERSION: '5.12.2'
+  INVOKE_BUILD_VERSION: '5.14.22'
   POWERSHELL_VERSION: '7.5.1'
 
 jobs:
