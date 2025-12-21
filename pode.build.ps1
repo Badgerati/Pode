@@ -122,7 +122,6 @@ param(
 $Versions = @{
     Pester      = '5.7.1'
     MkDocs      = '1.6.1'
-    PSCoveralls = '1.0.0'
     DotNet      = $SdkVersion
     MkDocsTheme = '9.6.12'
     PlatyPS     = '0.14.2'
