@@ -188,22 +188,39 @@ Describe 'OpenAPI integration tests' {
             return $webResponse
         }
 
+        # wait for ping to be available
         Start-Sleep -Seconds 5
+
+        $count = 0
+        while ($true) {
+            try {
+                $count++
+                $ping = Invoke-RestMethod -Uri "http://127.0.0.1:$($PortV3)/ping" -Method Post -TimeoutSec 1 -ErrorAction Stop
+                if ($ping.Result -ieq 'Pong') {
+                    break
+                }
+            }
+            catch {
+                Start-Sleep -Seconds 1
+                if ($count -ge 10) {
+                    throw "Ping to http://127.0.0.1:$($PortV3)/ping did not respond with 'Pong' within the expected time."
+                }
+            }
+        }
     }
 
     AfterAll {
         Start-Sleep -Seconds 5
-        Invoke-RestMethod -Uri "http://localhost:$($PortV3)/close" -Method Post | Out-Null
-
+        Invoke-RestMethod -Uri "http://127.0.0.1:$($PortV3)/close" -Method Post | Out-Null
     }
 
     Describe 'OpenAPI' {
-        it 'Open API v3.0.3' {
+        It 'Open API v3.0.3' {
 
             Start-Sleep -Seconds 10
             $fileContent = Get-Content -Path "$PSScriptRoot/specs/OpenApi-TuttiFrutti_3.0.3.json"
 
-            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3)/docs/openapi/v3.0" -Method Get
+            $webResponse = Invoke-WebRequest -Uri "http://127.0.0.1:$($PortV3)/docs/openapi/v3.0" -Method Get
             $json = $webResponse.Content
             if ($PSVersionTable.PSEdition -eq 'Desktop') {
                 $expected = $fileContent | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
@@ -218,10 +235,10 @@ Describe 'OpenAPI integration tests' {
 
         }
 
-        it 'Open API v3.1.0' {
+        It 'Open API v3.1.0' {
             $fileContent = Get-Content -Path "$PSScriptRoot/specs/OpenApi-TuttiFrutti_3.1.0.json"
 
-            $webResponse = Invoke-WebRequest -Uri "http://localhost:$($PortV3_1)/docs/openapi/v3.1" -Method Get
+            $webResponse = Invoke-WebRequest -Uri "http://127.0.0.1:$($PortV3_1)/docs/openapi/v3.1" -Method Get
             $json = $webResponse.Content
             if ($PSVersionTable.PSEdition -eq 'Desktop') {
                 $expected = $fileContent | ConvertFrom-Json | Convert-PsCustomObjectToOrderedHashtable
@@ -234,5 +251,4 @@ Describe 'OpenAPI integration tests' {
             Compare-Hashtable $response $expected | Should -BeTrue
         }
     }
-
 }

@@ -47,13 +47,13 @@ jobs:
     - name: Setup Powershell
       shell: pwsh
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
         Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
 
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
 
     - name: Build Zip Package
       shell: pwsh

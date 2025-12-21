@@ -27,6 +27,9 @@
 .PARAMETER SdkVersion
     Sets the SDK version used for building .NET projects, defaulting to net8.0.
 
+.PARAMETER TestType
+    Defines the types of tests to run: Compliance, Integration, Unit.
+
 .NOTES
     This build script requires Invoke-Build. Below is a list of all available tasks:
 
@@ -47,8 +50,6 @@
     - PackageFolder: Creates the `pkg` folder for module packaging.
     - TestNoBuild: Runs tests without building, including Pester tests.
     - Test: Runs tests after building the project.
-    - CheckFailedTests: Checks if any tests failed and throws an error if so.
-    - PushCodeCoverage: Pushes code coverage results to a coverage service.
     - Docs: Serves the documentation locally for review.
     - DocsHelpBuild: Builds function help documentation.
     - DocsBuild: Builds the documentation for distribution.
@@ -110,7 +111,11 @@ param(
 
     [string]
     [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
-    $SdkVersion = 'net9.0'
+    $SdkVersion = 'net9.0',
+
+    [string[]]
+    [ValidateSet('Compliance', 'Integration', 'Unit')]
+    $TestType = @('Compliance', 'Unit', 'Integration')
 )
 
 # Dependency Versions
@@ -176,31 +181,6 @@ function Test-PodeBuildIsWindows {
 #>
 function Test-PodeBuildIsGitHub {
     return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
-}
-
-<#
-.SYNOPSIS
-    Checks if code coverage is enabled for the build.
-
-.DESCRIPTION
-    This function checks if code coverage is enabled by evaluating the `PODE_RUN_CODE_COVERAGE`
-    environment variable. If the variable contains '1' or 'true' (case-insensitive), it returns `$true`;
-    otherwise, it returns `$false`.
-
-.OUTPUTS
-    [bool] - Returns `$true` if code coverage is enabled, otherwise `$false`.
-
-.EXAMPLE
-    if (Test-PodeBuildCanCodeCoverage) {
-        Write-Host "Code coverage is enabled for this build."
-    }
-
-.NOTES
-    - Useful for conditional logic in build scripts that should only execute code coverage-related tasks if enabled.
-    - The `PODE_RUN_CODE_COVERAGE` variable is typically set by the CI/CD environment or the user.
-#>
-function Test-PodeBuildCanCodeCoverage {
-    return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
 }
 
 <#
@@ -365,12 +345,13 @@ function Invoke-PodeBuildInstall($name, $version) {
 #>
 function Install-PodeBuildModule($name) {
     if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions[$name] })) {
+        Write-Host "$($name) v$($Versions[$name]) is already installed."
         return
     }
 
     Write-Host "Installing $($name) v$($Versions[$name])"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
+    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck -AllowClobber
 }
 
 <#
@@ -724,7 +705,7 @@ function Install-PodeBuildPwshWindows {
     }
 
     # Copy the new PowerShell files to the installation folder
-    Copy-Item -Path "$($Target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
+    Copy-Item -Path "$($Target)\" -Destination "$($installFolder)\" -Recurse -Force -ErrorAction Stop
 }
 
 
@@ -877,6 +858,33 @@ function Split-PodeBuildPwshPath {
     }
 }
 
+<#
+.SYNOPSIS
+    Invokes Pester tests with the specified configuration.
+
+.DESCRIPTION
+    This function runs Pester tests using the provided configuration object.
+    If any tests fail, it throws an error indicating the number of failed tests.
+
+.PARAMETER Configuration
+    The Pester configuration object to use for running tests.
+
+.EXAMPLE
+    $config = New-PesterConfiguration -Path './Tests' -Verbosity 'Detailed'
+    Invoke-PodeBuildPester -Configuration $config
+#>
+function Invoke-PodeBuildPester {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        $Configuration
+    )
+
+    $results = Invoke-Pester -Configuration $Configuration
+    if ($results.FailedCount -gt 0) {
+        throw "$($results.FailedCount) tests failed."
+    }
+}
+
 # Check if the script is running under Invoke-Build
 if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
     Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
@@ -913,8 +921,6 @@ Add-BuildTask Default {
     Write-Host '- ChocoPack: Creates a Chocolatey package of the module (Windows only).'
     Write-Host '- DockerPack: Builds Docker images for the module.'
     Write-Host "- PackageFolder: Creates the `pkg` folder for module packaging."
-    Write-Host '- CheckFailedTests: Checks if any tests failed and throws an error if so.'
-    Write-Host '- PushCodeCoverage: Pushes code coverage results to a coverage service.'
     Write-Host '- Docs: Serves the documentation locally for review.'
     Write-Host '- DocsHelpBuild: Builds function help documentation.'
     Write-Host "- CleanDeliverable: Removes the `deliverable` folder."
@@ -1003,11 +1009,6 @@ Add-BuildTask BuildDeps {
 Add-BuildTask TestDeps {
     # install pester
     Install-PodeBuildModule Pester
-
-    # install PSCoveralls
-    if (Test-PodeBuildCanCodeCoverage) {
-        Install-PodeBuildModule PSCoveralls
-    }
 }
 
 # Synopsis: Install dependencies for documentation
@@ -1316,75 +1317,52 @@ Add-BuildTask ShowNonExportedAliases {
 
 # Synopsis: Run the tests
 Add-BuildTask TestNoBuild TestDeps, {
-    $p = (Get-Command Invoke-Pester)
-    if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
+    # do nothing if no tests supplied
+    if ($TestType.Count -eq 0) {
+        Write-Output 'No tests specified, skipping Test task.'
+        return
+    }
+
+    # ensure correct pester version is loaded
+    $p = Get-Command Invoke-Pester
+    if (($null -eq $p) -or ($p.Version -ine $Versions.Pester)) {
         Remove-Module Pester -Force -ErrorAction Ignore
         Import-Module Pester -Force -RequiredVersion $Versions.Pester
     }
 
-    # for windows, output current netsh excluded ports
-    if (Test-PodeBuildIsWindows) {
-        netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
-    }
+    # set UICulture if specified
     if ($UICulture -ne ([System.Threading.Thread]::CurrentThread.CurrentUICulture) ) {
         $originalUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
-        Write-Output "Original UICulture is $originalUICulture"
-        Write-Output "Set UICulture to $UICulture"
-        # set new UICulture
+        Write-Output "Original UICulture is $($originalUICulture)"
+        Write-Output "Set UICulture to $($UICulture)"
         [System.Threading.Thread]::CurrentThread.CurrentUICulture = $UICulture
     }
-    $Script:TestResultFile = "$($pwd)/TestResults.xml"
 
-    # get default from static property
-    $configuration = [PesterConfiguration]::Default
-    $configuration.run.path = @('./tests/unit', './tests/integration')
-    $configuration.run.PassThru = $true
+    # create base pester configuration
+    $configuration = New-PesterConfiguration
+    $configuration.Run.PassThru = $true
     $configuration.Output.Verbosity = $PesterVerbosity
-    $configuration.TestResult.OutputPath = $Script:TestResultFile
+    $configuration.TestResult.OutputPath = "$($pwd)/TestResults.xml"
     $configuration.TestResult.OutputFormat = 'NUnitXml'
     $configuration.TestResult.Enabled = $true
 
-    # if run code coverage if enabled
-    if (Test-PodeBuildCanCodeCoverage) {
-        $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
-        $configuration.CodeCoverage.Enabled = $true
-        $configuration.CodeCoverage.Path = $srcFiles
-        $Script:TestStatus = Invoke-Pester -Configuration $configuration
+    # run the tests for the supplied types
+    foreach ($type in $TestType) {
+        $type = $type.ToLower()
+        $configuration.Run.Path = "./tests/$($type)"
+        $configuration.Run.Container = @(New-PesterContainer -Path "./tests/$($type)/Setup.ps1")
+        $configuration | Invoke-PodeBuildPester
     }
-    else {
-        $Script:TestStatus = Invoke-Pester -Configuration $configuration
-    }
+
+    # restore original UICulture
     if ($originalUICulture) {
-        Write-Output "Restore UICulture to $originalUICulture"
-        # restore original UICulture
+        Write-Output "Restore UICulture to $($originalUICulture)"
         [System.Threading.Thread]::CurrentThread.CurrentUICulture = $originalUICulture
     }
-}, PushCodeCoverage, CheckFailedTests
+}
 
 # Synopsis: Run tests after a build
 Add-BuildTask Test Build, TestNoBuild
-
-# Synopsis: Check if any of the tests failed
-Add-BuildTask CheckFailedTests {
-    if ($TestStatus.FailedCount -gt 0) {
-        throw "$($TestStatus.FailedCount) tests failed"
-    }
-}
-
-# Synopsis: If AppVeyor or GitHub, push code coverage stats
-Add-BuildTask PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
-    try {
-        $service = Get-PodeBuildService
-        $branch = Get-PodeBuildBranch
-
-        Write-Host "Pushing coverage for $($branch) from $($service)"
-        $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch
-        Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
-    }
-    catch {
-        $_.Exception | Out-Default
-    }
-}
 
 
 <#
@@ -1640,12 +1618,12 @@ Add-BuildTask SetupPowerShell {
     # download the package to a temp location
     $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
     $downloadParams = @{
-        Uri         = $urls.New
-        OutFile     = $outputFile
-        ErrorAction = 'Stop'
+        Uri     = $urls.New
+        OutFile = $outputFile
     }
 
     Write-Host "Output file: $($outputFile)"
+    Add-Type -AssemblyName System.Net.Http
 
     # retry the download 6 times, with a sleep of 10s between each attempt, and altering between old and new URLs
     $counter = 0
@@ -1666,7 +1644,28 @@ Add-BuildTask SetupPowerShell {
 
             # download the package
             Write-Host "Attempting download of $($packageName) from $($downloadParams.Uri)"
-            Invoke-WebRequest @downloadParams
+
+            try {
+                $handler = [System.Net.Http.HttpClientHandler]::new()
+                $handler.AutomaticDecompression = [System.Net.DecompressionMethods]::GZip -bor [System.Net.DecompressionMethods]::Deflate
+
+                $client = [System.Net.Http.HttpClient]::new($handler)
+                $response = $client.GetAsync($downloadParams.Uri, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).Result
+                $null = $response.EnsureSuccessStatusCode()
+
+                try {
+                    $fileStream = [System.IO.File]::Open($outputFile, [System.IO.FileMode]::Create)
+                    $response.Content.CopyToAsync($fileStream).Wait()
+                }
+                finally {
+                    $fileStream.Close()
+                }
+            }
+            finally {
+                $response.Dispose()
+                $client.Dispose()
+                $handler.Dispose()
+            }
 
             $success = $true
             Write-Host "Downloaded $($packageName) successfully"

@@ -59,12 +59,12 @@ function Start-PodeAzFuncServer {
                 Metadata         = @{}
             }
 
-            $WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'host') -split ':')[0]
-            $WebEvent.ContentType = (Get-PodeHeader -Name 'content-type')
+            $global:WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'host') -split ':')[0]
+            $global:WebEvent.ContentType = (Get-PodeHeader -Name 'content-type')
 
             # set the path, using static content query parameter if passed
             if (![string]::IsNullOrWhiteSpace($request.Query['static-file'])) {
-                $WebEvent.Path = $request.Query['static-file']
+                $global:WebEvent.Path = $request.Query['static-file']
             }
             else {
                 $funcName = $Data.sys.MethodName
@@ -72,34 +72,34 @@ function Start-PodeAzFuncServer {
                     $funcName = $Data.FunctionName
                 }
 
-                $WebEvent.Path = "/api/$($funcName)"
+                $global:WebEvent.Path = "/api/$($funcName)"
             }
 
-            $WebEvent.Path = [System.Web.HttpUtility]::UrlDecode($WebEvent.Path)
+            $global:WebEvent.Path = [System.Web.HttpUtility]::UrlDecode($global:WebEvent.Path)
 
             # set pode in server response header
             Set-PodeServerHeader -Type 'Kestrel'
 
             # invoke global and route middleware
-            if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
+            if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $global:WebEvent.Path)) {
+                if ((Invoke-PodeMiddleware -Middleware $global:WebEvent.Route.Middleware)) {
                     # invoke the route
-                    if ($null -ne $WebEvent.StaticContent) {
-                        $fileBrowser = $WebEvent.Route.FileBrowser
-                        if ($WebEvent.StaticContent.IsDownload) {
-                            Write-PodeAttachmentResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -FileBrowser:$fileBrowser
+                    if ($null -ne $global:WebEvent.StaticContent) {
+                        $fileBrowser = $global:WebEvent.Route.FileBrowser
+                        if ($global:WebEvent.StaticContent.IsDownload) {
+                            Write-PodeAttachmentResponseInternal -FileInfo $global:WebEvent.StaticContent.FileInfo -FileBrowser:$fileBrowser
                         }
-                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
-                            $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
-                            Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
+                        elseif ($global:WebEvent.StaticContent.RedirectToDefault) {
+                            $file = [System.IO.Path]::GetFileName($global:WebEvent.StaticContent.Source)
+                            Move-PodeResponseUrl -Url "$($global:WebEvent.Path)/$($file)"
                         }
                         else {
-                            $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
+                            $cachable = $global:WebEvent.StaticContent.IsCachable
+                            Write-PodeFileResponseInternal -FileInfo $global:WebEvent.StaticContent.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
                         }
                     }
                     else {
-                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $global:WebEvent.Route.Logic -Arguments $global:WebEvent.Route.Arguments -UsingVariables $global:WebEvent.Route.UsingVariables -Scoped -Splat
                     }
                 }
             }
@@ -110,11 +110,11 @@ function Start-PodeAzFuncServer {
             Set-PodeResponseStatus -Code 500 -Exception $_
         }
         finally {
-            Update-PodeServerRequestMetric -WebEvent $WebEvent
+            Update-PodeServerRequestMetric -WebEvent $global:WebEvent
         }
 
-        # invoke endware specifc to the current web event
-        $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
+        # invoke endware specific to the current web event
+        $_endware = ($global:WebEvent.OnEnd + @($PodeContext.Server.Endware))
         Invoke-PodeEndware -Endware $_endware
 
         # close and send the response
@@ -123,6 +123,9 @@ function Start-PodeAzFuncServer {
     catch {
         $_ | Write-PodeErrorLog
         throw $_.Exception
+    }
+    finally {
+        $global:WebEvent = $null
     }
 }
 
@@ -193,33 +196,33 @@ function Start-PodeAwsLambdaServer {
                 Metadata         = @{}
             }
 
-            $WebEvent.Endpoint.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
-            $WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'Host') -split ':')[0]
-            $WebEvent.ContentType = (Get-PodeHeader -Name 'Content-Type')
+            $global:WebEvent.Endpoint.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
+            $global:WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'Host') -split ':')[0]
+            $global:WebEvent.ContentType = (Get-PodeHeader -Name 'Content-Type')
 
             # set pode in server response header
             Set-PodeServerHeader -Type 'Lambda'
 
             # invoke global and route middleware
-            if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
+            if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $global:WebEvent.Path)) {
+                if ((Invoke-PodeMiddleware -Middleware $global:WebEvent.Route.Middleware)) {
                     # invoke the route
-                    if ($null -ne $WebEvent.StaticContent) {
-                        $fileBrowser = $WebEvent.Route.FileBrowser
-                        if ($WebEvent.StaticContent.IsDownload) {
-                            Write-PodeAttachmentResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -FileBrowser:$fileBrowser
+                    if ($null -ne $global:WebEvent.StaticContent) {
+                        $fileBrowser = $global:WebEvent.Route.FileBrowser
+                        if ($global:WebEvent.StaticContent.IsDownload) {
+                            Write-PodeAttachmentResponseInternal -FileInfo $global:WebEvent.StaticContent.FileInfo -FileBrowser:$fileBrowser
                         }
-                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
-                            $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
-                            Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
+                        elseif ($global:WebEvent.StaticContent.RedirectToDefault) {
+                            $file = [System.IO.Path]::GetFileName($global:WebEvent.StaticContent.Source)
+                            Move-PodeResponseUrl -Url "$($global:WebEvent.Path)/$($file)"
                         }
                         else {
-                            $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponseInternal -FileInfo $WebEvent.StaticContent.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
+                            $cachable = $global:WebEvent.StaticContent.IsCachable
+                            Write-PodeFileResponseInternal -FileInfo $global:WebEvent.StaticContent.FileInfo -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
                         }
                     }
                     else {
-                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $global:WebEvent.Route.Logic -Arguments $global:WebEvent.Route.Arguments -UsingVariables $global:WebEvent.Route.UsingVariables -Scoped -Splat
                     }
                 }
             }
@@ -230,11 +233,11 @@ function Start-PodeAwsLambdaServer {
             Set-PodeResponseStatus -Code 500 -Exception $_
         }
         finally {
-            Update-PodeServerRequestMetric -WebEvent $WebEvent
+            Update-PodeServerRequestMetric -WebEvent $global:WebEvent
         }
 
-        # invoke endware specifc to the current web event
-        $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
+        # invoke endware specific to the current web event
+        $_endware = ($global:WebEvent.OnEnd + @($PodeContext.Server.Endware))
         Invoke-PodeEndware -Endware $_endware
 
         # close and send the response
@@ -251,5 +254,8 @@ function Start-PodeAwsLambdaServer {
     catch {
         $_ | Write-PodeErrorLog
         throw $_.Exception
+    }
+    finally {
+        $global:WebEvent = $null
     }
 }

@@ -5,7 +5,7 @@ Describe 'WebSocket' {
 
     BeforeAll {
         $Port = 8080
-        $Endpoint = "http://localhost:$($Port)"
+        $Endpoint = "http://127.0.0.1:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
@@ -18,6 +18,10 @@ Describe 'WebSocket' {
                 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
+                }
+
+                Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Result = 'Pong' }
                 }
 
                 # set view engine to pode renderer
@@ -41,7 +45,25 @@ Describe 'WebSocket' {
             }
         }
 
-        Start-Sleep -Seconds 10
+        # wait for ping to be available
+        Start-Sleep -Seconds 5
+
+        $count = 0
+        while ($true) {
+            try {
+                $count++
+                $ping = Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Get -TimeoutSec 1 -ErrorAction Stop
+                if ($ping.Result -ieq 'Pong') {
+                    break
+                }
+            }
+            catch {
+                Start-Sleep -Seconds 1
+                if ($count -ge 10) {
+                    throw "Ping to $($Endpoint)/ping did not respond with 'Pong' within the expected time."
+                }
+            }
+        }
     }
 
     AfterAll {
@@ -53,7 +75,7 @@ Describe 'WebSocket' {
     It 'sends and receives a WebSocket signal with current date' {
         # Create a new WebSocket client
         $client = [System.Net.WebSockets.ClientWebSocket]::new()
-        $wsUri = "ws://localhost:$Port/"
+        $wsUri = "ws://127.0.0.1:$Port/"
 
         # Connect to the WebSocket endpoint
         $client.ConnectAsync([uri]$wsUri, [Threading.CancellationToken]::None).Wait()
@@ -91,7 +113,7 @@ Describe 'WebSocket' {
 
     It 'handles sending and receiving Max default size (16KB for 5.1 and 32KB for 7.0 or greater)' {
         $client = [System.Net.WebSockets.ClientWebSocket]::new()
-        $wsUri = "ws://localhost:$Port/"
+        $wsUri = "ws://127.0.0.1:$Port/"
 
         $client.ConnectAsync([uri]$wsUri, [Threading.CancellationToken]::None).Wait()
         $client.State | Should -Be 'Open'
@@ -134,7 +156,7 @@ Describe 'WebSocket' {
 
     It 'handles sending and receiving large messages (>3MB)' {
         $client = [System.Net.WebSockets.ClientWebSocket]::new()
-        $wsUri = "ws://localhost:$Port/"
+        $wsUri = "ws://127.0.0.1:$Port/"
 
         $client.ConnectAsync([uri]$wsUri, [Threading.CancellationToken]::None).Wait()
         $client.State | Should -Be 'Open'

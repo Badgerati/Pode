@@ -18,6 +18,10 @@ Describe 'Timers' {
                     Close-PodeServer
                 }
 
+                Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Result = 'Pong' }
+                }
+
                 Set-PodeState -Name 'Test1' -Value 0
                 Add-PodeTimer -Name 'Test1' -Interval 1 -ScriptBlock {
                     Set-PodeState -Name 'Test1' -Value 1337
@@ -30,7 +34,25 @@ Describe 'Timers' {
             }
         }
 
-        Start-Sleep -Seconds 10
+        # wait for ping to be available
+        Start-Sleep -Seconds 5
+
+        $count = 0
+        while ($true) {
+            try {
+                $count++
+                $ping = Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Get -TimeoutSec 1 -ErrorAction Stop
+                if ($ping.Result -ieq 'Pong') {
+                    break
+                }
+            }
+            catch {
+                Start-Sleep -Seconds 1
+                if ($count -ge 10) {
+                    throw "Ping to $($Endpoint)/ping did not respond with 'Pong' within the expected time."
+                }
+            }
+        }
     }
 
     AfterAll {
