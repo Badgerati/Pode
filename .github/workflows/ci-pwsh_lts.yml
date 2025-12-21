@@ -44,8 +44,16 @@ jobs:
       with:
         dotnet-version: 9.x
 
-    - name: Setup Powershell
+    - name: Setup Powershell - Unix
+      shell: pwsh
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+      run: |
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
+
+    - name: Setup Powershell - Windows
       shell: PowerShell
+      if: runner.os == 'Windows'
       run: |
         Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
         Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
