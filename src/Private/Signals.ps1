@@ -1,3 +1,5 @@
+using namespace Pode.ClientConnections
+
 function Invoke-PodeSignalEvent {
     param(
         [Parameter(Mandatory = $true)]
@@ -5,7 +7,7 @@ function Invoke-PodeSignalEvent {
         $Name, # Name of the Signal connection
 
         [Parameter(Mandatory = $true)]
-        [Pode.PodeClientConnectionEventType]
+        [PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]

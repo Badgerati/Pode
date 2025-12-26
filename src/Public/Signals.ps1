@@ -1,3 +1,5 @@
+using namespace Pode.ClientConnections
+
 <#
 .SYNOPSIS
 Converts the current HTTP request to a Route to be a Signal (WebSocket) connection.
@@ -841,7 +843,7 @@ function Register-PodeSignalEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [Pode.PodeClientConnectionEventType]
+        [PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -920,7 +922,7 @@ function Unregister-PodeSignalEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [Pode.PodeClientConnectionEventType]
+        [PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -972,7 +974,7 @@ function Test-PodeSignalEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [Pode.PodeClientConnectionEventType[]]
+        [PodeClientConnectionEventType[]]
         $Type,
 
         [Parameter()]
@@ -1016,7 +1018,7 @@ function Get-PodeSignalEvent {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [Pode.PodeClientConnectionEventType[]]
+        [PodeClientConnectionEventType[]]
         $Type,
 
         [Parameter()]

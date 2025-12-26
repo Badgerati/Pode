@@ -1,4 +1,7 @@
-using namespace Pode
+using namespace Pode.Connectors
+using namespace Pode.Sockets
+using namespace Pode.Utilities
+using namespace Pode.Requests
 
 function Start-PodeWebServer {
     param(
@@ -201,7 +204,7 @@ function Start-PodeWebServer {
                                 # if we have an sse clientId, verify it and then set details in WebEvent
                                 if ($null -ne $WebEvent.Request.ServerEvent) {
                                     if (!(Test-PodeSseClientIdValid)) {
-                                        throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.ServerEvent.ClientId)")
+                                        throw [PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.ServerEvent.ClientId)")
                                     }
 
                                     # setup the SSE property, as a reference to the request's ServerEvent
@@ -211,7 +214,7 @@ function Start-PodeWebServer {
                                 # if we have a signal clientId, verify it and then set details in WebEvent
                                 if ($null -ne $WebEvent.Request.Signal) {
                                     if (!(Test-PodeSignalClientIdValid)) {
-                                        throw [Pode.PodeRequestException]::new("The X-PODE-SIGNAL-CLIENT-ID value is not valid: $($WebEvent.Request.Signal.ClientId)")
+                                        throw [PodeRequestException]::new("The X-PODE-SIGNAL-CLIENT-ID value is not valid: $($WebEvent.Request.Signal.ClientId)")
                                     }
 
                                     # setup the Signal property, as a reference to the request's Signal
@@ -255,7 +258,7 @@ function Start-PodeWebServer {
                             catch [System.OperationCanceledException] {
                                 $_ | Write-PodeErrorLog -Level Debug
                             }
-                            catch [Pode.PodeRequestException] {
+                            catch [PodeRequestException] {
                                 $_.Exception | Write-PodeErrorLog -Level "$($_.Exception.LoggingLevel)" -CheckInnerException:($_.Exception.IsServerError)
 
                                 $code = $_.Exception.StatusCode
@@ -299,6 +302,7 @@ function Start-PodeWebServer {
         }
 
         # start the runspace for listening on x-number of threads
+        Write-Verbose 'Starting the Web Listener runspace(s)...'
         1..$PodeContext.Threads.General | ForEach-Object {
             Add-PodeRunspace -Type Web -Name 'Listener' -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
@@ -392,6 +396,7 @@ function Start-PodeWebServer {
         }
 
         # start the runspace for listening on x-number of threads
+        Write-Verbose 'Starting the Signals Listener runspace(s)...'
         1..$PodeContext.Threads.General | ForEach-Object {
             Add-PodeRunspace -Type Signals -Name 'Listener' -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
@@ -433,6 +438,7 @@ function Start-PodeWebServer {
         $rsType = 'Signals'
     }
 
+    Write-Verbose "Starting the $($rsType) KeepAlive runspace..."
     Add-PodeRunspace -Type $rsType -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # browse to the first endpoint, if flagged
@@ -455,7 +461,7 @@ function Start-PodeWebServer {
 
 function New-PodeListener {
     [CmdletBinding()]
-    [OutputType([Pode.PodeListener])]
+    [OutputType([Pode.Connectors.PodeListener])]
     param(
         [Parameter(Mandatory = $true)]
         [System.Threading.CancellationToken]
@@ -467,7 +473,7 @@ function New-PodeListener {
 
 function New-PodeListenerSocket {
     [CmdletBinding()]
-    [OutputType([Pode.PodeSocket])]
+    [OutputType([Pode.Sockets.PodeSocket])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -560,5 +566,6 @@ function Start-PodeWebConnectionEventsRunspace {
         $rsType = 'Signals'
     }
 
+    Write-Verbose "Starting the $($rsType) ConnectionEvents runspace..."
     Add-PodeRunspace -Type $rsType -Name 'ConnectionEvents' -ScriptBlock $connectionEventScript -Parameters @{ 'Listener' = $PodeContext.Server.Http.Listener }
 }

@@ -1,3 +1,5 @@
+using namespace Pode.ClientConnections
+
 function Invoke-PodeSseEvent {
     param(
         [Parameter(Mandatory = $true)]
@@ -5,7 +7,7 @@ function Invoke-PodeSseEvent {
         $Name, # Name of the SSE connection
 
         [Parameter(Mandatory = $true)]
-        [Pode.PodeClientConnectionEventType]
+        [PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]

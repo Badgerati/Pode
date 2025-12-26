@@ -1,4 +1,5 @@
-using namespace Pode
+using namespace Pode.Connectors
+using namespace Pode.FileSystemWatcher
 
 function Test-PodeFileWatchersExist {
     [CmdletBinding()]
@@ -10,7 +11,7 @@ function Test-PodeFileWatchersExist {
 
 function New-PodeFileWatcher {
     [CmdletBinding()]
-    [OutputType([PodeWatcher])]
+    [OutputType([Pode.Connectors.PodeWatcher])]
     param()
 
     $watcher = [PodeWatcher]::new([PodeConnectorType]::File, $PodeContext.Tokens.Cancellation.Token)
@@ -140,6 +141,7 @@ function Start-PodeFileWatcherRunspace {
 
     }
 
+    Write-Verbose 'Starting the File Watchers runspace(s)...'
     1..$PodeContext.Threads.Files | ForEach-Object {
         Add-PodeRunspace -Type Files -Name 'Watcher' -ScriptBlock $watchScript -Parameters @{ 'Watcher' = $watcher ; 'ThreadId' = $_ }
     }
@@ -169,5 +171,6 @@ function Start-PodeFileWatcherRunspace {
         }
     }
 
+    Write-Verbose 'Starting the File Watchers KeepAlive runspace...'
     Add-PodeRunspace -Type Files -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Watcher' = $watcher } -NoProfile
 }

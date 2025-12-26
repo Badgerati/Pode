@@ -1,3 +1,4 @@
+using namespace Pode.Utilities
 
 <#
 .SYNOPSIS
@@ -296,7 +297,16 @@ function Close-PodeCancellationTokenRequest {
         }
 
         if (!$PodeContext.Tokens[$item].IsCancellationRequested) {
-            $PodeContext.Tokens[$item].Cancel()
+            try {
+                $PodeContext.Tokens[$item].Cancel()
+            }
+            catch [System.AggregateException] {
+                # for Windows PowerShell, ignore AggregateException on Cancel due to known Semaphore race condition.
+                # This will only occur when cancelling the "Cancellation" token.
+                if ((Test-PodeIsPSCore) -or ($item -ine 'Cancellation')) {
+                    throw
+                }
+            }
         }
     }
 }
@@ -457,7 +467,7 @@ function Resolve-PodeCancellationToken {
     }
 
     # Handle enable/disable server actions
-    if ($PodeContext.Server.AllowedActions.Disable -and ($ServerState -eq [Pode.PodeServerState]::Running)) {
+    if ($PodeContext.Server.AllowedActions.Disable -and ($ServerState -eq [PodeServerState]::Running)) {
         if (Test-PodeServerIsEnabled) {
             if (Test-PodeCancellationTokenRequest -Type Disable) {
                 Disable-PodeServerInternal
@@ -476,11 +486,11 @@ function Resolve-PodeCancellationToken {
 
     # Handle suspend/resume actions
     if ($PodeContext.Server.AllowedActions.Suspend) {
-        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq [Pode.PodeServerState]::Resuming)) {
+        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq [PodeServerState]::Resuming)) {
             Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
             return
         }
-        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq [Pode.PodeServerState]::Suspending)) {
+        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq [PodeServerState]::Suspending)) {
             Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
             return
         }

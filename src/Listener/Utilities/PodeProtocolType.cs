@@ -1,0 +1,12 @@
+namespace Pode.Utilities
+{
+    public enum PodeProtocolType
+    {
+        Unknown,
+        Http,
+        Ws,
+        HttpAndWs,
+        Smtp,
+        Tcp
+    }
+}

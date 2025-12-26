@@ -1,3 +1,5 @@
+using namespace Pode.ClientConnections
+
 <#
 .SYNOPSIS
 Converts the current HTTP request to a Route to be an SSE connection.
@@ -860,7 +862,7 @@ function Register-PodeSseEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [Pode.PodeClientConnectionEventType]
+        [PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -940,7 +942,7 @@ function Unregister-PodeSseEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [Pode.PodeClientConnectionEventType]
+        [PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -992,7 +994,7 @@ function Test-PodeSseEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [Pode.PodeClientConnectionEventType[]]
+        [PodeClientConnectionEventType[]]
         $Type,
 
         [Parameter()]
@@ -1036,7 +1038,7 @@ function Get-PodeSseEvent {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [Pode.PodeClientConnectionEventType[]]
+        [PodeClientConnectionEventType[]]
         $Type,
 
         [Parameter()]
