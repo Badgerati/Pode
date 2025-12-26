@@ -1,4 +1,6 @@
-using namespace Pode
+using namespace Pode.Connectors
+using namespace Pode.Sockets
+using namespace Pode.Utilities
 
 function Start-PodeSmtpServer {
     # ensure we have smtp handlers
@@ -182,6 +184,7 @@ function Start-PodeSmtpServer {
     }
 
     # start the runspace for listening on x-number of threads
+    Write-Verbose 'Starting the Smtp Listener runspace(s)...'
     1..$PodeContext.Threads.General | ForEach-Object {
         Add-PodeRunspace -Type Smtp -Name 'Listener' -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
@@ -212,6 +215,7 @@ function Start-PodeSmtpServer {
         }
     }
 
+    Write-Verbose 'Starting the Smtp KeepAlive runspace...'
     Add-PodeRunspace -Type Smtp -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running

@@ -1,4 +1,4 @@
-using namespace Pode
+using namespace Pode.Utilities
 
 function New-PodeContext {
     [CmdletBinding()]
@@ -523,7 +523,7 @@ function New-PodeContext {
 
     # setup events
     $ctx.Server.Events = @{}
-    foreach ($eventType in [System.Enum]::GetValues([Pode.PodeServerEventType])) {
+    foreach ($eventType in [System.Enum]::GetValues([PodeServerEventType])) {
         $ctx.Server.Events[$eventType.ToString()] = [ordered]@{}
     }
 

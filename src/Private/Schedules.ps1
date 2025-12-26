@@ -116,6 +116,7 @@ function Start-PodeScheduleRunspace {
         }
     }
 
+    Write-Verbose 'Starting the Schedules runspace...'
     Add-PodeRunspace -Type Main -Name 'Schedules' -ScriptBlock $script -NoProfile
 }
 

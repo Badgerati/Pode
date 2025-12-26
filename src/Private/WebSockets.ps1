@@ -1,4 +1,5 @@
-using namespace Pode
+using namespace Pode.Connectors
+using namespace Pode.Sockets
 
 function Test-PodeWebSocketsExist {
     return (($null -ne $PodeContext.Server.WebSockets) -and (($PodeContext.Server.WebSockets.Enabled) -or ($PodeContext.Server.WebSockets.Connections.Count -gt 0)))
@@ -113,6 +114,7 @@ function Start-PodeWebSocketRunspace {
     }
 
     # start the runspace for listening on x-number of threads
+    Write-Verbose 'Starting the WebSockets Receiver runspace(s)...'
     1..$PodeContext.Threads.WebSockets | ForEach-Object {
         Add-PodeRunspace -Type WebSockets -Name 'Receiver' -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver; 'ThreadId' = $_ }
     }
@@ -143,5 +145,6 @@ function Start-PodeWebSocketRunspace {
         }
     }
 
+    Write-Verbose 'Starting the WebSockets KeepAlive runspace...'
     Add-PodeRunspace -Type WebSockets -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver } -NoProfile
 }

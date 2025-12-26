@@ -460,6 +460,7 @@ function Start-PodeLoggingRunspace {
         }
     }
 
+    Write-Verbose 'Starting the Logging runspace...'
     Add-PodeRunspace -Type Main -Name 'Logging' -ScriptBlock $script
 }
 

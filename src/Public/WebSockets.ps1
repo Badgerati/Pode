@@ -1,5 +1,3 @@
-using namespace Pode
-
 <#
 .SYNOPSIS
 Set the maximum number of concurrent WebSocket connection threads.

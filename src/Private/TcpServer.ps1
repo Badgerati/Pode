@@ -1,4 +1,6 @@
-using namespace Pode
+using namespace Pode.Connectors
+using namespace Pode.Sockets
+using namespace Pode.Utilities
 
 function Start-PodeTcpServer {
     # work out which endpoints to listen on
@@ -199,6 +201,7 @@ function Start-PodeTcpServer {
     }
 
     # start the runspace for listening on x-number of threads
+    Write-Verbose 'Starting the Tcp Listener runspace(s)...'
     1..$PodeContext.Threads.General | ForEach-Object {
         Add-PodeRunspace -Type Tcp -Name 'Listener' -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
@@ -229,6 +232,7 @@ function Start-PodeTcpServer {
         }
     }
 
+    Write-Verbose 'Starting the Tcp KeepAlive runspace...'
     Add-PodeRunspace -Type Tcp -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running

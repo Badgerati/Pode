@@ -1,3 +1,5 @@
+using namespace Pode.Utilities
+
 <#
 .SYNOPSIS
 Registers a script to be run when a certain server event occurs within Pode
@@ -24,7 +26,7 @@ function Register-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [Pode.PodeServerEventType]
+        [PodeServerEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -79,7 +81,7 @@ function Unregister-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [Pode.PodeServerEventType]
+        [PodeServerEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -127,7 +129,7 @@ function Test-PodeEvent {
     [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
-        [Pode.PodeServerEventType[]]
+        [PodeServerEventType[]]
         $Type,
 
         [Parameter()]
@@ -167,7 +169,7 @@ function Get-PodeEvent {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [Pode.PodeServerEventType[]]
+        [PodeServerEventType[]]
         $Type,
 
         [Parameter()]
@@ -214,7 +216,7 @@ function Clear-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [Pode.PodeServerEventType]
+        [PodeServerEventType]
         $Type
     )
 

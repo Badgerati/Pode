@@ -89,6 +89,7 @@ function Start-PodeTimerRunspace {
         }
     }
 
+    Write-Verbose 'Starting the Timers runspace...'
     Add-PodeRunspace -Type Timers -Name 'Scheduler' -ScriptBlock $script
 }
 

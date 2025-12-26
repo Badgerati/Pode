@@ -1,3 +1,4 @@
+using namespace Pode.Utilities
 
 <#
 .SYNOPSIS
@@ -44,7 +45,7 @@ function Show-PodeConsoleInfo {
     $serverState = Get-PodeServerState
 
     # Determine status and additional display options based on the server state.
-    if ($serverState -eq [Pode.PodeServerState]::Suspended) {
+    if ($serverState -eq [PodeServerState]::Suspended) {
         $status = $PodeLocale.suspendedMessage
         $statusColor = [System.ConsoleColor]::Yellow
         $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
@@ -54,7 +55,7 @@ function Show-PodeConsoleInfo {
         $topSeparator = $ShowTopSeparator.IsPresent
         $headerSeparator = $true
     }
-    elseif ($serverState -eq [Pode.PodeServerState]::Suspending) {
+    elseif ($serverState -eq [PodeServerState]::Suspending) {
         $status = $PodeLocale.suspendingMessage
         $statusColor = [System.ConsoleColor]::Yellow
         $showHelp = $false
@@ -64,7 +65,7 @@ function Show-PodeConsoleInfo {
         $topSeparator = $false
         $headerSeparator = $false
     }
-    elseif ($serverState -eq [Pode.PodeServerState]::Resuming) {
+    elseif ($serverState -eq [PodeServerState]::Resuming) {
         $status = $PodeLocale.resumingMessage
         $statusColor = [System.ConsoleColor]::Yellow
         $showHelp = $false
@@ -74,7 +75,7 @@ function Show-PodeConsoleInfo {
         $topSeparator = $false
         $headerSeparator = $false
     }
-    elseif ($serverState -eq [Pode.PodeServerState]::Restarting) {
+    elseif ($serverState -eq [PodeServerState]::Restarting) {
         $status = $PodeLocale.restartingMessage
         $statusColor = [System.ConsoleColor]::Yellow
         $showHelp = $false
@@ -84,7 +85,7 @@ function Show-PodeConsoleInfo {
         $topSeparator = $false
         $headerSeparator = $false
     }
-    elseif ($serverState -eq [Pode.PodeServerState]::Starting) {
+    elseif ($serverState -eq [PodeServerState]::Starting) {
         $status = $PodeLocale.startingMessage
         $statusColor = [System.ConsoleColor]::Yellow
         $showHelp = $false
@@ -94,7 +95,7 @@ function Show-PodeConsoleInfo {
         $topSeparator = $ShowTopSeparator.IsPresent
         $headerSeparator = $false
     }
-    elseif ($serverState -eq [Pode.PodeServerState]::Running) {
+    elseif ($serverState -eq [PodeServerState]::Running) {
         $status = $PodeLocale.runningMessage
         $statusColor = [System.ConsoleColor]::Green
         $showHelp = (!$PodeContext.Server.Console.DisableConsoleInput -and $PodeContext.Server.Console.ShowHelp)
@@ -104,7 +105,7 @@ function Show-PodeConsoleInfo {
         $topSeparator = $ShowTopSeparator.IsPresent
         $headerSeparator = $true
     }
-    elseif ($serverState -eq [Pode.PodeServerState]::Terminating) {
+    elseif ($serverState -eq [PodeServerState]::Terminating) {
         $status = $PodeLocale.terminatingMessage
         $statusColor = [System.ConsoleColor]::Red
         $showHelp = $false
@@ -114,7 +115,7 @@ function Show-PodeConsoleInfo {
         $topSeparator = $false
         $headerSeparator = $false
     }
-    elseif ($serverState -eq [Pode.PodeServerState]::Terminated) {
+    elseif ($serverState -eq [PodeServerState]::Terminated) {
         $status = $PodeLocale.terminatedMessage
         $statusColor = [System.ConsoleColor]::Red
         $showHelp = $false
@@ -143,7 +144,7 @@ function Show-PodeConsoleInfo {
     }
 
     # Display endpoints and OpenAPI information if the server is running.
-    if ($serverState -eq [Pode.PodeServerState]::Running) {
+    if ($serverState -eq [PodeServerState]::Running) {
         if ($PodeContext.Server.Console.ShowEndpoints) {
             # state what endpoints are being listened on
             Show-PodeConsoleEndpointsInfo -Force:$Force
@@ -1031,7 +1032,7 @@ function Invoke-PodeConsoleAction {
         Show-PodeConsoleInfo -ClearHost -Force
     }
     # Show metrics
-    elseif ((([Pode.PodeServerState]::Running, [Pode.PodeServerState]::Suspended) -contains $serverState ) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Metrics)) {
+    elseif ((([PodeServerState]::Running, [PodeServerState]::Suspended) -contains $serverState ) -and (Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Metrics)) {
         Show-PodeConsoleMetric
     }
 
@@ -1053,7 +1054,7 @@ function Invoke-PodeConsoleAction {
         }
         elseif ((Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Disable)) {
             # Handle enable/disable server actions
-            if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq [Pode.PodeServerState]::Running)) {
+            if ($PodeContext.Server.AllowedActions.Disable -and ($serverState -eq [PodeServerState]::Running)) {
                 if (Test-PodeServerIsEnabled) {
                     Close-PodeCancellationTokenRequest -Type Disable
                 }
@@ -1068,10 +1069,10 @@ function Invoke-PodeConsoleAction {
         elseif ((Test-PodeKeyPressed -Key $Key -Character $KeyBindings.Suspend)) {
             # Handle suspend/resume actions
             if ($PodeContext.Server.AllowedActions.Suspend) {
-                if ($serverState -eq [Pode.PodeServerState]::Suspended) {
+                if ($serverState -eq [PodeServerState]::Suspended) {
                     Set-PodeResumeToken
                 }
-                elseif ($serverState -eq [Pode.PodeServerState]::Running) {
+                elseif ($serverState -eq [PodeServerState]::Running) {
                     Set-PodeSuspendToken
                 }
             }
@@ -1412,9 +1413,9 @@ function Test-PodeHasConsole {
                 Error  = -12
             }
             # On Windows, validate standard input and output handles
-            return ([Pode.NativeMethods]::IsHandleValid($handleTypeMap.Input) -and `
-                    [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Output) -and `
-                    [Pode.NativeMethods]::IsHandleValid($handleTypeMap.Error)
+            return ([NativeMethods]::IsHandleValid($handleTypeMap.Input) -and `
+                    [NativeMethods]::IsHandleValid($handleTypeMap.Output) -and `
+                    [NativeMethods]::IsHandleValid($handleTypeMap.Error)
             )
         }
         # On Linux or Mac
@@ -1423,9 +1424,9 @@ function Test-PodeHasConsole {
             Output = 1
             Error  = 2
         }
-        return ([Pode.NativeMethods]::IsTerminal($handleTypeMap.Input) -and `
-                [Pode.NativeMethods]::IsTerminal($handleTypeMap.Output) -and `
-                [Pode.NativeMethods]::IsTerminal($handleTypeMap.Error)
+        return ([NativeMethods]::IsTerminal($handleTypeMap.Input) -and `
+                [NativeMethods]::IsTerminal($handleTypeMap.Output) -and `
+                [NativeMethods]::IsTerminal($handleTypeMap.Error)
         )
     }
     return $false

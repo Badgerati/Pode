@@ -1,3 +1,5 @@
+using namespace Pode.Utilities
+
 <#
 .SYNOPSIS
     Starts a Pode server with the supplied script block or file containing the server logic.
@@ -1041,43 +1043,43 @@ function Wait-PodeDebugger {
 #>
 function Get-PodeServerState {
     [CmdletBinding()]
-    [OutputType([Pode.PodeServerState])]
+    [OutputType([Pode.Utilities.PodeServerState])]
     param()
     # Check if PodeContext or its Tokens property is null; if so, consider the server terminated
     if ($null -eq $PodeContext -or $null -eq $PodeContext.Tokens) {
-        return [Pode.PodeServerState]::Terminated
+        return [PodeServerState]::Terminated
     }
 
     # Check if the server is in the process of terminating
     if (Test-PodeCancellationTokenRequest -Type Terminate) {
-        return [Pode.PodeServerState]::Terminating
+        return [PodeServerState]::Terminating
     }
 
     # Check if the server is resuming from a suspended state
     if (Test-PodeCancellationTokenRequest -Type Resume) {
-        return [Pode.PodeServerState]::Resuming
+        return [PodeServerState]::Resuming
     }
 
     # Check if the server is in the process of restarting
     if (Test-PodeCancellationTokenRequest -Type Restart) {
-        return [Pode.PodeServerState]::Restarting
+        return [PodeServerState]::Restarting
     }
 
     # Check if the server is suspending or already suspended
     if (Test-PodeCancellationTokenRequest -Type Suspend) {
         if (Test-PodeCancellationTokenRequest -Type Cancellation) {
-            return [Pode.PodeServerState]::Suspending
+            return [PodeServerState]::Suspending
         }
-        return [Pode.PodeServerState]::Suspended
+        return [PodeServerState]::Suspended
     }
 
     # Check if the server is starting
     if (!(Test-PodeCancellationTokenRequest -Type Start)) {
-        return [Pode.PodeServerState]::Starting
+        return [PodeServerState]::Starting
     }
 
     # If none of the above, assume the server is running
-    return [Pode.PodeServerState]::Running
+    return [PodeServerState]::Running
 }
 
 <#
@@ -1117,7 +1119,7 @@ function Get-PodeServerState {
 function Test-PodeServerState {
     param(
         [Parameter(Mandatory = $true)]
-        [Pode.PodeServerState]
+        [PodeServerState]
         $State
     )
 

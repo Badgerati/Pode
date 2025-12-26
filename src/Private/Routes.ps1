@@ -288,20 +288,20 @@ function Test-PodeRouteValidForCaching {
 
     # check current state of caching
     $config = $PodeContext.Server.Web.Static.Cache
-    $caching = $config.Enabled
-
-    # if caching, check include/exclude
-    if ($caching) {
-        if (($null -ne $config.Exclude) -and ($Path -imatch $config.Exclude)) {
-            $caching = $false
-        }
-
-        if (($null -ne $config.Include) -and ($Path -inotmatch $config.Include)) {
-            $caching = $false
-        }
+    if (!$config.Enabled) {
+        return $false
     }
 
-    return $caching
+    # if caching, check include/exclude
+    if (($null -ne $config.Exclude) -and ($Path -imatch $config.Exclude)) {
+        return $false
+    }
+
+    if (($null -ne $config.Include) -and ($Path -inotmatch $config.Include)) {
+        return $false
+    }
+
+    return $true
 }
 
 <#

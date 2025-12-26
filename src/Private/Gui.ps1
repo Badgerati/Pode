@@ -139,5 +139,6 @@ function Start-PodeGuiRunspace {
         }
     }
 
+    Write-Verbose 'Starting the GUI runspace...'
     Add-PodeRunspace -Type Gui -Name 'Watcher' -ScriptBlock $script
 }
