@@ -63,15 +63,6 @@ namespace Pode.Requests
             return content.StartsWith(command, true, CultureInfo.InvariantCulture);
         }
 
-        public async Task SendAck()
-        {
-            var ack = string.IsNullOrWhiteSpace(Context.PodeSocket.AcknowledgeMessage)
-                ? $"{Context.PodeSocket.Hostname} -- Pode Proxy Server"
-                : Context.PodeSocket.AcknowledgeMessage;
-
-            await Context.Response.WriteLine($"220 {ack}", true).ConfigureAwait(false);
-        }
-
         protected override bool ValidateInput(byte[] bytes)
         {
             // we need more bytes!
@@ -112,7 +103,7 @@ namespace Pode.Requests
             if (string.IsNullOrWhiteSpace(content))
             {
                 Command = PodeSmtpCommand.None;
-                await Context.Response.WriteLine("501 Invalid command received", true).ConfigureAwait(false);
+                SetStatus(501, "Invalid command received");
                 return true;
             }
 
@@ -120,7 +111,7 @@ namespace Pode.Requests
             if (IsCommand(content, "QUIT"))
             {
                 Command = PodeSmtpCommand.Quit;
-                await Context.Response.WriteLine("221 OK", true).ConfigureAwait(false);
+                SetStatus(221, "OK");
                 return true;
             }
 
@@ -128,7 +119,7 @@ namespace Pode.Requests
             if (StartType == PodeSmtpStartType.Ehlo && TlsMode == PodeTlsMode.Explicit && !SslUpgraded && !IsCommand(content, "STARTTLS"))
             {
                 Command = PodeSmtpCommand.None;
-                await Context.Response.WriteLine("530 Must issue a STARTTLS command first", true).ConfigureAwait(false);
+                SetStatus(530, "Must issue a STARTTLS command first");
                 return true;
             }
 
@@ -137,7 +128,7 @@ namespace Pode.Requests
             {
                 Command = PodeSmtpCommand.Helo;
                 StartType = PodeSmtpStartType.Helo;
-                await Context.Response.WriteLine("250 OK", true).ConfigureAwait(false);
+                SetStatus(250, "OK");
                 return true;
             }
 
@@ -146,14 +137,14 @@ namespace Pode.Requests
             {
                 Command = PodeSmtpCommand.Ehlo;
                 StartType = PodeSmtpStartType.Ehlo;
-                await Context.Response.WriteLine($"250-{Context.PodeSocket.Hostname} hello there", true).ConfigureAwait(false);
+                SetSubStatus(250, $"{Context.PodeSocket.Hostname} hello there");
 
                 if (TlsMode == PodeTlsMode.Explicit && !SslUpgraded)
                 {
-                    await Context.Response.WriteLine("250-STARTTLS", true).ConfigureAwait(false);
+                    SetSubStatus(250, "STARTTLS");
                 }
 
-                await Context.Response.WriteLine("250 OK", true).ConfigureAwait(false);
+                SetStatus(250, "OK");
                 return true;
             }
 
@@ -163,13 +154,13 @@ namespace Pode.Requests
                 if (TlsMode != PodeTlsMode.Explicit)
                 {
                     Command = PodeSmtpCommand.None;
-                    await Context.Response.WriteLine("501 SMTP server not running on Explicit TLS for the STARTTLS command", true).ConfigureAwait(false);
+                    SetStatus(501, "SMTP server not running on Explicit TLS for the STARTTLS command");
                     return true;
                 }
 
                 Reset();
                 Command = PodeSmtpCommand.StartTls;
-                await Context.Response.WriteLine("220 Ready to start TLS").ConfigureAwait(false);
+                SetStatus(220, "Ready to start TLS");
                 await UpgradeToSSL(cancellationToken).ConfigureAwait(false);
                 return true;
             }
@@ -179,7 +170,7 @@ namespace Pode.Requests
             {
                 Reset();
                 Command = PodeSmtpCommand.Reset;
-                await Context.Response.WriteLine("250 OK", true).ConfigureAwait(false);
+                SetStatus(250, "OK");
                 return true;
             }
 
@@ -187,7 +178,7 @@ namespace Pode.Requests
             if (IsCommand(content, "NOOP"))
             {
                 Command = PodeSmtpCommand.NoOp;
-                await Context.Response.WriteLine("250 OK", true).ConfigureAwait(false);
+                SetStatus(250, "OK");
                 return true;
             }
 
@@ -195,7 +186,7 @@ namespace Pode.Requests
             if (IsCommand(content, "RCPT TO"))
             {
                 Command = PodeSmtpCommand.RcptTo;
-                await Context.Response.WriteLine("250 OK", true).ConfigureAwait(false);
+                SetStatus(250, "OK");
                 To.Add(ParseEmail(content));
                 return true;
             }
@@ -204,7 +195,7 @@ namespace Pode.Requests
             if (IsCommand(content, "MAIL FROM"))
             {
                 Command = PodeSmtpCommand.MailFrom;
-                await Context.Response.WriteLine("250 OK", true).ConfigureAwait(false);
+                SetStatus(250, "OK");
                 From = ParseEmail(content);
                 return true;
             }
@@ -213,7 +204,7 @@ namespace Pode.Requests
             if (IsCommand(content, "DATA"))
             {
                 Command = PodeSmtpCommand.Data;
-                await Context.Response.WriteLine("354 Start mail input; end with <CR><LF>.<CR><LF>", true).ConfigureAwait(false);
+                SetStatus(354, "Start mail input; end with <CR><LF>.<CR><LF>");
                 return true;
             }
 
@@ -222,7 +213,7 @@ namespace Pode.Requests
             {
                 case PodeSmtpCommand.Data:
                     _canProcess = true;
-                    await Context.Response.WriteLine("250 OK", true).ConfigureAwait(false);
+                    SetStatus(250, "OK");
                     RawBody = bytes;
                     Attachments = new List<PodeSmtpAttachment>();
 
@@ -254,7 +245,7 @@ namespace Pode.Requests
                     else
                     {
                         Command = PodeSmtpCommand.None;
-                        await Context.Response.WriteLine("501 Invalid DATA received", true).ConfigureAwait(false);
+                        SetStatus(501, "Invalid DATA received");
                         return true;
                     }
                     break;
@@ -517,6 +508,17 @@ namespace Pode.Requests
             {
                 return _Encoding.ASCII.GetString(bytes);
             }
+        }
+
+        private void SetStatus(int code, string description)
+        {
+            Context.Response.StatusCode = code;
+            Context.Response.StatusDescription = description;
+        }
+
+        private void SetSubStatus(int code, string description)
+        {
+            Context.Response.WriteLine($"{code}-{description}", true).ConfigureAwait(false);
         }
 
         /// <summary>

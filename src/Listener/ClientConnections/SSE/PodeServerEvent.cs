@@ -18,7 +18,7 @@ namespace Pode.ClientConnections.SSE
         {
             Retry = retry;
             AllowAllOrigins = allowAllOrigins;
-            LastEventId = $"{context.HttpRequest.Headers["Last-Event-ID"]}".Trim();
+            LastEventId = $"{Request.Headers["Last-Event-ID"]}".Trim();
         }
 
         public override async Task<bool> Open()
@@ -29,7 +29,7 @@ namespace Pode.ClientConnections.SSE
             }
 
             // send SSE headers
-            await Context.Response.SendSSEHeaders(ClientId, Name, Group, AllowAllOrigins).ConfigureAwait(false);
+            await Response.UpgradeToSSE(ClientId, Name, Group, AllowAllOrigins).ConfigureAwait(false);
 
             // send retry event
             if (!await SendRetry().ConfigureAwait(false))
@@ -137,7 +137,7 @@ namespace Pode.ClientConnections.SSE
                 }
 
                 // attempt to write the message, if false is returned then error
-                if (!await Context.Response.WriteLine(message, flush).ConfigureAwait(false))
+                if (!await Response.WriteLine(message, flush).ConfigureAwait(false))
                 {
                     throw new IOException($"Failed to send SSE event '{message.Split(':')[0]}', client connection is closed");
                 }

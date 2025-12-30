@@ -138,12 +138,14 @@ function Start-PodeSmtpServer {
 
                             # ensure the request ip is allowed
                             if (!(Test-PodeLimitAccessRuleRequest)) {
-                                $Response.WriteLine('554 Your IP address was rejected', $true)
+                                $Response.StatusCode = 554
+                                $Response.StatusDescription = 'Your IP address was rejected'
                             }
 
                             # has the ip hit the rate limit?
                             elseif (!(Test-PodeLimitRateRuleRequest)) {
-                                $Response.WriteLine('554 Your IP address has hit the rate limit', $true)
+                                $Response.StatusCode = 554
+                                $Response.StatusDescription = 'Your IP address has hit the rate limit'
                             }
 
                             # deal with smtp call

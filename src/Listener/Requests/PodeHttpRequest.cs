@@ -36,6 +36,13 @@ namespace Pode.Requests
         public string Host { get; private set; }
         public bool AwaitingBody { get; private set; }
         public PodeForm Form { get; private set; }
+        public bool IsEligibleForWebSocketUpgrade
+        {
+            get
+            {
+                return Headers.ContainsKey("Sec-WebSocket-Key");
+            }
+        }
 
         private bool IsRequestLineValid;
         private MemoryStream BodyStream;
@@ -320,12 +327,6 @@ namespace Pode.Requests
                 }
             }
 
-            // is web-socket?
-            if (Headers.ContainsKey("Sec-WebSocket-Key"))
-            {
-                Type = PodeProtocolType.Ws;
-            }
-
             // do we have a reference SSE Client?
             var sseClientId = $"{Headers["X-Pode-Sse-Client-Id"]}";
             if (!string.IsNullOrEmpty(sseClientId))
@@ -369,9 +370,8 @@ namespace Pode.Requests
             }
 
             // keep-alive?
-            IsKeepAlive = IsWebSocket ||
-                (Headers.ContainsKey("Connection")
-                    && Headers["Connection"]?.ToString().Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase) == true);
+            IsKeepAlive = Headers.ContainsKey("Connection")
+                    && Headers["Connection"]?.ToString().Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase) == true;
 
             // return index where body starts in req
             return bodyIndex;
@@ -456,11 +456,6 @@ namespace Pode.Requests
         public bool IsHttpMethodValid()
         {
             if (string.IsNullOrWhiteSpace(HttpMethod) || !PodeHelpers.HTTP_METHODS.Contains(HttpMethod))
-            {
-                return false;
-            }
-
-            if (IsWebSocket && HttpMethod != "GET")
             {
                 return false;
             }

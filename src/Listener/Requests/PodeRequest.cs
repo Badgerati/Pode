@@ -479,6 +479,19 @@ namespace Pode.Requests
             await InputStream.FlushAsync().ConfigureAwait(false);
         }
 
+        public async Task Write(FileStream stream, CancellationToken cancellationToken)
+        {
+            if (IsDisposed || !IsWriteable || stream == default || stream.Length == 0)
+            {
+                return;
+            }
+
+            await Task.Run(() =>
+            {
+                stream.CopyTo(InputStream);
+            }, cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task Write(MemoryStream stream, CancellationToken cancellationToken)
         {
             if (IsDisposed || !IsWriteable || stream == default || stream.Length == 0)

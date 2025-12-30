@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Pode.Sockets;
 using Pode.Requests.Signals;
 using Pode.Utilities;
+using Pode.Requests;
 
 namespace Pode.ClientConnections.Signals
 {
@@ -25,7 +26,12 @@ namespace Pode.ClientConnections.Signals
             }
 
             // generate the handshake key
-            var handshakeKey = $"{Context.HttpRequest.Headers["Sec-WebSocket-Key"]}".Trim();
+            if (!Request.Headers.ContainsKey("Sec-WebSocket-Key"))
+            {
+                throw new PodeRequestException("WebSocket upgrade request is invalid, missing Sec-WebSocket-Key header", 412);
+            }
+
+            var handshakeKey = $"{Request.Headers["Sec-WebSocket-Key"]}".Trim();
 
             // Create the socket accept hash.
 #if NETCOREAPP2_1_OR_GREATER
@@ -36,7 +42,7 @@ namespace Pode.ClientConnections.Signals
 #endif
 
             // send WebSocket headers
-            await Context.Response.SendWebSocketHeaders(ClientId, Name, Group, acceptHandshakeKey).ConfigureAwait(false);
+            await Response.UpgradeToWebSocket(ClientId, Name, Group, acceptHandshakeKey).ConfigureAwait(false);
             return await base.Open().ConfigureAwait(false);
         }
 

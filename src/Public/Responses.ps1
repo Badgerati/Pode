@@ -1503,6 +1503,7 @@ function Write-PodeTcpClient {
         [string]
         $Message
     )
+
     begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()

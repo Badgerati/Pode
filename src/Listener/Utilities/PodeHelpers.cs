@@ -319,5 +319,15 @@ namespace Pode.Utilities
                     return stream;
             }
         }
+
+        public static FileInfo FileExists(FileSystemInfo file)
+        {
+            if (file == null || !(file is FileInfo fileInfo) || !fileInfo.Exists)
+            {
+                throw new FileNotFoundException($"File not found: {file?.FullName}");
+            }
+
+            return fileInfo;
+        }
     }
 }
