@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Pode.Connectors;
 using Pode.Utilities;
+using Pode.Sockets.Contexts;
 
 namespace Pode.Sockets
 {
@@ -183,7 +184,7 @@ namespace Pode.Sockets
             AddPendingSocket(acceptedSocket);
 
             // Create the context for the connection.
-            var context = new PodeContext(acceptedSocket, this, Listener);
+            var context = PodeContextFactory.Create(Type, acceptedSocket, this, Listener);
             PodeHelpers.WriteErrorMessage($"Opening Receive", Listener, PodeLoggingLevel.Verbose, context);
 
             // Initialize the context.
@@ -202,7 +203,7 @@ namespace Pode.Sockets
         /// Starts receiving data for a specific context.
         /// </summary>
         /// <param name="context">The context to start receiving for.</param>
-        public void StartReceive(PodeContext context)
+        public void StartReceive(IPodeContext context)
         {
             PodeHelpers.WriteErrorMessage($"Starting Receive", Listener, PodeLoggingLevel.Verbose, context);
 

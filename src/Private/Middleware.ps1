@@ -413,7 +413,7 @@ function Initialize-PodeIISMiddleware {
 
     # add middleware to check if there's a client cert
     Add-PodeMiddleware -Name '__pode_iis_clientcert_check__' -ScriptBlock {
-        if (!$WebEvent.Request.AllowClientCertificate -or ($null -ne $WebEvent.Request.ClientCertificate)) {
+        if (!$WebEvent.Request.Handler.AllowClientCertificate -or ($null -ne $WebEvent.Request.Handler.ClientCertificate)) {
             return $true
         }
 
@@ -425,10 +425,10 @@ function Initialize-PodeIISMiddleware {
 
             try {
                 $value = Get-PodeHeader -Name $header
-                $WebEvent.Request.ClientCertificate = [X509Certificates.X509Certificate2]::new([Convert]::FromBase64String($value))
+                $WebEvent.Request.Handler.ClientCertificate = [X509Certificates.X509Certificate2]::new([Convert]::FromBase64String($value))
             }
             catch {
-                $WebEvent.Request.ClientCertificateErrors = [System.Net.Security.SslPolicyErrors]::RemoteCertificateNotAvailable
+                $WebEvent.Request.Handler.ClientCertificateErrors = [System.Net.Security.SslPolicyErrors]::RemoteCertificateNotAvailable
             }
         }
 

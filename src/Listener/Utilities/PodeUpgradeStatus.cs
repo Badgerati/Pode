@@ -1,6 +1,6 @@
-namespace Pode.Responses
+namespace Pode.Utilities
 {
-    public enum PodeResponseUpgradeStatus
+    public enum PodeUpgradeStatus
     {
         None,
         InProgress,

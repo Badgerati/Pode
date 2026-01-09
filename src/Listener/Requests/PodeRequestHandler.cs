@@ -7,31 +7,34 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using Pode.Requests.Strategies;
+using Pode.Requests.Exceptions;
 using Pode.Sockets;
+using Pode.Sockets.Contexts;
 using Pode.Utilities;
 
 namespace Pode.Requests
 {
     /// <summary>
-    /// Represents an incoming request in Pode, handling different protocols, SSL/TLS upgrades, and client communication.
+    /// Represents an incoming request handler in Pode, handling different protocols, SSL/TLS upgrades, and client communication.
     /// </summary>
-    public class PodeRequest : PodeProtocol, IDisposable
+    public class PodeRequestHandler : IDisposable
     {
-        // Maximum buffer size for reading data from the input stream
-        protected const int MAX_BUFFER_SIZE = 16384;
-
         // Endpoint information for remote and local addresses
         public EndPoint RemoteEndPoint { get; private set; }
         public EndPoint LocalEndPoint { get; private set; }
 
         // SSL/TLS properties
         public bool IsSsl { get; private set; }
-        public bool SslUpgraded { get; private set; }
-        public bool IsKeepAlive { get; protected set; }
+        public bool SslUpgraded => SslUpgradeStatus == PodeUpgradeStatus.Completed;
+        public PodeUpgradeStatus SslUpgradeStatus { get; private set; } = PodeUpgradeStatus.None;
+        public bool IsKeepAlive => Strategy?.IsKeepAlive ?? false;
 
         // Flags indicating request characteristics and handling status
-        public virtual bool CloseImmediately => false;
-        public virtual bool IsProcessable => true;
+        public bool CloseImmediately => Strategy?.CloseImmediately ?? true;
+        public bool IsProcessable => Strategy?.IsProcessable ?? false;
+        public bool IsResettable => Strategy?.IsResettable ?? false;
+        public bool AwaitingContent => Strategy?.AwaitingContent ?? false;
 
         // Input stream for incoming request data
         public Stream InputStream { get; private set; }
@@ -47,24 +50,27 @@ namespace Pode.Requests
         public X509Certificate2 ClientCertificate { get; set; }
         public SslPolicyErrors ClientCertificateErrors { get; set; }
         public SslProtocols Protocols { get; private set; }
-        public PodeRequestException Error { get; set; }
-        public bool IsAborted => Error != default(PodeRequestException);
+
+        // Flags indicating request processing status
+        public PodeRequestException Error { get; private set; }
+        public bool IsAborted => Error != default;
         public bool IsDisposed { get; private set; }
 
         // Address and Scheme properties for the request
-        public virtual string Address => Context.PodeSocket.HasHostnames
+        public string Address => Context.PodeSocket.HasHostnames
             ? $"{Context.PodeSocket.Hostname}:{((IPEndPoint)LocalEndPoint).Port}"
             : $"{((IPEndPoint)LocalEndPoint).Address}:{((IPEndPoint)LocalEndPoint).Port}";
 
-        public virtual string Scheme => SslUpgraded ? $"{Context.PodeSocket.Type}s" : $"{Context.PodeSocket.Type}";
+        public string Scheme => (SslUpgraded ? $"{Strategy.Type}s" : $"{Strategy.Type}").ToLower();
 
         // Socket and Context associated with the request
         private Socket Socket;
-        public PodeContext Context { get; private set; }
+        private IPodeRequestStrategy Strategy;
+        public IPodeContext Context { get; private set; }
 
         // A fixed buffer used to temporarily store data read from the input stream.
         // This buffer is readonly to prevent reassignment and reduce memory allocations.
-        private byte[] _buffer;
+        private byte[] Buffer => Strategy?.Buffer;
         private MemoryStream BufferStream;
 
         /// <summary>
@@ -72,8 +78,8 @@ namespace Pode.Requests
         /// </summary>
         /// <param name="socket">The socket used for communication.</param>
         /// <param name="podeSocket">The PodeSocket managing this request.</param>
-        /// <param name="context">The PodeContext associated with this request.</param>
-        public PodeRequest(Socket socket, PodeSocket podeSocket, PodeContext context)
+        /// <param name="context">The Context associated with this request.</param>
+        public PodeRequestHandler(Socket socket, PodeSocket podeSocket, IPodeContext context)
         {
             Socket = socket;
             RemoteEndPoint = socket.RemoteEndPoint;
@@ -87,25 +93,20 @@ namespace Pode.Requests
             State = PodeStreamState.New;
         }
 
-        /// <summary>
-        /// Initializes a new instance of the PodeRequest class by copying properties from another request.
-        /// </summary>
-        /// <param name="request">The PodeRequest to copy properties from.</param>
-        public PodeRequest(PodeRequest request)
+        public void SetStrategy(IPodeRequestStrategy strategy)
         {
-            IsSsl = request.IsSsl;
-            InputStream = request.InputStream;
-            IsKeepAlive = request.IsKeepAlive;
-            Socket = request.Socket;
-            RemoteEndPoint = Socket.RemoteEndPoint;
-            LocalEndPoint = Socket.LocalEndPoint;
-            Error = request.Error;
-            Context = request.Context;
-            Certificate = request.Certificate;
-            AllowClientCertificate = request.AllowClientCertificate;
-            Protocols = request.Protocols;
-            TlsMode = request.TlsMode;
-            State = request.State;
+            strategy.Handler = this;
+            Strategy = strategy;
+        }
+
+        public T GetStrategy<T>() where T : IPodeRequestStrategy
+        {
+            return (T)Strategy;
+        }
+
+        public IPodeRequestStrategy GetStrategy()
+        {
+            return Strategy;
         }
 
         /// <summary>
@@ -143,10 +144,9 @@ namespace Pode.Requests
                 }
 
                 State = PodeStreamState.Error;
-                Error = new PodeRequestException(ex, 502);
+                Error = Strategy.CreateException(ex.Message, PodeRequestStatusType.ProxyError);
             }
         }
-
 
         /// <summary>
         /// Upgrades the current connection to SSL/TLS.
@@ -155,13 +155,14 @@ namespace Pode.Requests
         /// <returns>A Task representing the async operation.</returns>
         public async Task UpgradeToSSL(CancellationToken cancellationToken)
         {
-            if (SslUpgraded || IsDisposed)
+            if (SslUpgradeStatus == PodeUpgradeStatus.Completed || IsDisposed)
             {
                 State = PodeStreamState.Open;
                 return; // Already upgraded
             }
 
             // Create an SSL stream for secure communication
+            SslUpgradeStatus = PodeUpgradeStatus.InProgress;
             var ssl = new SslStream(InputStream, false, ValidateCertificateCallback);
 
             // Authenticate the SSL stream, handling cancellation and exceptions
@@ -183,7 +184,7 @@ namespace Pode.Requests
 
                 // Set InputStream to the upgraded SSL stream
                 InputStream = ssl;
-                SslUpgraded = true;
+                SslUpgradeStatus = PodeUpgradeStatus.Completed;
                 State = PodeStreamState.Open;
             }
             catch (Exception ex) when (ex is OperationCanceledException || ex is IOException || ex is ObjectDisposedException)
@@ -191,25 +192,26 @@ namespace Pode.Requests
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
                 ssl?.Dispose();
                 State = PodeStreamState.Error;
-                Error = new PodeRequestException(ex, 500);
+                SslUpgradeStatus = PodeUpgradeStatus.Failed;
+                Error = Strategy.CreateException(ex, PodeRequestStatusType.ServerError);
             }
-
             catch (AuthenticationException ex)
             {
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
                 ssl?.Dispose();
                 State = PodeStreamState.Error;
-                Error = new PodeRequestException(ex, 400);
+                SslUpgradeStatus = PodeUpgradeStatus.Failed;
+                Error = Strategy.CreateException(ex, PodeRequestStatusType.ClientError);
             }
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
                 ssl?.Dispose();
                 State = PodeStreamState.Error;
-                Error = new PodeRequestException(ex, 502);
+                SslUpgradeStatus = PodeUpgradeStatus.Failed;
+                Error = Strategy.CreateException(ex, PodeRequestStatusType.ProxyError);
             }
         }
-
 
         /// <summary>
         /// Callback to validate client certificates during the SSL handshake.
@@ -228,23 +230,6 @@ namespace Pode.Requests
                 : new X509Certificate2(certificate);
 
             return true;
-        }
-
-        /// <summary>
-        /// Provides access to a buffer. The buffer is allocated only when first requested,
-        /// saving memory if it is never needed.
-        /// This property is virtual to allow derived classes to override the buffer allocation behavior.
-        /// </summary>
-        protected virtual byte[] Buffer
-        {
-            get
-            {
-                if (_buffer == null)
-                {
-                    _buffer = new byte[MAX_BUFFER_SIZE];
-                }
-                return _buffer;
-            }
         }
 
         /// <summary>
@@ -276,9 +261,9 @@ namespace Pode.Requests
 
                         // Read data from the input stream
 #if NETCOREAPP2_1_OR_GREATER
-                        int read = await InputStream.ReadAsync(localBuffer.AsMemory(0, MAX_BUFFER_SIZE), cancellationToken).ConfigureAwait(false);
+                        int read = await InputStream.ReadAsync(localBuffer.AsMemory(0, PodeHelpers.MAX_BUFFER_SIZE), cancellationToken).ConfigureAwait(false);
 #else
-                        int read = await InputStream.ReadAsync(localBuffer, 0, MAX_BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
+                        int read = await InputStream.ReadAsync(localBuffer, 0, PodeHelpers.MAX_BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
 #endif
 
                         // Check for end of stream
@@ -295,12 +280,12 @@ namespace Pode.Requests
 #endif
 
                         // Validate and parse the data if available
-                        if (Socket.Available > 0 || !ValidateInput(BufferStream.ToArray()))
+                        if (Socket.Available > 0 || !Strategy.Validate(BufferStream.ToArray()))
                         {
                             continue;
                         }
 
-                        if (!await Parse(BufferStream.ToArray(), cancellationToken).ConfigureAwait(false))
+                        if (!await Strategy.Parse(BufferStream.ToArray(), cancellationToken).ConfigureAwait(false))
                         {
                             BufferStream.SetLength(0);
                             continue;
@@ -336,7 +321,7 @@ namespace Pode.Requests
                 if (Context.Listener.IsConnected)
                 {
                     PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
-                    Error = new PodeRequestException(ex, 500);
+                    Error = Strategy.CreateException(ex, PodeRequestStatusType.ServerError);
                 }
             }
             catch (PodeRequestException ex)
@@ -347,7 +332,7 @@ namespace Pode.Requests
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
-                Error = new PodeRequestException(ex, 500);
+                Error = Strategy.CreateException(ex, PodeRequestStatusType.ServerError);
             }
             finally
             {
@@ -356,7 +341,6 @@ namespace Pode.Requests
 
             return false;
         }
-
 
         /// <summary>
         /// Reads data from the input stream until the specified bytes are found.
@@ -380,7 +364,7 @@ namespace Pode.Requests
                 {
 #if NETCOREAPP2_1_OR_GREATER
                     // Read data from the input stream
-                    var read = await InputStream.ReadAsync(localBuffer.AsMemory(0, MAX_BUFFER_SIZE), cancellationToken).ConfigureAwait(false);
+                    var read = await InputStream.ReadAsync(localBuffer.AsMemory(0, PodeHelpers.MAX_BUFFER_SIZE), cancellationToken).ConfigureAwait(false);
                     if (read <= 0)
                     {
                         break;
@@ -390,7 +374,7 @@ namespace Pode.Requests
                     await bufferStream.WriteAsync(localBuffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
 #else
                     // Read data from the input stream
-                    var read = await InputStream.ReadAsync(localBuffer, 0, MAX_BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
+                    var read = await InputStream.ReadAsync(localBuffer, 0, PodeHelpers.MAX_BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
                     if (read <= 0)
                     {
                         break;
@@ -400,7 +384,7 @@ namespace Pode.Requests
                     await bufferStream.WriteAsync(localBuffer, 0, read, cancellationToken).ConfigureAwait(false);
 #endif
                     // Validate the input data
-                    if (Socket.Available > 0 || !ValidateInputInternal(bufferStream.ToArray(), checkBytes))
+                    if (Socket.Available > 0 || !Validate(bufferStream.ToArray(), checkBytes))
                     {
                         continue;
                     }
@@ -412,13 +396,23 @@ namespace Pode.Requests
             }
         }
 
+        public void Timeout()
+        {
+            var contextId = Context?.ID;
+            var message = string.IsNullOrEmpty(contextId)
+                ? "The request has timed out"
+                : $"The request for context '{contextId}' has timed out";
+
+            Error = Strategy.CreateException(message, PodeRequestStatusType.Timeout);
+        }
+
         /// <summary>
         /// Validates the input bytes against the specified check bytes.
         /// </summary>
         /// <param name="bytes">The bytes to validate.</param>
         /// <param name="checkBytes">The bytes to check against.</param>
         /// <returns>True if validation is successful, otherwise false.</returns>
-        private static bool ValidateInputInternal(byte[] bytes, byte[] checkBytes)
+        private static bool Validate(byte[] bytes, byte[] checkBytes)
         {
             if (bytes.Length == 0)
             {
@@ -447,26 +441,14 @@ namespace Pode.Requests
             return true;
         }
 
-        /// <summary>
-        /// Parses the received bytes. This method should be implemented in derived classes.
-        /// </summary>
-        /// <param name="bytes">The bytes to parse.</param>
-        /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
-        /// <returns>A Task representing the async operation, returning true if parsing was successful.</returns>
-        /// <exception cref="NotImplementedException">Thrown when called directly from PodeRequest.</exception>
-        protected virtual Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
+        public void Reset()
         {
-            throw new NotImplementedException();
-        }
+            if (!IsResettable)
+            {
+                return;
+            }
 
-        /// <summary>
-        /// Validates the incoming input bytes. Can be overridden by derived classes.
-        /// </summary>
-        /// <param name="bytes">The bytes to validate.</param>
-        /// <returns>True if validation is successful, otherwise false.</returns>
-        protected virtual bool ValidateInput(byte[] bytes)
-        {
-            return true;
+            Strategy?.Reset();
         }
 
         public async Task Flush()
@@ -550,10 +532,12 @@ namespace Pode.Requests
         /// <summary>
         /// Partially disposes resources used during request processing.
         /// </summary>
-        public virtual void PartialDispose()
+        public void PartialDispose()
         {
             try
             {
+                Strategy?.PartialDispose();
+
                 if (BufferStream != default(MemoryStream))
                 {
                     BufferStream.Dispose();
@@ -565,7 +549,6 @@ namespace Pode.Requests
                 {
                     Array.Clear(Buffer, 0, Buffer.Length);
                 }
-
             }
             catch (Exception ex)
             {
@@ -577,7 +560,7 @@ namespace Pode.Requests
         /// Dispose managed and unmanaged resources.
         /// </summary>
         /// <param name="disposing">Indicates if disposing is called manually or by garbage collection.</param>
-        protected virtual void Dispose(bool disposing)
+        protected void Dispose(bool disposing)
         {
             if (IsDisposed)
             {
@@ -588,6 +571,8 @@ namespace Pode.Requests
 
             if (disposing)
             {
+                Strategy?.Dispose(disposing);
+
                 if (InputStream != default(Stream))
                 {
                     State = PodeStreamState.Closed;

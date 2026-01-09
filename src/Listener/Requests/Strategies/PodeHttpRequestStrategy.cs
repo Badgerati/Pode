@@ -3,22 +3,23 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net.Http; // needed for netstandard2.0
-using System.Net.Sockets;
 using System.Text;
 using System.Web;
 using System.Linq;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Pode.Sockets;
 using Pode.ClientConnections.Signals;
 using Pode.ClientConnections.SSE;
 using Pode.Requests.Forms;
+using Pode.Requests.Exceptions;
 using Pode.Utilities;
+using Pode.Sockets.Contexts;
+using Pode.ClientConnections;
 
-namespace Pode.Requests
+namespace Pode.Requests.Strategies
 {
-    public class PodeHttpRequest : PodeRequest
+    public class PodeHttpRequestStrategy : PodeRequestStrategy
     {
         public string HttpMethod { get; private set; }
         public NameValueCollection QueryString { get; private set; }
@@ -34,7 +35,6 @@ namespace Pode.Requests
         public Hashtable Headers { get; private set; }
         public byte[] RawBody { get; private set; }
         public string Host { get; private set; }
-        public bool AwaitingBody { get; private set; }
         public PodeForm Form { get; private set; }
         public bool IsEligibleForWebSocketUpgrade
         {
@@ -54,7 +54,7 @@ namespace Pode.Requests
             {
                 if (_serverEvent == default(PodeServerEvent))
                 {
-                    return Context.SSE;
+                    return GetContext<PodeHttpContext>().SSE;
                 }
 
                 return _serverEvent;
@@ -72,7 +72,7 @@ namespace Pode.Requests
             {
                 if (_signal == default(PodeSignal))
                 {
-                    return Context.Signal;
+                    return GetContext<PodeHttpContext>().Signal;
                 }
 
                 return _signal;
@@ -104,17 +104,19 @@ namespace Pode.Requests
 
         public override bool IsProcessable
         {
-            get => !CloseImmediately && !AwaitingBody;
+            get => base.IsProcessable && !AwaitingContent;
         }
 
-        public PodeHttpRequest(Socket socket, PodeSocket podeSocket, PodeContext context)
-            : base(socket, podeSocket, context)
+        public PodeHttpRequestStrategy()
+            : base()
         {
             Protocol = "HTTP/1.1";
             Type = PodeProtocolType.Http;
         }
 
-        protected override bool ValidateInput(byte[] bytes)
+        public override void Reset() { }
+
+        public override bool Validate(byte[] bytes)
         {
             // we need more bytes!
             if (bytes.Length == 0)
@@ -123,7 +125,7 @@ namespace Pode.Requests
             }
 
             // wait until we have the rest of the payload
-            if (AwaitingBody)
+            if (AwaitingContent)
             {
                 return bytes.Length >= (ContentLength - BodyStream.Length);
             }
@@ -145,7 +147,7 @@ namespace Pode.Requests
 
                 if (reqMeta.Length != 3)
                 {
-                    throw new PodeRequestException($"Invalid request line: {reqLine} [{reqMeta.Length}]");
+                    throw CreateException($"Invalid request line: {reqLine} [{reqMeta.Length}]", 400);
                 }
 
                 IsRequestLineValid = true;
@@ -176,7 +178,7 @@ namespace Pode.Requests
             return true;
         }
 
-        protected override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
+        public override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
         {
             // if there are no bytes, return (0 bytes read means we can close the socket)
             if (bytes.Length == 0)
@@ -190,9 +192,9 @@ namespace Pode.Requests
                 ? PodeHelpers.NEW_LINE_UNIX
                 : PodeHelpers.NEW_LINE;
 
-            // parse the headers, unless we're waiting for the body
+            // parse the headers, unless we're waiting for the content
             var bodyIndex = 0;
-            if (!AwaitingBody)
+            if (!AwaitingContent)
             {
                 var content = PodeHelpers.Encoding.GetString(bytes, 0, bytes.Length);
                 var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
@@ -205,9 +207,9 @@ namespace Pode.Requests
 
             // parse the body
             await ParseBody(bytes, newline, bodyIndex, cancellationToken).ConfigureAwait(false);
-            AwaitingBody = ContentLength > 0 && BodyStream.Length < ContentLength && Error == default(PodeRequestException);
+            AwaitingContent = ContentLength > 0 && BodyStream.Length < ContentLength && Handler.Error == default(PodeRequestException);
 
-            if (!AwaitingBody)
+            if (!AwaitingContent)
             {
                 RawBody = BodyStream.ToArray();
 
@@ -218,7 +220,7 @@ namespace Pode.Requests
                 }
             }
 
-            return !AwaitingBody;
+            return !AwaitingContent;
         }
 
         private int ParseHeaders(string[] reqLines)
@@ -231,14 +233,14 @@ namespace Pode.Requests
             var reqMeta = reqLines[0].Trim().Split(' ');
             if (reqMeta.Length != 3)
             {
-                throw new PodeRequestException($"Invalid request line: {reqLines[0]} [{reqMeta.Length}]");
+                throw CreateException($"Invalid request line: {reqLines[0]} [{reqMeta.Length}]", 400);
             }
 
             // http method
             HttpMethod = reqMeta[0].Trim().ToUpper();
             if (!PodeHelpers.HTTP_METHODS.Contains(HttpMethod))
             {
-                throw new PodeRequestException($"Invalid request HTTP method: {HttpMethod}", 405);
+                throw CreateException($"Invalid request HTTP method: {HttpMethod}", 405);
             }
 
             // query string
@@ -253,7 +255,7 @@ namespace Pode.Requests
             Protocol = (reqMeta[2] ?? "HTTP/1.1").Trim();
             if (!Protocol.StartsWith("HTTP/"))
             {
-                throw new PodeRequestException($"Invalid request version: {Protocol}", 505);
+                throw CreateException($"Invalid request version: {Protocol}", 505);
             }
 
             ProtocolVersion = Protocol.Split('/')[1];
@@ -285,13 +287,13 @@ namespace Pode.Requests
             }
 
             // build required URI details
-            var _proto = IsSsl ? "https" : "http";
+            var _proto = Handler.IsSsl ? "https" : "http";
             Host = Headers["Host"]?.ToString();
 
             // check the host header
-            if (string.IsNullOrWhiteSpace(Host) || !Context.PodeSocket.CheckHostname(Host))
+            if (string.IsNullOrWhiteSpace(Host) || !Handler.Context.PodeSocket.CheckHostname(Host))
             {
-                throw new PodeRequestException($"Invalid Host header: {Host}");
+                throw CreateException($"Invalid Host header: {Host}", 400);
             }
 
             // build the URL
@@ -337,15 +339,15 @@ namespace Pode.Requests
                 // if we have a clientId, then we must have a name
                 if (string.IsNullOrEmpty(sseName))
                 {
-                    throw new PodeRequestException("Invalid SSE headers supplied, missing required X-Pode-Sse-Name HTTP header", 400);
+                    throw CreateException("Invalid SSE headers supplied, missing required X-Pode-Sse-Name HTTP header", 400);
                 }
 
-                if (!Context.Listener.TestSseConnectionExists(sseName, sseGroup, sseClientId))
+                if (!Handler.Context.Listener.TestSseConnectionExists(sseName, sseGroup, sseClientId))
                 {
-                    throw new PodeRequestException($"The SSE client connection being referenced does not exist, Name: {sseName}, Group: {string.Join(",", sseGroup)}, ClientId: {sseClientId}", 404);
+                    throw CreateException($"The SSE client connection being referenced does not exist, Name: {sseName}, Group: {string.Join(",", sseGroup)}, ClientId: {sseClientId}", 404);
                 }
 
-                ServerEvent = Context.Listener.GetSseConnection(sseName, sseGroup, sseClientId);
+                ServerEvent = Handler.Context.Listener.GetSseConnection(sseName, sseGroup, sseClientId);
             }
 
             // do we have a reference Signal Client?
@@ -358,20 +360,20 @@ namespace Pode.Requests
                 // if we have a clientId, then we must have a name
                 if (string.IsNullOrEmpty(signalName))
                 {
-                    throw new PodeRequestException("Invalid Signal headers supplied, missing required X-Pode-Signal-Name HTTP header", 400);
+                    throw CreateException("Invalid Signal headers supplied, missing required X-Pode-Signal-Name HTTP header", 400);
                 }
 
-                if (!Context.Listener.TestSignalConnectionExists(signalName, signalGroup, signalClientId))
+                if (!Handler.Context.Listener.TestSignalConnectionExists(signalName, signalGroup, signalClientId))
                 {
-                    throw new PodeRequestException($"The Signal client connection being referenced does not exist, Name: {signalName}, Group: {string.Join(",", signalGroup)}, ClientId: {signalClientId}", 404);
+                    throw CreateException($"The Signal client connection being referenced does not exist, Name: {signalName}, Group: {string.Join(",", signalGroup)}, ClientId: {signalClientId}", 404);
                 }
 
-                Signal = Context.Listener.GetSignalConnection(signalName, signalGroup, signalClientId);
+                Signal = Handler.Context.Listener.GetSignalConnection(signalName, signalGroup, signalClientId);
             }
 
             // keep-alive?
             IsKeepAlive = Headers.ContainsKey("Connection")
-                    && Headers["Connection"]?.ToString().Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase) == true;
+                && Headers["Connection"]?.ToString().Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase) == true;
 
             // return index where body starts in req
             return bodyIndex;
@@ -391,7 +393,7 @@ namespace Pode.Requests
             // if chunked, and we have a content-length, fail
             if (isChunked && ContentLength > 0)
             {
-                throw new PodeRequestException($"Cannot supply a Content-Length and a chunked Transfer-Encoding", 409);
+                throw CreateException($"Cannot supply a Content-Length and a chunked Transfer-Encoding", 409);
             }
 
             // parse for chunked
@@ -441,10 +443,10 @@ namespace Pode.Requests
             }
 
             // check body size
-            if (BodyStream.Length > Context.Listener.RequestBodySize)
+            if (BodyStream.Length > Handler.Context.Listener.RequestBodySize)
             {
-                AwaitingBody = false;
-                throw new PodeRequestException("Payload too large", 413);
+                AwaitingContent = false;
+                throw CreateException("Payload too large", 413);
             }
         }
 
@@ -463,6 +465,16 @@ namespace Pode.Requests
             return true;
         }
 
+        public async Task<PodeServerEvent> UpgradeToSSE(PodeClientConnectionScope scope, string clientId, string name, string group, bool trackEvents, int retry, bool allowAllOrigins)
+        {
+            return await GetContext<PodeHttpContext>().UpgradeToSSE(scope, clientId, name, group, trackEvents, retry, allowAllOrigins).ConfigureAwait(false);
+        }
+
+        public async Task<PodeSignal> UpgradeToWebSocket(PodeClientConnectionScope scope, string clientId, string name, string group, bool trackEvents)
+        {
+            return await GetContext<PodeHttpContext>().UpgradeToWebSocket(scope, clientId, name, group, trackEvents).ConfigureAwait(false);
+        }
+
         public override void PartialDispose()
         {
             if (BodyStream != default(MemoryStream))
@@ -470,17 +482,18 @@ namespace Pode.Requests
                 BodyStream.Dispose();
                 BodyStream = default;
             }
-
-            base.PartialDispose();
         }
 
         /// <summary>
         /// Dispose managed and unmanaged resources.
         /// </summary>
         /// <param name="disposing">Indicates whether the method is called explicitly or by garbage collection.</param>
-        protected override void Dispose(bool disposing)
+        public override void Dispose(bool disposing)
         {
-            if (IsDisposed) return;
+            if (IsDisposed)
+            {
+                return;
+            }
 
             if (disposing)
             {
@@ -488,13 +501,13 @@ namespace Pode.Requests
                 RawBody = default;
                 _body = string.Empty;
 
-                if (BodyStream != default(MemoryStream))
+                if (BodyStream != default)
                 {
                     BodyStream.Dispose();
                     BodyStream = default;
                 }
 
-                if (Form != default(PodeForm))
+                if (Form != default)
                 {
                     Form.Dispose();
                     Form = default;

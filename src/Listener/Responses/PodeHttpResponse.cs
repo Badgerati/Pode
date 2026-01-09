@@ -4,16 +4,14 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Pode.Requests;
-using Pode.Sockets;
+using Pode.Requests.Strategies;
+using Pode.Sockets.Contexts;
 using Pode.Utilities;
 
 namespace Pode.Responses
 {
     public class PodeHttpResponse : PodeResponse
     {
-        private PodeHttpRequest Request { get => (PodeHttpRequest)Context.Request; }
-
         public PodeResponseHeaders Headers { get; private set; }
         public MemoryStream OutputStream { get; private set; }
 
@@ -62,7 +60,7 @@ namespace Pode.Responses
 
         public string HttpResponseLine
         {
-            get => $"{Request.Protocol} {StatusCode} {StatusDescription}{PodeHelpers.NEW_LINE}";
+            get => $"{Request.GetStrategy<PodeHttpRequestStrategy>().Protocol} {StatusCode} {StatusDescription}{PodeHelpers.NEW_LINE}";
         }
 
         public PodeHttpResponse(PodeContext context)
@@ -75,7 +73,7 @@ namespace Pode.Responses
 
         public override async Task Send()
         {
-            if (IsSent || UpgradeStatus == PodeResponseUpgradeStatus.Completed || IsDisposed)
+            if (IsSent || ConnectionUpgradeStatus == PodeUpgradeStatus.Completed || IsDisposed)
             {
                 return;
             }
@@ -107,7 +105,7 @@ namespace Pode.Responses
 
         public override async Task Timeout()
         {
-            if (IsSent || UpgradeStatus == PodeResponseUpgradeStatus.Completed || IsDisposed)
+            if (IsSent || ConnectionUpgradeStatus == PodeUpgradeStatus.Completed || IsDisposed)
             {
                 return;
             }
@@ -162,7 +160,7 @@ namespace Pode.Responses
 
         public async Task UpgradeToSSE(string clientId, string name, string group, bool allowAllOrigins)
         {
-            UpgradeStatus = PodeResponseUpgradeStatus.InProgress;
+            ConnectionUpgradeStatus = PodeUpgradeStatus.InProgress;
 
             // clear headers, we only need the SSE headers
             Headers.Clear();
@@ -189,12 +187,12 @@ namespace Pode.Responses
             // send initial headers, and dispose output stream as we won't be using it
             PartialDispose();
             await Send().ConfigureAwait(false);
-            UpgradeStatus = PodeResponseUpgradeStatus.Completed;
+            ConnectionUpgradeStatus = PodeUpgradeStatus.Completed;
         }
 
         public async Task UpgradeToWebSocket(string clientId, string name, string group, string acceptHandshakeKey)
         {
-            UpgradeStatus = PodeResponseUpgradeStatus.InProgress;
+            ConnectionUpgradeStatus = PodeUpgradeStatus.InProgress;
 
             // set the status code and description
             StatusCode = 101;
@@ -220,7 +218,7 @@ namespace Pode.Responses
             // send initial headers, and dispose output stream as we won't be using it
             PartialDispose();
             await Send().ConfigureAwait(false);
-            UpgradeStatus = PodeResponseUpgradeStatus.Completed;
+            ConnectionUpgradeStatus = PodeUpgradeStatus.Completed;
         }
 
         private async Task SendBody(bool timeout)
@@ -261,7 +259,7 @@ namespace Pode.Responses
         private void SetDefaultHeaders()
         {
             // ensure content length (remove for 1xx responses, ensure added otherwise)
-            if (StatusCode < 200 || UpgradeStatus != PodeResponseUpgradeStatus.None)
+            if (StatusCode < 200 || ConnectionUpgradeStatus != PodeUpgradeStatus.None)
             {
                 Headers.Remove("Content-Length");
             }
@@ -306,7 +304,7 @@ namespace Pode.Responses
             Headers.Add("X-Pode-ContextId", Context.ID);
 
             // close the connection, only if request didn't specify keep-alive
-            if (!Context.IsKeepAlive && UpgradeStatus == PodeResponseUpgradeStatus.None)
+            if (!Context.IsKeepAlive && ConnectionUpgradeStatus == PodeUpgradeStatus.None)
             {
                 if (Headers.ContainsKey("Connection"))
                 {

@@ -1,6 +1,7 @@
 using namespace Pode.Connectors
 using namespace Pode.Sockets
 using namespace Pode.Utilities
+using namespace Pode.Requests.Strategies
 
 function Start-PodeTcpServer {
     # work out which endpoints to listen on
@@ -98,7 +99,7 @@ function Start-PodeTcpServer {
 
                     try {
                         try {
-                            $Request = $context.Request
+                            $Request = $context.Request.GetStrategy()
                             $Response = $context.Response
 
                             $TcpEvent = @{
@@ -106,8 +107,8 @@ function Start-PodeTcpServer {
                                 Request    = $Request
                                 Lockable   = $PodeContext.Threading.Lockables.Global
                                 Endpoint   = @{
-                                    Protocol = $Request.Scheme
-                                    Address  = $Request.Address
+                                    Protocol = $Request.Handler.Scheme
+                                    Address  = $Request.Handler.Address
                                     Name     = $context.EndpointName
                                 }
                                 Parameters = $null
@@ -116,8 +117,8 @@ function Start-PodeTcpServer {
                             }
 
                             # stop now if the request has an error
-                            if ($Request.IsAborted) {
-                                throw $Request.Error
+                            if ($Request.Handler.IsAborted) {
+                                throw $Request.Handler.Error
                             }
 
                             # ensure the request ip is allowed
@@ -169,7 +170,7 @@ function Start-PodeTcpServer {
 
                             # is the verb auto-upgrade to ssl?
                             if ($verb.Connection.UpgradeToSsl) {
-                                $Request.UpgradeToSSL()
+                                Wait-PodeTask -Task $Request.Handler.UpgradeToSSL()
                             }
                         }
                         catch [System.OperationCanceledException] {

@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Threading.Tasks;
-using Pode.Sockets;
+using Pode.Sockets.Contexts;
 using Pode.Utilities;
 
 namespace Pode.ClientConnections.SSE

@@ -116,7 +116,7 @@ The second way is to call the upgrade method directly:
 ```powershell
 Add-PodeVerb -Verb 'STARTTLS' -ScriptBlock {
     Write-PodeTcpClient -Message 'TLS GO AHEAD'
-    $TcpEvent.Request.UpgradeToSSL()
+    Wait-PodeTask -Task $TcpEvent.Request.Handler.UpgradeToSSL()
 }
 ```
 

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Pode.Sockets;
+using Pode.Sockets.Contexts;
 using Pode.Requests;
 using Pode.Utilities;
 
@@ -15,10 +15,12 @@ namespace Pode.Responses
         public bool SendChunked = false;
         public bool IsSent { get; protected set; } = false;
         public bool IsDisposed { get; private set; }
-        public PodeResponseUpgradeStatus UpgradeStatus { get; protected set; } = PodeResponseUpgradeStatus.None;
+
+        // upgrade status for the response (e.g. WebSockets, SSE, etc.)
+        public PodeUpgradeStatus ConnectionUpgradeStatus { get; protected set; } = PodeUpgradeStatus.None;
 
         public PodeContext Context { get; private set; }
-        private PodeRequest Request { get => Context.Request; }
+        protected PodeRequestHandler Request { get => Context.Request; }
 
         public PodeResponse(PodeContext context)
         {

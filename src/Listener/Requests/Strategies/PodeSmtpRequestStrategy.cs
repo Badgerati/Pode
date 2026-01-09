@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Globalization;
@@ -9,14 +8,14 @@ using _Encoding = System.Text.Encoding;
 using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
-using Pode.Sockets;
 using Pode.Requests.SMTP;
 using Pode.Requests.Forms;
+using Pode.Requests.Exceptions;
 using Pode.Utilities;
 
-namespace Pode.Requests
+namespace Pode.Requests.Strategies
 {
-    public class PodeSmtpRequest : PodeRequest
+    public class PodeSmtpRequestStrategy : PodeRequestStrategy
     {
         public string ContentType { get; private set; }
         public string ContentEncoding { get; private set; }
@@ -40,14 +39,15 @@ namespace Pode.Requests
         private bool _canProcess = false;
         public override bool IsProcessable
         {
-            get => !CloseImmediately && _canProcess;
+            get => base.IsProcessable && _canProcess;
         }
 
-        public PodeSmtpRequest(Socket socket, PodeSocket podeSocket, PodeContext context)
-            : base(socket, podeSocket, context)
+        public PodeSmtpRequestStrategy()
+            : base()
         {
             _canProcess = false;
             IsKeepAlive = true;
+            IsResettable = true;
             Command = PodeSmtpCommand.None;
             To = new List<string>();
             Type = PodeProtocolType.Smtp;
@@ -63,7 +63,7 @@ namespace Pode.Requests
             return content.StartsWith(command, true, CultureInfo.InvariantCulture);
         }
 
-        protected override bool ValidateInput(byte[] bytes)
+        public override bool Validate(byte[] bytes)
         {
             // we need more bytes!
             if (bytes.Length == 0)
@@ -87,7 +87,7 @@ namespace Pode.Requests
             return true;
         }
 
-        protected override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
+        public override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
         {
             // if there are no bytes, return (0 bytes read means we can close the socket)
             if (bytes.Length == 0)
@@ -116,7 +116,10 @@ namespace Pode.Requests
             }
 
             // ensure starttls is sent for explicit tls
-            if (StartType == PodeSmtpStartType.Ehlo && TlsMode == PodeTlsMode.Explicit && !SslUpgraded && !IsCommand(content, "STARTTLS"))
+            if (StartType == PodeSmtpStartType.Ehlo
+                && Handler.TlsMode == PodeTlsMode.Explicit
+                && Handler.SslUpgradeStatus != PodeUpgradeStatus.Completed
+                && !IsCommand(content, "STARTTLS"))
             {
                 Command = PodeSmtpCommand.None;
                 SetStatus(530, "Must issue a STARTTLS command first");
@@ -137,11 +140,11 @@ namespace Pode.Requests
             {
                 Command = PodeSmtpCommand.Ehlo;
                 StartType = PodeSmtpStartType.Ehlo;
-                SetSubStatus(250, $"{Context.PodeSocket.Hostname} hello there");
+                await SendStatus(250, $"{Handler.Context.PodeSocket.Hostname} hello there", isSub: true);
 
-                if (TlsMode == PodeTlsMode.Explicit && !SslUpgraded)
+                if (Handler.TlsMode == PodeTlsMode.Explicit && Handler.SslUpgradeStatus != PodeUpgradeStatus.Completed)
                 {
-                    SetSubStatus(250, "STARTTLS");
+                    await SendStatus(250, "STARTTLS", isSub: true);
                 }
 
                 SetStatus(250, "OK");
@@ -151,17 +154,17 @@ namespace Pode.Requests
             // starttls
             if (IsCommand(content, "STARTTLS"))
             {
-                if (TlsMode != PodeTlsMode.Explicit)
+                if (Handler.TlsMode != PodeTlsMode.Explicit)
                 {
                     Command = PodeSmtpCommand.None;
-                    SetStatus(501, "SMTP server not running on Explicit TLS for the STARTTLS command");
+                    SetStatus(503, "SMTP server not running on Explicit TLS for the STARTTLS command");
                     return true;
                 }
 
                 Reset();
                 Command = PodeSmtpCommand.StartTls;
-                SetStatus(220, "Ready to start TLS");
-                await UpgradeToSSL(cancellationToken).ConfigureAwait(false);
+                await SendStatus(220, "Ready to start TLS", isSub: false);
+                await Handler.UpgradeToSSL(cancellationToken).ConfigureAwait(false);
                 return true;
             }
 
@@ -186,8 +189,8 @@ namespace Pode.Requests
             if (IsCommand(content, "RCPT TO"))
             {
                 Command = PodeSmtpCommand.RcptTo;
-                SetStatus(250, "OK");
                 To.Add(ParseEmail(content));
+                SetStatus(250, "OK");
                 return true;
             }
 
@@ -195,8 +198,8 @@ namespace Pode.Requests
             if (IsCommand(content, "MAIL FROM"))
             {
                 Command = PodeSmtpCommand.MailFrom;
-                SetStatus(250, "OK");
                 From = ParseEmail(content);
+                SetStatus(250, "OK");
                 return true;
             }
 
@@ -251,15 +254,15 @@ namespace Pode.Requests
                     break;
 
                 default:
-                    throw new PodeRequestException("Invalid SMTP command");
+                    throw CreateException($"Invalid SMTP command: {Command}", 500);
             }
 
             return true;
         }
 
-        public void Reset()
+        public override void Reset()
         {
-            PodeHelpers.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
 
             _canProcess = false;
             Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
@@ -512,22 +515,28 @@ namespace Pode.Requests
 
         private void SetStatus(int code, string description)
         {
-            Context.Response.StatusCode = code;
-            Context.Response.StatusDescription = description;
+            Handler.Context.Response.StatusCode = code;
+            Handler.Context.Response.StatusDescription = description;
         }
 
-        private void SetSubStatus(int code, string description)
+        private async Task SendStatus(int code, string description, bool isSub)
         {
-            Context.Response.WriteLine($"{code}-{description}", true).ConfigureAwait(false);
+            var separator = isSub ? "-" : " ";
+            await Handler.Context.Response.WriteLine($"{code}{separator}{description}", true).ConfigureAwait(false);
         }
+
+        public override void PartialDispose() { }
 
         /// <summary>
         /// Dispose managed and unmanaged resources.
         /// </summary>
         /// <param name="disposing">Indicates if the method is called explicitly or by garbage collection.</param>
-        protected override void Dispose(bool disposing)
+        public override void Dispose(bool disposing)
         {
-            if (IsDisposed) return;
+            if (IsDisposed)
+            {
+                return;
+            }
 
             if (disposing)
             {

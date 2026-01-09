@@ -4,17 +4,18 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Pode.ClientConnections.Signals;
+using Pode.Requests.Exceptions;
 using Pode.Requests.Signals;
 using Pode.Utilities;
 
-namespace Pode.Requests
+namespace Pode.Requests.Strategies
 {
     /// <summary>
     /// Represents a WebSocket signal request. Inherits from PodeRequest to leverage the base connection
     /// and stream handling, and implements WebSocket-specific logic like frame parsing, op-code handling,
     /// and resource cleanup.
     /// </summary>
-    public class PodeSignalRequest : PodeRequest
+    public class PodeSignalRequestStrategy : PodeRequestStrategy
     {
         // The WebSocket operation code extracted from the incoming frame.
         public PodeWsOpCode OpCode { get; private set; }
@@ -54,7 +55,7 @@ namespace Pode.Requests
         // It excludes control frames (Ping/Pong) and ensures that a non-empty body exists.
         public override bool IsProcessable
         {
-            get => !CloseImmediately && OpCode != PodeWsOpCode.Pong && OpCode != PodeWsOpCode.Ping && !string.IsNullOrEmpty(Body);
+            get => base.IsProcessable && OpCode != PodeWsOpCode.Pong && OpCode != PodeWsOpCode.Ping && !string.IsNullOrEmpty(Body);
         }
 
         // The current frame being processed.
@@ -67,22 +68,24 @@ namespace Pode.Requests
         /// Although this introduces a small allocation overhead, it ensures data integrity
         /// for WebSocket communication.
         /// </summary>
-        protected override byte[] Buffer
+        public override byte[] Buffer
         {
             get
             {
-                return new byte[MAX_BUFFER_SIZE];
+                return new byte[PodeHelpers.MAX_BUFFER_SIZE];
             }
         }
 
         /// <summary>
-        /// Constructs a new PodeSignalRequest from an existing HTTP request and an associated signal.
+        /// Constructs a new PodeSignalRequestStrategy with an associated signal.
         /// Sets up the connection as a WebSocket request, preserving the original host and URL details.
         /// </summary>
-        /// <param name="request">The original HTTP request.</param>
-        /// <param name="signal">The associated PodeSignal.</param>
-        public PodeSignalRequest(PodeHttpRequest request, PodeSignal signal)
-            : base(request) // Copy base request properties from the HTTP request.
+        /// <param name="handler">The request handler managing this request.</param>
+        /// <param name="url">The original request URL.</param>
+        /// <param name="host">The Host header from the original request.</param>
+        /// <param name="signal">The PodeSignal associated with this request.</param>
+        public PodeSignalRequestStrategy(PodeHttpRequestStrategy httpStrategy, PodeSignal signal)
+            : base()
         {
             Signal = signal;
             IsKeepAlive = true;
@@ -91,11 +94,11 @@ namespace Pode.Requests
             Type = PodeProtocolType.Ws;
 
             // Determine the protocol prefix based on SSL usage.
-            var _proto = IsSsl ? "wss" : "ws";
-            Host = request.Host;
+            var _proto = httpStrategy.Handler.IsSsl ? "wss" : "ws";
+            Host = httpStrategy.Host;
 
             // Build the WebSocket URL from the original request's authority and path/query.
-            Url = new Uri($"{_proto}://{request.Url.Authority}{request.Url.PathAndQuery}");
+            Url = new Uri($"{_proto}://{httpStrategy.Url.Authority}{httpStrategy.Url.PathAndQuery}");
         }
 
         /// <summary>
@@ -108,13 +111,13 @@ namespace Pode.Requests
             return new PodeClientSignal(Signal, Body);
         }
 
-        protected override bool ValidateInput(byte[] bytes)
+        public override bool Validate(byte[] bytes)
         {
             // if we have a current frame, update it with the new bytes and check if it's still awaiting a body
             if (CurrentFrame != default)
             {
                 CurrentFrame.Update(bytes);
-                return !CurrentFrame.AwaitingBody;
+                return !CurrentFrame.AwaitingContent;
             }
 
             // otherwise, make sure we have enough bytes to parse the header
@@ -125,7 +128,7 @@ namespace Pode.Requests
 
             // create initial frame
             CurrentFrame = new PodeSignalFrame(bytes);
-            return !CurrentFrame.AwaitingBody;
+            return !CurrentFrame.AwaitingContent;
         }
 
         /// <summary>
@@ -136,7 +139,7 @@ namespace Pode.Requests
         /// <param name="bytes">The raw bytes of the WebSocket frame.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation if needed.</param>
         /// <returns>True if parsing is successful.</returns>
-        protected override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
+        public override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
         {
             // if there are no bytes, return (0 bytes read means we can close the socket)
             if (bytes == default || bytes.Length == 0 || CurrentFrame == default)
@@ -172,7 +175,7 @@ namespace Pode.Requests
             catch (Exception ex)
             {
                 // Log the error and return false to indicate failure.
-                PodeHelpers.WriteErrorMessage($"Error decoding WebSocket frame: {ex.Message}", Context.Listener, PodeLoggingLevel.Error, Context);
+                PodeHelpers.WriteErrorMessage($"Error decoding WebSocket frame: {ex.Message}", Handler.Context.Listener, PodeLoggingLevel.Error, Handler.Context);
                 throw;
             }
             finally
@@ -221,7 +224,7 @@ namespace Pode.Requests
 
                 // For a Ping frame, send back a Pong frame.
                 case PodeWsOpCode.Ping:
-                    await Context.Signal.Pong().ConfigureAwait(false);
+                    await Signal.Pong().ConfigureAwait(false);
                     break;
 
                 // For a Pong frame, do nothing.
@@ -233,12 +236,15 @@ namespace Pode.Requests
             return true;
         }
 
+        public override void Reset() { }
+        public override void PartialDispose() { }
+
         /// <summary>
         /// Disposes of managed and unmanaged resources used by the PodeSignalRequest.
         /// In addition to base cleanup, it sends a WebSocket Close frame and removes the client signal.
         /// </summary>
         /// <param name="disposing">Indicates whether the method is called explicitly or by the garbage collector.</param>
-        protected override void Dispose(bool disposing)
+        public override void Dispose(bool disposing)
         {
             if (IsDisposed)
             {
@@ -248,7 +254,7 @@ namespace Pode.Requests
             if (disposing)
             {
                 // Log a message indicating the WebSocket is being closed.
-                PodeHelpers.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
+                PodeHelpers.WriteErrorMessage($"Closing Websocket", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
                 Signal.Close().Wait();
             }
 

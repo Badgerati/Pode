@@ -1,6 +1,7 @@
 using namespace Pode.Connectors
 using namespace Pode.Sockets
 using namespace Pode.Utilities
+using namespace Pode.Requests.Strategies
 
 function Start-PodeSmtpServer {
     # ensure we have smtp handlers
@@ -103,7 +104,7 @@ function Start-PodeSmtpServer {
 
                     try {
                         try {
-                            $Request = $context.Request
+                            $Request = $context.Request.GetStrategy()
                             $Response = $context.Response
 
                             $script:SmtpEvent = @{
@@ -123,8 +124,8 @@ function Start-PodeSmtpServer {
                                     Body            = $Request.Body
                                 }
                                 Endpoint  = @{
-                                    Protocol = $Request.Scheme
-                                    Address  = $Request.Address
+                                    Protocol = $Request.Handler.Scheme
+                                    Address  = $Request.Handler.Address
                                     Name     = $context.EndpointName
                                 }
                                 Timestamp = [datetime]::UtcNow
@@ -132,8 +133,8 @@ function Start-PodeSmtpServer {
                             }
 
                             # stop now if the request has an error
-                            if ($Request.IsAborted) {
-                                throw $Request.Error
+                            if ($Request.Handler.IsAborted) {
+                                throw $Request.Handler.Error
                             }
 
                             # ensure the request ip is allowed

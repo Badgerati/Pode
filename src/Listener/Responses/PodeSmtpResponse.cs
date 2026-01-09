@@ -1,11 +1,28 @@
+using System;
+using System.Net.Mail;
 using System.Threading.Tasks;
-using Pode.Sockets;
+using Pode.Sockets.Contexts;
 using Pode.Utilities;
 
 namespace Pode.Responses
 {
     public class PodeSmtpResponse : PodeResponse
     {
+        private string _statusDesc = string.Empty;
+        public override string StatusDescription
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_statusDesc) && Enum.IsDefined(typeof(SmtpStatusCode), StatusCode))
+                {
+                    return ((SmtpStatusCode)StatusCode).ToString();
+                }
+
+                return _statusDesc;
+            }
+            set => _statusDesc = value;
+        }
+
         public PodeSmtpResponse(PodeContext context)
             : base(context)
         {

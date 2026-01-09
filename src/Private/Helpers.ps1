@@ -1,4 +1,4 @@
-using namespace Pode.Requests
+using namespace Pode.Requests.Exceptions
 using namespace Pode.Requests.Forms
 using namespace Pode.Utilities
 
@@ -1379,10 +1379,18 @@ function New-PodeRequestException {
     param(
         [Parameter(Mandatory = $true)]
         [int]
-        $StatusCode
+        $StatusCode,
+
+        [Parameter()]
+        [string]
+        $Message,
+
+        [Parameter()]
+        [PodeProtocolType]
+        $Type = [PodeProtocolType]::Http
     )
 
-    return [PodeRequestException]::new($StatusCode)
+    return [PodeRequestExceptionFactory]::Create($Type, $Message, $StatusCode)
 }
 
 function ConvertTo-PodeResponseContent {

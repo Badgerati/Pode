@@ -8,6 +8,7 @@ using Pode.ClientConnections.Signals;
 using Pode.ClientConnections.SSE;
 using Pode.Requests.Signals;
 using Pode.Utilities;
+using Pode.Sockets.Contexts;
 
 namespace Pode.Connectors
 {

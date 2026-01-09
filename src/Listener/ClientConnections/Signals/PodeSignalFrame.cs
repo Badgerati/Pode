@@ -13,7 +13,7 @@ namespace Pode.ClientConnections.Signals
         public byte[] MaskingKey { get; private set; }
         public int Length { get; private set; }
 
-        public bool AwaitingBody
+        public bool AwaitingContent
         {
             get
             {
@@ -61,7 +61,7 @@ namespace Pode.ClientConnections.Signals
 
         public byte[] Decode(byte[] bytes)
         {
-            if (AwaitingBody)
+            if (AwaitingContent)
             {
                 throw new InvalidOperationException("Frame is not complete");
             }

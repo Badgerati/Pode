@@ -3,9 +3,9 @@ using System.Collections;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Pode.Requests;
+using Pode.Requests.Strategies;
 using Pode.Responses;
-using Pode.Sockets;
+using Pode.Sockets.Contexts;
 using Pode.Utilities;
 
 namespace Pode.ClientConnections
@@ -14,7 +14,7 @@ namespace Pode.ClientConnections
     {
         public PodeClientConnectionType ConnectionType { get; private set; }
         public PodeContext Context { get; private set; }
-        public PodeHttpRequest Request => (PodeHttpRequest)Context?.Request;
+        public PodeHttpRequestStrategy Request => Context?.Request.GetStrategy<PodeHttpRequestStrategy>();
         public PodeHttpResponse Response => (PodeHttpResponse)Context?.Response;
         public string Name { get; private set; }
         public string Group { get; private set; }

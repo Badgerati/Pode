@@ -1,12 +1,12 @@
-using System.Net.Sockets;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Pode.Sockets;
+using Pode.Requests.Exceptions;
 using Pode.Utilities;
 
-namespace Pode.Requests
+namespace Pode.Requests.Strategies
 {
-    public class PodeTcpRequest : PodeRequest
+    public class PodeTcpRequestStrategy : PodeRequestStrategy
     {
         public byte[] RawBody { get; private set; }
 
@@ -29,23 +29,24 @@ namespace Pode.Requests
             get => IsDisposed || RawBody == default(byte[]) || RawBody.Length == 0;
         }
 
-        public PodeTcpRequest(Socket socket, PodeSocket podeSocket, PodeContext context)
-            : base(socket, podeSocket, context)
+        public PodeTcpRequestStrategy()
+            : base()
         {
             IsKeepAlive = true;
+            IsResettable = true;
             Type = PodeProtocolType.Tcp;
         }
 
-        protected override bool ValidateInput(byte[] bytes)
+        public override bool Validate(byte[] bytes)
         {
             // we need more bytes!
-            if (bytes.Length < (Context.PodeSocket.CRLFMessageEnd ? 2 : 1))
+            if (bytes.Length < (Handler.Context.PodeSocket.CRLFMessageEnd ? 2 : 1))
             {
                 return false;
             }
 
             // expect to end with <CR><LF>?
-            if (Context.PodeSocket.CRLFMessageEnd)
+            if (Handler.Context.PodeSocket.CRLFMessageEnd)
             {
                 return bytes[bytes.Length - 2] == PodeHelpers.CARRIAGE_RETURN_BYTE
                     && bytes[bytes.Length - 1] == PodeHelpers.NEW_LINE_BYTE;
@@ -54,7 +55,7 @@ namespace Pode.Requests
             return true;
         }
 
-        protected override Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
+        public override Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
         {
             // check if the request is cancelled
             cancellationToken.ThrowIfCancellationRequested();
@@ -66,25 +67,31 @@ namespace Pode.Requests
             return Task.FromResult(true);
         }
 
-        public void Reset()
+        public override void Reset()
         {
-            PodeHelpers.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
             _body = string.Empty;
             RawBody = default;
         }
 
         public void Close()
         {
-            Context.Dispose(true);
+            Handler.Context.Dispose(true);
         }
+
+        public override void PartialDispose() { }
 
         /// <summary>
         /// Dispose managed and unmanaged resources.
         /// </summary>
         /// <param name="disposing">Indicates if the method is called explicitly or by garbage collection.</param>
-        protected override void Dispose(bool disposing)
+        public override void Dispose(bool disposing)
         {
-            if (IsDisposed) return;
+            if (IsDisposed)
+            {
+                return;
+            }
+
             if (disposing)
             {
                 // Custom cleanup logic for PodeTcpRequest
@@ -95,6 +102,5 @@ namespace Pode.Requests
             // Call the base Dispose to clean up other resources
             base.Dispose(disposing);
         }
-
     }
 }

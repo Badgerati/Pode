@@ -434,7 +434,7 @@ function ConvertTo-PodeStrictSecret {
         $Secret
     )
 
-    return "$($Secret);$($WebEvent.Request.UserAgent);$($WebEvent.Request.RemoteEndPoint.Address.IPAddressToString)"
+    return "$($Secret);$($WebEvent.Request.UserAgent);$($WebEvent.Request.Handler.RemoteEndPoint.Address.IPAddressToString)"
 }
 
 function New-PodeJwtSignature {

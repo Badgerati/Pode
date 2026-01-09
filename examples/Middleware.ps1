@@ -65,7 +65,7 @@ Start-PodeServer {
         'Logic' = {
             'Middleware from hashtables!' | Out-Default
             return $true
-        };
+        }
     }
 
     $mw | Add-PodeMiddleware -Name 'MiddlewareFromPipe'
@@ -90,7 +90,7 @@ Start-PodeServer {
 
     # custom middleware to reject access to a specific IP address
     $reject_ip = {
-        if ($session.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
+        if ($session.Request.Handler.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
             Set-PodeResponseStatus -Code 403
             return $false
         }

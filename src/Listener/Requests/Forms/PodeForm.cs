@@ -18,7 +18,7 @@ namespace Pode.Requests.Forms
         private static readonly Regex BoundaryRegex = new Regex("boundary=\"?(?<boundary>.+?)\"?$");
         private static readonly Regex HeaderRegex = new Regex("^(?<name>.*?)\\:\\s+(?<value>.*?)$");
 
-        public PodeForm()
+        private PodeForm()
         {
             Files = new List<PodeFormFile>();
             Data = new List<PodeFormData>();
@@ -56,7 +56,7 @@ namespace Pode.Requests.Forms
             }
             else
             {
-                throw new PodeRequestException("No multipart/form-data boundary found");
+                throw new Exception("No multipart/form-data boundary found");
             }
 
             // get the boundary start/end
@@ -112,7 +112,7 @@ namespace Pode.Requests.Forms
                 // get the content disposition fields
                 if (!headers.TryGetValue("Content-Disposition", out string contentDispHeader))
                 {
-                    throw new PodeRequestException("No Content-Disposition found in multipart/form-data");
+                    throw new Exception("No Content-Disposition found in multipart/form-data");
                 }
 
                 // foreach (var line in disposition.Split(';'))

@@ -1,4 +1,4 @@
-namespace Pode.Sockets
+namespace Pode.Sockets.Contexts
 {
     public enum PodeContextState
     {

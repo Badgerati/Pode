@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using Pode.Sockets;
+using Pode.Sockets.Contexts;
 using Pode.Requests.Signals;
 using Pode.Utilities;
-using Pode.Requests;
+using Pode.Requests.Exceptions;
 
 namespace Pode.ClientConnections.Signals
 {
@@ -28,7 +28,7 @@ namespace Pode.ClientConnections.Signals
             // generate the handshake key
             if (!Request.Headers.ContainsKey("Sec-WebSocket-Key"))
             {
-                throw new PodeRequestException("WebSocket upgrade request is invalid, missing Sec-WebSocket-Key header", 412);
+                throw new PodeHttpRequestException("WebSocket upgrade request is invalid, missing Sec-WebSocket-Key header", 412);
             }
 
             var handshakeKey = $"{Request.Headers["Sec-WebSocket-Key"]}".Trim();

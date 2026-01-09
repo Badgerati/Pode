@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Text;
 using System.IO.Compression;
-using Pode.Sockets;
+using Pode.Sockets.Contexts;
 using Pode.Connectors;
 
 namespace Pode.Utilities
@@ -29,6 +29,7 @@ namespace Pode.Utilities
         public const byte CARRIAGE_RETURN_BYTE = 13;
         public const byte DASH_BYTE = 45;
         public const byte PERIOD_BYTE = 46;
+        public const int MAX_BUFFER_SIZE = 16384;
 
         private static string _dotnet_version = string.Empty;
         private static bool _is_net_framework = false;
@@ -94,7 +95,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteErrorMessage(string message, PodeConnector connector = default, PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default)
+        public static void WriteErrorMessage(string message, PodeConnector connector = default, PodeLoggingLevel level = PodeLoggingLevel.Error, IPodeContext context = default)
         {
             // do nothing if no message
             if (string.IsNullOrWhiteSpace(message))
@@ -115,7 +116,7 @@ namespace Pode.Utilities
             }
 
             // write the message to terminal
-            if (context == default(PodeContext))
+            if (context == default)
             {
                 Console.WriteLine($"[{level}]: {message}");
             }
