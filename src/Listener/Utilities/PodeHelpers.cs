@@ -160,6 +160,15 @@ namespace Pode.Utilities
             }
         }
 
+        public static async Task CopyFileTo(FileStream fileStream, Stream stream, CancellationToken cancellationToken)
+        {
+            // need to use Task.Run as CopyToAsync is missing netstandard2.0
+            await Task.Run(() =>
+            {
+                fileStream.CopyTo(stream);
+            }, cancellationToken).ConfigureAwait(false);
+        }
+
         public static byte[] Slice(byte[] array, int startIndex, int count = 0)
         {
             // Validate startIndex and adjust count if needed

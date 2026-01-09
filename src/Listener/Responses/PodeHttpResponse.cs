@@ -154,7 +154,7 @@ namespace Pode.Responses
 
             using (var fileStream = fileInfo.OpenRead())
             {
-                await fileStream.CopyToAsync(OutputStream, Context.Listener.CancellationToken).ConfigureAwait(false);
+                await PodeHelpers.CopyFileTo(fileStream, OutputStream, Context.Listener.CancellationToken).ConfigureAwait(false);
             }
         }
 
