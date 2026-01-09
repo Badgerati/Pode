@@ -150,11 +150,11 @@ namespace Pode.Responses
             }
 
             var fileInfo = PodeHelpers.FileExists(file);
-
             ContentLength64 = fileInfo.Length;
+
             using (var fileStream = fileInfo.OpenRead())
             {
-                await fileStream.CopyToAsync(OutputStream).ConfigureAwait(false);
+                await PodeHelpers.CopyFileTo(fileStream, OutputStream, Context.Listener.CancellationToken).ConfigureAwait(false);
             }
         }
 

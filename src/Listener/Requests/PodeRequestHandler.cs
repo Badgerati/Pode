@@ -468,10 +468,7 @@ namespace Pode.Requests
                 return;
             }
 
-            await Task.Run(() =>
-            {
-                stream.CopyTo(InputStream);
-            }, cancellationToken).ConfigureAwait(false);
+            await PodeHelpers.CopyFileTo(stream, InputStream, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task Write(MemoryStream stream, CancellationToken cancellationToken)
