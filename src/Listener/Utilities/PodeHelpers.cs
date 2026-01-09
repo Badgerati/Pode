@@ -160,15 +160,6 @@ namespace Pode.Utilities
             }
         }
 
-        public static async Task CopyFileTo(FileStream fileStream, Stream stream, CancellationToken cancellationToken)
-        {
-            // need to use Task.Run as CopyToAsync is broken on MacOS currently for PS7.5
-            await Task.Run(() =>
-            {
-                fileStream.CopyTo(stream);
-            }, cancellationToken).ConfigureAwait(false);
-        }
-
         public static byte[] Slice(byte[] array, int startIndex, int count = 0)
         {
             // Validate startIndex and adjust count if needed
