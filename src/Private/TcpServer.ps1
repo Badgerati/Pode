@@ -1,7 +1,6 @@
-using namespace Pode.Connectors
-using namespace Pode.Sockets
+using namespace Pode.Protocols.Tcp
+using namespace Pode.Transport.Sockets
 using namespace Pode.Utilities
-using namespace Pode.Requests.Strategies
 
 function Start-PodeTcpServer {
     # work out which endpoints to listen on
@@ -46,7 +45,7 @@ function Start-PodeTcpServer {
     }
 
     # create the listener
-    $listener = [PodeListener]::new([PodeConnectorType]::Tcp, $PodeContext.Tokens.Cancellation.Token)
+    $listener = [PodeTcpListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -99,7 +98,7 @@ function Start-PodeTcpServer {
 
                     try {
                         try {
-                            $Request = $context.Request.GetStrategy()
+                            $Request = $context.Request.Strategy
                             $Response = $context.Response
 
                             $TcpEvent = @{

@@ -1,4 +1,4 @@
-using namespace Pode.ClientConnections
+using namespace Pode.Protocols.Http.Client
 
 function Invoke-PodeSignalEvent {
     param(

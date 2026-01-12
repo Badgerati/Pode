@@ -30,6 +30,9 @@
 .PARAMETER TestType
     Defines the types of tests to run: Compliance, Integration, Unit.
 
+.PARAMETER SkipYarnInstall
+    If set, skips the installation of Yarn during the build process.
+
 .NOTES
     This build script requires Invoke-Build. Below is a list of all available tasks:
 
@@ -115,7 +118,10 @@ param(
 
     [string[]]
     [ValidateSet('Compliance', 'Integration', 'Unit')]
-    $TestType = @('Compliance', 'Unit', 'Integration')
+    $TestType = @('Compliance', 'Unit', 'Integration'),
+
+    [switch]
+    $SkipYarnInstall
 )
 
 # Dependency Versions
@@ -1094,6 +1100,11 @@ Add-BuildTask Build BuildDeps, Yarn, {
 
 # synopsis: Download the npm packages to pode_modules folder
 Add-BuildTask Yarn {
+    if ($SkipYarnInstall) {
+        Write-Host 'Skipping yarn install as per SkipYarnInstall flag.'
+        return
+    }
+
     if ($PSVersionTable.PSEdition -eq 'Desktop') {
         yarn install --force --ignore-scripts --ignore-optional --ignore-engines --modules-folder pode_modules
     }

@@ -1,8 +1,6 @@
-using namespace Pode.Connectors
-using namespace Pode.Sockets
+using namespace Pode.Protocols.Http
+using namespace Pode.Transport.Sockets
 using namespace Pode.Utilities
-using namespace Pode.Requests.Exceptions
-using namespace Pode.Requests.Strategies
 
 function Start-PodeWebServer {
     param(
@@ -144,7 +142,7 @@ function Start-PodeWebServer {
 
                         try {
                             try {
-                                $Request = $context.Request.GetStrategy()
+                                $Request = $context.Request.Strategy
                                 $Response = $context.Response
 
                                 # reset with basic event data
@@ -259,7 +257,7 @@ function Start-PodeWebServer {
                             catch [System.OperationCanceledException] {
                                 $_ | Write-PodeErrorLog -Level Debug
                             }
-                            catch [Pode.Requests.Exceptions.PodeRequestException] {
+                            catch [Pode.Protocols.Common.Requests.PodeRequestException] {
                                 $_.Exception | Write-PodeErrorLog -Level "$($_.Exception.LoggingLevel)" -CheckInnerException:($_.Exception.IsServerError)
 
                                 $code = $_.Exception.StatusCode
@@ -332,7 +330,7 @@ function Start-PodeWebServer {
 
                         try {
                             $payload = ($context.Message | ConvertFrom-Json)
-                            $Request = $context.Signal.Context.Request.GetStrategy()
+                            $Request = $context.Signal.Context.Request.Strategy
                             $Response = $context.Signal.Context.Response
 
                             $SignalEvent = @{
@@ -462,19 +460,19 @@ function Start-PodeWebServer {
 
 function New-PodeListener {
     [CmdletBinding()]
-    [OutputType([Pode.Connectors.PodeListener])]
+    [OutputType([Pode.Protocols.Http.PodeHttpListener])]
     param(
         [Parameter(Mandatory = $true)]
         [System.Threading.CancellationToken]
         $CancellationToken
     )
 
-    return [PodeListener]::new([PodeConnectorType]::Web, $CancellationToken)
+    return [PodeHttpListener]::new($CancellationToken)
 }
 
 function New-PodeListenerSocket {
     [CmdletBinding()]
-    [OutputType([Pode.Sockets.PodeSocket])]
+    [OutputType([Pode.Transport.Sockets.PodeSocket])]
     param(
         [Parameter(Mandatory = $true)]
         [string]

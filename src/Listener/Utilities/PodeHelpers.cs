@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Text;
 using System.IO.Compression;
-using Pode.Sockets.Contexts;
-using Pode.Connectors;
+using Pode.Adapters;
+using Pode.Protocols.Common.Contexts;
 
 namespace Pode.Utilities
 {
@@ -47,7 +47,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteException(Exception ex, PodeConnector connector = default, PodeLoggingLevel level = PodeLoggingLevel.Error)
+        public static void WriteException(Exception ex, IPodeAdapter adapter = default, PodeLoggingLevel level = PodeLoggingLevel.Error)
         {
             if (ex == default(Exception))
             {
@@ -55,7 +55,7 @@ namespace Pode.Utilities
             }
 
             // return if logging disabled, or if level isn't being logged
-            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            if (adapter != default && (!adapter.ErrorLoggingEnabled || !adapter.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }
@@ -71,7 +71,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void HandleAggregateException(AggregateException aex, PodeConnector connector = default, PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
+        public static void HandleAggregateException(AggregateException aex, IPodeAdapter adapter = default, PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
         {
             try
             {
@@ -82,7 +82,7 @@ namespace Pode.Utilities
                         return true;
                     }
 
-                    WriteException(ex, connector, level);
+                    WriteException(ex, adapter, level);
                     return false;
                 });
             }
@@ -95,7 +95,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteErrorMessage(string message, PodeConnector connector = default, PodeLoggingLevel level = PodeLoggingLevel.Error, IPodeContext context = default)
+        public static void WriteErrorMessage(string message, IPodeAdapter adapter = default, PodeLoggingLevel level = PodeLoggingLevel.Error, IPodeContext context = default)
         {
             // do nothing if no message
             if (string.IsNullOrWhiteSpace(message))
@@ -104,13 +104,13 @@ namespace Pode.Utilities
             }
 
             // return if logging disabled, or if level isn't being logged
-            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            if (adapter != default && (!adapter.ErrorLoggingEnabled || !adapter.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }
 
-            // return if no connector, and level is not error or higher
-            if (connector == default(PodeConnector) && level != PodeLoggingLevel.Error)
+            // return if no adapter, and level is not error or higher
+            if (adapter == default && level != PodeLoggingLevel.Error)
             {
                 return;
             }

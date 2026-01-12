@@ -1,5 +1,5 @@
-using namespace Pode.Requests.Exceptions
-using namespace Pode.Requests.Forms
+using namespace Pode.Protocols.Common.Requests
+using namespace Pode.Protocols.Common.Forms
 using namespace Pode.Utilities
 
 <#
