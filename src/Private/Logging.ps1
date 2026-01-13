@@ -295,7 +295,7 @@ function Write-PodeRequestLog {
 
     # build a request object
     $item = @{
-        Host            = $Request.RemoteEndPoint.Address.IPAddressToString
+        Host            = $Request.Handler.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = '-'
         User            = '-'
         Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
@@ -303,7 +303,7 @@ function Write-PodeRequestLog {
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
             Hostname = $Request.Host.ToLowerInvariant()
-            Scheme   = $Request.Scheme.ToLowerInvariant()
+            Scheme   = $Request.Handler.Scheme.ToLowerInvariant()
             Resource = $Path
             Query    = (Protect-PodeValue -Value $Request.Url.Query -Default '-').TrimStart('?')
             Protocol = "HTTP/$($Request.ProtocolVersion)"

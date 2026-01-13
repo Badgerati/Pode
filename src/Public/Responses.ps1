@@ -1503,6 +1503,7 @@ function Write-PodeTcpClient {
         [string]
         $Message
     )
+
     begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
@@ -1566,7 +1567,7 @@ function Read-PodeTcpClient {
         $cBytes = [byte[]]@(13, 10)
     }
 
-    return (Wait-PodeTask -Task $TcpEvent.Request.Read($cBytes, $PodeContext.Tokens.Cancellation.Token) -Timeout $Timeout)
+    return (Wait-PodeTask -Task $TcpEvent.Request.Handler.Read($cBytes, $PodeContext.Tokens.Cancellation.Token) -Timeout $Timeout)
 }
 
 <#

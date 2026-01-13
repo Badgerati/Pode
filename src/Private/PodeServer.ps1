@@ -1,7 +1,6 @@
-using namespace Pode.Connectors
-using namespace Pode.Sockets
+using namespace Pode.Protocols.Http
+using namespace Pode.Transport.Sockets
 using namespace Pode.Utilities
-using namespace Pode.Requests
 
 function Start-PodeWebServer {
     param(
@@ -143,7 +142,7 @@ function Start-PodeWebServer {
 
                         try {
                             try {
-                                $Request = $context.Request
+                                $Request = $context.Request.Strategy
                                 $Response = $context.Response
 
                                 # reset with basic event data
@@ -197,14 +196,14 @@ function Start-PodeWebServer {
                                 Add-PodeRequestLogEndware -WebEvent $WebEvent
 
                                 # stop now if the request has an error
-                                if ($Request.IsAborted) {
-                                    throw $Request.Error
+                                if ($Request.Handler.IsAborted) {
+                                    throw $Request.Handler.Error
                                 }
 
                                 # if we have an sse clientId, verify it and then set details in WebEvent
                                 if ($null -ne $WebEvent.Request.ServerEvent) {
                                     if (!(Test-PodeSseClientIdValid)) {
-                                        throw [PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.ServerEvent.ClientId)")
+                                        throw (New-PodeRequestException StatusCode 400 Message "The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.ServerEvent.ClientId)")
                                     }
 
                                     # setup the SSE property, as a reference to the request's ServerEvent
@@ -214,7 +213,7 @@ function Start-PodeWebServer {
                                 # if we have a signal clientId, verify it and then set details in WebEvent
                                 if ($null -ne $WebEvent.Request.Signal) {
                                     if (!(Test-PodeSignalClientIdValid)) {
-                                        throw [PodeRequestException]::new("The X-PODE-SIGNAL-CLIENT-ID value is not valid: $($WebEvent.Request.Signal.ClientId)")
+                                        throw (New-PodeRequestException StatusCode 400 Message "The X-PODE-SIGNAL-CLIENT-ID value is not valid: $($WebEvent.Request.Signal.ClientId)")
                                     }
 
                                     # setup the Signal property, as a reference to the request's Signal
@@ -224,14 +223,14 @@ function Start-PodeWebServer {
                                 # invoke global and route middleware
                                 if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
                                     # has the request been aborted
-                                    if ($Request.IsAborted) {
-                                        throw $Request.Error
+                                    if ($Request.Handler.IsAborted) {
+                                        throw $Request.Handler.Error
                                     }
 
                                     if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                                         # has the request been aborted
-                                        if ($Request.IsAborted) {
-                                            throw $Request.Error
+                                        if ($Request.Handler.IsAborted) {
+                                            throw $Request.Handler.Error
                                         }
 
                                         # invoke the route
@@ -258,7 +257,7 @@ function Start-PodeWebServer {
                             catch [System.OperationCanceledException] {
                                 $_ | Write-PodeErrorLog -Level Debug
                             }
-                            catch [PodeRequestException] {
+                            catch [Pode.Protocols.Common.Requests.PodeRequestException] {
                                 $_.Exception | Write-PodeErrorLog -Level "$($_.Exception.LoggingLevel)" -CheckInnerException:($_.Exception.IsServerError)
 
                                 $code = $_.Exception.StatusCode
@@ -331,7 +330,7 @@ function Start-PodeWebServer {
 
                         try {
                             $payload = ($context.Message | ConvertFrom-Json)
-                            $Request = $context.Signal.Context.Request
+                            $Request = $context.Signal.Context.Request.Strategy
                             $Response = $context.Signal.Context.Response
 
                             $SignalEvent = @{
@@ -461,19 +460,19 @@ function Start-PodeWebServer {
 
 function New-PodeListener {
     [CmdletBinding()]
-    [OutputType([Pode.Connectors.PodeListener])]
+    [OutputType([Pode.Protocols.Http.PodeHttpListener])]
     param(
         [Parameter(Mandatory = $true)]
         [System.Threading.CancellationToken]
         $CancellationToken
     )
 
-    return [PodeListener]::new([PodeConnectorType]::Web, $CancellationToken)
+    return [PodeHttpListener]::new($CancellationToken)
 }
 
 function New-PodeListenerSocket {
     [CmdletBinding()]
-    [OutputType([Pode.Sockets.PodeSocket])]
+    [OutputType([Pode.Transport.Sockets.PodeSocket])]
     param(
         [Parameter(Mandatory = $true)]
         [string]

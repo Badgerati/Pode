@@ -1,6 +1,6 @@
 namespace Pode.Utilities
 {
-    public class PodeProtocol
+    public class PodeProtocol : IPodeProtocol
     {
         public PodeProtocolType Type { get; protected set; }
 

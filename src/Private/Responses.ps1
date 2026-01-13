@@ -494,5 +494,5 @@ function Write-PodeAttachmentResponseInternal {
     $WebEvent.Response.SendChunked = $false
 
     # set file as an attachment on the response
-    $WebEvent.Response.WriteFile($FileInfo)
+    Wait-PodeTask -Task $WebEvent.Response.WriteFile($FileInfo)
 }

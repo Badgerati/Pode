@@ -170,10 +170,10 @@ function Add-PodeRunspace {
 
 <#
 .SYNOPSIS
-    Closes and disposes of the Pode runspaces, listeners, receivers, watchers, and optionally runspace pools.
+    Closes and disposes of the Pode runspaces, listeners, consumers, watchers, and optionally runspace pools.
 
 .DESCRIPTION
-    This function checks and waits for all Listeners, Receivers, and Watchers to be disposed of
+    This function checks and waits for all Listeners, Consumers, and Watchers to be disposed of
     before proceeding to close and dispose of the runspaces and optionally the runspace pools.
     It ensures a clean shutdown by managing the disposal of resources in a specified order.
     The function handles serverless and regular server environments differently, skipping
@@ -209,7 +209,7 @@ function Close-PodeRunspace {
             Write-Verbose 'Closing the Terminate cancellation token to dispose the Listeners'
             Close-PodeCancellationTokenRequest -Type Terminate
 
-            # Wait until all Listeners, Receivers, and Watchers are disposed, and there are no client connection events.
+            # Wait until all Listeners, Consumers, and Watchers are disposed, and there are no client connection events.
             Write-Verbose 'Waiting until all Listeners and Events are disposed'
             $count = 0
             $continue = $false
@@ -221,7 +221,7 @@ function Close-PodeRunspace {
                 $count++
                 $continue = $false
 
-                # Check each listener, receiver, and watcher; if any are not disposed, continue waiting.
+                # Check each listener, consumer, and watcher; if any are not disposed, continue waiting.
                 foreach ($listener in $PodeContext.Listeners) {
                     if (($listener.ClientConnectionEvents.Count -gt 0) -or !$listener.IsDisposed) {
                         Write-Verbose "-> [Listener]: $($listener.Type) - Disposed: $($listener.IsDisposed) - Client Connections: $($listener.ClientConnectionEvents.Count)"
@@ -230,9 +230,9 @@ function Close-PodeRunspace {
                     }
                 }
 
-                foreach ($receiver in $PodeContext.Receivers) {
-                    if (!$receiver.IsDisposed) {
-                        Write-Verbose "-> [Receiver]: $($receiver.Type) - Disposed: $($receiver.IsDisposed)"
+                foreach ($consumer in $PodeContext.Consumers) {
+                    if (!$consumer.IsDisposed) {
+                        Write-Verbose "-> [Consumer]: $($consumer.Type) - Disposed: $($consumer.IsDisposed)"
                         $continue = $true
                         break
                     }

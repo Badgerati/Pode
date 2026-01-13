@@ -87,7 +87,7 @@ function New-PodeContext {
         Server        = @{}
         Metrics       = @{}
         Listeners     = @()
-        Receivers     = @()
+        Consumers     = @()
         Watchers      = @()
         Fim           = @{}
     }
@@ -101,9 +101,9 @@ function New-PodeContext {
     $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
 
-    # list of created listeners/receivers
+    # list of created listeners/consumers
     $ctx.Listeners = @()
-    $ctx.Receivers = @()
+    $ctx.Consumers = @()
     $ctx.Watchers = @()
 
     # default secret that can used when needed, and a secret isn't supplied
@@ -183,7 +183,7 @@ function New-PodeContext {
 
     $ctx.Server.WebSockets = @{
         Enabled     = ($EnablePool -icontains 'websockets')
-        Receiver    = $null
+        Consumer    = $null
         Connections = @{}
     }
 
@@ -650,7 +650,7 @@ function New-PodeRunspacePool {
         }
     }
 
-    # web socket connections runspace - for receiving data for external sockets
+    # web socket connections runspace - for consuming data for external sockets
     if (Test-PodeWebSocketsExist) {
         $PodeContext.RunspacePools.WebSockets = @{
             Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.WebSockets + 1, $PodeContext.RunspaceState, $Host)
@@ -658,7 +658,7 @@ function New-PodeRunspacePool {
             LastId = 0
         }
 
-        New-PodeWebSocketReceiver
+        New-PodeWebSocketConsumer
     }
 
     # setup timer runspace pool -if we have any timers

@@ -112,8 +112,8 @@ function Connect-PodeWebSocket {
         $ArgumentList
     )
 
-    # ensure we have a receiver
-    New-PodeWebSocketReceiver
+    # ensure we have a consumer
+    New-PodeWebSocketConsumer
 
     # fail if already exists
     if (Test-PodeWebSocket -Name $Name) {
@@ -131,7 +131,7 @@ function Connect-PodeWebSocket {
 
     # connect
     try {
-        $null = Wait-PodeTask -Task $PodeContext.Server.WebSockets.Receiver.ConnectWebSocket($Name, $Url, $ContentType)
+        $null = Wait-PodeTask -Task $PodeContext.Server.WebSockets.Consumer.ConnectWebSocket($Name, $Url, $ContentType)
     }
     catch {
         # Failed to connect to websocket
@@ -178,7 +178,7 @@ function Disconnect-PodeWebSocket {
     }
 
     if (Test-PodeWebSocket -Name $Name) {
-        $PodeContext.Server.WebSockets.Receiver.DisconnectWebSocket($Name)
+        $PodeContext.Server.WebSockets.Consumer.DisconnectWebSocket($Name)
     }
 }
 
@@ -212,7 +212,7 @@ function Remove-PodeWebSocket {
         throw ($PodeLocale.noNameForWebSocketRemoveExceptionMessage)
     }
 
-    $PodeContext.Server.WebSockets.Receiver.RemoveWebSocket($Name)
+    $PodeContext.Server.WebSockets.Consumer.RemoveWebSocket($Name)
     $PodeContext.Server.WebSockets.Connections.Remove($Name)
 }
 
@@ -275,7 +275,7 @@ function Send-PodeWebSocket {
     }
 
     # get the websocket
-    $ws = $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name)
+    $ws = $PodeContext.Server.WebSockets.Consumer.GetWebSocket($Name)
 
     # parse message
     $Message = ConvertTo-PodeResponseContent -InputObject $Message -ContentType $ws.ContentType -Depth $Depth
@@ -326,7 +326,7 @@ function Reset-PodeWebSocket {
     }
 
     if (Test-PodeWebSocket -Name $Name) {
-        $null = Wait-PodeTask -Task $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name).Reconnect($Url)
+        $null = Wait-PodeTask -Task $PodeContext.Server.WebSockets.Consumer.GetWebSocket($Name).Reconnect($Url)
     }
 }
 
@@ -352,7 +352,7 @@ function Test-PodeWebSocket {
         $Name
     )
 
-    $found = ($null -ne $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name))
+    $found = ($null -ne $PodeContext.Server.WebSockets.Consumer.GetWebSocket($Name))
     if ($found) {
         return $true
     }

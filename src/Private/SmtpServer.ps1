@@ -1,5 +1,5 @@
-using namespace Pode.Connectors
-using namespace Pode.Sockets
+using namespace Pode.Protocols.Smtp
+using namespace Pode.Transport.Sockets
 using namespace Pode.Utilities
 
 function Start-PodeSmtpServer {
@@ -50,7 +50,7 @@ function Start-PodeSmtpServer {
     }
 
     # create the listener
-    $listener = [PodeListener]::new([PodeConnectorType]::Smtp, $PodeContext.Tokens.Cancellation.Token)
+    $listener = [PodeSmtpListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -103,7 +103,7 @@ function Start-PodeSmtpServer {
 
                     try {
                         try {
-                            $Request = $context.Request
+                            $Request = $context.Request.Strategy
                             $Response = $context.Response
 
                             $script:SmtpEvent = @{
@@ -123,8 +123,8 @@ function Start-PodeSmtpServer {
                                     Body            = $Request.Body
                                 }
                                 Endpoint  = @{
-                                    Protocol = $Request.Scheme
-                                    Address  = $Request.Address
+                                    Protocol = $Request.Handler.Scheme
+                                    Address  = $Request.Handler.Address
                                     Name     = $context.EndpointName
                                 }
                                 Timestamp = [datetime]::UtcNow
@@ -132,18 +132,20 @@ function Start-PodeSmtpServer {
                             }
 
                             # stop now if the request has an error
-                            if ($Request.IsAborted) {
-                                throw $Request.Error
+                            if ($Request.Handler.IsAborted) {
+                                throw $Request.Handler.Error
                             }
 
                             # ensure the request ip is allowed
                             if (!(Test-PodeLimitAccessRuleRequest)) {
-                                $Response.WriteLine('554 Your IP address was rejected', $true)
+                                $Response.StatusCode = 554
+                                $Response.StatusDescription = 'Your IP address was rejected'
                             }
 
                             # has the ip hit the rate limit?
                             elseif (!(Test-PodeLimitRateRuleRequest)) {
-                                $Response.WriteLine('554 Your IP address has hit the rate limit', $true)
+                                $Response.StatusCode = 554
+                                $Response.StatusDescription = 'Your IP address has hit the rate limit'
                             }
 
                             # deal with smtp call

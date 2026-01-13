@@ -1,4 +1,4 @@
-using namespace Pode.ClientConnections
+using namespace Pode.Protocols.Http.Client
 
 <#
 .SYNOPSIS
@@ -66,7 +66,7 @@ function ConvertTo-PodeSignalConnection {
 
     # set and send WebSocket headers
     $trackEvents = Test-PodeSignalEvent -Name $Name -Type Connect, Disconnect
-    $signalConnection = Wait-PodeTask -Task $WebEvent.Request.Context.UpgradeToWebSocket($Scope, $ClientId, $Name, $Group, $trackEvents)
+    $signalConnection = Wait-PodeTask -Task $WebEvent.Request.UpgradeToWebSocket($Scope, $ClientId, $Name, $Group, $trackEvents)
 
     # create Signal property on WebEvent
     $WebEvent.Signal = $signalConnection

@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Text;
 using System.IO.Compression;
-using Pode.Sockets;
-using Pode.Connectors;
+using Pode.Adapters;
+using Pode.Protocols.Common.Contexts;
 
 namespace Pode.Utilities
 {
@@ -29,6 +29,7 @@ namespace Pode.Utilities
         public const byte CARRIAGE_RETURN_BYTE = 13;
         public const byte DASH_BYTE = 45;
         public const byte PERIOD_BYTE = 46;
+        public const int MAX_BUFFER_SIZE = 16384;
 
         private static string _dotnet_version = string.Empty;
         private static bool _is_net_framework = false;
@@ -46,7 +47,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteException(Exception ex, PodeConnector connector = default, PodeLoggingLevel level = PodeLoggingLevel.Error)
+        public static void WriteException(Exception ex, IPodeAdapter adapter = default, PodeLoggingLevel level = PodeLoggingLevel.Error)
         {
             if (ex == default(Exception))
             {
@@ -54,7 +55,7 @@ namespace Pode.Utilities
             }
 
             // return if logging disabled, or if level isn't being logged
-            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            if (adapter != default && (!adapter.ErrorLoggingEnabled || !adapter.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }
@@ -70,7 +71,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void HandleAggregateException(AggregateException aex, PodeConnector connector = default, PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
+        public static void HandleAggregateException(AggregateException aex, IPodeAdapter adapter = default, PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
         {
             try
             {
@@ -81,7 +82,7 @@ namespace Pode.Utilities
                         return true;
                     }
 
-                    WriteException(ex, connector, level);
+                    WriteException(ex, adapter, level);
                     return false;
                 });
             }
@@ -94,7 +95,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteErrorMessage(string message, PodeConnector connector = default, PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default)
+        public static void WriteErrorMessage(string message, IPodeAdapter adapter = default, PodeLoggingLevel level = PodeLoggingLevel.Error, IPodeContext context = default)
         {
             // do nothing if no message
             if (string.IsNullOrWhiteSpace(message))
@@ -103,19 +104,19 @@ namespace Pode.Utilities
             }
 
             // return if logging disabled, or if level isn't being logged
-            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            if (adapter != default && (!adapter.ErrorLoggingEnabled || !adapter.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }
 
-            // return if no connector, and level is not error or higher
-            if (connector == default(PodeConnector) && level != PodeLoggingLevel.Error)
+            // return if no adapter, and level is not error or higher
+            if (adapter == default && level != PodeLoggingLevel.Error)
             {
                 return;
             }
 
             // write the message to terminal
-            if (context == default(PodeContext))
+            if (context == default)
             {
                 Console.WriteLine($"[{level}]: {message}");
             }
@@ -157,6 +158,15 @@ namespace Pode.Utilities
                 await stream.WriteAsync(array, startIndex, count, cancellationToken).ConfigureAwait(false);
 #endif
             }
+        }
+
+        public static async Task CopyFileTo(FileStream fileStream, Stream stream, CancellationToken cancellationToken)
+        {
+            // need to use Task.Run as CopyToAsync is missing netstandard2.0
+            await Task.Run(() =>
+            {
+                fileStream.CopyTo(stream);
+            }, cancellationToken).ConfigureAwait(false);
         }
 
         public static byte[] Slice(byte[] array, int startIndex, int count = 0)
@@ -318,6 +328,16 @@ namespace Pode.Utilities
                 default:
                     return stream;
             }
+        }
+
+        public static FileInfo FileExists(FileSystemInfo file)
+        {
+            if (file == null || !(file is FileInfo fileInfo) || !fileInfo.Exists)
+            {
+                throw new FileNotFoundException($"File not found: {file?.FullName}");
+            }
+
+            return fileInfo;
         }
     }
 }

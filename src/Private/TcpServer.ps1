@@ -1,5 +1,5 @@
-using namespace Pode.Connectors
-using namespace Pode.Sockets
+using namespace Pode.Protocols.Tcp
+using namespace Pode.Transport.Sockets
 using namespace Pode.Utilities
 
 function Start-PodeTcpServer {
@@ -45,7 +45,7 @@ function Start-PodeTcpServer {
     }
 
     # create the listener
-    $listener = [PodeListener]::new([PodeConnectorType]::Tcp, $PodeContext.Tokens.Cancellation.Token)
+    $listener = [PodeTcpListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -98,7 +98,7 @@ function Start-PodeTcpServer {
 
                     try {
                         try {
-                            $Request = $context.Request
+                            $Request = $context.Request.Strategy
                             $Response = $context.Response
 
                             $TcpEvent = @{
@@ -106,8 +106,8 @@ function Start-PodeTcpServer {
                                 Request    = $Request
                                 Lockable   = $PodeContext.Threading.Lockables.Global
                                 Endpoint   = @{
-                                    Protocol = $Request.Scheme
-                                    Address  = $Request.Address
+                                    Protocol = $Request.Handler.Scheme
+                                    Address  = $Request.Handler.Address
                                     Name     = $context.EndpointName
                                 }
                                 Parameters = $null
@@ -116,8 +116,8 @@ function Start-PodeTcpServer {
                             }
 
                             # stop now if the request has an error
-                            if ($Request.IsAborted) {
-                                throw $Request.Error
+                            if ($Request.Handler.IsAborted) {
+                                throw $Request.Handler.Error
                             }
 
                             # ensure the request ip is allowed
@@ -169,7 +169,7 @@ function Start-PodeTcpServer {
 
                             # is the verb auto-upgrade to ssl?
                             if ($verb.Connection.UpgradeToSsl) {
-                                $Request.UpgradeToSSL()
+                                Wait-PodeTask -Task $Request.Handler.UpgradeToSSL()
                             }
                         }
                         catch [System.OperationCanceledException] {

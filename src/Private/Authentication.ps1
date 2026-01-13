@@ -284,7 +284,7 @@ function Get-PodeOAuth2RedirectHost {
 function Get-PodeAuthClientCertificateType {
     return {
         param($options)
-        $cert = $WebEvent.Request.ClientCertificate
+        $cert = $WebEvent.Request.Handler.ClientCertificate
 
         # ensure we have a client cert
         if ($null -eq $cert) {
@@ -312,7 +312,7 @@ function Get-PodeAuthClientCertificateType {
         }
 
         # return data for calling validator
-        return @($cert, $WebEvent.Request.ClientCertificateErrors)
+        return @($cert, $WebEvent.Request.Handler.ClientCertificateErrors)
     }
 }
 

@@ -1,4 +1,4 @@
-using namespace Pode.ClientConnections
+using namespace Pode.Protocols.Http.Client
 
 <#
 .SYNOPSIS
@@ -94,7 +94,7 @@ function ConvertTo-PodeSseConnection {
 
     # set and send SSE headers
     $trackEvents = Test-PodeSseEvent -Name $Name -Type Connect, Disconnect
-    $sseConnection = Wait-PodeTask -Task $WebEvent.Request.Context.UpgradeToSSE($Scope, $ClientId, $Name, $Group, $trackEvents, $RetryDuration, $AllowAllOrigins.IsPresent)
+    $sseConnection = Wait-PodeTask -Task $WebEvent.Request.UpgradeToSSE($Scope, $ClientId, $Name, $Group, $trackEvents, $RetryDuration, $AllowAllOrigins.IsPresent)
 
     # create SSE property on WebEvent, as a reference to the SSE connection
     $WebEvent.Sse = $sseConnection

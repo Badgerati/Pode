@@ -298,7 +298,7 @@ function Restart-PodeInternalServer {
         # clear the sockets
         $PodeContext.Server.Http.Listener = $null
         $PodeContext.Listeners = @()
-        $PodeContext.Receivers = @()
+        $PodeContext.Consumers = @()
         $PodeContext.Watchers = @()
 
         # set view engine back to default
