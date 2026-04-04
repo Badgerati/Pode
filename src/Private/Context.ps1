@@ -100,6 +100,7 @@ function New-PodeContext {
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
     $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+    $ctx.Server.Version = Get-PodeVersion
 
     # list of created listeners/consumers
     $ctx.Listeners = @()
@@ -302,7 +303,7 @@ function New-PodeContext {
     if ((Test-PodeHasConsole) -and ! $Daemon) {
         try {
             if (! (Test-PodeIsISEHost)) {
-                # If the session is not configured for quiet mode, modify console behavior
+                # If the session is not configured for quiet mode, modify console behaviour
                 if (!$ctx.Server.Console.Quiet) {
                     # Hide the cursor to improve the console appearance
                     [System.Console]::CursorVisible = $false
@@ -319,7 +320,7 @@ function New-PodeContext {
             }
         }
         catch {
-            # Console support is partial , configure the context for non-console behavior
+            # Console support is partial , configure the context for non-console behaviour
             $ctx.Server.Console.DisableTermination = $true  # Prevent termination
             $ctx.Server.Console.DisableConsoleInput = $true # Disable console input
             $ctx.Server.Console.Quiet = $true               # Silence the console
@@ -327,7 +328,7 @@ function New-PodeContext {
         }
     }
     else {
-        # If not running in a console-like environment, configure the context for non-console behavior
+        # If not running in a console-like environment, configure the context for non-console behaviour
         $ctx.Server.Console.DisableTermination = $true  # Prevent termination
         $ctx.Server.Console.DisableConsoleInput = $true # Disable console input
         $ctx.Server.Console.Quiet = $true               # Silence the console
@@ -415,6 +416,12 @@ function New-PodeContext {
     $ctx.Server.Handlers = @{
         smtp    = @{}
         service = @{}
+    }
+
+    # tools and groups for MCP
+    $ctx.Server.Mcp = @{
+        Tools  = @{}
+        Groups = @{}
     }
 
     # setup basic access placeholders
