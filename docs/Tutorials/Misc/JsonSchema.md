@@ -2,7 +2,7 @@
 
 You can construct hashtable representations of JSON Schema objects in Pode, which follows the specification [outlined here](https://json-schema.org/specification).
 
-The hashtable objects can then be converted to JSON later, using `ConvertTo-Json` - or [`Write-PodeJsonResponse`].
+The hashtable objects can then be converted to JSON later, using `ConvertTo-Json` - or [`Write-PodeJsonResponse`](../../../Functions/Responses/Write-PodeJsonResponse).
 
 ## Types
 
@@ -18,7 +18,7 @@ The following types are supported:
 
 ### Null
 
-To construct a simple `null` object type definition use [`New-PodeJsonSchemaNull`]:
+To construct a simple `null` object type definition use [`New-PodeJsonSchemaNull`](../../../Functions/JsonSchema/New-PodeJsonSchemaNull):
 
 ```powershell
 $def = New-PodeJsonSchemaNull
@@ -32,7 +32,7 @@ $def = New-PodeJsonSchemaNull
 
 ### Boolean
 
-To construct a simple `boolean` object type definition use [`New-PodeJsonSchemaBoolean`]:
+To construct a simple `boolean` object type definition use [`New-PodeJsonSchemaBoolean`](../../../Functions/JsonSchema/New-PodeJsonSchemaBoolean):
 
 ```powershell
 $def = New-PodeJsonSchemaBoolean
@@ -57,7 +57,7 @@ $def = New-PodeJsonSchemaBoolean -Constant $true
 
 ### Integer
 
-To construct a simple `integer` object type definition use [`New-PodeJsonSchemaInteger`]:
+To construct a simple `integer` object type definition use [`New-PodeJsonSchemaInteger`](../../../Functions/JsonSchema/New-PodeJsonSchemaInteger):
 
 ```powershell
 $def = New-PodeJsonSchemaInteger
@@ -107,7 +107,7 @@ $def = New-PodeJsonSchemaInteger -Enum 1, 2, 4, 8, 16
 
 ### Number
 
-To construct a simple `number` object type definition use [`New-PodeJsonSchemaNumber`]:
+To construct a simple `number` object type definition use [`New-PodeJsonSchemaNumber`](../../../Functions/JsonSchema/New-PodeJsonSchemaNumber):
 
 ```powershell
 $def = New-PodeJsonSchemaNumber
@@ -157,7 +157,7 @@ $def = New-PodeJsonSchemaNumber -Enum 1, 2, 4, 8, 16
 
 ### String
 
-To construct a simple `string` object type definition use [`New-PodeJsonSchemaString`]:
+To construct a simple `string` object type definition use [`New-PodeJsonSchemaString`](../../../Functions/JsonSchema/New-PodeJsonSchemaString):
 
 ```powershell
 $def = New-PodeJsonSchemaString
@@ -258,7 +258,7 @@ $def = New-PodeJsonSchemaArray -Unique -MaxItems 2 -Item (
 
 ### Object
 
-An `object` uses the definitions above for Null, Boolean, Integer, Number, String and/or Array (or Object again) to define its own properties. However, instead of using the definitions directly, you need to first create a property definition using [`New-PodeJsonSchemaProperty`] - this allows you to explicitly name a definition, and specify if it's required.
+An `object` uses the definitions above for Null, Boolean, Integer, Number, String and/or Array (or Object again) to define its own properties. However, instead of using the definitions directly, you need to first create a property definition using [`New-PodeJsonSchemaProperty`](../../../Functions/JsonSchema/New-PodeJsonSchemaProperty) - this allows you to explicitly name a definition, and specify if it's required.
 
 A basic `object`, which can accept any properties, looks as follows:
 

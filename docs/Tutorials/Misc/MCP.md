@@ -11,7 +11,7 @@ There is support for the tools to have, or not have, parameters; you can also de
 
 Tools are bundled into Groups, which lets you create a Tool and add it into one or more Groups - for example, you could have a `Default` Group where all Tools are added, or you could have a `ReadOnly` and `Admin` Groups to separate Tools.
 
-To create a Group use [`Add-PodeMcpGroup`] with a Name and optional Description:
+To create a Group use [`Add-PodeMcpGroup`](../../../Functions/MCP/Add-PodeMcpGroup) with a Name and optional Description:
 
 ```powershell
 Add-PodeMcpGroup -Name 'Default'
@@ -21,7 +21,7 @@ Add-PodeMcpGroup -Name 'Admin' -Description 'Admin only Tools for management of 
 
 ## Tools
 
-An MCP Tool is simply just a ScriptBlock, with a Name and Description, and then added to the server using [`Add-PodeMcpTool`] - you also need to supply one or more Groups to assign the Tool into.
+An MCP Tool is simply just a ScriptBlock, with a Name and Description, and then added to the server using [`Add-PodeMcpTool`](../../../Functions/MCP/Add-PodeMcpTool) - you also need to supply one or more Groups to assign the Tool into.
 
 If the supplied ScriptBlock has no parameters, there's nothing more for you to do. However, if your ScriptBlock does have parameters then you'll need to define and describe them - you can use `-AutoSchema` for simple parameter, or the [JSON Schema](../JsonSchema) functions for advanced definitions.
 
@@ -40,7 +40,7 @@ Once added to your MCP server, you can ask `What services are on this machine?` 
 
 ### AutoSchema
 
-When creating a Tool which accepts parameters there is the option to have Pode automatically generate the JSON Schema, to do this you should supply `-AutoSchema` to [`Add-PodeMcpTool`].
+When creating a Tool which accepts parameters there is the option to have Pode automatically generate the JSON Schema, to do this you should supply `-AutoSchema` to [`Add-PodeMcpTool`](../../../Functions/MCP/Add-PodeMcpTool).
 
 !!! important
     Only simple types are supported: string, int, long, double, float, and bool (including arrays of these types).
@@ -93,7 +93,7 @@ Once added to your MCP server, you can ask `What services are running on this ma
 
 Unlike the above automatically generated schema, there is also the option to manually define the schema yourself using [JSON Schema](../JsonSchema).
 
-To do this you'll need to supply `-PassThru` to [`Add-PodeMcpTool`], and pipe the result into [`Add-PodeMcpToolProperty`] and describe the parameters - chaining the [`Add-PodeMcpToolProperty`] calls for each ScriptBlock parameter you need to define.
+To do this you'll need to supply `-PassThru` to [`Add-PodeMcpTool`](../../../Functions/MCP/Add-PodeMcpTool), and pipe the result into [`Add-PodeMcpToolProperty`](../../../Functions/MCP/Add-PodeMcpToolProperty) and describe the parameters - chaining the [`Add-PodeMcpToolProperty`](../../../Functions/MCP/Add-PodeMcpToolProperty) calls for each ScriptBlock parameter you need to define.
 
 For example, building slightly on the above AutoSchema example, the following Tool will test if a specific Windows Service is present and in the specified State - but the schema is built manually. It is highly recommended to supply `-Description` to the JSON Schema functions, to help the MCP server further understand the parameters:
 
@@ -131,7 +131,7 @@ Once added to your MCP server, you can ask `Is the WinRM service running on this
 
 ## Response Types
 
-In the above Tool examples you'll have likely spotted the Tools return [`New-PodeMcpTextContent`]. This is because MCP tools should respond with one or more of the following types: text, image, and audio - each of which are represented by:
+In the above Tool examples you'll have likely spotted the Tools return [`New-PodeMcpTextContent`](../../../Functions/MCP/New-PodeMcpTextContent). This is because MCP tools should respond with one or more of the following types: text, image, and audio - each of which are represented by:
 
 * [`New-PodeMcpTextContent`]
 * [`New-PodeMcpImageContent`]
@@ -143,9 +143,9 @@ These functions are mandatory to return from Tool ScriptBlocks, so Pode can appr
 
 To actually host the created Tools, and let an MCP server list/invoke them, you need to configure Routing within Pode.
 
-This can be done via the usual [`Add-PodeRoute`], and then within its ScriptBlock you call [`Resolve-PodeMcpRequest`] - supplying the Group of Tools the Route should be responsible for. Because we're using the standard [`Add-PodeRoute`] you can configure any path you require, as well a authentication, middleware, etc.
+This can be done via the usual [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute), and then within its ScriptBlock you call [`Resolve-PodeMcpRequest`](../../../Functions/MCP/Resolve-PodeMcpRequest) - supplying the Group of Tools the Route should be responsible for. Because we're using the standard [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) you can configure any path you require, as well a authentication, middleware, etc.
 
-The [`Resolve-PodeMcpRequest`] call deals with parsing the MCP server request, and the handling of `initialize`, `tools/list`, and `tools/call` requests:
+The [`Resolve-PodeMcpRequest`](../../../Functions/MCP/Resolve-PodeMcpRequest) call deals with parsing the MCP server request, and the handling of `initialize`, `tools/list`, and `tools/call` requests:
 
 ```powershell
 Add-PodeRoute -Method Post -Path '/mcp' -ScriptBlock {
