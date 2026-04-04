@@ -3,7 +3,7 @@
 !!! note
     This is an initial implementation of MCP support, while initial testing has worked please expect aspects of the implementation to possibly change.
 
-You can create MCP tools in PowerShell and host them via Pode over HTTP(S), for use by MCP servers such as GitHub Copilot.
+You can create MCP tools in PowerShell and host them via Pode over HTTP(S), for use by MCP servers such as GitHub Copilot. Information on MCP Tools can be [found here](https://modelcontextprotocol.info/docs/concepts/tools/).
 
 There is support for the tools to have, or not have, parameters; you can also describe the tool/parameters for the MCP server using [JSON Schema](../JsonSchema).
 

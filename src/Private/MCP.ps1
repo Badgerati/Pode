@@ -10,7 +10,7 @@ function Test-PodeMcpRequest {
     # check if the group exists, if not return an error
     if (!(Test-PodeMcpGroup -Name $Group)) {
         Write-PodeMcpErrorResponse -Message "Group '$($Group)' not found" -Type InternalError
-        return
+        return $false
     }
 
     # ensure request has valid jsonrpc version

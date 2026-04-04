@@ -317,7 +317,7 @@ $def = Merge-PodeJsonSchema -Type 'AllOf' -Definition @(
         @{
             type      = 'string'
             minLength = 5
-        }
+        },
         @{
             type      = 'string'
             maxLength = 10
@@ -344,7 +344,7 @@ $def = Merge-PodeJsonSchema -Type 'AnyOf' -Definition @(
         @{
             type      = 'string'
             maxLength = 5
-        }
+        },
         @{
             type    = 'integer'
             minimum = 0
@@ -371,7 +371,7 @@ $def = Merge-PodeJsonSchema -Type 'OneOf' -Definition @(
         @{
             type       = 'integer'
             multipleOf = 5
-        }
+        },
         @{
             type       = 'integer'
             multipleOf = 3
