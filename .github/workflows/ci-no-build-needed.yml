@@ -21,6 +21,7 @@ on:
     - 'Dockerfile'
     - '*.dockerfile'
     - 'PSScriptAnalyzerSettings.psd1'
+    - 'package.json'
   pull_request:
     branches:
     - '*'
@@ -40,13 +41,16 @@ on:
     - 'Dockerfile'
     - '*.dockerfile'
     - 'PSScriptAnalyzerSettings.psd1'
+    - 'package.json'
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
+      matrix:
+        os: [windows-latest]
 
     steps:
     - name: Install Invoke-Build
