@@ -129,7 +129,7 @@ $Versions = @{
     Pester      = '5.7.1'
     MkDocs      = '1.6.1'
     DotNet      = $SdkVersion
-    MkDocsTheme = '9.7.1'
+    MkDocsTheme = '9.7.6'
     PlatyPS     = '0.14.2'
     Yarn        = '1.22.22'
 }

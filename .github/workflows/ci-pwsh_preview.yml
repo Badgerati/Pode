@@ -24,7 +24,7 @@ on:
     - '*.dockerfile'
 
 env:
-  INVOKE_BUILD_VERSION: '5.14.22'
+  INVOKE_BUILD_VERSION: '5.14.23'
   POWERSHELL_VERSION: 'Preview'
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 9.x
+        dotnet-version: 10.x
 
     - name: Setup Powershell - Unix
       shell: pwsh
