@@ -1882,7 +1882,7 @@ function Test-PodePathIsFile {
         return $false
     }
 
-    return (![string]::IsNullOrEmpty([System.IO.Path]::GetExtension($Path)))
+    return ![string]::IsNullOrEmpty([System.IO.Path]::GetExtension($Path))
 }
 
 function Test-PodePathIsWildcard {

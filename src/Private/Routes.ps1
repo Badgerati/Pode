@@ -112,6 +112,7 @@ function Find-PodePublicRoute {
 
     # escape characters in the path
     $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+    $Path = $Path.TrimStart('/', '\')
 
     # ignore if path is not a file
     if (!(Test-PodePathIsFile -Path $Path)) {
@@ -258,6 +259,10 @@ function Find-PodeStaticRoute {
     if ($CheckPublic -and [string]::IsNullOrEmpty($source)) {
         # check if we have a public route
         $pubRoute = Find-PodePublicRoute -Path $Path
+        if ($null -eq $pubRoute) {
+            return $null
+        }
+
         $source = $pubRoute.Source
         $fileInfo = $pubRoute.FileInfo
 
