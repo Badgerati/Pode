@@ -570,7 +570,37 @@
         'New-PodeLimitRouteComponent',
         'New-PodeLimitEndpointComponent',
         'New-PodeLimitMethodComponent',
-        'New-PodeLimitHeaderComponent'
+        'New-PodeLimitHeaderComponent',
+
+        # mcp
+        'Resolve-PodeMcpRequest',
+        'New-PodeMcpTextContent',
+        'New-PodeMcpImageContent',
+        'New-PodeMcpAudioContent',
+        'Add-PodeMcpTool',
+        'Add-PodeMcpToolProperty',
+        'Get-PodeMcpTool',
+        'Test-PodeMcpTool',
+        'Remove-PodeMcpTool',
+        'Update-PodeMcpTool',
+        'Add-PodeMcpGroup',
+        'Remove-PodeMcpGroup',
+        'Get-PodeMcpGroup',
+        'Test-PodeMcpGroup',
+        'Clear-PodeMcpGroup',
+        'Register-PodeMcpToolToGroup',
+        'Unregister-PodeMcpToolFromGroup',
+
+        # json schema
+        'New-PodeJsonSchemaNull',
+        'New-PodeJsonSchemaBoolean',
+        'New-PodeJsonSchemaInteger',
+        'New-PodeJsonSchemaNumber',
+        'New-PodeJsonSchemaString',
+        'New-PodeJsonSchemaArray',
+        'New-PodeJsonSchemaObject',
+        'Merge-PodeJsonSchema',
+        'New-PodeJsonSchemaProperty'
     )
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.

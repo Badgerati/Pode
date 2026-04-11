@@ -1380,7 +1380,10 @@ Add-BuildTask Test Build, TestNoBuild
 #>
 
 # Synopsis: Run the documentation locally
-Add-BuildTask Docs DocsDeps, DocsHelpBuild, {
+Add-BuildTask Docs DocsDeps, DocsHelpBuild, DocsNoBuild
+
+# Synopsis: Run the documentation locally without building
+Add-BuildTask DocsNoBuild DocsDeps, {
     mkdocs serve --open
 }
 

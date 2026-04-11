@@ -1234,7 +1234,7 @@ function Write-PodeConsoleHeader {
     }
 
     # Write the header with timestamp, Pode version, and status.
-    Write-PodeHost "`r$timestamp Pode $(Get-PodeVersion) (PID: $($PID)) [" -ForegroundColor $headerColor -Force:$Force -NoNewLine
+    Write-PodeHost "`r$timestamp Pode $($PodeContext.Server.Version) (PID: $($PID)) [" -ForegroundColor $headerColor -Force:$Force -NoNewLine
     Write-PodeHost "$Status" -ForegroundColor $StatusColor -Force:$Force -NoNewLine
 
     if ($DisableHttp) {
