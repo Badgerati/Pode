@@ -688,7 +688,8 @@ function New-PodePSDrive {
 
     # if the path supplied doesn't exist, error
     if (!(Test-Path $Path)) {
-        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)#"Path does not exist: $($Path)"
+        # Path does not exist: $($Path)
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
     }
 
     # resolve the path

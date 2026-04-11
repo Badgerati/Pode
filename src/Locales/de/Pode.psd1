@@ -346,4 +346,5 @@
     mcpToolDoesNotExistExceptionMessage                               = "Das MCP-Tool '{0}' existiert nicht."
     mcpToolAlreadyExistsExceptionMessage                              = "Das MCP-Tool '{0}' existiert bereits."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "Die MCP-Toolgruppe '{0}' existiert bereits."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Die Standardwerte für statische Routen können keine gerooteten Pfade sein. Ungültiger Standardwert: '{0}'"
 }

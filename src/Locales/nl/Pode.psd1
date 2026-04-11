@@ -346,4 +346,5 @@
     mcpToolDoesNotExistExceptionMessage                               = "De MCP-tool '{0}' bestaat niet."
     mcpToolAlreadyExistsExceptionMessage                              = "De MCP-tool '{0}' bestaat al."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "De MCP-toolgroep '{0}' bestaat al."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Statische route-standaarden kunnen geen geroot pad zijn. Ongeldige standaard: '{0}'"
 }

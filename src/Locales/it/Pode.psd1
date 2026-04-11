@@ -346,4 +346,5 @@
     mcpToolDoesNotExistExceptionMessage                               = "Lo strumento MCP '{0}' non esiste."
     mcpToolAlreadyExistsExceptionMessage                              = "Lo strumento MCP '{0}' esiste già."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "Il gruppo di strumenti MCP '{0}' esiste già."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "I valori predefiniti delle route statiche non possono essere percorsi assoluti. Valore predefinito non valido: '{0}'"
 }
