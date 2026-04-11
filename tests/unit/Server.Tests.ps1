@@ -128,6 +128,10 @@ InModuleScope -ModuleName 'Pode' {
                     Logging         = @{
                         Types = @{ 'key' = 'value' }
                     }
+                    Mcp             = @{
+                        Tools  = @{}
+                        Groups = @{}
+                    }
                     Middleware      = @{ 'key' = 'value' }
                     Endpoints       = @{ 'key' = 'value' }
                     EndpointsMap    = @{ 'key' = 'value' }

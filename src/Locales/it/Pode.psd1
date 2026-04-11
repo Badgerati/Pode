@@ -336,4 +336,14 @@
     signalEventNotRegisteredExceptionMessage                          = "L'événement '{0}' n'est pas enregistré pour la connexion Signal '{1}'."
     sseEventAlreadyRegisteredExceptionMessage                         = "L'événement '{0}' est déjà enregistré pour la connexion SSE '{1}'."
     sseEventNotRegisteredExceptionMessage                             = "L'événement '{0}' n'est pas enregistré pour la connexion SSE '{1}'."
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "La proprietà di uno schema di oggetto JSON non ha un nome. Assegna un nome a questa proprietà usando il parametro 'Name'."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'MaxProperties non può essere inferiore a MinProperties per la proprietà dello schema JSON di tipo oggetto.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems non può essere inferiore a MinItems per la proprietà dello schema JSON di tipo array.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'MaxLength non può essere inferiore a MinLength per la proprietà dello schema JSON di tipo stringa.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'Maximum non può essere inferiore a Minimum per la proprietà dello schema JSON di tipo numero.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "Parametro non supportato tipo '{0}' per il parametro '{1}' nello strumento '{2}'. La generazione automatica di schema supporta solo i tipi stringa, int, long, double, float e bool."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "Il gruppo di strumenti MCP '{0}' non esiste."
+    mcpToolDoesNotExistExceptionMessage                               = "Lo strumento MCP '{0}' non esiste."
+    mcpToolAlreadyExistsExceptionMessage                              = "Lo strumento MCP '{0}' esiste già."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "Il gruppo di strumenti MCP '{0}' esiste già."
 }

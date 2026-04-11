@@ -336,4 +336,14 @@
     signalEventNotRegisteredExceptionMessage                          = '{0} حدث غير مسجل لاتصال Signal {1}: {2}'
     sseEventAlreadyRegisteredExceptionMessage                         = '{0} حدث مسجل بالفعل لاتصال SSE {1}: {2}'
     sseEventNotRegisteredExceptionMessage                             = '{0} حدث غير مسجل لاتصال SSE {1}: {2}'
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "يجب أن يتضمن كل تعريف خاصية كائن مخطط JSON مفتاح 'الاسم'."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'لا يمكن أن تكون MaxProperties أقل من MinProperties لخاصية مخطط JSON للكائن.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'لا يمكن أن تكون MaxItems أقل من MinItems لخاصية مخطط JSON الخاص بالمصفوفة (array JSON Schema).'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'لا يمكن أن يكون MaxLength أقل من MinLength لخاصية مخطط JSON للسلاسل النصية.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'لا يمكن أن يكون الحد الأقصى أقل من الحد الأدنى لخاصية JSON Schema {0}.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "نوع المعامل غير المدعوم '{0}' للمعامل '{1}' في أداة '{2}'. توليد المخطط التلقائي يدعم فقط أنواع السلاسل والمعلومات الذاتية والطويلة والمزدوجة والطفوية والبول."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "مجموعة أدوات MCP '{0}' غير موجودة."
+    mcpToolDoesNotExistExceptionMessage                               = "أداة MCP '{0}' غير موجودة."
+    mcpToolAlreadyExistsExceptionMessage                              = "أداة MCP '{0}' موجودة بالفعل."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "مجموعة أدوات MCP '{0}' موجودة بالفعل."
 }
