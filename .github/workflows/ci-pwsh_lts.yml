@@ -12,6 +12,7 @@ on:
     - '.github/workflows/ci-pwsh_lts.yml'
     - 'Dockerfile'
     - '*.dockerfile'
+    - 'package.json'
   pull_request:
     branches:
     - '*'
@@ -22,6 +23,7 @@ on:
     - '.github/workflows/ci-pwsh_lts.yml'
     - 'Dockerfile'
     - '*.dockerfile'
+    - 'package.json'
 
 env:
   INVOKE_BUILD_VERSION: '5.14.22'

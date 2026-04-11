@@ -21,6 +21,7 @@ on:
     - 'Dockerfile'
     - '*.dockerfile'
     - 'PSScriptAnalyzerSettings.psd1'
+    - 'package.json'
   pull_request:
     branches:
     - '*'
@@ -40,6 +41,7 @@ on:
     - 'Dockerfile'
     - '*.dockerfile'
     - 'PSScriptAnalyzerSettings.psd1'
+    - 'package.json'
 
 jobs:
   build:
