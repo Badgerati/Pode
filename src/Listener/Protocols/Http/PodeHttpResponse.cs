@@ -149,10 +149,10 @@ namespace Pode.Protocols.Http
             }
 
             var fileInfo = PodeHelpers.FileExists(file);
-            ContentLength64 = fileInfo.Length;
 
             using (var fileStream = fileInfo.OpenRead())
             {
+                ContentLength64 = fileStream.Length;
                 await PodeHelpers.CopyFileTo(fileStream, OutputStream, Context.Listener.CancellationToken).ConfigureAwait(false);
             }
         }
