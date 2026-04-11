@@ -13,6 +13,7 @@ pkg/
 deliverable/
 .vs/
 yarn.lock
+.vscode/mcp.json
 
 # Code Runner
 tempCodeRunnerFile.ps1

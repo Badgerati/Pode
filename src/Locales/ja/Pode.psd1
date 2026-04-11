@@ -336,4 +336,14 @@
     signalEventNotRegisteredExceptionMessage                          = "名前が '{0}' のSignalイベントは登録されていません。"
     sseEventAlreadyRegisteredExceptionMessage                         = "名前が '{0}' のSSEイベントは既に登録されています。"
     sseEventNotRegisteredExceptionMessage                             = "名前が '{0}' のSSEイベントは登録されていません。"
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = 'JSONスキーマのオブジェクトプロパティに名前がありません。'
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'JSONスキーマのオブジェクトプロパティの最大数が最小数より少ないです。'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'JSONスキーマの配列の最大アイテム数が最小アイテム数より少ないです。'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'JSONスキーマの文字列の最大長が最小長より短いです。'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'JSONスキーマプロパティの最大値は最小{0}小さくなってはなりません。'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = 'ツール「{2}」のパラメータ「{1}」に対してサポートされていないパラメータ型「{0}」。オートスキーマ生成は文字列、int、long、double、float、bool型のみをサポートします。'
+    mcpToolGroupDoesNotExistExceptionMessage                          = 'MCPツールグループ「{0}」は存在しません。'
+    mcpToolDoesNotExistExceptionMessage                               = 'MCPツール「{0}」は存在しません。'
+    mcpToolAlreadyExistsExceptionMessage                              = 'MCPツール「{0}」は既に存在します。'
+    mcpToolGroupAlreadyExistsExceptionMessage                         = 'MCPツールグループ「{0}」は既に存在します。'
 }
