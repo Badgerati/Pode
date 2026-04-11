@@ -336,4 +336,14 @@
     signalEventNotRegisteredExceptionMessage                          = "L'événement '{0}' n'est pas enregistré pour la connexion Signal '{1}'."
     sseEventAlreadyRegisteredExceptionMessage                         = "L'événement '{0}' est déjà enregistré pour la connexion SSE '{1}'."
     sseEventNotRegisteredExceptionMessage                             = "L'événement '{0}' n'est pas enregistré pour la connexion SSE '{1}'."
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "Une propriété d'objet dans le schéma JSON est manquante d'un nom."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'MaxProperties ne peut pas être inférieur à MinProperties pour la propriété JSON Schema de type objet.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems ne peut pas être inférieur à MinItems pour la propriété JSON Schema de type tableau.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'MaxLength ne peut pas être inférieur à MinLength pour la propriété JSON Schema de type chaîne.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'Maximum ne peut pas être inférieur à Minimum pour la propriété JSON Schema de type nombre.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "Type de paramètre non pris en charge '{0}' pour le paramètre '{1}' dans l'outil '{2}'. La génération automatique de schéma ne prend en charge que les types string, int, long, double, float et bool."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "Le groupe d'outils MCP '{0}' n'existe pas."
+    mcpToolDoesNotExistExceptionMessage                               = "L'outil MCP '{0}' n'existe pas."
+    mcpToolAlreadyExistsExceptionMessage                              = "L'outil MCP '{0}' existe déjà."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "Le groupe d'outils MCP '{0}' existe déjà."
 }

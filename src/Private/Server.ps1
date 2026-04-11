@@ -274,6 +274,10 @@ function Restart-PodeInternalServer {
         # clear file watchers
         $PodeContext.Fim.Items.Clear()
 
+        # clear MCP tools
+        $PodeContext.Server.Mcp.Tools.Clear()
+        $PodeContext.Server.Mcp.Groups.Clear()
+
         # auto-importers
         Reset-PodeAutoImportConfiguration
 
