@@ -336,5 +336,14 @@
     signalEventNotRegisteredExceptionMessage                          = "이름이 '{0}'인 Signal 이벤트는 등록되어 있지 않습니다."
     sseEventAlreadyRegisteredExceptionMessage                         = "이름이 '{0}'인 SSE 이벤트는 이미 등록되어 있습니다."
     sseEventNotRegisteredExceptionMessage                             = "이름이 '{0}'인 SSE 이벤트는 등록되어 있지 않습니다."
-
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = 'JSON 스키마 객체 속성에 이름이 없습니다.'
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'JSON 스키마 객체 속성의 최대 속성 수가 최소 속성 수보다 적습니다.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'JSON 스키마 배열의 최대 항목 수가 최소 항목 수보다 적습니다.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'JSON 스키마 문자열의 최대 길이가 최소 길이보다 짧습니다.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'JSON 스키마 속성의 최대는 최소{0} 작아서는 안 됩니다.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "도구 '{2}'에서 매개변수 '{1}'에 해당하는 지원되지 않는 매개변수 유형 '{0}'. 자동 스키마 생성은 문자열, 정수, 롱, 더블, 플로트, 불리언 타입만 지원합니다."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "MCP 툴 그룹 '{0}'은 존재하지 않습니다."
+    mcpToolDoesNotExistExceptionMessage                               = "MCP 도구 '{0}'은 존재하지 않습니다."
+    mcpToolAlreadyExistsExceptionMessage                              = "MCP 도구 '{0}'은 이미 존재합니다."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "MCP 도구 그룹 '{0}'은 이미 존재합니다."
 }
