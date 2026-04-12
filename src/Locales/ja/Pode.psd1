@@ -346,4 +346,5 @@
     mcpToolDoesNotExistExceptionMessage                               = 'MCPツール「{0}」は存在しません。'
     mcpToolAlreadyExistsExceptionMessage                              = 'MCPツール「{0}」は既に存在します。'
     mcpToolGroupAlreadyExistsExceptionMessage                         = 'MCPツールグループ「{0}」は既に存在します。'
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "静的ルートのデフォルトはルートパスにできません。無効なデフォルト: '{0}'"
 }

@@ -346,4 +346,5 @@
     mcpToolDoesNotExistExceptionMessage                               = "Narzędzie MCP '{0}' nie istnieje."
     mcpToolAlreadyExistsExceptionMessage                              = "Narzędzie MCP '{0}' już istnieje."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "Grupa narzędzi MCP '{0}' już istnieje."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Domyślne wartości statycznej trasy nie mogą być ścieżkami zrootowanymi. Nieprawidłowa wartość domyślna: '{0}'"
 }

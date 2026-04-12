@@ -346,4 +346,5 @@
     mcpToolDoesNotExistExceptionMessage                               = "MCP 도구 '{0}'은 존재하지 않습니다."
     mcpToolAlreadyExistsExceptionMessage                              = "MCP 도구 '{0}'은 이미 존재합니다."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "MCP 도구 그룹 '{0}'은 이미 존재합니다."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "정적 경로의 기본값은 루트 경로일 수 없습니다. 잘못된 기본값: '{0}'"
 }

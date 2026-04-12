@@ -795,6 +795,12 @@ function Add-PodeStaticRoute {
         $Defaults = Get-PodeStaticRouteDefault
     }
 
+    foreach ($def in $Defaults) {
+        if ([System.IO.Path]::IsPathRooted($def)) {
+            throw ($PodeLocale.staticRouteDefaultCannotBeRootedExceptionMessage -f $def)
+        }
+    }
+
     if (!$RedirectToDefault) {
         $RedirectToDefault = $PodeContext.Server.Web.Static.RedirectToDefault
     }

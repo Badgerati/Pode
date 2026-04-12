@@ -112,16 +112,26 @@ function Find-PodePublicRoute {
 
     # escape characters in the path
     $Path = Protect-PodePath -Path $Path -NoEscape:$NoEscape
+    $Path = $Path.TrimStart('/', '\')
 
-    # use the public static directory - but only if path is a file
+    # ignore if path is not a file
     if (!(Test-PodePathIsFile -Path $Path)) {
         return $null
     }
 
-    $source = [System.IO.Path]::Combine($publicPath, $Path.TrimStart('/', '\'))
-    $fileInfo = Test-PodePath -Path $source -NoStatus -Force -ReturnItem
+    # if path is rooted, ignore
+    if ([System.IO.Path]::IsPathRooted($Path)) {
+        return $null
+    }
 
+    # check if file exists in the public drive
+    $source = [System.IO.Path]::Combine($publicPath, $Path)
+    $fileInfo = Test-PodePath -Path $source -NoStatus -Force -ReturnItem
     if ($null -eq $fileInfo) {
+        return $null
+    }
+
+    if (!$source.StartsWith($publicPath.TrimEnd('\', '/'), [StringComparison]::OrdinalIgnoreCase)) {
         return $null
     }
 
@@ -197,7 +207,7 @@ function Find-PodeStaticRoute {
 
     # if we have a defined static route, use that
     if ($null -ne $found) {
-        # see if we have a file
+        # see if we have a valid, non-rooted, file
         $file = [string]::Empty
         $matchingPath = "$($found.Path.Replace('*', '.+?'))$"
 
@@ -205,8 +215,13 @@ function Find-PodeStaticRoute {
             $file = Protect-PodeValue -Value $Matches['file'] -Default ([string]::Empty)
         }
 
+        if ([System.IO.Path]::IsPathRooted($file)) {
+            return $null
+        }
+
         # if $file doesn't exist return $null
-        $fileInfo = Get-Item -Path ([System.IO.Path]::Combine($found.Source, $file)) -Force -ErrorAction Ignore
+        $filePath = [System.IO.Path]::Combine($found.Source, $file)
+        $fileInfo = Get-Item -Path $filePath -Force -ErrorAction Ignore
         if ($null -eq $fileInfo) {
             return $null
         }
@@ -214,27 +229,40 @@ function Find-PodeStaticRoute {
         # if this is a folder, we need to check defaults
         if (!$found.Download -and $fileInfo.PSIsContainer -and (($null -ne $found.Defaults) -and ($found.Defaults.Count -gt 0))) {
             foreach ($def in $found.Defaults) {
-                if ([string]::IsNullOrEmpty($def)) {
+                if ([string]::IsNullOrEmpty($def) -or [System.IO.Path]::IsPathRooted($def)) {
                     continue
                 }
 
-                $defFileInfo = Get-Item -Path ([System.IO.Path]::Combine($fileInfo.FullName, $def)) -Force -ErrorAction Ignore
-                if ($null -ne $defFileInfo) {
-                    $file = [System.IO.Path]::Combine($file, $def)
-                    $fileInfo = $defFileInfo
-                    $isDefault = $true
-                    break
+                $defFilePath = [System.IO.Path]::Combine($filePath, $def)
+                $defFileInfo = Get-Item -Path $defFilePath -Force -ErrorAction Ignore
+                if ($null -eq $defFileInfo) {
+                    continue
                 }
+
+                $source = [System.IO.Path]::Combine($found.Source, $file, $def)
+                $fileInfo = $defFileInfo
+                $isDefault = $true
+                break
             }
         }
+        else {
+            $source = $filePath
+        }
 
-        $source = [System.IO.Path]::Combine($found.Source, $file)
+        # ensure the source is within the route source
+        if (![string]::IsNullOrEmpty($source) -and !$source.StartsWith($found.Source.TrimEnd('\', '/'), [StringComparison]::OrdinalIgnoreCase)) {
+            return $null
+        }
     }
 
     # check public, if flagged
     if ($CheckPublic -and [string]::IsNullOrEmpty($source)) {
         # check if we have a public route
         $pubRoute = Find-PodePublicRoute -Path $Path
+        if ($null -eq $pubRoute) {
+            return $null
+        }
+
         $source = $pubRoute.Source
         $fileInfo = $pubRoute.FileInfo
 

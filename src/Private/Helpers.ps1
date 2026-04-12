@@ -688,7 +688,8 @@ function New-PodePSDrive {
 
     # if the path supplied doesn't exist, error
     if (!(Test-Path $Path)) {
-        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)#"Path does not exist: $($Path)"
+        # Path does not exist: $($Path)
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
     }
 
     # resolve the path
@@ -1881,7 +1882,7 @@ function Test-PodePathIsFile {
         return $false
     }
 
-    return (![string]::IsNullOrEmpty([System.IO.Path]::GetExtension($Path)))
+    return ![string]::IsNullOrEmpty([System.IO.Path]::GetExtension($Path))
 }
 
 function Test-PodePathIsWildcard {

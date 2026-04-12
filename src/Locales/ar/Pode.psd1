@@ -346,4 +346,5 @@
     mcpToolDoesNotExistExceptionMessage                               = "أداة MCP '{0}' غير موجودة."
     mcpToolAlreadyExistsExceptionMessage                              = "أداة MCP '{0}' موجودة بالفعل."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "مجموعة أدوات MCP '{0}' موجودة بالفعل."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "لا يمكن أن تكون القيم الافتراضية للمسار الثابت مسارات جذرية. القيمة الافتراضية غير صالحة: '{0}'"
 }
