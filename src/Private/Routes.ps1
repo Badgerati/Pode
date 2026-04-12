@@ -125,7 +125,7 @@ function Find-PodePublicRoute {
     }
 
     # check if file exists in the public drive
-    $source = [System.IO.Path]::Combine($publicPath, $Path.TrimStart('/', '\'))
+    $source = [System.IO.Path]::Combine($publicPath, $Path)
     $fileInfo = Test-PodePath -Path $source -NoStatus -Force -ReturnItem
     if ($null -eq $fileInfo) {
         return $null
