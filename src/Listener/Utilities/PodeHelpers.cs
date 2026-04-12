@@ -339,5 +339,29 @@ namespace Pode.Utilities
 
             return fileInfo;
         }
+
+        public static string RemoveBOM(string value)
+        {
+            // return if no value
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+
+            // check for utf-16 BOM and remove if found
+            if (value[0] == (char)0xFEFF)
+            {
+                return value.Substring(1);
+            }
+
+            // check for utf-8 BOM and remove if found
+            if (value.Length > 2 && value[0] == (char)0xEF && value[1] == (char)0xBB && value[2] == (char)0xBF)
+            {
+                return value.Substring(3);
+            }
+
+            // no BOM found, return original value
+            return value;
+        }
     }
 }
