@@ -1562,9 +1562,7 @@ function ConvertFrom-PodeRequestContent {
         }
 
         # remove any BOM if there is one
-        if (($null -ne $Content) -and $Content.StartsWith([PodeHelpers]::BOM)) {
-            $Content = $Content.Substring(1)
-        }
+        $Content = [PodeHelpers]::RemoveBOM($Content)
 
         # if there is no content then do nothing
         if ([string]::IsNullOrWhiteSpace($Content)) {

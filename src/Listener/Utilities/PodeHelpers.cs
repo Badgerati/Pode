@@ -30,7 +30,6 @@ namespace Pode.Utilities
         public const byte DASH_BYTE = 45;
         public const byte PERIOD_BYTE = 46;
         public const int MAX_BUFFER_SIZE = 16384;
-        public const char BOM = (char)0xFEFF;
 
         private static string _dotnet_version = string.Empty;
         private static bool _is_net_framework = false;
@@ -339,6 +338,30 @@ namespace Pode.Utilities
             }
 
             return fileInfo;
+        }
+
+        public static string RemoveBOM(string value)
+        {
+            // return if no value
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+
+            // check for utf-16 BOM and remove if found
+            if (value[0] == (char)0xFEFF)
+            {
+                return value.Substring(1);
+            }
+
+            // check for utf-8 BOM and remove if found
+            if (value.Length > 2 && value[0] == (char)0xEF && value[1] == (char)0xBB && value[2] == (char)0xBF)
+            {
+                return value.Substring(3);
+            }
+
+            // no BOM found, return original value
+            return value;
         }
     }
 }

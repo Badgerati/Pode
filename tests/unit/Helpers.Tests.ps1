@@ -559,9 +559,63 @@ InModuleScope -ModuleName 'Pode' {
                 $result.Data.root.value | Should -Be 'test'
             }
 
+            It 'Returns xml data with utf-16 BOM' {
+                $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
+                $value = [char]0xFEFF + '<root><value>test</value></root>'
+
+                $result = ConvertFrom-PodeRequestContent -Request @{
+                    Body            = $value
+                    ContentEncoding = [System.Text.Encoding]::UTF8
+                } -ContentType 'text/xml'
+
+                $result.Data | Should -Not -Be $null
+                $result.Data.root | Should -Not -Be $null
+                $result.Data.root.value | Should -Be 'test'
+            }
+
+            It 'Returns xml data with utf-8 BOM' {
+                $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
+                $value = [char]0xEF + [char]0xBB + [char]0xBF + '<root><value>test</value></root>'
+
+                $result = ConvertFrom-PodeRequestContent -Request @{
+                    Body            = $value
+                    ContentEncoding = [System.Text.Encoding]::UTF8
+                } -ContentType 'text/xml'
+
+                $result.Data | Should -Not -Be $null
+                $result.Data.root | Should -Not -Be $null
+                $result.Data.root.value | Should -Be 'test'
+            }
+
             It 'Returns json data' {
                 $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
                 $value = '{ "value": "test" }'
+
+                $result = ConvertFrom-PodeRequestContent -Request @{
+                    Body            = $value
+                    ContentEncoding = [System.Text.Encoding]::UTF8
+                } -ContentType 'application/json'
+
+                $result.Data | Should -Not -Be $null
+                $result.Data.value | Should -Be 'test'
+            }
+
+            It 'Returns json data with utf-16 BOM' {
+                $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
+                $value = [char]0xFEFF + '{ "value": "test" }'
+
+                $result = ConvertFrom-PodeRequestContent -Request @{
+                    Body            = $value
+                    ContentEncoding = [System.Text.Encoding]::UTF8
+                } -ContentType 'application/json'
+
+                $result.Data | Should -Not -Be $null
+                $result.Data.value | Should -Be 'test'
+            }
+
+            It 'Returns json data with utf-8 BOM' {
+                $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
+                $value = [char]0xEF + [char]0xBB + [char]0xBF + '{ "value": "test" }'
 
                 $result = ConvertFrom-PodeRequestContent -Request @{
                     Body            = $value
