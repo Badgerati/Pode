@@ -1561,6 +1561,11 @@ function ConvertFrom-PodeRequestContent {
             }
         }
 
+        # remove any BOM if there is one
+        if (($null -ne $Content) -and $Content.StartsWith([PodeHelpers]::BOM)) {
+            $Content = $Content.Substring(1)
+        }
+
         # if there is no content then do nothing
         if ([string]::IsNullOrWhiteSpace($Content)) {
             return $Result
@@ -1569,7 +1574,7 @@ function ConvertFrom-PodeRequestContent {
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
             $parser = $PodeContext.Server.BodyParsers[$ContentType]
-            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $Content -UsingVariables $parser.UsingVariables -Return)
+            $Result.Data = Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $Content -UsingVariables $parser.UsingVariables -Return
             $Content = $null
             return $Result
         }

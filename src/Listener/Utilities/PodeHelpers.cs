@@ -30,6 +30,7 @@ namespace Pode.Utilities
         public const byte DASH_BYTE = 45;
         public const byte PERIOD_BYTE = 46;
         public const int MAX_BUFFER_SIZE = 16384;
+        public const char BOM = (char)0xFEFF;
 
         private static string _dotnet_version = string.Empty;
         private static bool _is_net_framework = false;
