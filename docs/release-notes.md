@@ -1,5 +1,57 @@
 # Release Notes
 
+## v2.13.0
+
+Date: 16th April 2026
+
+```plain
+### Features
+* #1668: Add initial support for creating and hosting MCP Tools
+* #1668: Add initial support for creating JSON Schema definitions
+
+### Enhancements
+* #1638: Added additional events for SSE, WebSockets, and Authentication
+* #1638: Added manual upgrade path for WebSocket connection, including custom ClientId support
+* #1638: Improved SSE/WebSocket connection handling and clean-up
+
+### Bugs
+* #1646: Fix typo in "fenced-frame-src" Content-Security-Policy directive
+* #1647: Fix typo for the "screen-wake-lock" Permission-Policy parameter
+* #1675: Read file size from FileStream, not FileInfo, for correct symlinked file sizes
+* #1676: Fix to prevent path traversal in Static Routes when rooted paths are used
+* #1677: Fixes request body parsing failing when BOM is present
+
+### Documentation
+* #1627: Document behavior of excess requests in server (thanks @github-throwaway!)
+
+### Packaging
+* #1601: Bump bootstrap from 5.3.5 to 5.3.8
+* #1605: Bump actions/setup-dotnet from 4.0.0 to 5.0.0
+* #1618: Bump github/codeql-action from 3.0.0 to 4.0.0
+* #1619: Bump swagger-editor-dist from 4.14.5 to 4.14.8
+* #1636: Bump actions/checkout from 4.0.0 to 6.0.0
+* #1642: Bump redoc from 2.5.0 to 2.5.2
+* #1644: Add NuGet packages to Dependabot
+* #1648: Adds .gitattributes to standardise line-endings to CRLF for PowerShell/Markdown files
+* #1649: Refactor Pester tests to improve CI performance
+* #1659: Bump Kerberos.NET from 4.6.77 to 4.6.146
+* #1665: Bump crazy-max/ghaction-virustotal from 4.0.0 to 5.0.0
+* #1672: Add support for running CI when just JavaScript package versions are bumped
+* #1674: Bump .NET from 9.0.0 to 10.0.0
+* #1674: Bump Invoke-Build from 5.12.2 to 5.14.23
+* #1674: Bump MkDocs-Material from 9.6.12 to 9.7.6
+* #1680: Bump @stoplight/elements from 9.0.1 to 9.0.18
+* #1681: Bump openapi-explorer from 2.2.734 to 2.4.793
+* #1682: Fix for retrieving EOL and Supported PowerShell versions
+* #1683: Bump swagger-ui-dist from 5.21.0 to 5.32.4
+* #1684: Bump PowerShell from 7.5.1 to 7.5.5
+
+### Code-Hygiene
+* #1654: Migrate .NET listener to use folders/namespaces, to better manage the code
+* #1655: Re-organise the Pode .NET engine layout to be more vertically sliced
+* #1655: Refactor the Pode .NET engine to better utilise interfaces, abstractions, strategies, and other patterns
+```
+
 ## v2.12.1
 
 Date: 27th April 2025
