@@ -1637,37 +1637,26 @@ Add-BuildTask SetupPowerShell {
         })[$os]
 
     # build the URL
-    $urls = @{
-        Old = "https://pscoretestdata.blob.core.windows.net/v$($PowerShellVersion -replace '\.', '-')/$($packageName)"
-        New = "https://powershellinfraartifacts-gkhedzdeaghdezhr.z01.azurefd.net/install/v$($PowerShellVersion)/$($packageName)"
-    }
+    $url = "https://github.com/PowerShell/PowerShell/releases/download/v$($PowerShellVersion)/$($packageName)"
 
     # download the package to a temp location
     $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
     $downloadParams = @{
-        Uri     = $urls.New
+        Uri     = $url
         OutFile = $outputFile
     }
 
     Write-Host "Output file: $($outputFile)"
     Add-Type -AssemblyName System.Net.Http
 
-    # retry the download 6 times, with a sleep of 10s between each attempt, and altering between old and new URLs
+    # retry the download 3 times, with a sleep of 10s between each attempt
     $counter = 0
     $success = $false
 
     do {
         try {
             $counter++
-            Write-Host "Attempt $($counter) of 6"
-
-            # use new URL for odd attempts, and old URL for even attempts
-            if ($counter % 2 -eq 0) {
-                $downloadParams.Uri = $urls.Old
-            }
-            else {
-                $downloadParams.Uri = $urls.New
-            }
+            Write-Host "Attempt $($counter) of 3"
 
             # download the package
             Write-Host "Attempting download of $($packageName) from $($downloadParams.Uri)"
@@ -1699,8 +1688,8 @@ Add-BuildTask SetupPowerShell {
         }
         catch {
             $success = $false
-            if ($counter -ge 6) {
-                throw "Failed to download PowerShell package after 6 attempts. Error: $($_.Exception.Message)"
+            if ($counter -ge 3) {
+                throw "Failed to download PowerShell package after 3 attempts. Error: $($_.Exception.Message)"
             }
 
             Start-Sleep -Seconds 5
