@@ -1798,43 +1798,62 @@ task ReleaseNotes {
             $categories[$label] = @()
         }
 
-        if ($pr.author.login -ilike '*dependabot*') {
-            if ($pr.title -imatch 'Bump (?<name>\S+) from (?<from>[0-9\.]+) to (?<to>[0-9\.]+)') {
-                if (!$dependabot.ContainsKey($Matches['name'])) {
-                    $dependabot[$Matches['name']] = @{
-                        Name   = $Matches['name']
-                        Number = $pr.number
-                        From   = [version]$Matches['from']
-                        To     = [version]$Matches['to']
-                    }
-                }
-                else {
-                    $item = $dependabot[$Matches['name']]
-                    if ([int]$pr.number -gt [int]$item.Number) {
-                        $item.Number = $pr.number
-                    }
-                    if ([version]$Matches['from'] -lt $item.From) {
-                        $item.From = [version]$Matches['from']
-                    }
-                    if ([version]$Matches['to'] -gt $item.To) {
-                        $item.To = [version]$Matches['to']
-                    }
-                }
+        # handle package version bump PRs separately to aggregate them by package name, and get the from/to versions
+        if ($pr.title -imatch 'Bump (?<name>\S+) from (?<from>[0-9\.]+) to (?<to>[0-9\.]+)') {
+            # get the parts of the PR title
+            $pkgName = $Matches['name']
+            $fromStr = $Matches['from']
+            $toStr = $Matches['to']
 
-                continue
+            # ensure 'from' version has 3 parts
+            if ($fromStr -imatch '^\d+$') {
+                $fromStr += '.0.0'
             }
+            $from = [version]$fromStr
+
+            # ensure 'to' version has 3 parts
+            if ($toStr -imatch '^\d+$') {
+                $toStr += '.0.0'
+            }
+            $to = [version]$toStr
+
+            if (!$dependabot.ContainsKey($pkgName)) {
+                $dependabot[$pkgName] = @{
+                    Name   = $pkgName
+                    Number = $pr.number
+                    From   = $from
+                    To     = $to
+                }
+            }
+            else {
+                $item = $dependabot[$pkgName]
+                if ([int]$pr.number -gt [int]$item.Number) {
+                    $item.Number = $pr.number
+                }
+                if ($from -lt $item.From) {
+                    $item.From = $from
+                }
+                if ($to -gt $item.To) {
+                    $item.To = $to
+                }
+            }
+
+            continue
         }
 
+        # split titles on ; to handle multiple changes in one PR
         $titles = @($pr.title).Trim()
         if ($pr.title.Contains(';')) {
             $titles = ($pr.title -split ';').Trim()
         }
 
+        # only include the author if it's not badgerati or dependabot
         $author = $null
         if (($pr.author.login -ine 'badgerati') -and ($pr.author.login -inotlike '*dependabot*')) {
             $author = $pr.author.login
         }
 
+        # format the string for the PR, and add it to the relevant category/categories
         foreach ($title in $titles) {
             $str = "* #$($pr.number): $($title -replace '`', "'")"
             if (![string]::IsNullOrWhiteSpace($author)) {
