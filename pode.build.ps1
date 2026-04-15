@@ -507,24 +507,38 @@ function Invoke-PodeBuildDotnetBuild {
 .NOTES
     - Requires internet access to query the endoflife.date API.
     - If the request fails, the function returns an empty string for both `eol` and `supported`.
-    - API URL: https://endoflife.date/api/powershell.json
+    - API URL:
+        - https://endoflife.date/api/powershell.json
+        - https://endoflife.date/api/windows-powershell.json
 #>
 function Get-PodeBuildPwshEOL {
-    $uri = 'https://endoflife.date/api/powershell.json'
+    # get powershell EOL info
     try {
-        $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
-        return @{
-            eol       = ($eol | Where-Object { $_.eol -and ([datetime]$_.eol -lt [datetime]::Now) }).cycle -join ','
-            supported = ($eol | Where-Object { !$_.eol -or ([datetime]$_.eol -ge [datetime]::Now) }).cycle -join ','
-        }
+        $uri = 'https://endoflife.date/api/powershell.json'
+        $pwshEol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
     }
     catch {
         $_ | Out-Default
         Write-Warning "Invoke-RestMethod to $($uri) failed: $($_.ErrorDetails.Message)"
-        return  @{
-            eol       = ''
-            supported = ''
-        }
+        $pwshEol = @()
+    }
+
+    # get windows powershell EOL info
+    try {
+        $uri = 'https://endoflife.date/api/windows-powershell.json'
+        $winPwshEol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
+    }
+    catch {
+        $_ | Out-Default
+        Write-Warning "Invoke-RestMethod to $($uri) failed: $($_.ErrorDetails.Message)"
+        $winPwshEol = @()
+    }
+
+    # combine both lists and return
+    $eol = $pwshEol + $winPwshEol
+    return @{
+        eol       = ($eol | Where-Object { $_.eol -and ([datetime]$_.eol -lt [datetime]::Now) }).cycle -join ','
+        supported = ($eol | Where-Object { !$_.eol -or ([datetime]$_.eol -ge [datetime]::Now) }).cycle -join ','
     }
 }
 
