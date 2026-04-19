@@ -13,7 +13,7 @@
 .EXAMPLE
     To run the sample: ./Web-Signal.ps1
 
-    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8091/ -Method Get
 
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-Signal.ps1
@@ -47,14 +47,24 @@ Start-PodeServer -Threads 3 {
     # listen
     Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Http
     Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws
-    #Add-PodeEndpoint -Address localhost -Port 8090 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Https
-    #Add-PodeEndpoint -Address localhost -Port 8091 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Wss
+    # Add-PodeEndpoint -Address localhost -Port 8090 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Https
+    # Add-PodeEndpoint -Address localhost -Port 8091 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Wss
 
-    # log requests to the terminal
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Level Error, Debug, Verbose
+    # log errors to the terminal
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error
+
+    # register a connect event
+    Register-PodeSignalEvent -Name '/msg' -Type Connect -EventName 'SignalConnected' -ScriptBlock {
+        "Connected: $($TriggeredEvent.Connection.Name) ($($TriggeredEvent.Connection.ClientId))" | Out-Default
+    }
+
+    # register a disconnect event
+    Register-PodeSignalEvent -Name '/msg' -Type Disconnect -EventName 'SignalDisconnected' -ScriptBlock {
+        "Disconnected: $($TriggeredEvent.Connection.Name) ($($TriggeredEvent.Connection.ClientId))" | Out-Default
+    }
 
     # set view engine to pode renderer
-    Set-PodeViewEngine -Type Html
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
@@ -62,7 +72,7 @@ Start-PodeServer -Threads 3 {
     }
 
     # SIGNAL route, to return current date
-    Add-PodeSignalRoute -Path '/' -ScriptBlock {
+    Add-PodeSignalRoute -Path '/msg' -ScriptBlock {
         $msg = $SignalEvent.Data.Message
 
         if ($msg -ieq '[date]') {

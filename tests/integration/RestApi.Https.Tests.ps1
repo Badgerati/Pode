@@ -2,7 +2,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseUsingScopeModifierInNewRunspaces', '')]
 param()
 
-Describe 'REST API Requests' {
+Describe 'REST API HTTPS Requests' {
     BeforeAll {
         $splatter = @{}
         $version = $PSVersionTable.PSVersion
@@ -49,12 +49,12 @@ Describe 'REST API Requests' {
                     Close-PodeServer
                 }
 
-                function Write-InnerImportedResponse {
-                    Write-PodeJsonResponse -Value @{ Message = 'Inner Hello' }
-                }
-
                 Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
                     Write-PodeJsonResponse -Value @{ Result = 'Pong' }
+                }
+
+                function Write-InnerImportedResponse {
+                    Write-PodeJsonResponse -Value @{ Message = 'Inner Hello' }
                 }
 
                 Add-PodeRoute -Method Get -Path '/data/query' -ScriptBlock {
@@ -117,7 +117,25 @@ Describe 'REST API Requests' {
             }
         }
 
-        Start-Sleep -Seconds 10
+        # wait for ping to be available
+        Start-Sleep -Seconds 5
+
+        $count = 0
+        while ($true) {
+            try {
+                $count++
+                $ping = Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Get -TimeoutSec 1 -ErrorAction Stop @splatter
+                if ($ping.Result -ieq 'Pong') {
+                    break
+                }
+            }
+            catch {
+                Start-Sleep -Seconds 1
+                if ($count -ge 10) {
+                    throw "Ping to $($Endpoint)/ping did not respond with 'Pong' within the expected time."
+                }
+            }
+        }
     }
 
     AfterAll {

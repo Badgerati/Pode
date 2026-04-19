@@ -30,6 +30,7 @@ function Close-PodeDisposable {
         [switch]
         $CheckNetwork
     )
+
     process {
         if ($null -eq $Disposable) {
             return
@@ -111,6 +112,7 @@ function Start-PodeStopwatch {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         try {
             $watch = [System.Diagnostics.Stopwatch]::StartNew()
             . $ScriptBlock
@@ -499,7 +501,7 @@ Resolves a query, and returns a value based on the response.
 Resolves a query, and returns a value based on the response.
 
 .PARAMETER Check
-The query, or variable, to evalulate.
+The query, or variable, to evaluate.
 
 .PARAMETER TrueValue
 The value to use if evaluated to True.
@@ -827,10 +829,13 @@ Outputs an object to the main Host.
 
 .DESCRIPTION
 Due to Pode's use of runspaces, this will output a given object back to the main Host.
-It's advised to use this function, so that any output respects the -Quiet flag of the server.
+It's advised to use this function over Out-Default, so that any output respects the -Quiet flag of the server.
 
 .PARAMETER InputObject
 The object to output.
+
+.PARAMETER Force
+Overrides the -Quiet flag of the server.
 
 .EXAMPLE
 'Hello, world!' | Out-PodeHost
@@ -843,8 +848,12 @@ function Out-PodeHost {
     param(
         [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [object]
-        $InputObject
+        $InputObject,
+
+        [switch]
+        $Force
     )
+
     begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
@@ -856,19 +865,18 @@ function Out-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Console.Quiet) {
+        if ($PodeContext.Server.Console.Quiet -and !$Force) {
             return
         }
+
         # Set InputObject to the array of values
         if ($pipelineValue.Count -gt 1) {
-            $InputObject = $pipelineValue
-            $InputObject | Out-Default
+            $pipelineValue | Out-Default
         }
         else {
             Out-Default -InputObject $InputObject
         }
     }
-
 }
 
 <#
@@ -876,8 +884,9 @@ function Out-PodeHost {
 Writes an object to the Host.
 
 .DESCRIPTION
-Writes an object to the Host.
-It's advised to use this function, so that any output respects the -Quiet flag of the server.
+Writes an object to the Host - this does not fully respect Pode's different runspaces, so may at times not output as expected.
+If you want to write from a runspace, it's recommended to use Out-PodeHost.
+It's advised to use this function over Write-Host, so that any output respects the -Quiet flag of the server.
 
 .PARAMETER Object
 The object to write.
@@ -893,6 +902,9 @@ Show the object content
 
 .PARAMETER ShowType
 Show the Object Type
+
+.PARAMETER Timestamp
+Show a timestamp for the object
 
 .PARAMETER Label
 Show a label for the object
@@ -918,21 +930,26 @@ function Write-PodeHost {
         [switch]
         $NoNewLine,
 
-        [Parameter( Mandatory = $true, ParameterSetName = 'object')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'object')]
         [switch]
         $Explode,
 
-        [Parameter( Mandatory = $false, ParameterSetName = 'object')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'object')]
         [switch]
         $ShowType,
 
-        [Parameter( Mandatory = $false, ParameterSetName = 'object')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'object')]
+        [switch]
+        $Timestamp,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'object')]
         [string]
         $Label,
 
         [switch]
         $Force
     )
+
     begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
@@ -944,48 +961,67 @@ function Write-PodeHost {
     }
 
     end {
-        if ($PodeContext.Server.Console.Quiet -and !($Force.IsPresent)) {
+        if ($PodeContext.Server.Console.Quiet -and !$Force) {
             return
         }
+
         # Set Object to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Object = $pipelineValue
         }
 
-        if ($Explode.IsPresent ) {
-            if ($null -eq $Object) {
-                if ($ShowType) {
-                    $Object = "`tNull Value"
-                }
-            }
-            else {
-                $type = $Object.gettype().FullName
-                $Object = $Object | Out-String
-                if ($ShowType) {
-                    $Object = "`tTypeName: $type`n$Object"
-                }
-            }
+        # explode object if needed
+        if ($Explode) {
+            $strObject = ($Object | Out-String).TrimEnd()
+            $meta = @()
+
+            # add label if needed
             if ($Label) {
-                $Object = "`tName: $Label $Object"
+                $meta += "Name: $($Label)"
             }
 
+            # add type info if needed
+            if ($ShowType) {
+                if ($null -eq $Object) {
+                    $type = 'Null'
+                }
+                else {
+                    $type = $Object.GetType().FullName
+                }
+
+                $meta += "TypeName: $($type)"
+            }
+
+            # add timestamp if needed
+            if ($Timestamp) {
+                $time = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+                $meta += "Timestamp: $($time)"
+            }
+
+            # $Object = $strObject
+            if ($meta.Length -gt 0) {
+                $Object = "[$($meta -join '; ')]`n$strObject"
+            }
+            else {
+                $Object = $strObject
+            }
+        }
+
+        # write to host via splatting
+        $params = @{
+            NoNewline = $NoNewLine
         }
 
         if ($ForegroundColor) {
-            if ($pipelineValue.Count -gt 1) {
-                $Object | Write-Host -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
-            }
-            else {
-                Write-Host -Object $Object -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
-            }
+            $params.ForegroundColor = $ForegroundColor
+        }
+
+        if ($pipelineValue.Count -gt 1) {
+            $Object | Write-Host @params
         }
         else {
-            if ($pipelineValue.Count -gt 1) {
-                $Object | Write-Host -NoNewline:$NoNewLine
-            }
-            else {
-                Write-Host -Object $Object -NoNewline:$NoNewLine
-            }
+            $params.Object = $Object
+            Write-Host @params
         }
     }
 }
@@ -1125,7 +1161,7 @@ This is an array of Minutes that the expression should use between 0-59.
 This is an array of Hours that the expression should use between 0-23.
 
 .PARAMETER Date
-This is an array of Dates in the monnth that the expression should use between 1-31.
+This is an array of Dates in the month that the expression should use between 1-31.
 
 .PARAMETER Month
 This is an array of Months that the expression should use between January-December.
@@ -1224,7 +1260,7 @@ function New-PodeCron {
     # convert month/day to numbers
     if ($Month.Length -gt 0) {
         $MonthInts = @(foreach ($item in $Month) {
-            (@{
+                (@{
                     January   = 1
                     February  = 2
                     March     = 3
@@ -1243,7 +1279,7 @@ function New-PodeCron {
 
     if ($Day.Length -gt 0) {
         $DayInts = @(foreach ($item in $Day) {
-            (@{
+                (@{
                     Sunday    = 0
                     Monday    = 1
                     Tuesday   = 2
@@ -1450,11 +1486,15 @@ function ConvertFrom-PodeXml {
         [switch]
         $KeepAttributes
     )
+
     process {
         #if option set, we skip the Document element
-        if ($node.DocumentElement -and !($ShowDocElement.IsPresent))
-        { $node = $node.DocumentElement }
+        if ($node.DocumentElement -and !($ShowDocElement.IsPresent)) {
+            $node = $node.DocumentElement
+        }
+
         $oHash = [ordered] @{ } # start with an ordered hashtable.
+
         #The order of elements is always significant regardless of what they are
         if ($null -ne $node.Attributes  ) {
             #if there are elements
@@ -1463,6 +1503,7 @@ function ConvertFrom-PodeXml {
                 $oHash.$("$Prefix$($_.FirstChild.parentNode.LocalName)") = $_.FirstChild.value
             }
         }
+
         # check to see if there is a pseudo-array. (more than one
         # child-node with the same name that must be handled as an array)
         $node.ChildNodes | #we just group the names and create an empty
@@ -1471,13 +1512,15 @@ function ConvertFrom-PodeXml {
             ForEach-Object {
                 $oHash.($_.Name) = @() <# create an empty array for each one#>
             }
+
         foreach ($child in $node.ChildNodes) {
             #now we look at each node in turn.
             $childName = $child.LocalName
             if ($child -is [system.xml.xmltext]) {
                 # if it is simple XML text
-                $oHash.$childname += $child.InnerText
+                $oHash.$childName += $child.InnerText
             }
+
             # if it has a #text child we may need to cope with attributes
             elseif ($child.FirstChild.Name -eq '#text' -and $child.ChildNodes.Count -eq 1) {
                 if ($null -ne $child.Attributes -and $KeepAttributes ) {
@@ -1490,30 +1533,31 @@ function ConvertFrom-PodeXml {
                     }
                     #now we add the text with an explicit name
                     $aHash.'#text' += $child.'#text'
-                    $oHash.$childname += $aHash
+                    $oHash.$childName += $aHash
                 }
                 else {
                     #phew, just a simple text attribute.
-                    $oHash.$childname += $child.FirstChild.InnerText
+                    $oHash.$childName += $child.FirstChild.InnerText
                 }
             }
             elseif ($null -ne $child.'#cdata-section' ) {
                 # if it is a data section, a block of text that isnt parsed by the parser,
                 # but is otherwise recognized as markup
-                $oHash.$childname = $child.'#cdata-section'
+                $oHash.$childName = $child.'#cdata-section'
             }
             elseif ($child.ChildNodes.Count -gt 1 -and
-                        ($child | Get-Member -MemberType Property).Count -eq 1) {
-                $oHash.$childname = @()
+                ($child | Get-Member -MemberType Property).Count -eq 1) {
+                $oHash.$childName = @()
                 foreach ($grandchild in $child.ChildNodes) {
-                    $oHash.$childname += (ConvertFrom-PodeXml $grandchild)
+                    $oHash.$childName += (ConvertFrom-PodeXml $grandchild)
                 }
             }
             else {
                 # create an array as a value  to the hashtable element
-                $oHash.$childname += (ConvertFrom-PodeXml $child)
+                $oHash.$childName += (ConvertFrom-PodeXml $child)
             }
         }
+
         return $oHash
     }
 }

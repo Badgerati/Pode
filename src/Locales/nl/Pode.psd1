@@ -326,4 +326,25 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Rate Limit-regel met de naam '{0}' bestaat niet."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Toegangslimietregel met de naam '{0}' bestaat al."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Toegangslimietregel met de naam '{0}' bestaat niet."
+    sseConnectionNameNotFoundExceptionMessage                         = "Er is geen SSE-verbinding gevonden met de naam '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "Geen Signal-verbinding gevonden met de naam '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal kon niet worden uitgezonden vanwege het gedefinieerde Signal-uitzendniveau voor {0}: {1}.'
+    authMethodNotFoundExceptionMessage                                = "Geen authenticatiemethode gevonden met de naam '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "Authenticatie-evenement met de naam '{0}' is al geregistreerd."
+    authMethodEventNotRegisteredExceptionMessage                      = "Authenticatie-evenement met de naam '{0}' is niet geregistreerd."
+    signalEventAlreadyRegisteredExceptionMessage                      = "Signal-evenement met de naam '{0}' is al geregistreerd."
+    signalEventNotRegisteredExceptionMessage                          = "Signal-evenement met de naam '{0}' is niet geregistreerd."
+    sseEventAlreadyRegisteredExceptionMessage                         = "SSE-evenement met de naam '{0}' is al geregistreerd."
+    sseEventNotRegisteredExceptionMessage                             = "SSE-evenement met de naam '{0}' is niet geregistreerd."
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "Elke definitie van de eigenschap van JSON Schema Object moet een 'Name'-sleutel bevatten."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'Het maximum aantal eigenschappen van het JSON-schema-object is kleiner dan het minimum aantal eigenschappen.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'Het maximum aantal items van het JSON-schema-array is kleiner dan het minimum aantal items.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'De maximale lengte van de JSON-schema-string is kleiner dan de minimale lengte.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'Maximum mag niet kleiner zijn dan Minimum voor {0} JSON Schema-eigenschap.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "Niet-ondersteund parametertype '{0}' voor parameter '{1}' in tool '{2}'. Auto-schema generatie ondersteunt alleen string-, int-, long-, double-, float- en bool-typen."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "De MCP-toolgroep '{0}' bestaat niet."
+    mcpToolDoesNotExistExceptionMessage                               = "De MCP-tool '{0}' bestaat niet."
+    mcpToolAlreadyExistsExceptionMessage                              = "De MCP-tool '{0}' bestaat al."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "De MCP-toolgroep '{0}' bestaat al."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Statische route-standaarden kunnen geen geroot pad zijn. Ongeldige standaard: '{0}'"
 }

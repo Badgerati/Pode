@@ -326,4 +326,25 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "A Rate Limit Rule with the name '{0}' does not exist."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "An Access Limit Rule with the name '{0}' already exists."
     accessLimitRuleDoesNotExistExceptionMessage                       = "An Access Limit Rule with the name '{0}' does not exist."
+    sseConnectionNameNotFoundExceptionMessage                         = "No SSE connection found with the name '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "No Signal connection found with the name '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal failed to broadcast due to defined Signal broadcast level for {0}: {1}'
+    authMethodNotFoundExceptionMessage                                = "No Authentication method found with the name '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = '{0} event already registered for Authentication method {1}: {2}'
+    authMethodEventNotRegisteredExceptionMessage                      = '{0} event not registered for Authentication method {1}: {2}'
+    signalEventAlreadyRegisteredExceptionMessage                      = '{0} event already registered for Signal connection {1}: {2}'
+    signalEventNotRegisteredExceptionMessage                          = '{0} event not registered for Signal connection {1}: {2}'
+    sseEventAlreadyRegisteredExceptionMessage                         = '{0} event already registered for SSE connection {1}: {2}'
+    sseEventNotRegisteredExceptionMessage                             = '{0} event not registered for SSE connection {1}: {2}'
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "Each JSON Schema Object property definition must include a 'Name' key."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'MaxProperties cannot be less than MinProperties for object JSON Schema property.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems cannot be less than MinItems for array JSON Schema property.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'MaxLength cannot be less than MinLength for string JSON Schema property.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'Maximum cannot be less than Minimum for {0} JSON Schema property.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "Unsupported parameter type '{0}' for parameter '{1}' in tool '{2}'. Auto schema generation only supports string, int, long, double, float, and bool types."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "The MCP tool group '{0}' does not exist."
+    mcpToolDoesNotExistExceptionMessage                               = "The MCP tool '{0}' does not exist."
+    mcpToolAlreadyExistsExceptionMessage                              = "The MCP tool '{0}' already exists."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "The MCP tool group '{0}' already exists."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Static route defaults cannot be rooted paths. Invalid default: '{0}'"
 }

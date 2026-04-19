@@ -12,6 +12,7 @@ on:
     - '.github/workflows/ci-pwsh_lts.yml'
     - 'Dockerfile'
     - '*.dockerfile'
+    - 'package.json'
   pull_request:
     branches:
     - '*'
@@ -22,9 +23,10 @@ on:
     - '.github/workflows/ci-pwsh_lts.yml'
     - 'Dockerfile'
     - '*.dockerfile'
+    - 'package.json'
 
 env:
-  INVOKE_BUILD_VERSION: '5.12.2'
+  INVOKE_BUILD_VERSION: '5.14.23'
   POWERSHELL_VERSION: 'lts'
 
 jobs:
@@ -37,25 +39,25 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 9.x
+        dotnet-version: 10.x
 
     - name: Setup Powershell - Unix
       shell: pwsh
       if: runner.os == 'Linux' || runner.os == 'macOS'
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
         Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
 
     - name: Setup Powershell - Windows
       shell: PowerShell
       if: runner.os == 'Windows'
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
         Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
 
     - name: Output PowerShell version
@@ -66,7 +68,7 @@ jobs:
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
 
     - name: Run Pester Tests
       shell: pwsh

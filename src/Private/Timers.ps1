@@ -26,6 +26,7 @@ function Start-PodeTimerRunspace {
             while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
                 # Check for suspension token and wait for the debugger to reset if active
                 Test-PodeSuspensionToken
+
                 try {
                     $_now = [DateTime]::Now
 
@@ -88,6 +89,7 @@ function Start-PodeTimerRunspace {
         }
     }
 
+    Write-Verbose 'Starting the Timers runspace...'
     Add-PodeRunspace -Type Timers -Name 'Scheduler' -ScriptBlock $script
 }
 

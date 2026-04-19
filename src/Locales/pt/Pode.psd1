@@ -326,4 +326,25 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "A regra de limite de taxa com o nome '{0}' não existe."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "A regra de limite de acesso com o nome '{0}' já existe."
     accessLimitRuleDoesNotExistExceptionMessage                       = "A regra de limite de acesso com o nome '{0}' não existe."
+    sseConnectionNameNotFoundExceptionMessage                         = "Nenhuma conexão SSE encontrada com o nome '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "Nenhuma conexão Signal encontrada com o nome '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal falhou ao transmitir devido ao nível de transmissão de Signal definido para {0}: {1}.'
+    authMethodNotFoundExceptionMessage                                = "Nenhuma método de autenticação encontrada com o nome '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "Evento de método de autenticação com o nome '{0}' já está registrado."
+    authMethodEventNotRegisteredExceptionMessage                      = "Evento de método de autenticação com o nome '{0}' não está registrado."
+    signalEventAlreadyRegisteredExceptionMessage                      = "Evento Signal com o nome '{0}' já está registrado."
+    signalEventNotRegisteredExceptionMessage                          = "Evento Signal com o nome '{0}' não está registrado."
+    sseEventAlreadyRegisteredExceptionMessage                         = "Evento SSE com o nome '{0}' já está registrado."
+    sseEventNotRegisteredExceptionMessage                             = "Evento SSE com o nome '{0}' não está registrado."
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "Cada definição de propriedade do Objeto de Esquema JSON deve incluir uma chave 'Nome'."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'As propriedades MaxProperties não podem ser menores que MinProperties para a propriedade do esquema JSON do objeto.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems não pode ser menor que MinItems para a propriedade do esquema JSON do array.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'MaxLength não pode ser menor que MinLength para a propriedade do esquema JSON da string.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'O máximo não pode ser menor que o mínimo para {0} propriedade de esquema JSON.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "Parâmetro não suportado tipo '{0}' para o parâmetro '{1}' na ferramenta '{2}'. A geração automática de esquemas só suporta tipos string, int, long, double, float e bool."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "O grupo de ferramentas MCP '{0}' não existe."
+    mcpToolDoesNotExistExceptionMessage                               = "A ferramenta MCP '{0}' não existe."
+    mcpToolAlreadyExistsExceptionMessage                              = "A ferramenta MCP '{0}' já existe."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "O grupo de ferramentas MCP '{0}' já existe."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Os valores padrão da rota estática não podem ser caminhos raiz. Valor padrão inválido: '{0}'"
 }

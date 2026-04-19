@@ -284,7 +284,7 @@ function Get-PodeOAuth2RedirectHost {
 function Get-PodeAuthClientCertificateType {
     return {
         param($options)
-        $cert = $WebEvent.Request.ClientCertificate
+        $cert = $WebEvent.Request.Handler.ClientCertificate
 
         # ensure we have a client cert
         if ($null -eq $cert) {
@@ -312,7 +312,7 @@ function Get-PodeAuthClientCertificateType {
         }
 
         # return data for calling validator
-        return @($cert, $WebEvent.Request.ClientCertificateErrors)
+        return @($cert, $WebEvent.Request.Handler.ClientCertificateErrors)
     }
 }
 
@@ -616,7 +616,7 @@ function Get-PodeAuthDigestType {
             }
         }
 
-        # return 400 if domain doesnt match request domain
+        # return 400 if domain doesn't match request domain
         if ($WebEvent.Path -ine $params.uri) {
             return @{
                 Message = 'Invalid Authorization header'
@@ -760,7 +760,7 @@ function Get-PodeAuthUserFileMethod {
     return {
         param($username, $password, $options)
 
-        # using pscreds?
+        # using pscredential?
         if (($null -eq $options) -and ($username -is [pscredential])) {
             $_username = ([pscredential]$username).UserName
             $_password = ([pscredential]$username).GetNetworkCredential().Password
@@ -1399,8 +1399,13 @@ function Test-PodeAuthInternal {
 
     # check for logout command
     if ($Logout) {
+        # trigger logout event
+        Invoke-PodeAuthEvent -Name $WebEvent.Session.Data.Auth.Name -Type Logout -User $WebEvent.Session.Data.Auth.User
+
+        # remove the auth session
         Remove-PodeAuthSession
 
+        # redirect to failure url
         if ($PodeContext.Server.Sessions.Info.UseHeaders) {
             return Set-PodeAuthStatus `
                 -StatusCode 401 `
@@ -1486,21 +1491,23 @@ function Test-PodeAuthInternal {
         IsAuthenticated = $true
         IsAuthorised    = $true
         Store           = !$auth.Sessionless
-        Name            = $result.Auth
     }
 
     # successful auth
-    $authName = $null
     if ($auth.Merged -and !$auth.PassOne) {
-        $authName = $Name
+        $WebEvent.Auth.Name = $Name
     }
     else {
-        $authName = @($result.Auth)[0]
+        $WebEvent.Auth.Name = @($result.Auth)[0]
     }
 
+    # trigger successful auth event
+    Invoke-PodeAuthEvent -Name $WebEvent.Auth.Name -Type Login -User $WebEvent.Auth.User
+
+    # set the status to success
     return Set-PodeAuthStatus `
         -Headers $result.Headers `
-        -Name $authName `
+        -Name $WebEvent.Auth.Name `
         -LoginRoute:$Login
 }
 
@@ -1718,7 +1725,7 @@ function Set-PodeAuthStatus {
         return $false
     }
 
-    # if no statuscode, success, so check if we have a success url redirect (but only for auto-login routes)
+    # if no status code, success, so check if we have a success url redirect (but only for auto-login routes)
     if (!$NoSuccessRedirect -or $LoginRoute) {
         $url = Get-PodeAuthRedirectUrl -Url $success.Url -UseOrigin:($success.UseOrigin)
         if (![string]::IsNullOrWhiteSpace($url)) {
@@ -2381,4 +2388,75 @@ function Get-PodeAuthRedirectUrl {
     }
 
     return $Url
+}
+
+function Invoke-PodeAuthEvent {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name, # Name of the Auth method connection
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Login', 'Logout')]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $User,
+
+        [Parameter()]
+        [hashtable]
+        $ArgumentList
+    )
+
+    # do nothing if no auth method
+    if (!$PodeContext.Server.Authentications.Methods.ContainsKey($Name)) {
+        return
+    }
+
+    $auth = $PodeContext.Server.Authentications.Methods[$Name]
+
+    # if this is a merged auth, then we need to also attempt to invoke events for the parent auths
+    if ($auth.Merged) {
+        Invoke-PodeAuthEvent -Name $auth.Parent -Type $Type -User $User -ArgumentList $ArgumentList
+    }
+
+    # do nothing if no events
+    if (!$auth.Events.ContainsKey($Type) -or
+        $auth.Events[$Type].Count -eq 0) {
+        return
+    }
+
+    # setup a triggered event object
+    $TriggeredEvent = @{
+        Lockable  = $PodeContext.Threading.Lockables.Global
+        Name      = $Name
+        Type      = $Type
+        Timestamp = [DateTime]::UtcNow
+        User      = $User
+        Metadata  = @{}
+    }
+
+    if (($null -ne $ArgumentList) -and ($ArgumentList.Count -gt 0)) {
+        foreach ($key in $ArgumentList.Keys) {
+            $TriggeredEvent.Metadata[$key] = $ArgumentList[$key]
+        }
+    }
+
+    # invoke each event's scriptblock
+    foreach ($evt in $auth.Events[$Type].Values) {
+        if (($null -eq $evt) -or ($null -eq $evt.ScriptBlock)) {
+            continue
+        }
+
+        try {
+            $null = Invoke-PodeScriptBlock -ScriptBlock $evt.ScriptBlock.GetNewClosure() -Arguments $evt.Arguments -UsingVariables $evt.UsingVariables -Scoped -Splat -NoNewClosure
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
+    }
+
+    $TriggeredEvent = $null
 }

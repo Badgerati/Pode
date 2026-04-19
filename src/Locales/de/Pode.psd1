@@ -326,4 +326,25 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Die Rate-Limit-Regel mit dem Namen '{0}' existiert nicht."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert bereits."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Die Zugriffsbeschränkungsregel mit dem Namen '{0}' existiert nicht."
+    sseConnectionNameNotFoundExceptionMessage                         = "Keine SSE-Verbindung mit dem Namen '{0}' gefunden."
+    signalConnectionNameNotFoundExceptionMessage                      = "Keine Signalverbindung mit dem Namen '{0}' gefunden."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal konnte aufgrund des definierten Signalübertragungsniveaus für {0}: {1} nicht übertragen werden.'
+    authMethodNotFoundExceptionMessage                                = 'Keine Authentifizierungsmethode mit dem Namen {0} gefunden.'
+    authMethodEventAlreadyRegisteredExceptionMessage                  = 'Das Ereignis {0} ist bereits für die Authentifizierungsmethode {1} registriert.'
+    authMethodEventNotRegisteredExceptionMessage                      = 'Das Ereignis {0} ist nicht für die Authentifizierungsmethode {1} registriert.'
+    signalEventAlreadyRegisteredExceptionMessage                      = 'Das Ereignis {0} ist bereits für die Signalverbindung {1} registriert.'
+    signalEventNotRegisteredExceptionMessage                          = 'Das Ereignis {0} ist nicht für die Signalverbindung {1} registriert.'
+    sseEventAlreadyRegisteredExceptionMessage                         = 'Das Ereignis {0} ist bereits für die SSE-Verbindung {1} registriert.'
+    sseEventNotRegisteredExceptionMessage                             = 'Das Ereignis {0} ist nicht für die SSE-Verbindung {1} registriert.'
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "Jede Eigenschaftsdefinition eines JSON-Schema-Objekts muss einen 'Name'-Schlüssel enthalten."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'MaxProperties darf nicht kleiner als MinProperties für eine JSON-Schema-Objekteigenschaft sein.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems darf nicht kleiner als MinItems für eine JSON-Schema-Arrayeigenschaft sein.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'MaxLength darf nicht kleiner als MinLength für eine JSON-Schema-Stringeigenschaft sein.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'Maximum darf nicht kleiner als Minimum für eine JSON-Schema-Zahleneigenschaft sein.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "Nicht unterstützter Parametertyp '{0}' für den Parameter '{1}' im Werkzeug '{2}'. Auto-Schema-Generierung unterstützt nur String-, Int-, Long-, Double-, Float- und Bool-Typen."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "Die MCP-Toolgruppe '{0}' existiert nicht."
+    mcpToolDoesNotExistExceptionMessage                               = "Das MCP-Tool '{0}' existiert nicht."
+    mcpToolAlreadyExistsExceptionMessage                              = "Das MCP-Tool '{0}' existiert bereits."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "Die MCP-Toolgruppe '{0}' existiert bereits."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Die Standardwerte für statische Routen können keine gerooteten Pfade sein. Ungültiger Standardwert: '{0}'"
 }

@@ -781,7 +781,7 @@ function New-PodeLimitIPComponent {
             if ($WebEvent) {
                 switch ($options.Location) {
                     'remoteaddress' {
-                        $ipAddresses = @($WebEvent.Request.RemoteEndPoint.Address)
+                        $ipAddresses = @($WebEvent.Request.Handler.RemoteEndPoint.Address)
                     }
                     'xforwardedfor' {
                         $xForwardedFor = $WebEvent.Request.Headers['X-Forwarded-For']
@@ -805,10 +805,10 @@ function New-PodeLimitIPComponent {
                 }
             }
             elseif ($SmtpEvent) {
-                $ipAddresses = @($SmtpEvent.Request.RemoteEndPoint.Address)
+                $ipAddresses = @($SmtpEvent.Request.Handler.RemoteEndPoint.Address)
             }
             elseif ($TcpEvent) {
-                $ipAddresses = @($TcpEvent.Request.RemoteEndPoint.Address)
+                $ipAddresses = @($TcpEvent.Request.Handler.RemoteEndPoint.Address)
             }
 
             # if we have no ip addresses, then return null

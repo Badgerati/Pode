@@ -27,6 +27,12 @@
 .PARAMETER SdkVersion
     Sets the SDK version used for building .NET projects, defaulting to net8.0.
 
+.PARAMETER TestType
+    Defines the types of tests to run: Compliance, Integration, Unit.
+
+.PARAMETER SkipYarnInstall
+    If set, skips the installation of Yarn during the build process.
+
 .NOTES
     This build script requires Invoke-Build. Below is a list of all available tasks:
 
@@ -47,8 +53,6 @@
     - PackageFolder: Creates the `pkg` folder for module packaging.
     - TestNoBuild: Runs tests without building, including Pester tests.
     - Test: Runs tests after building the project.
-    - CheckFailedTests: Checks if any tests failed and throws an error if so.
-    - PushCodeCoverage: Pushes code coverage results to a coverage service.
     - Docs: Serves the documentation locally for review.
     - DocsHelpBuild: Builds function help documentation.
     - DocsBuild: Builds the documentation for distribution.
@@ -110,16 +114,22 @@ param(
 
     [string]
     [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
-    $SdkVersion = 'net9.0'
+    $SdkVersion = 'net9.0',
+
+    [string[]]
+    [ValidateSet('Compliance', 'Integration', 'Unit')]
+    $TestType = @('Compliance', 'Unit', 'Integration'),
+
+    [switch]
+    $SkipYarnInstall
 )
 
 # Dependency Versions
 $Versions = @{
     Pester      = '5.7.1'
     MkDocs      = '1.6.1'
-    PSCoveralls = '1.0.0'
     DotNet      = $SdkVersion
-    MkDocsTheme = '9.6.12'
+    MkDocsTheme = '9.7.6'
     PlatyPS     = '0.14.2'
     Yarn        = '1.22.22'
 }
@@ -176,31 +186,6 @@ function Test-PodeBuildIsWindows {
 #>
 function Test-PodeBuildIsGitHub {
     return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
-}
-
-<#
-.SYNOPSIS
-    Checks if code coverage is enabled for the build.
-
-.DESCRIPTION
-    This function checks if code coverage is enabled by evaluating the `PODE_RUN_CODE_COVERAGE`
-    environment variable. If the variable contains '1' or 'true' (case-insensitive), it returns `$true`;
-    otherwise, it returns `$false`.
-
-.OUTPUTS
-    [bool] - Returns `$true` if code coverage is enabled, otherwise `$false`.
-
-.EXAMPLE
-    if (Test-PodeBuildCanCodeCoverage) {
-        Write-Host "Code coverage is enabled for this build."
-    }
-
-.NOTES
-    - Useful for conditional logic in build scripts that should only execute code coverage-related tasks if enabled.
-    - The `PODE_RUN_CODE_COVERAGE` variable is typically set by the CI/CD environment or the user.
-#>
-function Test-PodeBuildCanCodeCoverage {
-    return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
 }
 
 <#
@@ -365,12 +350,13 @@ function Invoke-PodeBuildInstall($name, $version) {
 #>
 function Install-PodeBuildModule($name) {
     if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions[$name] })) {
+        Write-Host "$($name) v$($Versions[$name]) is already installed."
         return
     }
 
     Write-Host "Installing $($name) v$($Versions[$name])"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
+    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck -AllowClobber
 }
 
 <#
@@ -403,10 +389,10 @@ function Get-PodeBuildTargetFramework {
     )
 
     switch ($TargetFrameworks) {
-        'netstandard2.0' { return  2 }
+        'netstandard2.0' { return 2 }
         'net8.0' { return 8 }
-        'net9.0' { return  9 }
-        'net10.0' { return  10 }
+        'net9.0' { return 9 }
+        'net10.0' { return 10 }
         default {
             Write-Warning "$TargetFrameworks is not a valid Framework. Rollback to netstandard2.0"
             return 2
@@ -454,31 +440,24 @@ function Get-PodeBuildTargetFrameworkName {
     }
 }
 
+function Get-PodeBuildAvailableDotnetSdkVersion {
+    $dnVersion = ([version](dotnet --version)).Major
+    Write-Host "Dotnet Version: $($dnVersion)"
+    return $dnVersion
+}
+
 function Invoke-PodeBuildDotnetBuild {
     param (
         [string]$target
     )
 
     # Retrieve the installed SDK versions
-    $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-    if ([string]::IsNullOrEmpty($AvailableSdkVersion)) {
-        $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
-    }
-    else {
-        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-PodeBuildTargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
-    }
-    # Map target frameworks to minimum SDK versions
-
-    if ($null -eq $majorVersions) {
-        Write-Error "The requested '$AvailableSdkVersion' framework is not available."
-        return
-    }
+    $dotnetVersion = Get-PodeBuildAvailableDotnetSdkVersion
     $requiredSdkVersion = Get-PodeBuildTargetFramework -TargetFrameworks $target
+    Write-Host "Target Framework: $($target) requires SDK version: $($requiredSdkVersion)"
 
     # Determine if the target framework is compatible
-    $isCompatible = $majorVersions -ge $requiredSdkVersion
-
-    if ($isCompatible) {
+    if ($dotnetVersion -ge $requiredSdkVersion) {
         Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
     }
     else {
@@ -528,23 +507,38 @@ function Invoke-PodeBuildDotnetBuild {
 .NOTES
     - Requires internet access to query the endoflife.date API.
     - If the request fails, the function returns an empty string for both `eol` and `supported`.
-    - API URL: https://endoflife.date/api/powershell.json
+    - API URL:
+        - https://endoflife.date/api/powershell.json
+        - https://endoflife.date/api/windows-powershell.json
 #>
 function Get-PodeBuildPwshEOL {
-    $uri = 'https://endoflife.date/api/powershell.json'
+    # get powershell EOL info
     try {
-        $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
-        return @{
-            eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
-            supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
-        }
+        $uri = 'https://endoflife.date/api/powershell.json'
+        $pwshEol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
     }
     catch {
-        Write-Warning "Invoke-RestMethod to $uri failed: $($_.ErrorDetails.Message)"
-        return  @{
-            eol       = ''
-            supported = ''
-        }
+        $_ | Out-Default
+        Write-Warning "Invoke-RestMethod to $($uri) failed: $($_.ErrorDetails.Message)"
+        $pwshEol = @()
+    }
+
+    # get windows powershell EOL info
+    try {
+        $uri = 'https://endoflife.date/api/windows-powershell.json'
+        $winPwshEol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
+    }
+    catch {
+        $_ | Out-Default
+        Write-Warning "Invoke-RestMethod to $($uri) failed: $($_.ErrorDetails.Message)"
+        $winPwshEol = @()
+    }
+
+    # combine both lists and return
+    $eol = $pwshEol + $winPwshEol
+    return @{
+        eol       = ($eol | Where-Object { $_.eol -and ([datetime]$_.eol -lt [datetime]::Now) }).cycle -join ','
+        supported = ($eol | Where-Object { !$_.eol -or ([datetime]$_.eol -ge [datetime]::Now) }).cycle -join ','
     }
 }
 
@@ -730,7 +724,7 @@ function Install-PodeBuildPwshWindows {
     }
 
     # Copy the new PowerShell files to the installation folder
-    Copy-Item -Path "$($Target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
+    Copy-Item -Path "$($Target)\" -Destination "$($installFolder)\" -Recurse -Force -ErrorAction Stop
 }
 
 
@@ -883,6 +877,33 @@ function Split-PodeBuildPwshPath {
     }
 }
 
+<#
+.SYNOPSIS
+    Invokes Pester tests with the specified configuration.
+
+.DESCRIPTION
+    This function runs Pester tests using the provided configuration object.
+    If any tests fail, it throws an error indicating the number of failed tests.
+
+.PARAMETER Configuration
+    The Pester configuration object to use for running tests.
+
+.EXAMPLE
+    $config = New-PesterConfiguration -Path './Tests' -Verbosity 'Detailed'
+    Invoke-PodeBuildPester -Configuration $config
+#>
+function Invoke-PodeBuildPester {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        $Configuration
+    )
+
+    $results = Invoke-Pester -Configuration $Configuration
+    if ($results.FailedCount -gt 0) {
+        throw "$($results.FailedCount) tests failed."
+    }
+}
+
 # Check if the script is running under Invoke-Build
 if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
     Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
@@ -919,8 +940,6 @@ Add-BuildTask Default {
     Write-Host '- ChocoPack: Creates a Chocolatey package of the module (Windows only).'
     Write-Host '- DockerPack: Builds Docker images for the module.'
     Write-Host "- PackageFolder: Creates the `pkg` folder for module packaging."
-    Write-Host '- CheckFailedTests: Checks if any tests failed and throws an error if so.'
-    Write-Host '- PushCodeCoverage: Pushes code coverage results to a coverage service.'
     Write-Host '- Docs: Serves the documentation locally for review.'
     Write-Host '- DocsHelpBuild: Builds function help documentation.'
     Write-Host "- CleanDeliverable: Removes the `deliverable` folder."
@@ -978,45 +997,37 @@ Add-BuildTask BuildDeps {
     }
 
     try {
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        $dotnetVersion = Get-PodeBuildAvailableDotnetSdkVersion
+        if ($dotnetVersion -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+            throw "The current .NET SDK version '$dotnetVersion' is less than the required '$SdkVersion'"
+        }
     }
     catch {
         Invoke-PodeBuildInstall $dotnet $SdkVersion
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        $dotnetVersion = Get-PodeBuildAvailableDotnetSdkVersion
     }
-    $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-    $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
 
-    if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
-        Invoke-PodeBuildInstall $dotnet $SdkVersion
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-        $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-        $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
+    $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName -Version $dotnetVersion
 
-        if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
-            Write-Error "The requested framework '$SdkVersion' is not available."
-            return
-        }
+    if ($dotnetVersion -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+        Write-Error "The requested framework '$SdkVersion' is not available."
+        return
     }
-    elseif ($majorVersions -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+
+    if ($dotnetVersion -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
         Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
     }
 
+    # install yarn
     if (!(Test-PodeBuildCommand 'yarn')) {
         Invoke-PodeBuildInstall 'yarn' $Versions.Yarn
     }
-
 }
 
 # Synopsis: Install dependencies for running tests
 Add-BuildTask TestDeps {
     # install pester
     Install-PodeBuildModule Pester
-
-    # install PSCoveralls
-    if (Test-PodeBuildCanCodeCoverage) {
-        Install-PodeBuildModule PSCoveralls
-    }
 }
 
 # Synopsis: Install dependencies for documentation
@@ -1103,6 +1114,11 @@ Add-BuildTask Build BuildDeps, Yarn, {
 
 # synopsis: Download the npm packages to pode_modules folder
 Add-BuildTask Yarn {
+    if ($SkipYarnInstall) {
+        Write-Host 'Skipping yarn install as per SkipYarnInstall flag.'
+        return
+    }
+
     if ($PSVersionTable.PSEdition -eq 'Desktop') {
         yarn install --force --ignore-scripts --ignore-optional --ignore-engines --modules-folder pode_modules
     }
@@ -1280,6 +1296,44 @@ Add-BuildTask PackageFolder Build, {
     }
 }
 
+Add-BuildTask ShowNonExportedFunctions {
+    # load the current psd1
+    $psDataFile = Import-PowerShellDataFile 'src/Pode.psd1'
+    $funcs = $psDataFile.FunctionsToExport
+
+    # load all public ps1 files and get functions
+    $sysFuncs = Get-ChildItem Function:
+    Get-ChildItem 'src/Public/*.ps1' | ForEach-Object { . $_ }
+
+    # find any missing public functions
+    Get-ChildItem Function: |
+        Where-Object {
+            ($sysFuncs -inotcontains $_) -and ($_.Name -inotin $funcs)
+        } |
+        ForEach-Object {
+            Write-Host $_.Name -ForegroundColor Yellow
+        }
+}
+
+Add-BuildTask ShowNonExportedAliases {
+    # load the current psd1
+    $psDataFile = Import-PowerShellDataFile 'src/Pode.psd1'
+    $aliases = $psDataFile.AliasesToExport
+
+    # load all public ps1 files and get aliases
+    $sysAliases = Get-ChildItem Alias:
+    Get-ChildItem 'src/Public/*.ps1' | ForEach-Object { . $_ }
+
+    # find any missing public aliases
+    Get-ChildItem Alias: |
+        Where-Object {
+            ($sysAliases -inotcontains $_) -and ($_.Name -inotin $aliases)
+        } |
+        ForEach-Object {
+            Write-Host $_.Name -ForegroundColor Yellow
+        }
+}
+
 
 <#
 # Testing
@@ -1287,75 +1341,52 @@ Add-BuildTask PackageFolder Build, {
 
 # Synopsis: Run the tests
 Add-BuildTask TestNoBuild TestDeps, {
-    $p = (Get-Command Invoke-Pester)
-    if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
+    # do nothing if no tests supplied
+    if ($TestType.Count -eq 0) {
+        Write-Output 'No tests specified, skipping Test task.'
+        return
+    }
+
+    # ensure correct pester version is loaded
+    $p = Get-Command Invoke-Pester
+    if (($null -eq $p) -or ($p.Version -ine $Versions.Pester)) {
         Remove-Module Pester -Force -ErrorAction Ignore
         Import-Module Pester -Force -RequiredVersion $Versions.Pester
     }
 
-    # for windows, output current netsh excluded ports
-    if (Test-PodeBuildIsWindows) {
-        netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
-    }
+    # set UICulture if specified
     if ($UICulture -ne ([System.Threading.Thread]::CurrentThread.CurrentUICulture) ) {
         $originalUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
-        Write-Output "Original UICulture is $originalUICulture"
-        Write-Output "Set UICulture to $UICulture"
-        # set new UICulture
+        Write-Output "Original UICulture is $($originalUICulture)"
+        Write-Output "Set UICulture to $($UICulture)"
         [System.Threading.Thread]::CurrentThread.CurrentUICulture = $UICulture
     }
-    $Script:TestResultFile = "$($pwd)/TestResults.xml"
 
-    # get default from static property
-    $configuration = [PesterConfiguration]::Default
-    $configuration.run.path = @('./tests/unit', './tests/integration')
-    $configuration.run.PassThru = $true
+    # create base pester configuration
+    $configuration = New-PesterConfiguration
+    $configuration.Run.PassThru = $true
     $configuration.Output.Verbosity = $PesterVerbosity
-    $configuration.TestResult.OutputPath = $Script:TestResultFile
+    $configuration.TestResult.OutputPath = "$($pwd)/TestResults.xml"
     $configuration.TestResult.OutputFormat = 'NUnitXml'
     $configuration.TestResult.Enabled = $true
 
-    # if run code coverage if enabled
-    if (Test-PodeBuildCanCodeCoverage) {
-        $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
-        $configuration.CodeCoverage.Enabled = $true
-        $configuration.CodeCoverage.Path = $srcFiles
-        $Script:TestStatus = Invoke-Pester -Configuration $configuration
+    # run the tests for the supplied types
+    foreach ($type in $TestType) {
+        $type = $type.ToLower()
+        $configuration.Run.Path = "./tests/$($type)"
+        $configuration.Run.Container = @(New-PesterContainer -Path "./tests/$($type)/Setup.ps1")
+        $configuration | Invoke-PodeBuildPester
     }
-    else {
-        $Script:TestStatus = Invoke-Pester -Configuration $configuration
-    }
+
+    # restore original UICulture
     if ($originalUICulture) {
-        Write-Output "Restore UICulture to $originalUICulture"
-        # restore original UICulture
+        Write-Output "Restore UICulture to $($originalUICulture)"
         [System.Threading.Thread]::CurrentThread.CurrentUICulture = $originalUICulture
     }
-}, PushCodeCoverage, CheckFailedTests
+}
 
 # Synopsis: Run tests after a build
 Add-BuildTask Test Build, TestNoBuild
-
-# Synopsis: Check if any of the tests failed
-Add-BuildTask CheckFailedTests {
-    if ($TestStatus.FailedCount -gt 0) {
-        throw "$($TestStatus.FailedCount) tests failed"
-    }
-}
-
-# Synopsis: If AppVeyor or GitHub, push code coverage stats
-Add-BuildTask PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
-    try {
-        $service = Get-PodeBuildService
-        $branch = Get-PodeBuildBranch
-
-        Write-Host "Pushing coverage for $($branch) from $($service)"
-        $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch
-        Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
-    }
-    catch {
-        $_.Exception | Out-Default
-    }
-}
 
 
 <#
@@ -1363,7 +1394,10 @@ Add-BuildTask PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
 #>
 
 # Synopsis: Run the documentation locally
-Add-BuildTask Docs DocsDeps, DocsHelpBuild, {
+Add-BuildTask Docs DocsDeps, DocsHelpBuild, DocsNoBuild
+
+# Synopsis: Run the documentation locally without building
+Add-BuildTask DocsNoBuild DocsDeps, {
     mkdocs serve --open
 }
 
@@ -1376,6 +1410,9 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
     # build the function docs
     $path = './docs/Functions'
     $map = @{}
+
+    Remove-Item -Path $path -Recurse -Force -ErrorAction Ignore | Out-Null
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
 
     (Get-Module Pode).ExportedFunctions.Keys | ForEach-Object {
         $type = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path -Leaf -Path (Get-Command $_ -Module Pode).ScriptBlock.File))
@@ -1392,11 +1429,11 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
                 $line = $_
 
-                while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(] | $))') {
+                while ($line -imatch '(?<func>\[`(?<name>[a-z]+\-pode[a-z]+)`\])([^(])') {
                     $updated = $true
+                    $func = $Matches['func']
                     $name = $Matches['name']
-                    $char = $Matches['char']
-                    $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
+                    $line = $line.Replace($func, "$($func)($('../' * $depth)Functions/$($map[$name])/$($name))")
                 }
 
                 $line
@@ -1600,49 +1637,59 @@ Add-BuildTask SetupPowerShell {
         })[$os]
 
     # build the URL
-    $urls = @{
-        Old = "https://pscoretestdata.blob.core.windows.net/v$($PowerShellVersion -replace '\.', '-')/$($packageName)"
-        New = "https://powershellinfraartifacts-gkhedzdeaghdezhr.z01.azurefd.net/install/v$($PowerShellVersion)/$($packageName)"
-    }
+    $url = "https://github.com/PowerShell/PowerShell/releases/download/v$($PowerShellVersion)/$($packageName)"
 
     # download the package to a temp location
     $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
     $downloadParams = @{
-        Uri         = $urls.New
-        OutFile     = $outputFile
-        ErrorAction = 'Stop'
+        Uri     = $url
+        OutFile = $outputFile
     }
 
     Write-Host "Output file: $($outputFile)"
+    Add-Type -AssemblyName System.Net.Http
 
-    # retry the download 6 times, with a sleep of 10s between each attempt, and altering between old and new URLs
+    # retry the download 3 times, with a sleep of 10s between each attempt
     $counter = 0
     $success = $false
 
     do {
         try {
             $counter++
-            Write-Host "Attempt $($counter) of 6"
-
-            # use new URL for odd attempts, and old URL for even attempts
-            if ($counter % 2 -eq 0) {
-                $downloadParams.Uri = $urls.Old
-            }
-            else {
-                $downloadParams.Uri = $urls.New
-            }
+            Write-Host "Attempt $($counter) of 3"
 
             # download the package
             Write-Host "Attempting download of $($packageName) from $($downloadParams.Uri)"
-            Invoke-WebRequest @downloadParams
+
+            try {
+                $handler = [System.Net.Http.HttpClientHandler]::new()
+                $handler.AutomaticDecompression = [System.Net.DecompressionMethods]::GZip -bor [System.Net.DecompressionMethods]::Deflate
+
+                $client = [System.Net.Http.HttpClient]::new($handler)
+                $response = $client.GetAsync($downloadParams.Uri, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).Result
+                $null = $response.EnsureSuccessStatusCode()
+
+                try {
+                    $fileStream = [System.IO.File]::Open($outputFile, [System.IO.FileMode]::Create)
+                    $response.Content.CopyToAsync($fileStream).Wait()
+                }
+                finally {
+                    $fileStream.Close()
+                }
+            }
+            finally {
+                $response.Dispose()
+                $client.Dispose()
+                $handler.Dispose()
+            }
 
             $success = $true
             Write-Host "Downloaded $($packageName) successfully"
         }
         catch {
             $success = $false
-            if ($counter -ge 6) {
-                throw "Failed to download PowerShell package after 6 attempts. Error: $($_.Exception.Message)"
+            if ($counter -ge 3) {
+                throw "Failed to download PowerShell package after 3 attempts. Error: $($_.Exception.Message)"
             }
 
             Start-Sleep -Seconds 5
@@ -1740,47 +1787,75 @@ task ReleaseNotes {
             $categories[$label] = @()
         }
 
-        if ($pr.author.login -ilike '*dependabot*') {
-            if ($pr.title -imatch 'Bump (?<name>\S+) from (?<from>[0-9\.]+) to (?<to>[0-9\.]+)') {
-                if (!$dependabot.ContainsKey($Matches['name'])) {
-                    $dependabot[$Matches['name']] = @{
-                        Name   = $Matches['name']
-                        Number = $pr.number
-                        From   = [version]$Matches['from']
-                        To     = [version]$Matches['to']
-                    }
-                }
-                else {
-                    $item = $dependabot[$Matches['name']]
-                    if ([int]$pr.number -gt [int]$item.Number) {
-                        $item.Number = $pr.number
-                    }
-                    if ([version]$Matches['from'] -lt $item.From) {
-                        $item.From = [version]$Matches['from']
-                    }
-                    if ([version]$Matches['to'] -gt $item.To) {
-                        $item.To = [version]$Matches['to']
-                    }
-                }
-
-                continue
-            }
-        }
-
+        # split titles on ; to handle multiple changes in one PR
         $titles = @($pr.title).Trim()
         if ($pr.title.Contains(';')) {
             $titles = ($pr.title -split ';').Trim()
         }
 
+        # only include the author if it's not badgerati or dependabot
         $author = $null
         if (($pr.author.login -ine 'badgerati') -and ($pr.author.login -inotlike '*dependabot*')) {
-            $author = $pr.author.login
+            $author = "@$($pr.author.login)"
         }
 
+        # format the string for the PR, and add it to the relevant category/categories
         foreach ($title in $titles) {
+            # handle package version bump PRs separately to aggregate them by package name, and get the from/to versions
+            if ($title -imatch 'Bump (?<name>\S+) from (?<from>[0-9\.]+) to (?<to>[0-9\.]+)') {
+                # get the parts of the PR title
+                $pkgName = $Matches['name']
+                $fromStr = $Matches['from']
+                $toStr = $Matches['to']
+
+                # ensure 'from' version has 3 parts
+                if ($fromStr -imatch '^\d+$') {
+                    $fromStr += '.0.0'
+                }
+                $from = [version]$fromStr
+
+                # ensure 'to' version has 3 parts
+                if ($toStr -imatch '^\d+$') {
+                    $toStr += '.0.0'
+                }
+                $to = [version]$toStr
+
+                if (!$dependabot.ContainsKey($pkgName)) {
+                    $dependabot[$pkgName] = @{
+                        Name   = $pkgName
+                        Number = $pr.number
+                        From   = $from
+                        To     = $to
+                        Author = @()
+                    }
+
+                    if ($author) {
+                        $dependabot[$pkgName].Author += $author
+                    }
+                }
+                else {
+                    $item = $dependabot[$pkgName]
+                    if ([int]$pr.number -gt [int]$item.Number) {
+                        $item.Number = $pr.number
+                    }
+                    if ($from -lt $item.From) {
+                        $item.From = $from
+                    }
+                    if ($to -gt $item.To) {
+                        $item.To = $to
+                    }
+                    if ($author -and ($author -notin $item.Author)) {
+                        $item.Author += $author
+                    }
+                }
+
+                continue
+            }
+
+            # handle normal PRs
             $str = "* #$($pr.number): $($title -replace '`', "'")"
             if (![string]::IsNullOrWhiteSpace($author)) {
-                $str += " (thanks @$($author)!)"
+                $str += " (thanks $author!)"
             }
 
             if ($str -imatch '\s+(docs|documentation)\s+') {
@@ -1800,7 +1875,11 @@ task ReleaseNotes {
         }
 
         foreach ($dep in $dependabot.Values) {
-            $categories[$label] += "* #$($dep.Number): Bump $($dep.Name) from $($dep.From) to $($dep.To)"
+            $str = "* #$($dep.Number): Bump $($dep.Name) from $($dep.From) to $($dep.To)"
+            if ($dep.Author.Count -gt 0) {
+                $str += " (thanks $($dep.Author -join ', ')!)"
+            }
+            $categories[$label] += $str
         }
     }
 

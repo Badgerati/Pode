@@ -1,3 +1,5 @@
+using namespace Pode.Protocols.Http.Client
+
 <#
 .SYNOPSIS
 Converts the current HTTP request to a Route to be an SSE connection.
@@ -91,15 +93,19 @@ function ConvertTo-PodeSseConnection {
     $ClientId = New-PodeSseClientId -ClientId $ClientId
 
     # set and send SSE headers
-    $ClientId = Wait-PodeTask -Task $WebEvent.Response.SetSseConnection($Scope, $ClientId, $Name, $Group, $RetryDuration, $AllowAllOrigins.IsPresent)
+    $trackEvents = Test-PodeSseEvent -Name $Name -Type Connect, Disconnect
+    $sseConnection = Wait-PodeTask -Task $WebEvent.Request.UpgradeToSSE($Scope, $ClientId, $Name, $Group, $trackEvents, $RetryDuration, $AllowAllOrigins.IsPresent)
 
-    # create SSE property on WebEvent
-    $WebEvent.Sse = @{
-        Name        = $Name
-        Group       = $Group
-        ClientId    = $ClientId
-        LastEventId = Get-PodeHeader -Name 'Last-Event-ID'
-        IsLocal     = ($Scope -ieq 'local')
+    # create SSE property on WebEvent, as a reference to the SSE connection
+    $WebEvent.Sse = $sseConnection
+
+    # add local SSE endware to trigger disconnect event
+    if ($WebEvent.Sse.IsLocal -and (Test-PodeSseEvent -Name $Name -Type Disconnect)) {
+        $WebEvent.OnEnd += @{
+            Logic = {
+                Invoke-PodeSseEvent -Name $WebEvent.Sse.Name -Type Disconnect -Connection $WebEvent.Sse.ToHashtable()
+            }
+        }
     }
 }
 
@@ -161,7 +167,7 @@ Send an Event to one or more SSE connections. This can either be:
 - The current SSE connection being referenced within $WebEvent.Sse
 
 .PARAMETER Name
-An SSE connection Name.
+An SSE connection Name - multiple may be supplied.
 
 .PARAMETER Group
 An optional array of 1 or more SSE connection Groups to send Events to, for the specified SSE connection Name.
@@ -182,7 +188,7 @@ The Data for the Event being sent, either as a String or a Hashtable/PSObject. I
 The Depth to generate the JSON document - the larger this value the worse performance gets.
 
 .PARAMETER FromEvent
-If supplied, the SSE connection Name and ClientId will atttempt to be retrived from $WebEvent.Sse.
+If supplied, the SSE connection Name and ClientId will attempt to be retrieved from $WebEvent.Sse.
 These details will be set if ConvertTo-PodeSseConnection has just been called. Or if X-PODE-SSE-CLIENT-ID and X-PODE-SSE-NAME are set on an HTTP request.
 
 .EXAMPLE
@@ -207,7 +213,7 @@ function Send-PodeSseEvent {
         $Data,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Name')]
-        [string]
+        [string[]]
         $Name,
 
         [Parameter(ParameterSetName = 'Name')]
@@ -235,13 +241,8 @@ function Send-PodeSseEvent {
         $FromEvent
     )
 
-
     begin {
         $pipelineValue = @()
-        # do nothing if no value
-        if (($null -eq $Data) -or ([string]::IsNullOrEmpty($Data))) {
-            return
-        }
     }
 
     process {
@@ -252,6 +253,7 @@ function Send-PodeSseEvent {
         if ($pipelineValue.Count -gt 1) {
             $Data = $pipelineValue
         }
+
         # jsonify the value
         if ($Data -isnot [string]) {
             if ($Depth -le 0) {
@@ -264,33 +266,37 @@ function Send-PodeSseEvent {
 
         # send directly back to current connection
         if ($FromEvent -and $WebEvent.Sse.IsLocal) {
-            $null = Wait-PodeTask -Task $WebEvent.Response.SendSseEvent($EventType, $Data, $Id)
+            $null = Wait-PodeTask -Task $WebEvent.Response.Context.SSE.Send($EventType, $Data, $Id)
             return
         }
 
         # from event and global?
-        if ($FromEvent) {
+        if ($FromEvent -and ($null -ne $WebEvent.Sse)) {
             $Name = $WebEvent.Sse.Name
             $Group = $WebEvent.Sse.Group
             $ClientId = $WebEvent.Sse.ClientId
         }
 
         # error if no name
-        if ([string]::IsNullOrEmpty($Name)) {
+        if ([string]::IsNullOrEmpty($Name) -or ($Name.Length -eq 0)) {
             # An SSE connection Name is required, either from -Name or $WebEvent.Sse.Name
             throw ($PodeLocale.sseConnectionNameRequiredExceptionMessage)
         }
 
-        # check if broadcast level
-        if (!(Test-PodeSseBroadcastLevel -Name $Name -Group $Group -ClientId $ClientId)) {
-            # SSE failed to broadcast due to defined SSE broadcast level
-            throw ($PodeLocale.sseFailedToBroadcastExceptionMessage -f $Name, (Get-PodeSseBroadcastLevel -Name $Name))
-        }
+        # loop through each supplied Name
+        foreach ($n in $Name) {
+            # check the broadcast level
+            if (!(Test-PodeSseBroadcastLevel -Name $n -Group $Group -ClientId $ClientId)) {
+                # SSE failed to broadcast due to defined SSE broadcast level
+                throw ($PodeLocale.sseFailedToBroadcastExceptionMessage -f $n, (Get-PodeSseBroadcastLevel -Name $n))
+            }
 
-        # send event
-        $PodeContext.Server.Http.Listener.SendSseEvent($Name, $Group, $ClientId, $EventType, $Data, $Id)
+            # send event
+            $PodeContext.Server.Http.Listener.SendSseEvent($n, $Group, $ClientId, $EventType, $Data, $Id)
+        }
     }
 }
+
 <#
 .SYNOPSIS
 Close one or more SSE connections.
@@ -362,7 +368,7 @@ function Test-PodeSseClientIdSigned {
 
     # get clientId from WebEvent if not passed
     if ([string]::IsNullOrEmpty($ClientId)) {
-        $ClientId = $WebEvent.Request.SseClientId
+        $ClientId = $WebEvent.Request.ServerEvent.ClientId
     }
 
     # test if clientId is validly signed
@@ -397,7 +403,7 @@ function Test-PodeSseClientIdValid {
 
     # get clientId from WebEvent if not passed
     if ([string]::IsNullOrEmpty($ClientId)) {
-        $ClientId = $WebEvent.Request.SseClientId
+        $ClientId = $WebEvent.Request.ServerEvent.ClientId
     }
 
     # if no clientId, then it's not valid
@@ -435,7 +441,7 @@ function Test-PodeSseName {
         $Name
     )
 
-    return $PodeContext.Server.Http.Listener.TestSseConnectionExists($Name)
+    return $PodeContext.Server.Http.Listener.TestSseConnectionExists($Name, $null, $null)
 }
 
 <#
@@ -447,6 +453,9 @@ Test if an SSE connection ClientId exists or not.
 
 .PARAMETER Name
 The Name of an SSE connection.
+
+.PARAMETER Group
+An optional Group for the SSE connection.
 
 .PARAMETER ClientId
 The SSE connection ClientId to test.
@@ -461,12 +470,16 @@ function Test-PodeSseClientId {
         [string]
         $Name,
 
+        [Parameter()]
+        [string[]]
+        $Group = $null,
+
         [Parameter(Mandatory = $true)]
         [string]
         $ClientId
     )
 
-    return $PodeContext.Server.Http.Listener.TestSseConnectionExists($Name, $ClientId)
+    return $PodeContext.Server.Http.Listener.TestSseConnectionExists($Name, $Group, $ClientId)
 }
 
 <#
@@ -722,4 +735,354 @@ function Test-PodeSseBroadcastLevel {
 
     # valid, return true
     return $true
+}
+
+<#
+.SYNOPSIS
+Retrieve a list of all SSE connection Names.
+
+.DESCRIPTION
+Retrieve a list of all SSE connection Names.
+
+.EXAMPLE
+$names = Get-PodeSseNameList
+#>
+function Get-PodeSseNameList {
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param()
+
+    return $PodeContext.Server.Http.Listener.ServerEvents.Keys
+}
+
+<#
+.SYNOPSIS
+Retrieve a list of all Groups for an SSE connection Name.
+
+.DESCRIPTION
+Retrieve a list of all Groups for an SSE connection Name.
+
+.PARAMETER Name
+The Name of an SSE connection.
+
+.EXAMPLE
+$groups = Get-PodeSseGroupList -Name 'Example'
+#>
+function Get-PodeSseGroupList {
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    # check if name exists
+    if (!(Test-PodeSseName -Name $Name)) {
+        # SSE connection not found
+        throw ($PodeLocale.sseConnectionNameNotFoundExceptionMessage -f $Name)
+    }
+
+    return $PodeContext.Server.Http.Listener.ServerEvents.GetGroups($Name)
+}
+
+<#
+.SYNOPSIS
+Retrieve a list of all ClientIds for an SSE connection Name.
+
+.DESCRIPTION
+Retrieve a list of all ClientIds for an SSE connection Name, optionally filtered by Group.
+
+.PARAMETER Name
+The Name of an SSE connection.
+
+.PARAMETER Group
+An optional Group(s) for the SSE connection.
+
+.EXAMPLE
+$clientIds = Get-PodeSseClientIdList -Name 'Example'
+
+.EXAMPLE
+$clientIds = Get-PodeSseClientIdList -Name 'Example' -Group 'admins'
+#>
+function Get-PodeSseClientIdList {
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Group = $null
+    )
+
+    # check if name exists
+    if (!(Test-PodeSseName -Name $Name)) {
+        # SSE connection not found
+        throw ($PodeLocale.sseConnectionNameNotFoundExceptionMessage -f $Name)
+    }
+
+    return $PodeContext.Server.Http.Listener.ServerEvents.GetClientIds($Name, $Group)
+}
+
+<#
+.SYNOPSIS
+Register an event for one or more SSE connections.
+
+.DESCRIPTION
+Register an event for one or more SSE connections, allowing custom scriptblocks to be executed when the event is triggered.
+
+.PARAMETER Name
+The Name(s) of the SSE connection(s) to register the event for.
+
+.PARAMETER Type
+The Type of event to register, either Connect or Disconnect.
+
+.PARAMETER EventName
+The name of the event to register.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to execute when the event is triggered.
+
+.PARAMETER ArgumentList
+An optional array of Arguments to pass to the ScriptBlock when executed.
+
+.EXAMPLE
+Register-PodeSseEvent -Name 'Actions' -Type Connect -EventName 'OnConnect' -ScriptBlock {
+    "SSE Connection established: $($TriggeredEvent.Connection.Name) - $($TriggeredEvent.Connection.ClientId)" | Out-Default
+}
+#>
+function Register-PodeSseEvent {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [PodeClientConnectionEventType]
+        $Type,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $EventName,
+
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
+    )
+
+    foreach ($n in $Name) {
+        # create "connection" reference
+        if (!$PodeContext.Server.Sse.Connections.ContainsKey($n)) {
+            $PodeContext.Server.Sse.Connections[$n] = @{
+                Events = @{}
+            }
+        }
+
+        # error if event already registered
+        if ($PodeContext.Server.Sse.Connections[$n].Events.ContainsKey($Type.ToString()) -and
+            $PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()].Contains($EventName)) {
+            # "$($Type) event already registered for SSE connection $($n): $($EventName)"
+            throw ($PodeLocale.sseEventAlreadyRegisteredExceptionMessage -f $Type, $n, $EventName)
+        }
+    }
+
+    # register for each SSE connection name supplied
+    foreach ($n in $Name) {
+        # check for scoped vars
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # add event
+        if (!$PodeContext.Server.Sse.Connections[$n].Events.ContainsKey($Type.ToString())) {
+            $PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()] = [ordered]@{}
+        }
+
+        $PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()][$EventName] = @{
+            Name           = $n
+            EventName      = $EventName
+            Type           = $Type.ToString()
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+            Arguments      = $ArgumentList
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Unregister an event for one or more SSE connections.
+
+.DESCRIPTION
+Unregister an event for one or more SSE connections.
+
+.PARAMETER Name
+The Name(s) of the SSE connection(s) to unregister the event for.
+
+.PARAMETER Type
+The Type of event to unregister, either Connect or Disconnect.
+
+.PARAMETER EventName
+The name of the event to unregister.
+
+.EXAMPLE
+Unregister-PodeSseEvent -Name 'Actions' -Type Connect -EventName 'OnConnect'
+#>
+function Unregister-PodeSseEvent {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [PodeClientConnectionEventType]
+        $Type,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $EventName
+    )
+
+    foreach ($n in $Name) {
+        # error if event not registered
+        if (!$PodeContext.Server.Sse.Connections.ContainsKey($n) -or
+            !$PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()].Contains($EventName)) {
+            # "$($Type) event not registered for SSE connection $($n): $($EventName)"
+            throw ($PodeLocale.sseEventNotRegisteredExceptionMessage -f $Type, $n, $EventName)
+        }
+
+        # remove event
+        $null = $PodeContext.Server.Sse.Connections[$n].Events[$Type.ToString()].Remove($EventName)
+    }
+}
+
+<#
+.SYNOPSIS
+Test if one or more SSE events are registered.
+
+.DESCRIPTION
+Test if one or more SSE events are registered.
+
+.PARAMETER Name
+An optional Name(s) of the SSE connection(s) to test.
+
+.PARAMETER Type
+The Type(s) of event to test, either Connect or Disconnect.
+
+.PARAMETER EventName
+An optional name(s) of the event to test.
+
+.EXAMPLE
+if (Test-PodeSseEvent -Name 'Actions' -Type Connect -EventName 'OnConnect') { ... }
+
+.EXAMPLE
+if (Test-PodeSseEvent -Type Disconnect) { ... }
+#>
+function Test-PodeSseEvent {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [PodeClientConnectionEventType[]]
+        $Type,
+
+        [Parameter()]
+        [string[]]
+        $EventName
+    )
+
+    $evts = Get-PodeSseEvent -Name $Name -Type $Type -EventName $EventName
+    return (($null -ne $evts) -and ($evts.Count -gt 0))
+}
+
+<#
+.SYNOPSIS
+Retrieve one or more SSE events.
+
+.DESCRIPTION
+Retrieve one or more SSE events.
+
+.PARAMETER Name
+An optional Name(s) of the SSE connection(s) to retrieve events for.
+
+.PARAMETER Type
+The Type(s) of event to retrieve, either Connect or Disconnect.
+
+.PARAMETER EventName
+An optional name(s) of the event to retrieve.
+
+.EXAMPLE
+$events = Get-PodeSseEvent -Name 'Actions' -Type Connect -EventName 'OnConnect'
+
+.EXAMPLE
+$events = Get-PodeSseEvent -Type Disconnect
+#>
+function Get-PodeSseEvent {
+    [CmdletBinding()]
+    [OutputType([System.Object[]])]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [PodeClientConnectionEventType[]]
+        $Type,
+
+        [Parameter()]
+        [string[]]
+        $EventName
+    )
+
+    # return null if no connections
+    if (($null -eq $PodeContext.Server.Sse.Connections) -or ($PodeContext.Server.Sse.Connections.Count -eq 0)) {
+        return $null
+    }
+
+    # get connections by name if specified, otherwise all
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $connections = @(foreach ($n in $Name) {
+                if ($PodeContext.Server.Sse.Connections.ContainsKey($n)) {
+                    $PodeContext.Server.Sse.Connections[$n]
+                }
+            })
+    }
+    else {
+        $connections = $PodeContext.Server.Sse.Connections.Values
+    }
+
+    # if no connections, return null
+    if (($null -eq $connections) -or ($connections.Count -eq 0)) {
+        return $null
+    }
+
+    # get events by type
+    $evts = @(foreach ($t in $Type) {
+            $connections.Events[$t.ToString()].Values
+        })
+    $connections = $null
+
+    # filter by event names if specified
+    if (($null -ne $EventName) -and ($EventName.Length -gt 0)) {
+        $evts = @(foreach ($e in $evts) {
+                if ($EventName -icontains $e.Name) {
+                    $e
+                }
+            })
+    }
+
+    # return events
+    return $evts
 }

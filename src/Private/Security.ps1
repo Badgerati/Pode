@@ -589,7 +589,7 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
         Protect-PodeContentSecurityKeyword -Name 'base-uri' -Value $Params.BaseUri -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'form-action' -Value $Params.FormAction -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'frame-ancestors' -Value $Params.FrameAncestor -Append:$Append
-        Protect-PodeContentSecurityKeyword -Name 'fenched-frame-src' -Value $Params.FencedFrame -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'fenced-frame-src' -Value $Params.FencedFrame -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'prefetch-src' -Value $Params.Prefetch -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'script-src-attr' -Value $Params.ScriptAttr -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'script-src-elem' -Value $Params.ScriptElem -Append:$Append
@@ -711,7 +711,7 @@ function Set-PodeSecurityPermissionsPolicyInternal {
         Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $Params.UnoptimisedImages -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $Params.UnsizedMedia -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Params.Usb -Append:$Append
-        Protect-PodePermissionsPolicyKeyword -Name 'screen-wake-lock' -Value $Params.ScreenWakeLake -Append:$Append
+        Protect-PodePermissionsPolicyKeyword -Name 'screen-wake-lock' -Value $Params.ScreenWakeLock -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'web-share' -Value $Params.WebShare -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $Params.XrSpatialTracking -Append:$Append
     )

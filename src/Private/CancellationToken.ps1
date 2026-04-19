@@ -1,3 +1,4 @@
+using namespace Pode.Utilities
 
 <#
 .SYNOPSIS
@@ -28,11 +29,12 @@
 function Reset-PodeCancellationToken {
     param(
         [Parameter(Mandatory = $true)]
-        [validateset( 'Cancellation' , 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable' )]
+        [ValidateSet( 'Cancellation' , 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable' )]
         [string[]]
         $Type
     )
-    foreach ($item in $type) {
+
+    foreach ($item in $Type) {
         # Ensure cleanup of disposable tokens
         Close-PodeDisposable -Disposable $PodeContext.Tokens[$item]
 
@@ -84,50 +86,46 @@ function Reset-PodeCancellationToken {
     This is an internal function and may change in future releases of Pode.
 
 #>
-
-
 function Close-PodeCancellationToken {
     [CmdletBinding()]
     param(
         [Parameter()]
-        [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable' )]
+        [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable')]
         [string[]]
         $Type
     )
-    if ($null -eq $Type) {
-        $PodeContext.Tokens.Values | Close-PodeDisposable
+
+    # If no type is specified, dispose of all tokens
+    if (($null -eq $Type) -or ($Type.Length -eq 0)) {
+        $Type = $PodeContext.Tokens.Keys
     }
-    else {
-        foreach ($tokenType in $Type) {
-            # Ensure cleanup of disposable tokens
-            Close-PodeDisposable -Disposable $PodeContext.Tokens[$tokenType]
-        }
+
+    # Dispose of each specified token
+    foreach ($tokenType in $Type) {
+        Close-PodeDisposable -Disposable $PodeContext.Tokens[$tokenType]
     }
 }
 
-
-
-
 <#
 .SYNOPSIS
-	Waits for Pode suspension cancellation token to be reset.
+    Waits for Pode suspension cancellation token to be reset.
 
 .DESCRIPTION
-	The `Test-PodeSuspensionToken` function checks the status of the suspension cancellation token within the `$PodeContext`.
-	It enters a loop to wait for the `Suspend` cancellation token to be reset before proceeding.
-	Each loop iteration includes a 1-second delay to minimize resource usage.
-	The function returns a boolean indicating whether the suspension token was initially requested.
+    The `Test-PodeSuspensionToken` function checks the status of the suspension cancellation token within the `$PodeContext`.
+    It enters a loop to wait for the `Suspend` cancellation token to be reset before proceeding.
+    Each loop iteration includes a 1-second delay to minimize resource usage.
+    The function returns a boolean indicating whether the suspension token was initially requested.
 
 .EXAMPLE
-	Test-PodeSuspensionToken
-	Waits for the suspension token to be reset in the Pode context.
+    Test-PodeSuspensionToken
+    Waits for the suspension token to be reset in the Pode context.
 
 .OUTPUTS
-	[bool]
-	Indicates whether the suspension token was initially requested.
+    [bool]
+    Indicates whether the suspension token was initially requested.
 
 .NOTES
-	This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeSuspensionToken {
     # Check if the Suspend token was initially requested
@@ -294,10 +292,20 @@ function Close-PodeCancellationTokenRequest {
 
     # Iterate over each provided type and cancel its corresponding token if not already canceled
     foreach ($item in $Type) {
-        if ($PodeContext.Tokens.ContainsKey($item)) {
-            if (! $PodeContext.Tokens[$item].IsCancellationRequested) {
-                # Cancel the specified token
+        if (!$PodeContext.Tokens.ContainsKey($item)) {
+            continue
+        }
+
+        if (!$PodeContext.Tokens[$item].IsCancellationRequested) {
+            try {
                 $PodeContext.Tokens[$item].Cancel()
+            }
+            catch [System.AggregateException] {
+                # for Windows PowerShell, ignore AggregateException on Cancel due to known Semaphore race condition.
+                # This will only occur when cancelling the "Cancellation" token.
+                if ((Test-PodeIsPSCore) -or ($item -ine 'Cancellation')) {
+                    throw
+                }
             }
         }
     }
@@ -340,7 +348,7 @@ function Wait-PodeCancellationTokenRequest {
 
     # Wait for the token to be reset, with exponential back-off
     $count = 1
-    while (! $PodeContext.Tokens[$Type].IsCancellationRequested) {
+    while (!$PodeContext.Tokens[$Type].IsCancellationRequested) {
         Start-Sleep -Milliseconds (100 * $count)
         $count = [System.Math]::Min($count + 1, 20)
     }
@@ -352,27 +360,44 @@ function Wait-PodeCancellationTokenRequest {
 
 .DESCRIPTION
     The `Test-PodeCancellationTokenRequest` function checks the cancellation state of a given token
-    in the Pode server context. It determines whether the token has been marked for cancellation
-    and optionally waits for the cancellation to occur if the `-Wait` parameter is specified.
+    in the Pode server context. It determines whether the token has been marked for cancellation.
 
 .PARAMETER Type
-    Specifies the token to check for an active cancellation request.
+    Specify one or more token types to check for an active cancellation request.
     Acceptable values include predefined token types in Pode:
-    - `Cancellation`
-    - `Restart`
-    - `Suspend`
-    - `Resume`
-    - `Terminate`
-    - `Start`
-    - `Disable`
+    - Cancellation
+    - Restart
+    - Suspend
+    - Resume
+    - Terminate
+    - Start
+    - Disable
+
+.PARAMETER Match
+    An optional Match parameter, with possible values of 'Any' or 'All'. (Default: Any)
+    - Any: Returns `$true` if any of the specified tokens have an active cancellation request.
+    - All: Returns `$true` only if all specified tokens have active cancellation requests.
 
 .OUTPUTS
-    [bool] Returns `$true` if the specified token has an active cancellation request, otherwise `$false`.
+    [bool] Returns `$true` if the specified token(s) have an active cancellation request,
+    based on the Match parameter; otherwise, returns `$false`.
 
 .EXAMPLE
     Test-PodeCancellationTokenRequest -Type 'Restart'
 
     Checks if the Restart token has an active cancellation request and returns `$true` or `$false`.
+
+.EXAMPLE
+    Test-PodeCancellationTokenRequest -Type 'Suspend','Resume' -Match All
+
+    Checks if both the Suspend and Resume tokens have active cancellation requests.
+    Returns `$true` only if both tokens are in a cancellation state; otherwise, returns `$false`.
+
+.EXAMPLE
+    Test-PodeCancellationTokenRequest -Type 'Terminate','Start' -Match Any
+
+    Checks if either the Terminate or Start token has an active cancellation request.
+    Returns `$true` if at least one of the tokens is in a cancellation state; otherwise, returns `$false`.
 
 .NOTES
     This function is an internal utility for Pode and may be subject to change in future releases.
@@ -381,14 +406,35 @@ function Test-PodeCancellationTokenRequest {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Cancellation', 'Restart', 'Suspend', 'Resume', 'Terminate', 'Start', 'Disable')]
+        [string[]]
+        $Type,
+
+        [Parameter()]
+        [ValidateSet('Any', 'All')]
         [string]
-        $Type
+        $Match = 'Any'
     )
 
-    # Check if the specified token has an active cancellation request
-    $cancelled = $PodeContext.Tokens[$Type].IsCancellationRequested
+    # Determine the matching logic based on the Match parameter
+    $isAllMatch = $Match -ieq 'All'
 
-    return $cancelled
+    # Loop through each specified token type
+    foreach ($t in $Type) {
+        $cancelled = $PodeContext.Tokens[$t].IsCancellationRequested
+
+        # If the token is cancelled and we're looking for any match, return true
+        if ($cancelled -and !$isAllMatch) {
+            return $true
+        }
+
+        # If the token is not cancelled and we're looking for all matches, return false
+        if (!$cancelled -and $isAllMatch) {
+            return $false
+        }
+    }
+
+    # If we reach here, either all tokens matched (for 'All') or none matched (for 'Any')
+    return $isAllMatch
 }
 
 
@@ -421,7 +467,7 @@ function Resolve-PodeCancellationToken {
     }
 
     # Handle enable/disable server actions
-    if ($PodeContext.Server.AllowedActions.Disable -and ($ServerState -eq [Pode.PodeServerState]::Running)) {
+    if ($PodeContext.Server.AllowedActions.Disable -and ($ServerState -eq [PodeServerState]::Running)) {
         if (Test-PodeServerIsEnabled) {
             if (Test-PodeCancellationTokenRequest -Type Disable) {
                 Disable-PodeServerInternal
@@ -437,13 +483,14 @@ function Resolve-PodeCancellationToken {
             }
         }
     }
+
     # Handle suspend/resume actions
     if ($PodeContext.Server.AllowedActions.Suspend) {
-        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq [Pode.PodeServerState]::Resuming)) {
+        if ((Test-PodeCancellationTokenRequest -Type Resume) -and ($ServerState -eq [PodeServerState]::Resuming)) {
             Resume-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Resume
             return
         }
-        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq [Pode.PodeServerState]::Suspending)) {
+        elseif ((Test-PodeCancellationTokenRequest -Type Suspend) -and ($ServerState -eq [PodeServerState]::Suspending)) {
             Suspend-PodeServerInternal -Timeout $PodeContext.Server.AllowedActions.Timeout.Suspend
             return
         }

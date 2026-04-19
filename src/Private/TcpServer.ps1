@@ -1,26 +1,12 @@
-using namespace Pode
+using namespace Pode.Protocols.Tcp
+using namespace Pode.Transport.Sockets
+using namespace Pode.Utilities
 
 function Start-PodeTcpServer {
     # work out which endpoints to listen on
     $endpoints = @()
 
-    # Variable to track if a default endpoint is already defined for the current type.
-    # This ensures that only one default endpoint can be assigned per protocol type (e.g., HTTP, HTTPS).
-    # If multiple default endpoints are detected, an error will be thrown to prevent configuration issues.
-    $defaultEndpoint = $false
-
     @(Get-PodeEndpointByProtocolType -Type Tcp) | ForEach-Object {
-
-        # Enforce unicity: only one default endpoint is allowed per type.
-        if ($defaultEndpoint -and $_.Default) {
-            # A default endpoint for the type '{0}' is already set. Only one default endpoint is allowed per type. Please check your configuration.
-            throw ($Podelocale.defaultEndpointAlreadySetExceptionMessage -f $($_.Type))
-        }
-        else {
-            # Assign the current endpoint's Default value for tracking.
-            $defaultEndpoint = $_.Default
-        }
-
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
@@ -59,7 +45,7 @@ function Start-PodeTcpServer {
     }
 
     # create the listener
-    $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
+    $listener = [PodeTcpListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -106,13 +92,13 @@ function Start-PodeTcpServer {
 
         do {
             try {
-                while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate, Cancellation -Match All)) {
                     # get email
                     $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
                     try {
                         try {
-                            $Request = $context.Request
+                            $Request = $context.Request.Strategy
                             $Response = $context.Response
 
                             $TcpEvent = @{
@@ -120,8 +106,8 @@ function Start-PodeTcpServer {
                                 Request    = $Request
                                 Lockable   = $PodeContext.Threading.Lockables.Global
                                 Endpoint   = @{
-                                    Protocol = $Request.Scheme
-                                    Address  = $Request.Address
+                                    Protocol = $Request.Handler.Scheme
+                                    Address  = $Request.Handler.Address
                                     Name     = $context.EndpointName
                                 }
                                 Parameters = $null
@@ -130,8 +116,8 @@ function Start-PodeTcpServer {
                             }
 
                             # stop now if the request has an error
-                            if ($Request.IsAborted) {
-                                throw $Request.Error
+                            if ($Request.Handler.IsAborted) {
+                                throw $Request.Handler.Error
                             }
 
                             # ensure the request ip is allowed
@@ -183,7 +169,7 @@ function Start-PodeTcpServer {
 
                             # is the verb auto-upgrade to ssl?
                             if ($verb.Connection.UpgradeToSsl) {
-                                $Request.UpgradeToSSL()
+                                Wait-PodeTask -Task $Request.Handler.UpgradeToSSL()
                             }
                         }
                         catch [System.OperationCanceledException] {
@@ -215,6 +201,7 @@ function Start-PodeTcpServer {
     }
 
     # start the runspace for listening on x-number of threads
+    Write-Verbose 'Starting the Tcp Listener runspace(s)...'
     1..$PodeContext.Threads.General | ForEach-Object {
         Add-PodeRunspace -Type Tcp -Name 'Listener' -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
@@ -245,16 +232,19 @@ function Start-PodeTcpServer {
         }
     }
 
+    Write-Verbose 'Starting the Tcp KeepAlive runspace...'
     Add-PodeRunspace -Type Tcp -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {
             @{
+                Protocol = $endpoint.Protocol
                 Url      = $endpoint.Url
                 Pool     = $endpoint.Pool
                 DualMode = $endpoint.DualMode
                 Name     = $endpoint.Name
                 Default  = $endpoint.Default
+                Order    = ($endpoint.Protocol | Get-PodeEndpointProtocolOrder)
             }
         })
 }

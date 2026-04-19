@@ -1,262 +1,257 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 param()
 
-BeforeAll {
-    $path = $PSCommandPath
-    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
-}
-
-Describe 'Add-PodeFlashMessage' {
-    It 'Throws error because sessions are not configured' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Add-PodeFlashMessage -Name 'name' -Message 'message' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
-    }
-
-    It 'Throws error for no name supplied' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Add-PodeFlashMessage -Name '' -Message 'message' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeFlashMessage'
-    }
-
-    It 'Throws error for no message supplied' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Add-PodeFlashMessage -Name 'name' -Message '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeFlashMessage'
-    }
-
-    It 'Adds a single key and value' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
-
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 1
-        $WebEvent.Session.Data.Flash['Test1'] | Should -Be 'Value1'
-    }
-
-    It 'Adds two different keys and values' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
-
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-        Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
-
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 2
-        $WebEvent.Session.Data.Flash['Test1'] | Should -Be 'Value1'
-        $WebEvent.Session.Data.Flash['Test2'] | Should -Be 'Value2'
-    }
-
-    It 'Adds two values for the same key' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
-
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value2'
-
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 1
-        $WebEvent.Session.Data.Flash['Test1'].Length | Should -Be 2
-        $WebEvent.Session.Data.Flash['Test1'][0] | Should -Be 'Value1'
-        $WebEvent.Session.Data.Flash['Test1'][1] | Should -Be 'Value2'
-    }
-}
-
-Describe 'Clear-PodeFlashMessages' {
-    It 'Throws error because sessions are not configured' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Clear-PodeFlashMessages } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
-    }
-
-    It 'Adds two keys and then Clears them all' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
-
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-        Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
-
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 2
-
-        Clear-PodeFlashMessages
-
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 0
-    }
-}
-
-Describe 'Get-PodeFlashMessage' {
-    It 'Throws error because sessions are not configured' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Get-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
-    }
-
-    It 'Throws error for no key supplied' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Get-PodeFlashMessage -Name '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Get-PodeFlashMessage'
-    }
-
-    It 'Returns empty array on key that does not exist' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
-
-        $result = (Get-PodeFlashMessage -Name 'Test1')
-        $result.Length | Should -Be 0
-    }
-
-    It 'Returns empty array on key that is empty' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{
-                    'Flash' = @{ 'Test1' = @(); }
-                }
-            }
+InModuleScope -ModuleName 'Pode' {
+    Describe 'Add-PodeFlashMessage' {
+        It 'Throws error because sessions are not configured' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
+            { Add-PodeFlashMessage -Name 'name' -Message 'message' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
         }
 
-        $result = (Get-PodeFlashMessage -Name 'Test1')
-        $result.Length | Should -Be 0
+        It 'Throws error for no name supplied' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            { Add-PodeFlashMessage -Name '' -Message 'message' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeFlashMessage'
+        }
+
+        It 'Throws error for no message supplied' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            { Add-PodeFlashMessage -Name 'name' -Message '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeFlashMessage'
+        }
+
+        It 'Adds a single key and value' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 1
+            $WebEvent.Session.Data.Flash['Test1'] | Should -Be 'Value1'
+        }
+
+        It 'Adds two different keys and values' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+            Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
+
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 2
+            $WebEvent.Session.Data.Flash['Test1'] | Should -Be 'Value1'
+            $WebEvent.Session.Data.Flash['Test2'] | Should -Be 'Value2'
+        }
+
+        It 'Adds two values for the same key' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value2'
+
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 1
+            $WebEvent.Session.Data.Flash['Test1'].Length | Should -Be 2
+            $WebEvent.Session.Data.Flash['Test1'][0] | Should -Be 'Value1'
+            $WebEvent.Session.Data.Flash['Test1'][1] | Should -Be 'Value2'
+        }
     }
 
-    It 'Adds two keys and then Gets one of them' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+    Describe 'Clear-PodeFlashMessages' {
+        It 'Throws error because sessions are not configured' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
+            { Clear-PodeFlashMessages } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
+        }
 
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-        Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
+        It 'Adds two keys and then Clears them all' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 2
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+            Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
 
-        $result = (Get-PodeFlashMessage -Name 'Test1')
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 2
 
-        $result | Should -Be 'Value1'
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 1
+            Clear-PodeFlashMessages
+
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 0
+        }
     }
 
-    It 'Adds two values for the same key then Gets it' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+    Describe 'Get-PodeFlashMessage' {
+        It 'Throws error because sessions are not configured' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
+            { Get-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
+        }
 
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value2'
+        It 'Throws error for no key supplied' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            { Get-PodeFlashMessage -Name '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Get-PodeFlashMessage'
+        }
 
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 1
+        It 'Returns empty array on key that does not exist' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-        $result = (Get-PodeFlashMessage -Name 'Test1')
+            $result = (Get-PodeFlashMessage -Name 'Test1')
+            $result.Length | Should -Be 0
+        }
 
-        $result.Length | Should -Be 2
-        $result[0] | Should -Be 'Value1'
-        $result[1] | Should -Be 'Value2'
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 0
-    }
-}
+        It 'Returns empty array on key that is empty' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{
+                        'Flash' = @{ 'Test1' = @(); }
+                    }
+                }
+            }
 
-Describe 'Get-PodeFlashMessageNames' {
-    It 'Throws error because sessions are not configured' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Get-PodeFlashMessageNames } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
-    }
+            $result = (Get-PodeFlashMessage -Name 'Test1')
+            $result.Length | Should -Be 0
+        }
 
-    It 'Adds two keys and then retrieves the Keys' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+        It 'Adds two keys and then Gets one of them' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-        Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+            Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
 
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 2
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 2
 
-        $result = (Get-PodeFlashMessageNames)
+            $result = (Get-PodeFlashMessage -Name 'Test1')
 
-        $result.Length | Should -Be 2
-        $result.IndexOf('Test1') | Should -Not -Be -1
-        $result.IndexOf('Test2') | Should -Not -Be -1
+            $result | Should -Be 'Value1'
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 1
+        }
 
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 2
-    }
+        It 'Adds two values for the same key then Gets it' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-    It 'Returns no keys as none have been added' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value2'
 
-        $result = (Get-PodeFlashMessageNames)
-        $result.Length | Should -Be 0
-    }
-}
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 1
 
-Describe 'Remove-PodeFlashMessage' {
-    It 'Throws error because sessions are not configured' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Remove-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
-    }
+            $result = (Get-PodeFlashMessage -Name 'Test1')
 
-    It 'Throws error for no key supplied' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Remove-PodeFlashMessage -Name '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Remove-PodeFlashMessage'
-    }
-
-    It 'Adds two keys and then Remove one of them' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
-
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-        Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
-
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 2
-
-        Remove-PodeFlashMessage -Name 'Test1'
-
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 1
-    }
-}
-
-Describe 'Test-PodeFlashMessage' {
-    It 'Throws error because sessions are not configured' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Test-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
+            $result.Length | Should -Be 2
+            $result[0] | Should -Be 'Value1'
+            $result[1] | Should -Be 'Value2'
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 0
+        }
     }
 
-    It 'Throws error for no key supplied' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Test-PodeFlashMessage -Name '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeFlashMessage'
+    Describe 'Get-PodeFlashMessageNames' {
+        It 'Throws error because sessions are not configured' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
+            { Get-PodeFlashMessageNames } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
+        }
+
+        It 'Adds two keys and then retrieves the Keys' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+            Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
+
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 2
+
+            $result = (Get-PodeFlashMessageNames)
+
+            $result.Length | Should -Be 2
+            $result.IndexOf('Test1') | Should -Not -Be -1
+            $result.IndexOf('Test2') | Should -Not -Be -1
+
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 2
+        }
+
+        It 'Returns no keys as none have been added' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+
+            $result = (Get-PodeFlashMessageNames)
+            $result.Length | Should -Be 0
+        }
     }
 
-    It 'Adds two keys and then Tests if one of them exists' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+    Describe 'Remove-PodeFlashMessage' {
+        It 'Throws error because sessions are not configured' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
+            { Remove-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
+        }
 
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-        Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
+        It 'Throws error for no key supplied' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            { Remove-PodeFlashMessage -Name '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Remove-PodeFlashMessage'
+        }
 
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 2
+        It 'Adds two keys and then Remove one of them' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-        Test-PodeFlashMessage -Name 'Test1' | Should -Be $true
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+            Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
+
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 2
+
+            Remove-PodeFlashMessage -Name 'Test1'
+
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 1
+        }
     }
 
-    It 'Adds two keys and then Tests for a non-existent key' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+    Describe 'Test-PodeFlashMessage' {
+        It 'Throws error because sessions are not configured' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
+            { Test-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
+        }
 
-        Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
-        Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
+        It 'Throws error for no key supplied' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            { Test-PodeFlashMessage -Name '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeFlashMessage'
+        }
 
-        $WebEvent.Session.Data.Flash | Should -Not -Be $null
-        $WebEvent.Session.Data.Flash.Count | Should -Be 2
+        It 'Adds two keys and then Tests if one of them exists' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-        Test-PodeFlashMessage -Name 'Test3' | Should -Be $false
-    }
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+            Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
 
-    It 'Returns false when no flash message have been added' {
-        $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
-        Test-PodeFlashMessage -Name 'Test3' | Should -Be $false
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 2
+
+            Test-PodeFlashMessage -Name 'Test1' | Should -Be $true
+        }
+
+        It 'Adds two keys and then Tests for a non-existent key' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+
+            Add-PodeFlashMessage -Name 'Test1' -Message 'Value1'
+            Add-PodeFlashMessage -Name 'Test2' -Message 'Value2'
+
+            $WebEvent.Session.Data.Flash | Should -Not -Be $null
+            $WebEvent.Session.Data.Flash.Count | Should -Be 2
+
+            Test-PodeFlashMessage -Name 'Test3' | Should -Be $false
+        }
+
+        It 'Returns false when no flash message have been added' {
+            $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+            Test-PodeFlashMessage -Name 'Test3' | Should -Be $false
+        }
     }
 }

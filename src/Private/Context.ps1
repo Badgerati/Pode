@@ -1,4 +1,4 @@
-using namespace Pode
+using namespace Pode.Utilities
 
 function New-PodeContext {
     [CmdletBinding()]
@@ -87,7 +87,7 @@ function New-PodeContext {
         Server        = @{}
         Metrics       = @{}
         Listeners     = @()
-        Receivers     = @()
+        Consumers     = @()
         Watchers      = @()
         Fim           = @{}
     }
@@ -100,10 +100,11 @@ function New-PodeContext {
     $ctx.Server.PodeModule = (Get-PodeModuleInfo)
     $ctx.Server.Console = $Console
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+    $ctx.Server.Version = Get-PodeVersion
 
-    # list of created listeners/receivers
+    # list of created listeners/consumers
     $ctx.Listeners = @()
-    $ctx.Receivers = @()
+    $ctx.Consumers = @()
     $ctx.Watchers = @()
 
     # default secret that can used when needed, and a secret isn't supplied
@@ -159,13 +160,17 @@ function New-PodeContext {
         ReceiveTimeout = 100
     }
 
-    $ctx.Server.Signals = @{
-        Enabled  = $false
+    $ctx.Server.Http = @{
         Listener = $null
     }
 
-    $ctx.Server.Http = @{
-        Listener = $null
+    $ctx.Server.Signals = @{
+        Signed         = $false
+        Secret         = $null
+        Strict         = $false
+        DefaultScope   = 'Global'
+        BroadcastLevel = @{}
+        Connections    = @{}
     }
 
     $ctx.Server.Sse = @{
@@ -174,11 +179,12 @@ function New-PodeContext {
         Strict         = $false
         DefaultScope   = 'Global'
         BroadcastLevel = @{}
+        Connections    = @{}
     }
 
     $ctx.Server.WebSockets = @{
         Enabled     = ($EnablePool -icontains 'websockets')
-        Receiver    = $null
+        Consumer    = $null
         Connections = @{}
     }
 
@@ -297,7 +303,7 @@ function New-PodeContext {
     if ((Test-PodeHasConsole) -and ! $Daemon) {
         try {
             if (! (Test-PodeIsISEHost)) {
-                # If the session is not configured for quiet mode, modify console behavior
+                # If the session is not configured for quiet mode, modify console behaviour
                 if (!$ctx.Server.Console.Quiet) {
                     # Hide the cursor to improve the console appearance
                     [System.Console]::CursorVisible = $false
@@ -314,7 +320,7 @@ function New-PodeContext {
             }
         }
         catch {
-            # Console support is partial , configure the context for non-console behavior
+            # Console support is partial , configure the context for non-console behaviour
             $ctx.Server.Console.DisableTermination = $true  # Prevent termination
             $ctx.Server.Console.DisableConsoleInput = $true # Disable console input
             $ctx.Server.Console.Quiet = $true               # Silence the console
@@ -322,7 +328,7 @@ function New-PodeContext {
         }
     }
     else {
-        # If not running in a console-like environment, configure the context for non-console behavior
+        # If not running in a console-like environment, configure the context for non-console behaviour
         $ctx.Server.Console.DisableTermination = $true  # Prevent termination
         $ctx.Server.Console.DisableConsoleInput = $true # Disable console input
         $ctx.Server.Console.Quiet = $true               # Silence the console
@@ -410,6 +416,12 @@ function New-PodeContext {
     $ctx.Server.Handlers = @{
         smtp    = @{}
         service = @{}
+    }
+
+    # tools and groups for MCP
+    $ctx.Server.Mcp = @{
+        Tools  = @{}
+        Groups = @{}
     }
 
     # setup basic access placeholders
@@ -517,14 +529,9 @@ function New-PodeContext {
     $ctx.Runspaces = @()
 
     # setup events
-    $ctx.Server.Events = @{
-        Start     = [ordered]@{}
-        Terminate = [ordered]@{}
-        Restart   = [ordered]@{}
-        Browser   = [ordered]@{}
-        Crash     = [ordered]@{}
-        Stop      = [ordered]@{}
-        Running   = [ordered]@{}
+    $ctx.Server.Events = @{}
+    foreach ($eventType in [System.Enum]::GetValues([PodeServerEventType])) {
+        $ctx.Server.Events[$eventType.ToString()] = [ordered]@{}
     }
 
     # modules
@@ -617,7 +624,7 @@ function New-PodeRunspacePool {
     # web runspace - if we have any http/s endpoints
     if (Test-PodeEndpointByProtocolType -Type Http) {
         $PodeContext.RunspacePools.Web = @{
-            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            Pool   = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
             State  = 'Waiting'
             LastId = 0
         }
@@ -650,7 +657,7 @@ function New-PodeRunspacePool {
         }
     }
 
-    # web socket connections runspace - for receiving data for external sockets
+    # web socket connections runspace - for consuming data for external sockets
     if (Test-PodeWebSocketsExist) {
         $PodeContext.RunspacePools.WebSockets = @{
             Pool   = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.WebSockets + 1, $PodeContext.RunspaceState, $Host)
@@ -658,7 +665,7 @@ function New-PodeRunspacePool {
             LastId = 0
         }
 
-        New-PodeWebSocketReceiver
+        New-PodeWebSocketConsumer
     }
 
     # setup timer runspace pool -if we have any timers

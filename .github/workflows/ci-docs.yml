@@ -24,27 +24,29 @@ on:
     - 'src/Pode.psd1'
 
 env:
-  INVOKE_BUILD_VERSION: '5.12.2'
+  INVOKE_BUILD_VERSION: '5.14.23'
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
+      matrix:
+        os: [windows-latest]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 9.x
+        dotnet-version: 10.x
 
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
 
     - name: Build Documentation
       shell: pwsh

@@ -68,7 +68,7 @@ function Add-PodeRunspace {
         $PassThru,
 
         [string]
-        $Name = 'generic'
+        $Name = 'Generic'
     )
 
     try {
@@ -110,11 +110,15 @@ function Add-PodeRunspace {
         $ps = [powershell]::Create()
         $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
 
+        # create the name and increment the last Id for the type
+        $rsId = ++$PodeContext.RunspacePools[$Type].LastId
+        $rsName = "Pode_$($Type)_$($Name)_$($rsId)"
+
         # Add the script block and parameters to the pipeline.
         $null = $ps.AddScript($openRunspaceScript)
         $null = $ps.AddParameters(@{
                 Type      = $Type
-                Name      = "Pode_$($Type)_$($Name)_$((++$PodeContext.RunspacePools[$Type].LastId))" # create the name and increment the last Id for the type
+                Name      = $rsName
                 NoProfile = $NoProfile.IsPresent
             })
 
@@ -152,6 +156,8 @@ function Add-PodeRunspace {
                 Pipeline = $ps
                 Handler  = $pipeline
                 Stopped  = $false
+                Name     = $Name
+                Id       = $rsId
             }
         }
     }
@@ -164,10 +170,10 @@ function Add-PodeRunspace {
 
 <#
 .SYNOPSIS
-    Closes and disposes of the Pode runspaces, listeners, receivers, watchers, and optionally runspace pools.
+    Closes and disposes of the Pode runspaces, listeners, consumers, watchers, and optionally runspace pools.
 
 .DESCRIPTION
-    This function checks and waits for all Listeners, Receivers, and Watchers to be disposed of
+    This function checks and waits for all Listeners, Consumers, and Watchers to be disposed of
     before proceeding to close and dispose of the runspaces and optionally the runspace pools.
     It ensures a clean shutdown by managing the disposal of resources in a specified order.
     The function handles serverless and regular server environments differently, skipping
@@ -199,26 +205,34 @@ function Close-PodeRunspace {
     try {
         # Only proceed if there are runspaces to dispose of.
         if (!(Test-PodeIsEmpty $PodeContext.Runspaces)) {
-            Write-Verbose 'Waiting until all Listeners are disposed'
+            # Close the Terminate cancellation token to dispose the Listeners
+            Write-Verbose 'Closing the Terminate cancellation token to dispose the Listeners'
+            Close-PodeCancellationTokenRequest -Type Terminate
 
+            # Wait until all Listeners, Consumers, and Watchers are disposed, and there are no client connection events.
+            Write-Verbose 'Waiting until all Listeners and Events are disposed'
             $count = 0
             $continue = $false
+
             # Attempts to dispose of resources for up to 10 seconds.
-            while ($count -le 10) {
+            while ($count -lt 10) {
+                Write-Verbose "Dispose attempt: $($count + 1)"
                 Start-Sleep -Seconds 1
                 $count++
-
                 $continue = $false
-                # Check each listener, receiver, and watcher; if any are not disposed, continue waiting.
+
+                # Check each listener, consumer, and watcher; if any are not disposed, continue waiting.
                 foreach ($listener in $PodeContext.Listeners) {
-                    if (!$listener.IsDisposed) {
+                    if (($listener.ClientConnectionEvents.Count -gt 0) -or !$listener.IsDisposed) {
+                        Write-Verbose "-> [Listener]: $($listener.Type) - Disposed: $($listener.IsDisposed) - Client Connections: $($listener.ClientConnectionEvents.Count)"
                         $continue = $true
                         break
                     }
                 }
 
-                foreach ($receiver in $PodeContext.Receivers) {
-                    if (!$receiver.IsDisposed) {
+                foreach ($consumer in $PodeContext.Consumers) {
+                    if (!$consumer.IsDisposed) {
+                        Write-Verbose "-> [Consumer]: $($consumer.Type) - Disposed: $($consumer.IsDisposed)"
                         $continue = $true
                         break
                     }
@@ -226,11 +240,13 @@ function Close-PodeRunspace {
 
                 foreach ($watcher in $PodeContext.Watchers) {
                     if (!$watcher.IsDisposed) {
+                        Write-Verbose "-> [Watcher]: $($watcher.Type) - Disposed: $($watcher.IsDisposed)"
                         $continue = $true
                         break
                     }
                 }
-                # If undisposed resources exist, continue waiting.
+
+                # If non-disposed resources exist, continue waiting.
                 if ($continue) {
                     continue
                 }
@@ -239,6 +255,10 @@ function Close-PodeRunspace {
             }
 
             Write-Verbose 'All Listeners disposed'
+
+            # now close the Cancellation token
+            Write-Verbose 'Closing the Cancellation cancellation token'
+            Close-PodeCancellationTokenRequest -Type Cancellation
 
             # now dispose runspaces
             Write-Verbose 'Disposing Runspaces'
@@ -341,16 +361,65 @@ function Close-PodeRunspace {
 
 #>
 function Reset-PodeRunspaceName {
-    [CmdletBinding()]
-
     # Get the current runspace
     $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
 
     # Check if the runspace name starts with 'Pode_'
-    if (! $currentRunspace.Name.StartsWith('Pode_')) {
+    if (!$currentRunspace.Name.StartsWith('Pode_')) {
         return
     }
 
     # Update the runspace name with the required format
     $currentRunspace.Name = "_$($currentRunspace.Name -replace '^(Pode_[^_]+_).+?(_\d+)$', '${1}idle${2}')"
+}
+
+function Get-PodeRunspace {
+    param(
+        [Parameter()]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files', 'Timers')]
+        [string]
+        $Type = $null,
+
+        [Parameter()]
+        [string]
+        $Name = $null
+    )
+
+    $runspaces = $PodeContext.Runspaces
+
+    # find the runspaces by type, if specified
+    if (![string]::IsNullOrEmpty($Type)) {
+        $runspaces = @(foreach ($rs in $runspaces) {
+                if ($rs.Pool -ieq $Type) {
+                    $rs
+                }
+            })
+    }
+
+    # filter by name, if specified
+    if (![string]::IsNullOrEmpty($Name)) {
+        $runspaces = @(foreach ($rs in $runspaces) {
+                if ($rs.Name -ieq $Name) {
+                    $rs
+                }
+            })
+    }
+
+    # return the runspaces
+    return $runspaces
+}
+
+function Test-PodeRunspace {
+    param(
+        [Parameter()]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files', 'Timers')]
+        [string]
+        $Type = $null,
+
+        [Parameter()]
+        [string]
+        $Name = $null
+    )
+
+    return (Get-PodeRunspace -Type $Type -Name $Name).Count -gt 0
 }

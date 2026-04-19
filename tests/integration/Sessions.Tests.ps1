@@ -17,6 +17,10 @@ Describe 'Session Requests' {
                     Close-PodeServer
                 }
 
+                Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Result = 'Pong' }
+                }
+
                 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 5 -Extend -UseHeaders
 
                 New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Auth' -ScriptBlock {
@@ -41,7 +45,63 @@ Describe 'Session Requests' {
             }
         }
 
-        Start-Sleep -Seconds 10
+        Mock Invoke-WebRequest {
+            param($Uri, [string]$Method, $Headers)
+
+            $handler = [System.Net.Http.HttpClientHandler]::new()
+            $client = [System.Net.Http.HttpClient]::new($handler)
+
+            $request = [System.Net.Http.HttpRequestMessage]::new($Method, $Uri)
+
+            if ($null -ne $Headers) {
+                foreach ($key in $Headers.Keys) {
+                    $request.Headers.Add($key, $Headers[$key])
+                }
+            }
+
+            $response = $client.SendAsync($request).GetAwaiter().GetResult()
+            $content = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+
+            $webResponse = @{
+                Content    = $content
+                StatusCode = $response.StatusCode.value__
+                Headers    = @{}
+            }
+
+            if ($null -ne $response.Headers) {
+                foreach ($header in $response.Headers.GetEnumerator()) {
+                    $webResponse.Headers[$header.Key] = $header.Value -join ', '
+                }
+            }
+
+            if ($null -ne $response.Content.Headers) {
+                foreach ($header in $response.Content.Headers.GetEnumerator()) {
+                    $webResponse.Headers[$header.Key] = $header.Value -join ', '
+                }
+            }
+
+            return $webResponse
+        }
+
+        # wait for ping to be available
+        Start-Sleep -Seconds 5
+
+        $count = 0
+        while ($true) {
+            try {
+                $count++
+                $ping = Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Get -TimeoutSec 1 -ErrorAction Stop
+                if ($ping.Result -ieq 'Pong') {
+                    break
+                }
+            }
+            catch {
+                Start-Sleep -Seconds 1
+                if ($count -ge 10) {
+                    throw "Ping to $($Endpoint)/ping did not respond with 'Pong' within the expected time."
+                }
+            }
+        }
     }
 
     AfterAll {
@@ -49,7 +109,6 @@ Describe 'Session Requests' {
         Invoke-RestMethod -Uri "$($Endpoint)/close" -Method Get | Out-Null
         Get-Job -Name 'Pode' | Remove-Job -Force
     }
-
 
     It 'returns ok for valid creds' {
         $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }

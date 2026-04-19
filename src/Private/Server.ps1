@@ -158,7 +158,12 @@ function Start-PodeInternalServer {
 
             if ($PodeContext.Server.EndpointsInfo) {
                 # Re-order the endpoints
-                $PodeContext.Server.EndpointsInfo = Get-PodeSortedEndpointsInfo -EndpointsInfo $PodeContext.Server.EndpointsInfo
+                $PodeContext.Server.EndpointsInfo = $PodeContext.Server.EndpointsInfo |
+                    Sort-Object -Property @{
+                        Expression = 'Order'; Ascending = $true
+                    }, @{
+                        Expression = 'Url'; Ascending = $true
+                    }
 
                 # now go back through, and wait for each server type's runspace pool to be ready
                 foreach ($pool in ($PodeContext.Server.EndpointsInfo.Pool | Sort-Object -Unique)) {
@@ -194,8 +199,6 @@ function Start-PodeInternalServer {
 
         # run running event hooks
         Invoke-PodeEvent -Type Running
-
-
     }
     catch {
         throw
@@ -218,22 +221,18 @@ function Start-PodeInternalServer {
     - This is an internal function used within the Pode framework and is subject to change in future releases.
 #>
 function Restart-PodeInternalServer {
-
     if (!$PodeContext.Tokens.Restart.IsCancellationRequested) {
         return
     }
 
     try {
         Reset-PodeCancellationToken -Type Start
+
         # inform restart
-        # Restarting server...
         Show-PodeConsoleInfo
 
         # run restarting event hooks
         Invoke-PodeEvent -Type Restarting
-
-        # cancel the session token
-        Close-PodeCancellationTokenRequest -Type Cancellation, Terminate
 
         # close all current runspaces
         Close-PodeRunspace -ClosePool
@@ -257,6 +256,13 @@ function Restart-PodeInternalServer {
         $PodeContext.Timers.Items.Clear()
         $PodeContext.Server.Logging.Types.Clear()
 
+        # clear client connections
+        $PodeContext.Server.Signals.BroadcastLevel.Clear()
+        $PodeContext.Server.Signals.Connections.Clear()
+
+        $PodeContext.Server.Sse.BroadcastLevel.Clear()
+        $PodeContext.Server.Sse.Connections.Clear()
+
         # clear schedules
         $PodeContext.Schedules.Items.Clear()
         $PodeContext.Schedules.Processes.Clear()
@@ -267,6 +273,10 @@ function Restart-PodeInternalServer {
 
         # clear file watchers
         $PodeContext.Fim.Items.Clear()
+
+        # clear MCP tools
+        $PodeContext.Server.Mcp.Tools.Clear()
+        $PodeContext.Server.Mcp.Groups.Clear()
 
         # auto-importers
         Reset-PodeAutoImportConfiguration
@@ -290,11 +300,9 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $PodeContext.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
 
         # clear the sockets
-        $PodeContext.Server.Signals.Enabled = $false
-        $PodeContext.Server.Signals.Listener = $null
         $PodeContext.Server.Http.Listener = $null
         $PodeContext.Listeners = @()
-        $PodeContext.Receivers = @()
+        $PodeContext.Consumers = @()
         $PodeContext.Watchers = @()
 
         # set view engine back to default

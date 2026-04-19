@@ -112,7 +112,7 @@ function Update-PodeServerSignalMetric {
         return
     }
 
-     # Determine which metrics to update
+    # Determine which metrics to update
     $metrics = @($PodeContext.Metrics.Signals)
     if ($null -ne $SignalEvent.Route) {
         $metrics += $SignalEvent.Route.Metrics.Requests

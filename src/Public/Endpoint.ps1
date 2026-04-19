@@ -34,10 +34,10 @@ A certificate thumbprint to bind onto HTTPS endpoints (Windows).
 A certificate subject name to bind onto HTTPS endpoints (Windows).
 
 .PARAMETER CertificateStoreName
-The name of a certifcate store where a certificate can be found (Default: My) (Windows).
+The name of a certificate store where a certificate can be found (Default: My) (Windows).
 
 .PARAMETER CertificateStoreLocation
-The location of a certifcate store where a certificate can be found (Default: CurrentUser) (Windows).
+The location of a certificate store where a certificate can be found (Default: CurrentUser) (Windows).
 
 .PARAMETER X509Certificate
 The raw X509 certificate that can be use to enable HTTPS
@@ -64,10 +64,10 @@ One or more optional SSL Protocols this endpoints supports. (Default: SSL3/TLS12
 If supplied, TCP endpoints will expect incoming data to end with CRLF.
 
 .PARAMETER Force
-Ignore Adminstrator checks for non-localhost endpoints.
+Ignore Administrator checks for non-localhost endpoints.
 
 .PARAMETER SelfSigned
-Create and bind a self-signed certifcate for HTTPS endpoints.
+Create and bind a self-signed certificate for HTTPS endpoints.
 
 .PARAMETER AllowClientCertificate
 Allow for client certificates to be sent on requests.
@@ -84,6 +84,10 @@ For IPv6, this will only work if the IPv6 address can convert to a valid IPv4 ad
 
 .PARAMETER Default
 If supplied, this endpoint will be the default one used for internally generating URLs.
+
+.PARAMETER NoAutoUpgradeWebSockets
+If supplied, WebSocket endpoints will not automatically upgrade HTTP requests to WebSocket connections.
+You will need to manually upgrade requests within your route scriptblocks, using ConvertTo-PodeSignalConnection
 
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
@@ -208,7 +212,10 @@ function Add-PodeEndpoint {
         $DualMode,
 
         [switch]
-        $Default
+        $Default,
+
+        [switch]
+        $NoAutoUpgradeWebSockets
     )
 
     # error if serverless
@@ -268,6 +275,16 @@ function Add-PodeEndpoint {
         throw ($PodeLocale.endpointAlreadyDefinedExceptionMessage -f $Name)
     }
 
+    # ensure we don't have a default endpoint already configured for the protocol type
+    if ($Default) {
+        $PodeContext.Server.Endpoints.Values | ForEach-Object {
+            if ($_.Default -and ($_.Type -ieq $type)) {
+                # A default endpoint for the type '{0}' is already set. Only one default endpoint is allowed per type. Please check your configuration.
+                throw ($PodeLocale.defaultEndpointAlreadySetExceptionMessage -f $type)
+            }
+        }
+    }
+
     # protocol must be https for client certs, or hosted behind a proxy like iis
     if (($Protocol -ine 'https') -and !(Test-PodeIsHosted) -and $AllowClientCertificate) {
         # Client certificates are only supported on HTTPS endpoints
@@ -325,6 +342,9 @@ function Add-PodeEndpoint {
             CRLFMessageEnd = $CRLFMessageEnd
         }
         Favicon      = $null
+        WebSockets   = @{
+            NoAutoUpgrade = $NoAutoUpgradeWebSockets.IsPresent
+        }
     }
 
     # set ssl protocols
@@ -365,6 +385,7 @@ function Add-PodeEndpoint {
     else {
         $obj.Url = "$($obj.Protocol)://$($obj.FriendlyName):$($obj.Port)"
     }
+
     # if the address is non-local, then check admin privileges
     if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeIsAdminUser)) {
         # Must be running with administrator privileges to listen on non-localhost addresses
@@ -373,7 +394,7 @@ function Add-PodeEndpoint {
 
     # has this endpoint been added before? (for http/https we can just not add it again)
     $exists = ($PodeContext.Server.Endpoints.Values | Where-Object {
-        ($_.FriendlyName -ieq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl.Enabled -eq $obj.Ssl.Enabled) -and ($_.Type -ieq $obj.Type)
+            ($_.FriendlyName -ieq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl.Enabled -eq $obj.Ssl.Enabled) -and ($_.Type -ieq $obj.Type)
         } | Measure-Object).Count
 
     # if we're dealing with a certificate, attempt to import it

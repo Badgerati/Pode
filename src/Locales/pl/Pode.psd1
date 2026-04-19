@@ -326,4 +326,25 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "Reguła limitu szybkości o nazwie '{0}' nie istnieje."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Reguła limitu dostępu o nazwie '{0}' już istnieje."
     accessLimitRuleDoesNotExistExceptionMessage                       = "Reguła limitu dostępu o nazwie '{0}' nie istnieje."
+    sseConnectionNameNotFoundExceptionMessage                         = "Nie znaleziono połączenia SSE o nazwie '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "Nie znaleziono połączenia Signal o nazwie '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal nie mógł zostać nadany z powodu zdefiniowanego poziomu nadawania Signal dla {0}: {1}.'
+    authMethodNotFoundExceptionMessage                                = "Nie znaleziono metody uwierzytelniania o nazwie '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "Zdarzenie metody uwierzytelniania o nazwie '{0}' jest już zarejestrowane."
+    authMethodEventNotRegisteredExceptionMessage                      = "Zdarzenie metody uwierzytelniania o nazwie '{0}' nie jest zarejestrowane."
+    signalEventAlreadyRegisteredExceptionMessage                      = "Zdarzenie Signal o nazwie '{0}' jest już zarejestrowane."
+    signalEventNotRegisteredExceptionMessage                          = "Zdarzenie Signal o nazwie '{0}' nie jest zarejestrowane."
+    sseEventAlreadyRegisteredExceptionMessage                         = "Zdarzenie SSE o nazwie '{0}' jest już zarejestrowane."
+    sseEventNotRegisteredExceptionMessage                             = "Zdarzenie SSE o nazwie '{0}' nie jest zarejestrowane."
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "Każda definicja właściwości obiektu schematu JSON musi zawierać klucz 'Nazwa'."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'MaxProperties, nie może być mniejsze niż MinProperties dla obiektu właściwości JSON Schema.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems nie może być mniejszy niż MinItems dla właściwości array JSON Schema.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'MaxLength nie może być mniejsza niż MinLength dla właściwości schematu JSON w ciągu ciągów.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'Maksimum nie może być mniejsze niż Minimum dla {0} właściwości schematu JSON.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "Nieobsługiwany typ parametru '{0}' dla parametru '{1}' w narzędziu '{2}'. Automatyczne generowanie schematu obsługuje tylko typy stringów, int, long, double, float i bool."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "Grupa narzędzi MCP '{0}' nie istnieje."
+    mcpToolDoesNotExistExceptionMessage                               = "Narzędzie MCP '{0}' nie istnieje."
+    mcpToolAlreadyExistsExceptionMessage                              = "Narzędzie MCP '{0}' już istnieje."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "Grupa narzędzi MCP '{0}' już istnieje."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Domyślne wartości statycznej trasy nie mogą być ścieżkami zrootowanymi. Nieprawidłowa wartość domyślna: '{0}'"
 }

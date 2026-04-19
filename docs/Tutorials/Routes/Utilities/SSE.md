@@ -35,7 +35,8 @@ Once [`ConvertTo-PodeSseConnection`](../../../../Functions/SSE/ConvertTo-PodeSse
 | Group       | An optional Group assigned to the connection within the Name                                            |
 | ClientId    | The assigned ClientId for the connection - this will be different to a passed ClientId if using signing |
 | LastEventId | The last EventId the client saw, if this is a reconnecting SSE request                                  |
-| IsLocal     | Is the connection Local or Global                                                                       |
+| IsLocal     | Is the connection Local                                                                                 |
+| IsGlobal    | Is the connection Global                                                                                |
 
 Therefore, after converting a request, you can get the client ID back via:
 
@@ -162,6 +163,10 @@ sse.addEventListener('pode.close', (e) => {
 });
 ```
 
+#### Ping
+
+Periodically Pode will send a `pode.ping` event to SSE connections, if this fails then the connection is assumed to have been closed by the client. When a closed connection is detected Pode will dispose of the connection server side, and free up the resources.
+
 ## Send Events
 
 To send an event from the server to one or more connected clients, you can use [`Send-PodeSseEvent`](../../../../Functions/SSE/Send-PodeSseEvent). Using the `-Data` parameter, you can either send a raw string value, or a more complex hashtable/psobject which will be auto-converted into a JSON string.
@@ -193,11 +198,11 @@ Send-PodeSseEvent -Name 'Events' -Id $id -EventType 'Date' -Data $data
 
 ### Broadcast Levels
 
-By default, Pode will allow broadcasting of events to all clients for an SSE connection Name, Group, or a specific ClientId.
+By default, Pode will allow the broadcasting of events to all clients for an SSE connection Name, Group, or a specific ClientId.
 
 You can supply a custom broadcasting level for specific SSE connection names (or all), limiting broadcasting to requiring a specific ClientId for example, by using [`Set-PodeSseBroadcastLevel`](../../../../Functions/SSE/Set-PodeSseBroadcastLevel). If a `-Name` is not supplied then the level type is applied to all SSE connections.
 
-For example, the following will only allow events to be broadcast to an SSE connection name if a ClientId is also specified on [`Send-PodeSseEvent`](../../../../Functions/SSE/Send-PodeSseEvent):
+For example, the following will only allow events to be broadcast to an SSE connection name if a ClientId is also specified on [`Send-PodeSseEvent`](../../../../Functions/SSE/Send-PodeSseEvent) - preventing accidentally broadcasting to every connected client:
 
 ```powershell
 # apply to all SSE connections
@@ -209,11 +214,11 @@ Set-PodeSseBroadcastLevel -Name 'Events' -Type 'ClientId'
 
 The following levels are available:
 
-| Level    | Description                                                         |
-| -------- | ------------------------------------------------------------------- |
-| Name     | A Name is required. Groups/ClientIds are optional.                  |
-| Group    | A Name is required. One of either a Group and ClientId is required. |
-| ClientId | A Name and a ClientId are required.                                 |
+| Level    | Description                                                        |
+| -------- | ------------------------------------------------------------------ |
+| Name     | A Name is required. Groups/ClientIds are optional.                 |
+| Group    | A Name is required. One of either a Group or ClientId is required. |
+| ClientId | A Name and a ClientId are required.                                |
 
 ## Signing ClientIds
 
@@ -237,7 +242,7 @@ You can also supply the `-Strict` switch to [`Enable-PodeSseSigning`](../../../.
 
 ## Request Headers
 
-If you have an SSE connection open for a client, and you want to have the client send AJAX requests to the server but have the responses streamed back over the SSE connection, then you can identify the SSE connection for the client using the following HTTP headers:
+If you have an SSE connection open for a client, and you want to have the client send AJAX requests to the server but have the responses streamed back over that client's SSE connection, then you can identify the SSE connection for the client using the following HTTP headers:
 
 * `X-PODE-SSE-CLIENT-ID`
 * `X-PODE-SSE-NAME`
@@ -254,6 +259,56 @@ When these headers are supplied in a request, Pode will set up the `$WebEvent.Ss
 | ClientId    | The assigned ClientId for the connection from X-PODE-SSE-CLIENT-ID |
 | LastEventId | `$null`                                                            |
 | IsLocal     | `$false`                                                           |
+| IsGlobal    | `$true`                                                            |
 
 !!! note
     If you only supply the Name or Group headers, then the `$WebEvent.Sse` property will not be configured. The ClientId is required as a minimum.
+
+## Events
+
+Similar to [Server Events](../../../Events) there are also events which you can register scriptblocks for SSE connections. Currently the following events are supported:
+
+| Event      | Description                                                                       |
+| ---------- | --------------------------------------------------------------------------------- |
+| Connect    | Triggered when an HTTP request is successfully converted to an SSE connection     |
+| Disconnect | Triggered when the SSE connection is disconnected, either by the server or client |
+
+### Register
+
+To register a scriptblock for an SSE connection event you use [`Register-PodeSseEvent`](../../../../Functions/SSE/Register-PodeSseEvent).  You'll need to supply the Name of the SSE connection - from [`ConvertTo-PodeSseConnection`](../../../../Functions/SSE/ConvertTo-PodeSseConnection) - which you're registering the event against, as well as the type of the event, and a name for the event registration - and of course the scriptblock itself.
+
+For example, to register for the Connect event of an SSE connection, to write the Client ID to the CLI, you would do:
+
+```powershell
+# register a Connect event
+Register-PodeSseEvent -Name 'Example' -Type Connect -EventName 'OnConnect' -ScriptBlock {
+    "Connected: $($TriggeredEvent.Connection.Name) ($($TriggeredEvent.Connection.ClientId))" | Out-Default
+}
+
+# a Route to convert the HTTP request to an SSE connection
+Add-PodeRoute -Method Get -Path '/sse' -ScriptBlock {
+    ConvertTo-PodeSseConnection -Name 'Example'
+}
+```
+
+#### Event Data
+
+Various metadata about the SSE connection event is supplied to your scriptblock, under the `$TriggeredEvent` variable - including the Connection object, the same one typically found under `$WebEvent.Sse`:
+
+| Property   | Description                                                                           |
+| ---------- | ------------------------------------------------------------------------------------- |
+| Lockable   | A global lockable value you can use for `Lock-PodeObject`                             |
+| Metadata   | Any additional metadata about the event, you can add your own properties here as well |
+| Name       | The Name of the SSE connection which triggered the event                              |
+| Type       | The type of event triggered - Connect, Disconnect                                     |
+| Timestamp  | When the event was triggered, in UTC                                                  |
+| Connection | The Connection object itself, containing the connection Name, Group, ClientId, etc.   |
+
+### Unregister
+
+To unregister an previous event registration, simply use [`Unregister-PodeSseEvent`](../../../../Functions/SSE/Unregister-PodeSseEvent):
+
+```powershell
+# to remove the Connect event from above:
+Unregister-PodeSseEvent -Name 'Example' -Type Connect -EventName 'OnConnect'
+```

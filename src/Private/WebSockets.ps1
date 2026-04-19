@@ -1,4 +1,5 @@
-using namespace Pode
+using namespace Pode.Adapters
+using namespace Pode.Adapters.Consumers
 
 function Test-PodeWebSocketsExist {
     return (($null -ne $PodeContext.Server.WebSockets) -and (($PodeContext.Server.WebSockets.Enabled) -or ($PodeContext.Server.WebSockets.Connections.Count -gt 0)))
@@ -14,22 +15,22 @@ function Find-PodeWebSocket {
     return $PodeContext.Server.WebSockets.Connections[$Name]
 }
 
-function New-PodeWebSocketReceiver {
-    if ($null -ne $PodeContext.Server.WebSockets.Receiver) {
+function New-PodeWebSocketConsumer {
+    if ($null -ne $PodeContext.Server.WebSockets.Consumer) {
         return
     }
 
     try {
-        $receiver = [PodeReceiver]::new($PodeContext.Tokens.Cancellation.Token)
-        $receiver.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-        $receiver.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
-        $PodeContext.Server.WebSockets.Receiver = $receiver
-        $PodeContext.Receivers += $receiver
+        $consumer = [PodeConsumer]::new([PodeAdapterType]::WebSocket, $PodeContext.Tokens.Cancellation.Token)
+        $consumer.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+        $consumer.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
+        $PodeContext.Server.WebSockets.Consumer = $consumer
+        $PodeContext.Consumers += $consumer
     }
     catch {
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
-        Close-PodeDisposable -Disposable $receiver
+        Close-PodeDisposable -Disposable $consumer
         throw $_.Exception
     }
 }
@@ -39,12 +40,12 @@ function Start-PodeWebSocketRunspace {
         return
     }
 
-    # script for listening out of for incoming requests (Receiver)
-    $receiveScript = {
+    # script for listening out of for incoming requests (Consumer)
+    $consumerScript = {
         param(
             [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
-            $Receiver,
+            $Consumer,
 
             [Parameter(Mandatory = $true)]
             [int]
@@ -55,9 +56,9 @@ function Start-PodeWebSocketRunspace {
 
         do {
             try {
-                while ($Receiver.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                while ($Consumer.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate, Cancellation -Match All)) {
                     # get request
-                    $request = (Wait-PodeTask -Task $Receiver.GetWebSocketRequestAsync($PodeContext.Tokens.Cancellation.Token))
+                    $request = (Wait-PodeTask -Task $Consumer.GetWebSocketRequestAsync($PodeContext.Tokens.Cancellation.Token))
 
                     try {
                         try {
@@ -113,24 +114,23 @@ function Start-PodeWebSocketRunspace {
     }
 
     # start the runspace for listening on x-number of threads
+    Write-Verbose 'Starting the WebSockets Consumer runspace(s)...'
     1..$PodeContext.Threads.WebSockets | ForEach-Object {
-        Add-PodeRunspace -Type WebSockets -Name 'Receiver' -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type WebSockets -Name 'Consumer' -ScriptBlock $consumerScript -Parameters @{ 'Consumer' = $PodeContext.Server.WebSockets.Consumer; 'ThreadId' = $_ }
     }
 
-    # script to keep websocket server receiving until cancelled
+    # script to keep websocket server consuming until cancelled
     $waitScript = {
         param(
             [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
-            $Receiver
+            $Consumer
         )
 
         try {
-            while ($Receiver.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
+            while ($Consumer.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
                 Start-Sleep -Seconds 1
             }
-
-
         }
         catch [System.OperationCanceledException] {
             $_ | Write-PodeErrorLog -Level Debug
@@ -141,9 +141,10 @@ function Start-PodeWebSocketRunspace {
             throw $_.Exception
         }
         finally {
-            Close-PodeDisposable -Disposable $Receiver
+            Close-PodeDisposable -Disposable $Consumer
         }
     }
 
-    Add-PodeRunspace -Type WebSockets -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver } -NoProfile
+    Write-Verbose 'Starting the WebSockets KeepAlive runspace...'
+    Add-PodeRunspace -Type WebSockets -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Consumer' = $PodeContext.Server.WebSockets.Consumer } -NoProfile
 }

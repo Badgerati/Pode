@@ -326,4 +326,25 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "La regla de límite de velocidad con el nombre '{0}' no existe."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "La regla de límite de acceso con el nombre '{0}' ya existe."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La regla de límite de acceso con el nombre '{0}' no existe."
+    sseConnectionNameNotFoundExceptionMessage                         = "No se encontró ninguna conexión SSE con el nombre '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "No se encontró ninguna conexión Signal con el nombre '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = 'Signal falló al transmitir debido al nivel de transmisión de Signal definido para {0}: {1}'
+    authMethodNotFoundExceptionMessage                                = 'No se encontró ningún método de autenticación con el nombre {0}.'
+    authMethodEventAlreadyRegisteredExceptionMessage                  = 'El evento {0} ya está registrado para el método de autenticación {1}.'
+    authMethodEventNotRegisteredExceptionMessage                      = 'El evento {0} no está registrado para el método de autenticación {1}.'
+    signalEventAlreadyRegisteredExceptionMessage                      = 'El evento {0} ya está registrado para la conexión Signal {1}.'
+    signalEventNotRegisteredExceptionMessage                          = 'El evento {0} no está registrado para la conexión Signal {1}.'
+    sseEventAlreadyRegisteredExceptionMessage                         = 'El evento {0} ya está registrado para la conexión SSE {1}.'
+    sseEventNotRegisteredExceptionMessage                             = 'El evento {0} no está registrado para la conexión SSE {1}.'
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "Cada definición de propiedad de objeto JSON Schema debe incluir una clave 'Name'."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'MaxProperties no puede ser menor que MinProperties para la propiedad JSON Schema de tipo objeto.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems no puede ser menor que MinItems para la propiedad JSON Schema de tipo array.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'MaxLength no puede ser menor que MinLength para la propiedad JSON Schema de tipo string.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'Maximum no puede ser menor que Minimum para la propiedad JSON Schema de tipo number.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "Tipo de parámetro no soportado '{0}' para el parámetro '{1}' en la herramienta '{2}'. La generación automática de esquemas solo soporta tipos de cadena, int, largo, doble, flotante y bool."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "El grupo de herramientas MCP '{0}' no existe."
+    mcpToolDoesNotExistExceptionMessage                               = "La herramienta MCP '{0}' no existe."
+    mcpToolAlreadyExistsExceptionMessage                              = "La herramienta MCP '{0}' ya existe."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "El grupo de herramientas MCP '{0}' ya existe."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Los valores predeterminados de las rutas estáticas no pueden ser rutas absolutas. Valor predeterminado no válido: '{0}'"
 }

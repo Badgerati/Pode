@@ -51,7 +51,7 @@ Start-PodeServer {
         if ($cert.Thumbprint -ieq '3571B3BE3CA202FA56F73691FC258E653D0874C1') {
             return @{
                 User = @{
-                    ID ='M0R7Y302'
+                    ID   = 'M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'
                 }
@@ -64,7 +64,7 @@ Start-PodeServer {
 
     # GET request for web page at "/"
     Add-PodeRoute -Method Get -Path '/' -Authentication 'Validate' -ScriptBlock {
-        #$WebEvent.Request.ClientCertificate | out-default
+        #$WebEvent.Request.Handler.ClientCertificate | out-default
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 

@@ -20,17 +20,19 @@ on:
     - '.github/workflows/ci-powershell.yml'
 
 env:
-  INVOKE_BUILD_VERSION: '5.12.2'
+  INVOKE_BUILD_VERSION: '5.14.23'
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
+      matrix:
+        os: [windows-latest]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Check PowerShell version
       shell: powershell
@@ -38,15 +40,15 @@ jobs:
         $PSVersionTable.PSVersion
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 9.x
+        dotnet-version: 10.x
 
     - name: Install Invoke-Build
       shell: powershell
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
 
     - name: Run Pester Tests
       shell: powershell

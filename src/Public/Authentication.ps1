@@ -1,4 +1,4 @@
-using namespace Pode
+using namespace Pode.Utilities
 
 <#
 .SYNOPSIS
@@ -870,6 +870,7 @@ function Add-PodeAuth {
                 Url       = $SuccessUrl
                 UseOrigin = $SuccessUseOrigin.IsPresent
             }
+            Events         = @{}
             Cache          = @{}
             Merged         = $false
             Parent         = $null
@@ -998,7 +999,8 @@ function Merge-PodeAuth {
     # ensure all the auth methods exist
     foreach ($authName in $Authentication) {
         if (!(Test-PodeAuthExists -Name $authName)) {
-            throw ($PodeLocale.authMethodNotExistForMergingExceptionMessage -f $authName) #"Authentication method does not exist for merging: $($authName)"
+            # Authentication method does not exist: $($authName)
+            throw ($PodeLocale.authMethodNotFoundExceptionMessage -f $authName)
         }
     }
 
@@ -1091,6 +1093,7 @@ function Merge-PodeAuth {
             Url       = $SuccessUrl
             UseOrigin = $SuccessUseOrigin.IsPresent
         }
+        Events          = @{}
         Cache           = @{}
         Merged          = $true
         Parent          = $null
@@ -1121,7 +1124,8 @@ function Get-PodeAuth {
 
     # ensure the name exists
     if (!(Test-PodeAuthExists -Name $Name)) {
-        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Name) # "Authentication method not defined: $($Name)"
+        # "Authentication method not defined: $($Name)"
+        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Name)
     }
 
     # get auth method
@@ -1442,6 +1446,7 @@ function Add-PodeAuthWindowsAd {
                 Url       = $SuccessUrl
                 UseOrigin = $SuccessUseOrigin
             }
+            Events      = @{}
             Cache       = @{}
             Merged      = $false
             Parent      = $null
@@ -2037,6 +2042,7 @@ function Add-PodeAuthUserFile {
                 Url       = $SuccessUrl
                 UseOrigin = $SuccessUseOrigin
             }
+            Events      = @{}
             Cache       = @{}
             Merged      = $false
             Parent      = $null
@@ -2203,6 +2209,7 @@ function Add-PodeAuthWindowsLocal {
                 Url       = $SuccessUrl
                 UseOrigin = $SuccessUseOrigin
             }
+            Events      = @{}
             Cache       = @{}
             Merged      = $false
             Parent      = $null
@@ -2734,4 +2741,265 @@ function New-PodeAuthKeyTab {
     )
 
     ktpass /princ HTTP/$Hostname@$DomainName /mapuser $Username /pass $Password /out $FilePath /crypto $Crypto /ptype KRB5_NT_PRINCIPAL /mapop set
+}
+
+<#
+.SYNOPSIS
+Registers an Authentication event ScriptBlock.
+
+.DESCRIPTION
+Registers an Authentication event ScriptBlock, allowing custom code to be run on Login or Logout events.
+
+.PARAMETER Name
+An array of Authentication method Names to register the event for.
+
+.PARAMETER Type
+The Type of event to register, either 'Login' or 'Logout'.
+
+.PARAMETER EventName
+A unique Name for the event.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to run when the event is triggered.
+
+.PARAMETER ArgumentList
+An optional array of Arguments to pass to the ScriptBlock.
+
+.EXAMPLE
+Register-PodeAuthEvent -Name 'Basic' -Type 'Login' -EventName 'OnLogin' -ScriptBlock {
+    "User $($TriggeredEvent.User.Name) has logged in" | Out-Default
+}
+#>
+function Register-PodeAuthEvent {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Login', 'Logout')]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $EventName,
+
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
+    )
+
+    # error if auth method doesn't exist
+    foreach ($n in $Name) {
+        if (!$PodeContext.Server.Authentications.Methods.ContainsKey($n)) {
+            # "Authentication method not found: {0}"
+            throw ($PodeLocale.authMethodNotFoundExceptionMessage -f $n)
+        }
+
+        # error if event already registered
+        if ($PodeContext.Server.Authentications.Methods[$n].Events.ContainsKey($Type) -and
+            $PodeContext.Server.Authentications.Methods[$n].Events[$Type].Contains($EventName)) {
+            # "$($Type) event already registered for Authentication method $($n): $($EventName)"
+            throw ($PodeLocale.authMethodEventAlreadyRegisteredExceptionMessage -f $Type, $n, $EventName)
+        }
+    }
+
+    foreach ($n in $Name) {
+        # check for scoped vars
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # add event
+        if (!$PodeContext.Server.Authentications.Methods[$n].Events.ContainsKey($Type)) {
+            $PodeContext.Server.Authentications.Methods[$n].Events[$Type] = [ordered]@{}
+        }
+
+        $PodeContext.Server.Authentications.Methods[$n].Events[$Type][$EventName] = @{
+            Name           = $n
+            EventName      = $EventName
+            Type           = $Type
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+            Arguments      = $ArgumentList
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Unregister an Authentication event.
+
+.DESCRIPTION
+Unregister an Authentication event.
+
+.PARAMETER Name
+An array of Authentication method Names to unregister the event for.
+
+.PARAMETER Type
+The Type of event to unregister, either 'Login' or 'Logout'.
+
+.PARAMETER EventName
+A unique Name for the event.
+
+.EXAMPLE
+Unregister-PodeAuthEvent -Name 'Basic' -Type 'Login' -EventName 'OnLogin'
+#>
+function Unregister-PodeAuthEvent {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Login', 'Logout')]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $EventName
+    )
+
+    foreach ($n in $Name) {
+        # error if event not registered
+        if (!$PodeContext.Server.Authentications.Methods.ContainsKey($n) -or
+            !$PodeContext.Server.Authentications.Methods[$n].Events[$Type].Contains($EventName)) {
+            # "$($Type) event not registered for Authentication method $($n): $($EventName)"
+            throw ($PodeLocale.authMethodEventNotRegisteredExceptionMessage -f $Type, $n, $EventName)
+        }
+
+        # remove event
+        $null = $PodeContext.Server.Authentications.Methods[$n].Events[$Type].Remove($EventName)
+    }
+}
+
+<#
+.SYNOPSIS
+Tests whether an Authentication event is registered.
+
+.DESCRIPTION
+Tests whether an Authentication event is registered.
+
+.PARAMETER Name
+An optional array of Authentication method Names to check for.
+
+.PARAMETER Type
+The Type of event to check for, either 'Login' or 'Logout'.
+
+.PARAMETER EventName
+An optional array of event Names to check for.
+
+.EXAMPLE
+if (Test-PodeAuthEvent -Name 'Basic' -Type 'Login' -EventName 'OnLogin') { ... }
+
+.EXAMPLE
+if (Test-PodeAuthEvent -Type 'Logout') { ... }
+#>
+function Test-PodeAuthEvent {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Login', 'Logout')]
+        [string[]]
+        $Type,
+
+        [Parameter()]
+        [string[]]
+        $EventName
+    )
+
+    $evts = Get-PodeAuthEvent -Name $Name -Type $Type -EventName $EventName
+    return (($null -ne $evts) -and ($evts.Count -gt 0))
+}
+
+<#
+.SYNOPSIS
+Gets registered Authentication events.
+
+.DESCRIPTION
+Gets registered Authentication events.
+
+.PARAMETER Name
+An optional array of Authentication method Names to get events for.
+
+.PARAMETER Type
+The Type of event to get, either 'Login' or 'Logout'.
+
+.PARAMETER EventName
+An optional array of event Names to get.
+
+.EXAMPLE
+$events = Get-PodeAuthEvent -Name 'Basic' -Type 'Login' -EventName 'OnLogin'
+
+.EXAMPLE
+$events = Get-PodeAuthEvent -Type 'Logout'
+#>
+function Get-PodeAuthEvent {
+    [CmdletBinding()]
+    [OutputType([System.Object[]])]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Login', 'Logout')]
+        [string[]]
+        $Type,
+
+        [Parameter()]
+        [string[]]
+        $EventName
+    )
+
+    # return null if no auth methods
+    if (($null -eq $PodeContext.Server.Authentications.Methods) -or ($PodeContext.Server.Authentications.Methods.Count -eq 0)) {
+        return $null
+    }
+
+    # get auths by name if specified, otherwise all
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $auths = @(foreach ($n in $Name) {
+                if ($PodeContext.Server.Authentications.Methods.ContainsKey($n)) {
+                    $PodeContext.Server.Authentications.Methods[$n]
+                }
+            })
+    }
+    else {
+        $auths = $PodeContext.Server.Authentications.Methods.Values
+    }
+
+    # if no auths, return null
+    if (($null -eq $auths) -or ($auths.Count -eq 0)) {
+        return $null
+    }
+
+    # get events by type
+    $evts = @(foreach ($t in $Type) {
+            $auths.Events[$t].Values
+        })
+    $auths = $null
+
+    # filter by event names if specified
+    if (($null -ne $EventName) -and ($EventName.Length -gt 0)) {
+        $evts = @(foreach ($e in $evts) {
+                if ($EventName -icontains $e.Name) {
+                    $e
+                }
+            })
+    }
+
+    # return events
+    return $evts
 }

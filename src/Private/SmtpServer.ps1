@@ -1,4 +1,6 @@
-using namespace Pode
+using namespace Pode.Protocols.Smtp
+using namespace Pode.Transport.Sockets
+using namespace Pode.Utilities
 
 function Start-PodeSmtpServer {
     # ensure we have smtp handlers
@@ -10,24 +12,7 @@ function Start-PodeSmtpServer {
     # work out which endpoints to listen on
     $endpoints = @()
 
-    # Variable to track if a default endpoint is already defined for the current type.
-    # This ensures that only one default endpoint can be assigned per protocol type (e.g., HTTP, HTTPS).
-    # If multiple default endpoints are detected, an error will be thrown to prevent configuration issues.
-    $defaultEndpoint = $false
-
     @(Get-PodeEndpointByProtocolType -Type Smtp) | ForEach-Object {
-
-
-        # Enforce unicity: only one default endpoint is allowed per type.
-        if ($defaultEndpoint -and $_.Default) {
-            # A default endpoint for the type '{0}' is already set. Only one default endpoint is allowed per type. Please check your configuration.
-            throw ($Podelocale.defaultEndpointAlreadySetExceptionMessage -f $($_.Type))
-        }
-        else {
-            # Assign the current endpoint's Default value for tracking.
-            $defaultEndpoint = $_.Default
-        }
-
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
@@ -65,7 +50,7 @@ function Start-PodeSmtpServer {
     }
 
     # create the listener
-    $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
+    $listener = [PodeSmtpListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -112,13 +97,13 @@ function Start-PodeSmtpServer {
 
         do {
             try {
-                while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                while ($Listener.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate, Cancellation -Match All)) {
                     # get email
                     $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
                     try {
                         try {
-                            $Request = $context.Request
+                            $Request = $context.Request.Strategy
                             $Response = $context.Response
 
                             $script:SmtpEvent = @{
@@ -138,8 +123,8 @@ function Start-PodeSmtpServer {
                                     Body            = $Request.Body
                                 }
                                 Endpoint  = @{
-                                    Protocol = $Request.Scheme
-                                    Address  = $Request.Address
+                                    Protocol = $Request.Handler.Scheme
+                                    Address  = $Request.Handler.Address
                                     Name     = $context.EndpointName
                                 }
                                 Timestamp = [datetime]::UtcNow
@@ -147,18 +132,20 @@ function Start-PodeSmtpServer {
                             }
 
                             # stop now if the request has an error
-                            if ($Request.IsAborted) {
-                                throw $Request.Error
+                            if ($Request.Handler.IsAborted) {
+                                throw $Request.Handler.Error
                             }
 
                             # ensure the request ip is allowed
                             if (!(Test-PodeLimitAccessRuleRequest)) {
-                                $Response.WriteLine('554 Your IP address was rejected', $true)
+                                $Response.StatusCode = 554
+                                $Response.StatusDescription = 'Your IP address was rejected'
                             }
 
                             # has the ip hit the rate limit?
                             elseif (!(Test-PodeLimitRateRuleRequest)) {
-                                $Response.WriteLine('554 Your IP address has hit the rate limit', $true)
+                                $Response.StatusCode = 554
+                                $Response.StatusDescription = 'Your IP address has hit the rate limit'
                             }
 
                             # deal with smtp call
@@ -199,6 +186,7 @@ function Start-PodeSmtpServer {
     }
 
     # start the runspace for listening on x-number of threads
+    Write-Verbose 'Starting the Smtp Listener runspace(s)...'
     1..$PodeContext.Threads.General | ForEach-Object {
         Add-PodeRunspace -Type Smtp -Name 'Listener' -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
@@ -229,16 +217,19 @@ function Start-PodeSmtpServer {
         }
     }
 
+    Write-Verbose 'Starting the Smtp KeepAlive runspace...'
     Add-PodeRunspace -Type Smtp -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {
             @{
+                Protocol = $endpoint.Protocol
                 Url      = $endpoint.Url
                 Pool     = $endpoint.Pool
                 DualMode = $endpoint.DualMode
                 Name     = $endpoint.Name
                 Default  = $endpoint.Default
+                Order    = ($endpoint.Protocol | Get-PodeEndpointProtocolOrder)
             }
         })
 }

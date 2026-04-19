@@ -70,7 +70,7 @@ function Add-PodeFavicon {
 
     # Validate if the given endpoint exists in the context; throw error if it doesn't
     if (! [string]::IsNullOrEmpty($EndpointName) -and (! $PodeContext.Server.Endpoints.ContainsKey($EndpointName))) {
-        throw ($Podelocale.endpointNameNotExistExceptionMessage -f $EndpointName)
+        throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $EndpointName)
     }
 
     # Determine which parameter set is used to retrieve the favicon bytes
@@ -120,7 +120,7 @@ function Add-PodeFavicon {
             continue
         }
         if (@('Http', 'Https') -icontains $endpoint.Protocol) {
-            $Endpoint.Favicon = $FaviconData
+            $endpoint.Favicon = $FaviconData
         }
     }
 }
@@ -172,7 +172,7 @@ function Test-PodeFavicon {
 
     # Validate endpoint name if supplied
     if (! [string]::IsNullOrEmpty($EndpointName) -and (! $PodeContext.Server.Endpoints.ContainsKey($EndpointName))) {
-        throw ($Podelocale.endpointNameNotExistExceptionMessage -f $EndpointName)
+        throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $EndpointName)
     }
 
     # Collect endpoints to evaluate
@@ -203,7 +203,7 @@ function Test-PodeFavicon {
         }
 
         # If we reach here, the endpoint has a favicon
-        $found = $true  
+        $found = $true
     }
 
     return $found
@@ -254,7 +254,7 @@ function Get-PodeFavicon {
 
     # Validate that the specified endpoint exists, if provided
     if (! [string]::IsNullOrEmpty($EndpointName) -and (! $PodeContext.Server.Endpoints.ContainsKey($EndpointName))) {
-        throw ($Podelocale.endpointNameNotExistExceptionMessage -f $EndpointName)
+        throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $EndpointName)
     }
 
     # Determine which endpoint(s) to check
@@ -328,7 +328,7 @@ function Remove-PodeFavicon {
 
     # Validate that the endpoint exists if a name is provided
     if (! [string]::IsNullOrEmpty($EndpointName) -and (! $PodeContext.Server.Endpoints.ContainsKey($EndpointName))) {
-        throw ($Podelocale.endpointNameNotExistExceptionMessage -f $EndpointName)
+        throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $EndpointName)
     }
 
     # Determine the target endpoint(s)

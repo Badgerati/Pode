@@ -1,17 +1,21 @@
-using namespace Pode
+using namespace Pode.Adapters
+using namespace Pode.Adapters.Watchers
+using namespace Pode.Protocols.File
 
 function Test-PodeFileWatchersExist {
     [CmdletBinding()]
     [OutputType([bool])]
     param()
+
     return (($null -ne $PodeContext.Fim) -and (($PodeContext.Fim.Enabled) -or ($PodeContext.Fim.Items.Count -gt 0)))
 }
 
 function New-PodeFileWatcher {
     [CmdletBinding()]
-    [OutputType([PodeWatcher])]
+    [OutputType([Pode.Adapters.Watchers.PodeWatcher])]
     param()
-    $watcher = [PodeWatcher]::new($PodeContext.Tokens.Cancellation.Token)
+
+    $watcher = [PodeWatcher]::new([PodeAdapterType]::File, $PodeContext.Tokens.Cancellation.Token)
     $watcher.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $watcher.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     return $watcher
@@ -64,7 +68,7 @@ function Start-PodeFileWatcherRunspace {
         Wait-PodeCancellationTokenRequest -Type Start
         do {
             try {
-                while ($Watcher.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                while ($Watcher.IsConnected -and !(Test-PodeCancellationTokenRequest -Type Terminate, Cancellation -Match All)) {
                     $evt = (Wait-PodeTask -Task $Watcher.GetFileEventAsync($PodeContext.Tokens.Cancellation.Token))
 
                     try {
@@ -138,6 +142,7 @@ function Start-PodeFileWatcherRunspace {
 
     }
 
+    Write-Verbose 'Starting the File Watchers runspace(s)...'
     1..$PodeContext.Threads.Files | ForEach-Object {
         Add-PodeRunspace -Type Files -Name 'Watcher' -ScriptBlock $watchScript -Parameters @{ 'Watcher' = $watcher ; 'ThreadId' = $_ }
     }
@@ -167,5 +172,6 @@ function Start-PodeFileWatcherRunspace {
         }
     }
 
+    Write-Verbose 'Starting the File Watchers KeepAlive runspace...'
     Add-PodeRunspace -Type Files -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Watcher' = $watcher } -NoProfile
 }

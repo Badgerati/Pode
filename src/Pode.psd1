@@ -88,7 +88,6 @@
         'Test-PodeRequestFile',
         'Set-PodeViewEngine',
         'Use-PodePartialView',
-        'Send-PodeSignal',
         'Add-PodeViewFolder',
         'Send-PodeResponse',
 
@@ -108,6 +107,37 @@
         'Get-PodeSseDefaultScope',
         'Test-PodeSseName',
         'Test-PodeSseClientId',
+        'Get-PodeSseClientIdList',
+        'Get-PodeSseGroupList',
+        'Get-PodeSseNameList',
+        'Get-PodeSseEvent',
+        'Register-PodeSseEvent',
+        'Test-PodeSseEvent',
+        'Unregister-PodeSseEvent',
+
+        # signals
+        'Send-PodeSignal',
+        'Close-PodeSignalConnection',
+        'ConvertTo-PodeSignalConnection',
+        'Disable-PodeSignalSigning',
+        'Enable-PodeSignalSigning',
+        'Get-PodeSignalBroadcastLevel',
+        'Get-PodeSignalClientIdList',
+        'Get-PodeSignalDefaultScope',
+        'Get-PodeSignalGroupList',
+        'Get-PodeSignalNameList',
+        'New-PodeSignalClientId',
+        'Set-PodeSignalBroadcastLevel',
+        'Set-PodeSignalDefaultScope',
+        'Test-PodeSignalBroadcastLevel',
+        'Test-PodeSignalClientId',
+        'Test-PodeSignalClientIdSigned',
+        'Test-PodeSignalClientIdValid',
+        'Test-PodeSignalName',
+        'Get-PodeSignalEvent',
+        'Register-PodeSignalEvent',
+        'Test-PodeSignalEvent',
+        'Unregister-PodeSignalEvent',
 
         # utility helpers
         'Close-PodeDisposable',
@@ -268,6 +298,10 @@
         'Get-PodeAuthUser',
         'Add-PodeAuthSession',
         'New-PodeAuthKeyTab',
+        'Get-PodeAuthEvent',
+        'Register-PodeAuthEvent',
+        'Test-PodeAuthEvent',
+        'Unregister-PodeAuthEvent',
 
         # access
         'New-PodeAccessScheme',
@@ -385,6 +419,9 @@
         'Get-PodeServerSignalMetric',
         'Get-PodeServerActiveRequestMetric',
         'Get-PodeServerActiveSignalMetric',
+        'Get-PodeServerActiveSignalClientMetric',
+        'Get-PodeServerActiveSseClientMetric',
+        'Get-PodeServerActiveSseMetric',
 
         # AutoImport
         'Export-PodeModule',
@@ -533,7 +570,37 @@
         'New-PodeLimitRouteComponent',
         'New-PodeLimitEndpointComponent',
         'New-PodeLimitMethodComponent',
-        'New-PodeLimitHeaderComponent'
+        'New-PodeLimitHeaderComponent',
+
+        # mcp
+        'Resolve-PodeMcpRequest',
+        'New-PodeMcpTextContent',
+        'New-PodeMcpImageContent',
+        'New-PodeMcpAudioContent',
+        'Add-PodeMcpTool',
+        'Add-PodeMcpToolProperty',
+        'Get-PodeMcpTool',
+        'Test-PodeMcpTool',
+        'Remove-PodeMcpTool',
+        'Update-PodeMcpTool',
+        'Add-PodeMcpGroup',
+        'Remove-PodeMcpGroup',
+        'Get-PodeMcpGroup',
+        'Test-PodeMcpGroup',
+        'Clear-PodeMcpGroup',
+        'Register-PodeMcpToolToGroup',
+        'Unregister-PodeMcpToolFromGroup',
+
+        # json schema
+        'New-PodeJsonSchemaNull',
+        'New-PodeJsonSchemaBoolean',
+        'New-PodeJsonSchemaInteger',
+        'New-PodeJsonSchemaNumber',
+        'New-PodeJsonSchemaString',
+        'New-PodeJsonSchemaArray',
+        'New-PodeJsonSchemaObject',
+        'Merge-PodeJsonSchema',
+        'New-PodeJsonSchemaProperty'
     )
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.

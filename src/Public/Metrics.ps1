@@ -63,7 +63,7 @@ function Get-PodeServerUptime {
         [ValidateSet('Milliseconds', 'Concise', 'Compact', 'Verbose')]
         [string]
         $Format = 'Milliseconds',
- 
+
         [switch]
         $ExcludeMilliseconds
     )
@@ -107,10 +107,10 @@ function Get-PodeServerRestartCount {
 
 <#
 .SYNOPSIS
-Returns the total number of requests/per status code the Server has receieved.
+Returns the total number of requests/per status code the Server has received.
 
 .DESCRIPTION
-Returns the total number of requests/per status code the Server has receieved.
+Returns the total number of requests/per status code the Server has received.
 
 .PARAMETER StatusCode
 If supplied, will return the total number of requests for a specific StatusCode.
@@ -158,10 +158,10 @@ function Get-PodeServerRequestMetric {
 
 <#
 .SYNOPSIS
-Returns the total number of Signal requests the Server has receieved.
+Returns the total number of Signal requests the Server has received.
 
 .DESCRIPTION
-Returns the total number of Signal requests the Server has receieved.
+Returns the total number of Signal requests the Server has received.
 
 .EXAMPLE
 $totalReqs = Get-PodeServerSignalMetric
@@ -191,6 +191,7 @@ Get-PodeServerActiveRequestMetric -CountType Queued
 #>
 function Get-PodeServerActiveRequestMetric {
     [CmdletBinding()]
+    [OutputType([long])]
     param(
         [Parameter()]
         [ValidateSet('Total', 'Queued', 'Processing')]
@@ -200,15 +201,15 @@ function Get-PodeServerActiveRequestMetric {
 
     switch ($CountType.ToLowerInvariant()) {
         'total' {
-            return $PodeContext.Server.Signals.Listener.Contexts.Count
+            return $PodeContext.Server.Http.Listener.Contexts.Count
         }
 
         'queued' {
-            return $PodeContext.Server.Signals.Listener.Contexts.QueuedCount
+            return $PodeContext.Server.Http.Listener.Contexts.QueuedCount
         }
 
         'processing' {
-            return $PodeContext.Server.Signals.Listener.Contexts.ProcessingCount
+            return $PodeContext.Server.Http.Listener.Contexts.ProcessingCount
         }
     }
 }
@@ -234,6 +235,7 @@ Get-PodeServerActiveSignalMetric -Type Client -CountType Queued
 #>
 function Get-PodeServerActiveSignalMetric {
     [CmdletBinding()]
+    [OutputType([long])]
     param(
         [Parameter()]
         [ValidateSet('Total', 'Server', 'Client')]
@@ -250,15 +252,15 @@ function Get-PodeServerActiveSignalMetric {
         'total' {
             switch ($CountType.ToLowerInvariant()) {
                 'total' {
-                    return $PodeContext.Server.Signals.Listener.ServerSignals.Count + $PodeContext.Server.Signals.Listener.ClientSignals.Count
+                    return $PodeContext.Server.Http.Listener.Signals.ProcessingCount + $PodeContext.Server.Http.Listener.ClientSignals.Count
                 }
 
                 'queued' {
-                    return $PodeContext.Server.Signals.Listener.ServerSignals.QueuedCount + $PodeContext.Server.Signals.Listener.ClientSignals.QueuedCount
+                    return $PodeContext.Server.Http.Listener.ClientSignals.QueuedCount
                 }
 
                 'processing' {
-                    return $PodeContext.Server.Signals.Listener.ServerSignals.ProcessingCount + $PodeContext.Server.Signals.Listener.ClientSignals.ProcessingCount
+                    return $PodeContext.Server.Http.Listener.Signals.ProcessingCount + $PodeContext.Server.Http.Listener.ClientSignals.ProcessingCount
                 }
             }
         }
@@ -266,15 +268,15 @@ function Get-PodeServerActiveSignalMetric {
         'server' {
             switch ($CountType.ToLowerInvariant()) {
                 'total' {
-                    return $PodeContext.Server.Signals.Listener.ServerSignals.Count
+                    return $PodeContext.Server.Http.Listener.Signals.ProcessingCount
                 }
 
                 'queued' {
-                    return $PodeContext.Server.Signals.Listener.ServerSignals.QueuedCount
+                    return 0l
                 }
 
                 'processing' {
-                    return $PodeContext.Server.Signals.Listener.ServerSignals.ProcessingCount
+                    return $PodeContext.Server.Http.Listener.Signals.ProcessingCount
                 }
             }
         }
@@ -282,17 +284,109 @@ function Get-PodeServerActiveSignalMetric {
         'client' {
             switch ($CountType.ToLowerInvariant()) {
                 'total' {
-                    return $PodeContext.Server.Signals.Listener.ClientSignals.Count
+                    return $PodeContext.Server.Http.Listener.ClientSignals.Count
                 }
 
                 'queued' {
-                    return $PodeContext.Server.Signals.Listener.ClientSignals.QueuedCount
+                    return $PodeContext.Server.Http.Listener.ClientSignals.QueuedCount
                 }
 
                 'processing' {
-                    return $PodeContext.Server.Signals.Listener.ClientSignals.ProcessingCount
+                    return $PodeContext.Server.Http.Listener.ClientSignals.ProcessingCount
                 }
             }
         }
     }
+}
+
+<#
+.SYNOPSIS
+Returns the count of active Signal clients.
+
+.DESCRIPTION
+Returns the count of all, or for a specific Name, active Signal clients.
+
+.PARAMETER Name
+If supplied, will return the count of active Signal clients for the specific Name.
+
+.EXAMPLE
+$count = Get-PodeServerActiveSignalClientMetric
+
+.EXAMPLE
+$count = Get-PodeServerActiveSignalClientMetric -Name 'Events'
+#>
+function Get-PodeServerActiveSignalClientMetric {
+    [CmdletBinding()]
+    [OutputType([long])]
+    param(
+        [Parameter()]
+        [string]
+        $Name
+    )
+
+    if (![string]::IsNullOrEmpty($Name)) {
+        if (!(Test-PodeSignalName -Name $Name)) {
+            # Signal connection not found
+            throw ($PodeLocale.signalConnectionNameNotFoundExceptionMessage -f $Name)
+        }
+
+        return $PodeContext.Server.Http.Listener.Signals.Count($Name)
+    }
+
+    return $PodeContext.Server.Http.Listener.Signals.TotalCount
+}
+
+<#
+.SYNOPSIS
+Returns the count of active SSE messages.
+
+.DESCRIPTION
+Returns the count of all processing SSE messages.
+
+.EXAMPLE
+$count = Get-PodeServerActiveSseMetric
+#>
+function Get-PodeServerActiveSseMetric {
+    [CmdletBinding()]
+    [OutputType([long])]
+    param()
+
+    return $PodeContext.Server.Http.Listener.ServerEvents.ProcessingCount
+}
+
+<#
+.SYNOPSIS
+Returns the count of active SSE clients.
+
+.DESCRIPTION
+Returns the count of all, or for a specific Name, active SSE clients.
+
+.PARAMETER Name
+If supplied, will return the count of active SSE clients for the specific Name.
+
+.EXAMPLE
+$count = Get-PodeServerActiveSseClientMetric
+
+.EXAMPLE
+$count = Get-PodeServerActiveSseClientMetric -Name 'Events'
+#>
+function Get-PodeServerActiveSseClientMetric {
+    [CmdletBinding()]
+    [OutputType([long])]
+    param(
+        [Parameter()]
+        [string]
+        $Name
+    )
+
+    if (![string]::IsNullOrEmpty($Name)) {
+        if (!(Test-PodeSseName -Name $Name)) {
+            # SSE connection not found
+            throw ($PodeLocale.sseConnectionNameNotFoundExceptionMessage -f $Name)
+        }
+
+        return $PodeContext.Server.Http.Listener.ServerEvents.Count($Name)
+    }
+
+    return $PodeContext.Server.Http.Listener.ServerEvents.TotalCount
 }

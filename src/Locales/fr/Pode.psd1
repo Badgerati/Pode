@@ -326,4 +326,25 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = "La règle de limite de taux '{0}' n'existe pas."
     accessLimitRuleAlreadyExistsExceptionMessage                      = "Une règle de limite d'accès nommée '{0}' existe déjà."
     accessLimitRuleDoesNotExistExceptionMessage                       = "La règle de limite d'accès '{0}' n'existe pas."
+    sseConnectionNameNotFoundExceptionMessage                         = "Aucune connexion SSE trouvée avec le nom '{0}'."
+    signalConnectionNameNotFoundExceptionMessage                      = "Aucune connexion Signal trouvée avec le nom '{0}'."
+    signalFailedToBroadcastExceptionMessage                           = "Le signal n'a pas pu être diffusé en raison du niveau de diffusion du signal défini pour {0}: {1}."
+    authMethodNotFoundExceptionMessage                                = "Aucun méthode d'authentification trouvée avec le nom '{0}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "L'événement '{0}' est déjà enregistré pour le méthode d'authentification '{1}'."
+    authMethodEventNotRegisteredExceptionMessage                      = "L'événement '{0}' n'est pas enregistré pour le méthode d'authentification '{1}'."
+    signalEventAlreadyRegisteredExceptionMessage                      = "L'événement '{0}' est déjà enregistré pour la connexion Signal '{1}'."
+    signalEventNotRegisteredExceptionMessage                          = "L'événement '{0}' n'est pas enregistré pour la connexion Signal '{1}'."
+    sseEventAlreadyRegisteredExceptionMessage                         = "L'événement '{0}' est déjà enregistré pour la connexion SSE '{1}'."
+    sseEventNotRegisteredExceptionMessage                             = "L'événement '{0}' n'est pas enregistré pour la connexion SSE '{1}'."
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "Une propriété d'objet dans le schéma JSON est manquante d'un nom."
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'MaxProperties ne peut pas être inférieur à MinProperties pour la propriété JSON Schema de type objet.'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems ne peut pas être inférieur à MinItems pour la propriété JSON Schema de type tableau.'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = 'MaxLength ne peut pas être inférieur à MinLength pour la propriété JSON Schema de type chaîne.'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = 'Maximum ne peut pas être inférieur à Minimum pour la propriété JSON Schema de type nombre.'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "Type de paramètre non pris en charge '{0}' pour le paramètre '{1}' dans l'outil '{2}'. La génération automatique de schéma ne prend en charge que les types string, int, long, double, float et bool."
+    mcpToolGroupDoesNotExistExceptionMessage                          = "Le groupe d'outils MCP '{0}' n'existe pas."
+    mcpToolDoesNotExistExceptionMessage                               = "L'outil MCP '{0}' n'existe pas."
+    mcpToolAlreadyExistsExceptionMessage                              = "L'outil MCP '{0}' existe déjà."
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "Le groupe d'outils MCP '{0}' existe déjà."
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "Les valeurs par défaut des routes statiques ne peuvent pas être des chemins absolus. Valeur par défaut non valide : '{0}'"
 }

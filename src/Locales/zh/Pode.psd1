@@ -326,4 +326,25 @@
     rateLimitRuleDoesNotExistExceptionMessage                         = '速率限制规则不存在: {0}'
     accessLimitRuleAlreadyExistsExceptionMessage                      = '访问限制规则已存在: {0}'
     accessLimitRuleDoesNotExistExceptionMessage                       = '访问限制规则不存在: {0}'
+    sseConnectionNameNotFoundExceptionMessage                         = "未找到名称为 '{0}' 的 SSE 连接。"
+    signalConnectionNameNotFoundExceptionMessage                      = "未找到名称为 '{0}' 的 Signal 连接。"
+    signalFailedToBroadcastExceptionMessage                           = 'Signal 由于为 {0} 定义的 Signal 广播级别而未能广播: {1}'
+    authMethodNotFoundExceptionMessage                                = "未找到名称为 '{0}' 的身份验证方法。"
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "事件身份验证方法名称为 '{0}' 已注册。"
+    authMethodEventNotRegisteredExceptionMessage                      = "事件身份验证方法名称为 '{0}' 未注册。"
+    signalEventAlreadyRegisteredExceptionMessage                      = "事件 Signal 名称为 '{0}' 已注册。"
+    signalEventNotRegisteredExceptionMessage                          = "事件 Signal 名称为 '{0}' 未注册。"
+    sseEventAlreadyRegisteredExceptionMessage                         = "事件 SSE 名称为 '{0}' 已注册。"
+    sseEventNotRegisteredExceptionMessage                             = "事件 SSE 名称为 '{0}' 未注册。"
+    jsonSchemaObjectPropertyMissingNameExceptionMessage               = "每个 JSON 模式对象属性定义必须包含一个'Name'键。"
+    jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = '对于对象 JSON Schema 属性，MaxProperties 不能小于 MinProperties。'
+    jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems 不能小于 MinItems 以应数组 JSON Schema 属性。'
+    jsonSchemaStringMaxLengthLessThanMinLengthExceptionMessage        = '对于字符串 JSON Schema 属性，MaxLength 不能小于 MinLength。'
+    jsonSchemaNumberMaximumLessThanMinimumExceptionMessage            = '对于{0} JSON模式属性，最大值不能小于最小值。'
+    mcpToolAutoSchemaUnsupportedParameterTypeExceptionMessage         = "工具'{2}'中参数'{1}'的不支持参数类型为'{0}'。自动模式生成只支持字符串、整数、长、双重、浮点和布尔类型。"
+    mcpToolGroupDoesNotExistExceptionMessage                          = 'MCP工具组"{0}"不存在。'
+    mcpToolDoesNotExistExceptionMessage                               = "MCP工具'{0}'不存在。"
+    mcpToolAlreadyExistsExceptionMessage                              = "MCP工具'{0}'已经存在。"
+    mcpToolGroupAlreadyExistsExceptionMessage                         = "MCP工具组'{0}'已经存在。"
+    staticRouteDefaultCannotBeRootedExceptionMessage                  = "静态路由的默认值不能是根路径。无效的默认值: '{0}'"
 }

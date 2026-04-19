@@ -19,7 +19,7 @@ on:
     - cron: '0 12 * * *'
 
 env:
-  INVOKE_BUILD_VERSION: '5.12.2'
+  INVOKE_BUILD_VERSION: '5.14.23'
   POWERSHELL_VERSION: 'lts'
 
 jobs:
@@ -37,23 +37,23 @@ jobs:
         fi
         echo "VIRUSTOTAL_API_KEY is set. Proceeding with the workflow."
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 9.x
+        dotnet-version: 10.x
 
     - name: Setup Powershell
       shell: pwsh
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
         Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
 
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force -SkipPublisherCheck -AllowClobber -Scope CurrentUser
 
     - name: Build Zip Package
       shell: pwsh
@@ -61,7 +61,7 @@ jobs:
         Invoke-Build Compress
 
     - name: Run VirusTotal Scan
-      uses: crazy-max/ghaction-virustotal@v4
+      uses: crazy-max/ghaction-virustotal@v5
       with:
         vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
         request_rate: 4

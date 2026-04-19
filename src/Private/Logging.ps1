@@ -295,7 +295,7 @@ function Write-PodeRequestLog {
 
     # build a request object
     $item = @{
-        Host            = $Request.RemoteEndPoint.Address.IPAddressToString
+        Host            = $Request.Handler.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = '-'
         User            = '-'
         Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
@@ -303,9 +303,9 @@ function Write-PodeRequestLog {
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
             Hostname = $Request.Host.ToLowerInvariant()
-            Scheme   = $Request.Scheme.ToLowerInvariant()
+            Scheme   = $Request.Handler.Scheme.ToLowerInvariant()
             Resource = $Path
-            Query = (Protect-PodeValue -Value $Request.Url.Query -Default '-').TrimStart('?')
+            Query    = (Protect-PodeValue -Value $Request.Url.Query -Default '-').TrimStart('?')
             Protocol = "HTTP/$($Request.ProtocolVersion)"
             Referrer = $Request.UrlReferrer
             Agent    = $Request.UserAgent
@@ -316,7 +316,7 @@ function Write-PodeRequestLog {
             Size              = '-'
         }
     }
-    
+
     # set size if >0
     if ($Response.ContentLength64 -gt 0) {
         $item.Response.Size = $Response.ContentLength64
@@ -410,7 +410,7 @@ function Start-PodeLoggingRunspace {
                         continue
                     }
 
-                    # convert to log item into a writable format
+                    # convert to log item into a writeable format
                     $rawItems = $log.Item
                     $_args = @($log.Item) + @($logger.Arguments)
                     $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
@@ -437,7 +437,7 @@ function Start-PodeLoggingRunspace {
                         }
                     }
 
-                    # send the writable log item off to the log writer
+                    # send the writeable log item off to the log writer
                     if ($null -ne $result) {
                         $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
                         $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
@@ -460,6 +460,7 @@ function Start-PodeLoggingRunspace {
         }
     }
 
+    Write-Verbose 'Starting the Logging runspace...'
     Add-PodeRunspace -Type Main -Name 'Logging' -ScriptBlock $script
 }
 

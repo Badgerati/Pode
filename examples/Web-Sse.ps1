@@ -44,7 +44,17 @@ Start-PodeServer -Threads 3 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # log errors
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels *
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error
+
+    # register a connect event
+    Register-PodeSseEvent -Name 'Test', 'Data' -Type Connect -EventName 'Connected' -ScriptBlock {
+        "Connected: $($TriggeredEvent.Connection.Name) ($($TriggeredEvent.Connection.ClientId))" | Out-Default
+    }
+
+    # register a disconnect event
+    Register-PodeSseEvent -Name 'Test', 'Data' -Type Disconnect -EventName 'Disconnected' -ScriptBlock {
+        "Disconnected: $($TriggeredEvent.Connection.Name) ($($TriggeredEvent.Connection.ClientId))" | Out-Default
+    }
 
     # open local sse connection, and send back data
     Add-PodeRoute -Method Get -Path '/data' -ScriptBlock {
@@ -63,7 +73,7 @@ Start-PodeServer -Threads 3 {
         ConvertTo-PodeSseConnection -Name 'Test'
     }
 
-    Add-PodeTimer -Name 'SendEvent' -Interval 10 -ScriptBlock {
+    Add-PodeTimer -Name 'SendEvent' -Interval 70 -ScriptBlock {
         Send-PodeSseEvent -Name 'Test' -Data "An Event! $(Get-Random -Minimum 1 -Maximum 100)"
     }
 }

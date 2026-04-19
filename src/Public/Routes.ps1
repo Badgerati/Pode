@@ -69,7 +69,7 @@ One or more optional Scopes that will be authorised to access this Route, when u
 One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER OAResponses
-An alternative way to associate OpenApi responses unsing New-PodeOAResponse instead of piping multiple Add-PodeOAResponse
+An alternative way to associate OpenApi responses using New-PodeOAResponse instead of piping multiple Add-PodeOAResponse
 
 .PARAMETER OAReference
 A reference to OpenAPI reusable pathItem component created with Add-PodeOAComponentPathItem
@@ -388,14 +388,14 @@ function Add-PodeRoute {
             continue
         }
 
-        #add security header method if autoMethods is enabled
+        # add security header method if autoMethods is enabled
         if (  $PodeContext.Server.Security.autoMethods ) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method.ToUpper() -Append
         }
 
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
-        #add the default OpenApi responses
+        # add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses) {
             $DefaultResponse = [ordered]@{}
             foreach ($tag in $DefinitionTag) {
@@ -793,6 +793,12 @@ function Add-PodeStaticRoute {
     # setup default static files
     if ($null -eq $Defaults) {
         $Defaults = Get-PodeStaticRouteDefault
+    }
+
+    foreach ($def in $Defaults) {
+        if ([System.IO.Path]::IsPathRooted($def)) {
+            throw ($PodeLocale.staticRouteDefaultCannotBeRootedExceptionMessage -f $def)
+        }
     }
 
     if (!$RedirectToDefault) {
@@ -2062,7 +2068,7 @@ function ConvertTo-PodeRoute {
 
         # create the routes for each of the commands
         foreach ($cmd in $Commands) {
-            # get module verb/noun and comvert verb to HTTP method
+            # get module verb/noun and convert verb to HTTP method
             $split = ($cmd -split '\-')
 
             if ($split.Length -ge 2) {
@@ -2161,7 +2167,7 @@ function ConvertTo-PodeRoute {
 Helper function to generate simple GET routes.
 
 .DESCRIPTION
-Helper function to generate simple GET routes from ScritpBlocks, Files, and Views.
+Helper function to generate simple GET routes from ScriptBlocks, Files, and Views.
 The output is always rendered as HTML.
 
 .PARAMETER Name

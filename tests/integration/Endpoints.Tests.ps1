@@ -22,6 +22,10 @@ Describe 'Endpoint Requests' {
                     Close-PodeServer
                 }
 
+                Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Result = 'Pong' }
+                }
+
                 Add-PodeRoute -Method Get -Path '/ping-1' -EndpointName 'Endpoint1' -ScriptBlock {
                     Write-PodeJsonResponse -Value @{ Result = 'Pong1' }
                 }
@@ -36,7 +40,25 @@ Describe 'Endpoint Requests' {
             }
         }
 
-        Start-Sleep -Seconds 10
+        # wait for ping to be available
+        Start-Sleep -Seconds 5
+
+        $count = 0
+        while ($true) {
+            try {
+                $count++
+                $ping = Invoke-RestMethod -Uri "$($Endpoint1)/ping" -Method Get -TimeoutSec 1 -ErrorAction Stop
+                if ($ping.Result -ieq 'Pong') {
+                    break
+                }
+            }
+            catch {
+                Start-Sleep -Seconds 1
+                if ($count -ge 10) {
+                    throw "Ping to $($Endpoint1)/ping did not respond with 'Pong' within the expected time."
+                }
+            }
+        }
     }
 
     AfterAll {

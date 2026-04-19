@@ -757,8 +757,8 @@ The values to use for the UnsizedMedia portion of the header.
 .PARAMETER Usb
 The values to use for the Usb portion of the header.
 
-.PARAMETER ScreenWakeLake
-The values to use for the ScreenWakeLake portion of the header.
+.PARAMETER ScreenWakeLock
+The values to use for the ScreenWakeLock portion of the header.
 
 .PARAMETER WebShare
 The values to use for the WebShare portion of the header.
@@ -881,7 +881,7 @@ function Set-PodeSecurityPermissionsPolicy {
 
         [Parameter()]
         [string[]]
-        $ScreenWakeLake,
+        $ScreenWakeLock,
 
         [Parameter()]
         [string[]]
@@ -983,8 +983,8 @@ The values to add for the UnsizedMedia portion of the header.
 .PARAMETER Usb
 The values to add for the Usb portion of the header.
 
-.PARAMETER ScreenWakeLake
-The values to add for the ScreenWakeLake portion of the header.
+.PARAMETER ScreenWakeLock
+The values to add for the ScreenWakeLock portion of the header.
 
 .PARAMETER WebShare
 The values to add for the WebShare portion of the header.
@@ -1108,7 +1108,7 @@ function Add-PodeSecurityPermissionsPolicy {
 
         [Parameter()]
         [string[]]
-        $ScreenWakeLake,
+        $ScreenWakeLock,
 
         [Parameter()]
         [string[]]

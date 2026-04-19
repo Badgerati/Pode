@@ -45,7 +45,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     Add-PodeVerb -Verb 'HELLO' -ScriptBlock {
-        Write-PodeTcpClient -Message "HI"
+        Write-PodeTcpClient -Message 'HI'
         'here' | Out-Default
     }
 
@@ -66,7 +66,7 @@ Start-PodeServer -Threads 2 {
 
     # Add-PodeVerb -Verb 'STARTTLS' -ScriptBlock {
     #     Write-PodeTcpClient -Message 'TLS GO AHEAD'
-    #     $TcpEvent.Request.UpgradeToSSL()
+    #     Wait-PodeTask -Task $TcpEvent.Request.Handler.UpgradeToSSL()
     # }
 
     # Add-PodeVerb -Verb 'QUIT' -Close
