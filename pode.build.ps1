@@ -110,11 +110,11 @@ param(
 
     [string[]]
     [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
-    $TargetFrameworks = @('netstandard2.0', 'net8.0', 'net9.0'),
+    $TargetFrameworks = @('netstandard2.0', 'net8.0', 'net9.0', 'net10.0'),
 
     [string]
     [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
-    $SdkVersion = 'net9.0',
+    $SdkVersion = 'net10.0',
 
     [string[]]
     [ValidateSet('Compliance', 'Integration', 'Unit')]
@@ -394,7 +394,7 @@ function Get-PodeBuildTargetFramework {
         'net9.0' { return 9 }
         'net10.0' { return 10 }
         default {
-            Write-Warning "$TargetFrameworks is not a valid Framework. Rollback to netstandard2.0"
+            Write-Warning "$($TargetFrameworks) is not a valid Framework. Rollback to netstandard2.0"
             return 2
         }
     }
@@ -434,7 +434,7 @@ function Get-PodeBuildTargetFrameworkName {
         '9' { return 'net9.0' }
         '10' { return 'net10.0' }
         default {
-            Write-Warning "$Version is not a valid Framework. Rollback to netstandard2.0"
+            Write-Warning "$($Version) is not a valid Framework. Rollback to netstandard2.0"
             return 'netstandard2.0'
         }
     }
