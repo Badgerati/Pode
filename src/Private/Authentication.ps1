@@ -2402,7 +2402,7 @@ function Invoke-PodeAuthEvent {
         $Type,
 
         [Parameter(Mandatory = $true)]
-        [hashtable]
+        [object]
         $User,
 
         [Parameter()]
