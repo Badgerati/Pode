@@ -1,5 +1,18 @@
 # Release Notes
 
+## v2.13.1
+
+Date: 22nd April 2026
+
+```plain
+### Bugs
+* #1689: Fixes error when User object isn't a Hashtable when checking Auth events
+
+### Packaging
+* #1687: Bump @stoplight/elements from 9.0.18 to 9.0.19
+* #1690: Compile binaries using .NET10
+```
+
 ## v2.13.0
 
 Date: 17th April 2026

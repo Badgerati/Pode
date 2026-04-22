@@ -95,8 +95,8 @@ try {
         # filter .net dll folders based on version above, and get path for latest version found
         if (![string]::IsNullOrWhiteSpace($version)) {
             $netFolder = Get-ChildItem -Path $libsPath -Directory -Force |
-                Where-Object { $_.Name -imatch "net[1-$($version)]" } |
-                Sort-Object -Property Name -Descending |
+                Where-Object { ($_.Name -imatch 'net\d+') -and (([double]($_.Name -ireplace 'net', '')) -le [double]$version) } |
+                Sort-Object -Property { [double]($_.Name -ireplace 'net', '') } -Descending |
                 Select-Object -First 1 -ExpandProperty FullName
         }
 
