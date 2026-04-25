@@ -1400,7 +1400,9 @@ function Test-PodeAuthInternal {
     # check for logout command
     if ($Logout) {
         # trigger logout event
-        Invoke-PodeAuthEvent -Name $WebEvent.Session.Data.Auth.Name -Type Logout -User $WebEvent.Session.Data.Auth.User
+        if ($null -ne $WebEvent.Session.Data.Auth) {
+            Invoke-PodeAuthEvent -Name $WebEvent.Session.Data.Auth.Name -Type Logout -User $WebEvent.Session.Data.Auth.User
+        }
 
         # remove the auth session
         Remove-PodeAuthSession
