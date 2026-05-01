@@ -116,7 +116,7 @@ namespace Pode.Protocols.Http
 
         public override void Reset(bool force = false)
         {
-            if (!force && !AwaitingContent)
+            if (!force && AwaitingContent)
             {
                 return;
             }

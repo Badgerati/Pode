@@ -428,7 +428,7 @@ namespace Pode.Protocols.Common.Contexts
                     }
 
                     // Attempt to reset the request.
-                    Request.Reset(!_awaitingContent);
+                    Request.Reset(IsErrored || IsTimeout);
 
                     // Dispose of request and response if not keep-alive or forced.
                     if (!_awaitingContent && (!IsKeepAlive || force))
