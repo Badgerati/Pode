@@ -72,6 +72,11 @@ namespace Pode.Protocols.Common.Contexts
         Task Initialise();
 
         /// <summary>
+        /// Resets the request timeout by restarting the timeout timer.
+        /// </summary>
+        void ResetTimeout();
+
+        /// <summary>
         /// Cancels the request timeout by disposing of the timeout timer.
         /// </summary>
         void CancelTimeout();

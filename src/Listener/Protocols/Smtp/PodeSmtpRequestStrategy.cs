@@ -160,7 +160,7 @@ namespace Pode.Protocols.Smtp
                     return true;
                 }
 
-                Reset();
+                Reset(true);
                 Command = PodeSmtpCommand.StartTls;
                 await SendStatus(220, "Ready to start TLS", isSub: false);
                 await Handler.UpgradeToSSL(cancellationToken).ConfigureAwait(false);
@@ -170,7 +170,7 @@ namespace Pode.Protocols.Smtp
             // reset
             if (IsCommand(content, "RSET"))
             {
-                Reset();
+                Reset(true);
                 Command = PodeSmtpCommand.Reset;
                 SetStatus(250, "OK");
                 return true;
@@ -259,8 +259,13 @@ namespace Pode.Protocols.Smtp
             return true;
         }
 
-        public override void Reset()
+        public override void Reset(bool force = false)
         {
+            if (!force && !IsProcessable)
+            {
+                return;
+            }
+
             PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
 
             _canProcess = false;

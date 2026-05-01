@@ -1,5 +1,19 @@
 # Release Notes
 
+## v2.13.2
+
+Date: 1st May 2026
+
+```plain
+### Bugs
+* #1695: Fixes an error being thrown when a Logout Route is called for non-authenticated sessions
+* #1698: Fixes a race condition during idle connections timing out
+* #1698: Fixes older requests not being reset properly
+
+### Packaging
+* #1696: Bump swagger-ui-dist from 5.32.4 to 5.32.5
+```
+
 ## v2.13.1
 
 Date: 22nd April 2026

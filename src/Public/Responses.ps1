@@ -1344,7 +1344,7 @@ function Set-PodeResponseStatus {
     )
 
     # already sent? skip
-    if ($WebEvent.Response.Sent) {
+    if (($null -eq $WebEvent) -or $WebEvent.Response.Sent) {
         return
     }
 
