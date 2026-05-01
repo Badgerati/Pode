@@ -114,7 +114,33 @@ namespace Pode.Protocols.Http
             Type = PodeProtocolType.Http;
         }
 
-        public override void Reset() { }
+        public override void Reset(bool force = false)
+        {
+            if (!force && !AwaitingContent)
+            {
+                return;
+            }
+
+            PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
+
+            HttpMethod = string.Empty;
+            QueryString = default;
+            Protocol = "HTTP/1.1";
+            ProtocolVersion = "1.1";
+            ContentType = string.Empty;
+            ContentLength = 0;
+            ContentEncoding = System.Text.Encoding.UTF8;
+            TransferEncoding = string.Empty;
+            UserAgent = string.Empty;
+            UrlReferrer = string.Empty;
+            Url = default;
+            Headers = default;
+            RawBody = default;
+            Host = string.Empty;
+            Form?.Dispose();
+            Form = default;
+            _body = string.Empty;
+        }
 
         public override bool Validate(byte[] bytes)
         {

@@ -265,6 +265,9 @@ namespace Pode.Protocols.Common.Requests
                             break;
                         }
 
+                        // Reset the timeout timer on received data, to prevent timeouts during long uploads or slow connections
+                        Context.ResetTimeout();
+
                         // Write the data to the buffer stream
 #if NETCOREAPP2_1_OR_GREATER
                         await BufferStream.WriteAsync(localBuffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
@@ -434,14 +437,14 @@ namespace Pode.Protocols.Common.Requests
             return true;
         }
 
-        public void Reset()
+        public void Reset(bool force = false)
         {
             if (!IsResettable)
             {
                 return;
             }
 
-            Strategy?.Reset();
+            Strategy?.Reset(force);
         }
 
         public async Task Flush()

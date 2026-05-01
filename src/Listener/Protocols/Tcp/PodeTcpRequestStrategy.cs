@@ -67,8 +67,13 @@ namespace Pode.Protocols.Tcp
             return Task.FromResult(true);
         }
 
-        public override void Reset()
+        public override void Reset(bool force = false)
         {
+            if (!force && !IsProcessable)
+            {
+                return;
+            }
+
             PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
             _body = string.Empty;
             RawBody = default;

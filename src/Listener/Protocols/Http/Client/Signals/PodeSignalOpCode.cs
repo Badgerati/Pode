@@ -2,6 +2,7 @@ namespace Pode.Protocols.Http.Client.Signals
 {
     public enum PodeSignalOpCode
     {
+        None = -1,
         Continuation = 0,
         Text = 1,
         Binary = 2,
