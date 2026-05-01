@@ -297,7 +297,6 @@ function Start-PodeWebServer {
 
                 # end do-while
             } while (Test-PodeSuspensionToken) # Check for suspension token and wait for the debugger to reset if active
-
         }
 
         # start the runspace for listening on x-number of threads

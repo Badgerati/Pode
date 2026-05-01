@@ -69,7 +69,8 @@ namespace Pode.Protocols.Common.Requests
         /// <summary>
         /// Resets the request state. Can be overridden by derived classes.
         /// </summary>
-        public abstract void Reset();
+        /// <param name="force">Indicates whether to force the reset, even if the request is not marked as resettable or processable.</param>
+        public abstract void Reset(bool force = false);
 
         /// <summary>
         /// Gets the context associated with the request handler.

@@ -34,7 +34,7 @@ namespace Pode.Protocols.Common.Requests
         // Methods for parsing, validating, and resetting the request
         Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken);
         bool Validate(byte[] bytes);
-        void Reset();
+        void Reset(bool force = false);
 
         // Utility methods
         T GetContext<T>() where T : IPodeContext;

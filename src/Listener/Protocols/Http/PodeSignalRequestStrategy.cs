@@ -17,7 +17,7 @@ namespace Pode.Protocols.Http
     public class PodeSignalRequestStrategy : PodeRequestStrategy
     {
         // The WebSocket operation code extracted from the incoming frame.
-        public PodeSignalOpCode OpCode { get; private set; }
+        public PodeSignalOpCode OpCode { get; private set; } = PodeSignalOpCode.None;
 
         // The decoded message body as a string.
         public string Body { get; private set; }
@@ -54,7 +54,11 @@ namespace Pode.Protocols.Http
         // It excludes control frames (Ping/Pong) and ensures that a non-empty body exists.
         public override bool IsProcessable
         {
-            get => base.IsProcessable && OpCode != PodeSignalOpCode.Pong && OpCode != PodeSignalOpCode.Ping && !string.IsNullOrEmpty(Body);
+            get => base.IsProcessable
+                && OpCode != PodeSignalOpCode.Pong
+                && OpCode != PodeSignalOpCode.Ping
+                && OpCode != PodeSignalOpCode.None
+                && !string.IsNullOrEmpty(Body);
         }
 
         // The current frame being processed.
@@ -235,7 +239,14 @@ namespace Pode.Protocols.Http
             return true;
         }
 
-        public override void Reset() { }
+        public override void Reset(bool force = false)
+        {
+            OpCode = PodeSignalOpCode.None;
+            Body = string.Empty;
+            ContentLength = 0;
+            RawBody = default;
+        }
+
         public override void PartialDispose() { }
 
         /// <summary>
@@ -255,6 +266,15 @@ namespace Pode.Protocols.Http
                 // Log a message indicating the WebSocket is being closed.
                 PodeHelpers.WriteErrorMessage($"Closing Websocket", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
                 Signal.Close().Wait();
+
+                Body = string.Empty;
+                RawBody = default;
+
+                if (BodyStream != default)
+                {
+                    BodyStream.Dispose();
+                    BodyStream = default;
+                }
             }
 
             // Call the base class Dispose to clean up other resources.

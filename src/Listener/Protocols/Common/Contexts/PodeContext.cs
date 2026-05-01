@@ -70,6 +70,7 @@ namespace Pode.Protocols.Common.Contexts
         // Determines if the context should be closed immediately.
         public bool CloseImmediately => State == PodeContextState.Error
                 || State == PodeContextState.Closing
+                || State == PodeContextState.Closed
                 || State == PodeContextState.Timeout
                 || (Request?.CloseImmediately ?? true);
 
@@ -140,8 +141,8 @@ namespace Pode.Protocols.Common.Contexts
                 PodeHelpers.WriteErrorMessage("TimeoutCallback triggered", Listener, PodeLoggingLevel.Debug, this);
                 PodeHelpers.WriteErrorMessage($"Request timeout reached: {Listener.RequestTimeout} seconds", Listener, PodeLoggingLevel.Warning, this);
 
-                ContextTimeoutToken.Cancel();
                 State = PodeContextState.Timeout;
+                ContextTimeoutToken.Cancel();
 
                 Request.Timeout();
                 Response.StatusCode = Request.Error.StatusCode;
@@ -158,6 +159,28 @@ namespace Pode.Protocols.Common.Contexts
         protected virtual void NewTimeoutTimer()
         {
             TimeoutTimer = new Timer(TimeoutCallback, null, Listener.RequestTimeout * 1000, Timeout.Infinite);
+        }
+
+        /// <summary>
+        /// Resets the request timeout by restarting the timeout timer.
+        /// </summary>
+        public void ResetTimeout()
+        {
+            if (TimeoutTimer == default || IsTimeout)
+            {
+                return;
+            }
+
+            TimeoutTimer.Change(Listener.RequestTimeout * 1000, Timeout.Infinite);
+        }
+
+        /// <summary>
+        /// Cancels the request timeout by disposing of the timeout timer.
+        /// </summary>
+        public void CancelTimeout()
+        {
+            TimeoutTimer?.Dispose();
+            TimeoutTimer = null;
         }
 
         /// <summary>
@@ -183,15 +206,6 @@ namespace Pode.Protocols.Common.Contexts
             State = Request.State == PodeStreamState.Open
                 ? PodeContextState.Open
                 : PodeContextState.Error;
-        }
-
-        /// <summary>
-        /// Cancels the request timeout by disposing of the timeout timer.
-        /// </summary>
-        public void CancelTimeout()
-        {
-            TimeoutTimer?.Dispose();
-            TimeoutTimer = null;
         }
 
         /// <summary>
@@ -245,7 +259,11 @@ namespace Pode.Protocols.Common.Contexts
         /// <returns>A Task representing the async operation.</returns>
         protected virtual async Task EndReceive(bool close)
         {
-            State = close ? PodeContextState.Closing : PodeContextState.Received;
+            if (State == PodeContextState.Receiving)
+            {
+                State = close ? PodeContextState.Closing : PodeContextState.Received;
+            }
+
             await Handle().ConfigureAwait(false);
         }
 
@@ -409,11 +427,8 @@ namespace Pode.Protocols.Common.Contexts
                         }
                     }
 
-                    // Reset request if it's allowed, and was processable.
-                    if (Request.IsResettable && Request.IsProcessable)
-                    {
-                        Request.Reset();
-                    }
+                    // Attempt to reset the request.
+                    Request.Reset(IsErrored || IsTimeout);
 
                     // Dispose of request and response if not keep-alive or forced.
                     if (!_awaitingContent && (!IsKeepAlive || force))
