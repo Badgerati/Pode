@@ -72,7 +72,7 @@ function Start-PodeWebServer {
     }
 
     # Create the listener
-    $listener = & $("New-Pode$($PodeContext.Server.ListenerType)Listener") -CancellationToken $PodeContext.Tokens.Cancellation.Token
+    $listener = [PodeHttpListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -83,20 +83,8 @@ function Start-PodeWebServer {
     try {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            # Create a hashtable of parameters for splatting
-            $socketParams = @{
-                Name                   = $_.Name
-                Address                = $_.Address
-                Port                   = $_.Port
-                SslProtocols           = $_.SslProtocols
-                Type                   = $endpointsMap[$_.Key].Type
-                Certificate            = $_.Certificate
-                AllowClientCertificate = $_.AllowClientCertificate
-                DualMode               = $_.DualMode
-            }
-
             # Initialize a new listener socket with splatting
-            $socket = & $("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket") @socketParams
+            $socket = [PodeSocket]::new($_.Name, $_.Address, $_.Port, $_.SslProtocols, $endpointsMap[$_.Key].Type, $_.Certificate, $_.AllowClientCertificate, 'Implicit', $_.DualMode)
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
             $socket.NoAutoUpgradeWebSockets = $_.NoAutoUpgradeWebSockets
 
@@ -455,57 +443,6 @@ function Start-PodeWebServer {
                 Order    = ($endpoint.Protocol | Get-PodeEndpointProtocolOrder)
             }
         })
-}
-
-function New-PodeListener {
-    [CmdletBinding()]
-    [OutputType([Pode.Protocols.Http.PodeHttpListener])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.Threading.CancellationToken]
-        $CancellationToken
-    )
-
-    return [PodeHttpListener]::new($CancellationToken)
-}
-
-function New-PodeListenerSocket {
-    [CmdletBinding()]
-    [OutputType([Pode.Transport.Sockets.PodeSocket])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name,
-
-        [Parameter(Mandatory = $true)]
-        [ipaddress[]]
-        $Address,
-
-        [Parameter(Mandatory = $true)]
-        [int]
-        $Port,
-
-        [Parameter()]
-        [System.Security.Authentication.SslProtocols]
-        $SslProtocols,
-
-        [Parameter(Mandatory = $true)]
-        [PodeProtocolType]
-        $Type,
-
-        [Parameter()]
-        [X509Certificate]
-        $Certificate,
-
-        [Parameter()]
-        [bool]
-        $AllowClientCertificate,
-
-        [switch]
-        $DualMode
-    )
-
-    return [PodeSocket]::new($Name, $Address, $Port, $SslProtocols, $Type, $Certificate, $AllowClientCertificate, 'Implicit', $DualMode.IsPresent)
 }
 
 function Start-PodeWebConnectionEventsRunspace {
