@@ -42,9 +42,6 @@ using namespace Pode.Utilities
     - Show
     - Hide
 
-.PARAMETER ListenerType
-    Specifies a custom socket listener. Defaults to Pode's inbuilt listener.
-
 .PARAMETER EnablePool
     Configures specific runspace pools (e.g., Timers, Schedules, Tasks, WebSockets, Files) for ad-hoc usage.
 
@@ -151,10 +148,6 @@ function Start-PodeServer {
         $StatusPageExceptions = [string]::Empty,
 
         [Parameter()]
-        [string]
-        $ListenerType = [string]::Empty,
-
-        [Parameter()]
         [ValidateSet('Timers', 'Schedules', 'Tasks', 'WebSockets', 'Files')]
         [string[]]
         $EnablePool,
@@ -254,7 +247,6 @@ function Start-PodeServer {
                 $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
             }
 
-
             # Define parameters for the context creation
             $ContextParams = @{
                 ScriptBlock          = $ScriptBlock
@@ -263,7 +255,6 @@ function Start-PodeServer {
                 Interval             = $Interval
                 ServerRoot           = Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot
                 ServerlessType       = $ServerlessType
-                ListenerType         = $ListenerType
                 EnablePool           = $EnablePool
                 StatusPageExceptions = $StatusPageExceptions
                 Console              = Get-PodeDefaultConsole
@@ -272,7 +263,6 @@ function Start-PodeServer {
                 ConfigFile           = $ConfigFile
                 Daemon               = $Daemon
             }
-
 
             # Create main context object
             $PodeContext = New-PodeContext @ContextParams

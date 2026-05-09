@@ -36,10 +36,6 @@ function New-PodeContext {
         $StatusPageExceptions,
 
         [Parameter()]
-        [string]
-        $ListenerType,
-
-        [Parameter()]
         [string[]]
         $EnablePool,
 
@@ -259,9 +255,6 @@ function New-PodeContext {
     if ($EnableBreakpoints) {
         $ctx.Server.Debug.Breakpoints.Enabled = $EnableBreakpoints.IsPresent
     }
-
-    # set the server's listener type
-    $ctx.Server.ListenerType = $ListenerType
 
     # set serverless info
     $ctx.Server.ServerlessType = $ServerlessType
