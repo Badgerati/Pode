@@ -54,7 +54,7 @@ Start-PodeServer -EnablePool WebSockets {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # log requests to the terminal
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error, Debug, Verbose
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging -Levels Error, Debug, Verbose
 
     # connect to web socket from web-signal.ps1
     Connect-PodeWebSocket -Name 'Example' -Url 'ws://localhost:8091' -ScriptBlock {

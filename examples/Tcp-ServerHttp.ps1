@@ -40,7 +40,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Tcp
 
     # enable logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # example limits
     # Add-PodeLimitAccessRule -Name 'Main' -Action Deny -Component @(

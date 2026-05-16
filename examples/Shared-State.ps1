@@ -42,8 +42,8 @@ catch { throw }
 Start-PodeServer {
 
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeRequestLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # re-initialise the state
     Restore-PodeState -Path './state.json'

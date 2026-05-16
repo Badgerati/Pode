@@ -47,7 +47,7 @@ Start-PodeServer -Threads 5 {
     # Add-PodeEndpoint -Address localhost -Port 8081 -SelfSigned -Protocol Https
 
     # log requests to the terminal
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {

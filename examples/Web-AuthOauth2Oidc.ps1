@@ -14,7 +14,7 @@
 
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthOauth2Oidc.ps1
-    
+
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -44,7 +44,7 @@ Start-PodeServer -Threads 2 {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # set the view engine
     Set-PodeViewEngine -Type Pode

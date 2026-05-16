@@ -46,8 +46,8 @@ Start-PodeServer -ConfigFile '..\Server.psd1' -Threads 2 {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port $port -Protocol Http
-    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeRequestLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type HTML

@@ -44,7 +44,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Name 'user'
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http -Name 'admin'
 
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     Enable-PodeOpenApi -DisableMinimalDefinitions
     Add-PodeOAInfo  -Title 'OpenAPI Example'

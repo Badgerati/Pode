@@ -39,7 +39,7 @@ catch { throw }
 # runs the logic once, then exits
 Start-PodeServer {
 
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
     Use-PodeScript -Path './modules/Script1.ps1'
 
 }

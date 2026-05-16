@@ -42,7 +42,7 @@ Start-PodeServer -Threads 2 {
     # Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Tcps -SelfSigned -CRLFMessageEnd -TlsMode Implicit -Acknowledge 'Welcome!'
 
     # enable logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     Add-PodeVerb -Verb 'HELLO' -ScriptBlock {
         Write-PodeTcpClient -Message 'HI'

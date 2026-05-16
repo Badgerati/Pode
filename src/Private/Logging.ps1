@@ -494,3 +494,23 @@ function Test-PodeLoggerBatch {
         }
     }
 }
+
+function New-PodeLogBatchConfig {
+    param(
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $BatchInfo = $null
+    )
+
+    if ($null -eq $BatchInfo) {
+        $BatchInfo = New-PodeLogBatchInfo
+    }
+
+    return @{
+        Size       = $BatchInfo.Size
+        Timeout    = $BatchInfo.Timeout
+        LastUpdate = $null
+        Items      = @()
+        RawItems   = @()
+    }
+}

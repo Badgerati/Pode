@@ -41,7 +41,7 @@ Start-PodeServer -Threads 2 {
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # GET request that receives gzip'd json
     Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {

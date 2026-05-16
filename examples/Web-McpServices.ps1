@@ -39,8 +39,9 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # request logging
-    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # Create a simple default group for MCP tools
     Add-PodeMcpGroup -Name 'Default' -Description 'Default group for MCP tools'

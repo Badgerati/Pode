@@ -43,8 +43,8 @@ catch {
 Start-PodeServer {
 
 	# Enable terminal logging for requests and errors
-	New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
-	New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+	New-PodeLogTerminalMethod | Enable-PodeRequestLogging
+	New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
 	# Define the endpoint for the server
 	Add-PodeEndpoint -Address 127.0.0.1 -Port 8080 -Protocol Http

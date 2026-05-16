@@ -55,7 +55,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port $port -Protocol Http
 
     Set-PodeViewEngine -Type HTML
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {

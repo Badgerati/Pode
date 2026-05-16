@@ -347,4 +347,5 @@
     mcpToolAlreadyExistsExceptionMessage                              = "L'outil MCP '{0}' existe déjà."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "Le groupe d'outils MCP '{0}' existe déjà."
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "Les valeurs par défaut des routes statiques ne peuvent pas être des chemins absolus. Valeur par défaut non valide : '{0}'"
+    deprecatedFunctionWarningMessage                                  = "AVERTISSEMENT : La fonction '{0}' est obsolète et sera supprimée dans les futures versions. Veuillez utiliser la fonction '{1}' à la place."
 }

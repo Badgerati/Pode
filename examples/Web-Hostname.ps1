@@ -60,7 +60,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Hostname pode4.foo.com -Port $Port -Protocol Http -LookupHostname
 
     # logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode

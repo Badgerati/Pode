@@ -35,7 +35,7 @@ catch { throw }
 
 Start-PodeServer -Threads 1 -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     Add-PodeRoute -PassThru -Method Get -Path '/routeCreateScriptBlock/:id' -ScriptBlock ([ScriptBlock]::Create( (Get-Content -Path "$ScriptPath\scripts\routeScript.ps1" -Raw))) |
         Set-PodeOARouteInfo -Summary 'Test' -OperationId 'routeCreateScriptBlock' -PassThru |

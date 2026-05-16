@@ -50,8 +50,8 @@ catch { throw }
 
 # create a server, flagged to generate a self-signed cert for dev/testing
 Start-PodeServer {
-    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeRequestLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # bind to ip/port and set as https with self-signed cert
     switch ($CertType) {

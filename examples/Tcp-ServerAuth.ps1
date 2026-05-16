@@ -40,7 +40,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Tcp -CRLFMessageEnd
 
     # enable logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     # create a role access method get retrieves roles from a database
     New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'RoleExample' -ScriptBlock {

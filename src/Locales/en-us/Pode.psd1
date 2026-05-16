@@ -347,4 +347,5 @@
     mcpToolAlreadyExistsExceptionMessage                              = "The MCP tool '{0}' already exists."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "The MCP tool group '{0}' already exists."
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "Static route defaults cannot be rooted paths. Invalid default: '{0}'"
+    deprecatedFunctionWarningMessage                                  = "WARNING: The function '{0}' is deprecated and will be removed in future releases. Please use the '{1}' function instead."
 }

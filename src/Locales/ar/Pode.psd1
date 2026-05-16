@@ -347,4 +347,5 @@
     mcpToolAlreadyExistsExceptionMessage                              = "أداة MCP '{0}' موجودة بالفعل."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "مجموعة أدوات MCP '{0}' موجودة بالفعل."
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "لا يمكن أن تكون القيم الافتراضية للمسار الثابت مسارات جذرية. القيمة الافتراضية غير صالحة: '{0}'"
+    deprecatedFunctionWarningMessage                                  = "تحذير: الدالة '{0}' لم تعد مدعومة وسيتم إزالتها في الإصدارات المستقبلية. يرجى استخدام الدالة '{1}' بدلاً منها."
 }

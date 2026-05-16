@@ -347,4 +347,5 @@
     mcpToolAlreadyExistsExceptionMessage                              = "MCP工具'{0}'已经存在。"
     mcpToolGroupAlreadyExistsExceptionMessage                         = "MCP工具组'{0}'已经存在。"
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "静态路由的默认值不能是根路径。无效的默认值: '{0}'"
+    deprecatedFunctionWarningMessage                                  = "警告: 函数 '{0}' 已被弃用，并将在未来版本中移除。请改用 '{1}' 函数。"
 }

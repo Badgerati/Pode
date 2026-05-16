@@ -1,19 +1,19 @@
 # Custom
 
-Sometimes you don't want to log to a file, or the terminal; instead you want to log to something better, like LogStash, Splunk, Athena, or any other central logging platform. Although Pode doesn't have these inbuilt (yet!) it is possible to create a custom logging method, where you define a ScriptBlock with logic to send logs to these platforms.
+Sometimes you don't want to log to a file, or the terminal; instead you want to log to different provider, like LogStash, Splunk, Athena, or any other central logging platform. Although Pode doesn't have these inbuilt (yet!) it is possible to create a custom logging Method, where you define a ScriptBlock with logic to send logs to these platforms. To do this you can use [`New-PodeLogCustomMethod`](../../../../Functions/Logging/New-PodeLogCustomMethod).
 
-These custom method can be used for any log type - Requests, Error, or Custom.
+These custom Methods can be used for any log Type - Requests, Error, or Custom Types.
 
 The ScriptBlock you create will be supplied two arguments:
 
-1. The item to be logged. This could be a string (from Requests/Errors), or any custom type.
-2. The options you supplied on [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod).
+1. The transformed log item to be logged. This could be a string (from Requests/Errors), or any custom type.
+2. The options you supplied on [`New-PodeLogCustomMethod`](../../../../Functions/Logging/New-PodeLogCustomMethod).
 
 ## Examples
 
 ### Send to S3 Bucket
 
-This example will take whatever item is supplied to it, convert it to a string, and then send it off to some S3 bucket in AWS. In this case, it will be logging Requests:
+This example will take whatever transformed log item is supplied to it, convert it to a string, and then send it off to some S3 bucket in AWS. In this case, it will be logging Requests:
 
 ```powershell
 $s3_options = @{
@@ -21,7 +21,7 @@ $s3_options = @{
     SecretKey = $SecretKey
 }
 
-$s3_logging = New-PodeLoggingType -Custom -ArgumentList $s3_options -ScriptBlock {
+$s3_logging = New-PodeLogCustomType -ArgumentList $s3_options -ScriptBlock {
     param($item, $s3_opts)
 
     Write-S3Object `

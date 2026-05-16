@@ -45,7 +45,8 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -DualMode
 
     # request logging
-    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
+    $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogging
 
     # can be hit by sending a GET request to "localhost:8086/api/test"
     Add-PodeRoute -Method Get -Path '/api/test' -ScriptBlock {

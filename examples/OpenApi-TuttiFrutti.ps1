@@ -70,7 +70,7 @@ catch { throw }
 Start-PodeServer  -Threads 1 -Daemon:$Daemon  -IgnoreServerConfig:$IgnoreServerConfig -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port $PortV3 -Protocol Http -Default -Name 'endpoint_v3'
     Add-PodeEndpoint -Address localhost -Port $PortV3_1 -Protocol Http -Name 'endpoint_v3.1'
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
     $InfoDescription = @'
 This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about Swagger at [http://swagger.io](http://swagger.io).
 In the third iteration of the pet store, we've switched to the design first approach!

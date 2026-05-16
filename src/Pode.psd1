@@ -324,13 +324,18 @@
         'Enable-PodeErrorLogging',
         'Disable-PodeRequestLogging',
         'Disable-PodeErrorLogging',
-        'Add-PodeLogger',
+        'Add-PodeLogType',
         'Remove-PodeLogger',
         'Clear-PodeLoggers',
         'Write-PodeErrorLog',
         'Write-PodeLog',
         'Protect-PodeLogItem',
         'Use-PodeLogging',
+        'New-PodeLogBatchInfo',
+        'New-PodeLogTerminalMethod',
+        'New-PodeLogFileMethod',
+        'New-PodeLogEventViewerMethod',
+        'New-PodeLogCustomMethod',
 
         # core
         'Start-PodeServer',
@@ -608,7 +613,8 @@
         'Enable-PodeOpenApiViewer',
         'Enable-PodeOA',
         'Get-PodeOpenApiDefinition',
-        'New-PodeOASchemaProperty'
+        'New-PodeOASchemaProperty',
+        'Add-PodeLogger'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

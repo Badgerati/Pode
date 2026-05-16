@@ -347,4 +347,5 @@
     mcpToolAlreadyExistsExceptionMessage                              = 'MCPツール「{0}」は既に存在します。'
     mcpToolGroupAlreadyExistsExceptionMessage                         = 'MCPツールグループ「{0}」は既に存在します。'
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "静的ルートのデフォルトはルートパスにできません。無効なデフォルト: '{0}'"
+    deprecatedFunctionWarningMessage                                  = "警告: 関数 '{0}' は非推奨であり、将来のリリースで削除されます。代わりに '{1}' 関数を使用してください。"
 }

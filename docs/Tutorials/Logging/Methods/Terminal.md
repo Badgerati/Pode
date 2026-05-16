@@ -1,13 +1,16 @@
 # Terminal
 
-You can log items to the terminal using Pode's inbuilt terminal logic. The inbuilt logic will convert any item to a string, and output it to the terminal.
+You can log items to the terminal using Pode's inbuilt terminal Method, via [`New-PodeLogTerminalMethod`](../../../../Functions/Logging/New-PodeLogTerminalMethod).
+
+!!! note
+    This will convert the supplied transformed log items into a string, if it isn't one already.
 
 ## Examples
 
 ### Basic
 
-The following example will setup the terminal logging method for logging Requests:
+The following example will setup the terminal logging Method for logging Requests:
 
 ```powershell
-New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+New-PodeLogTerminalMethod | Enable-PodeRequestLogging
 ```

@@ -72,7 +72,7 @@ Start-PodeServer -Threads 4 -EnablePool Tasks -IgnoreServerConfig -ScriptBlock {
     Set-PodeViewEngine -Type Html
 
     # Enable error logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
 
     # Enable OpenAPI documentation

@@ -347,4 +347,5 @@
     mcpToolAlreadyExistsExceptionMessage                              = "MCP 도구 '{0}'은 이미 존재합니다."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "MCP 도구 그룹 '{0}'은 이미 존재합니다."
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "정적 경로의 기본값은 루트 경로일 수 없습니다. 잘못된 기본값: '{0}'"
+    deprecatedFunctionWarningMessage                                  = "경고: 함수 '{0}'는 더 이상 사용되지 않으며 향후 릴리스에서 제거될 예정입니다. 대신 '{1}' 함수를 사용하십시오."
 }

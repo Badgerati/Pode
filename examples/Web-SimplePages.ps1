@@ -19,7 +19,7 @@
 
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-SimplePages.ps1
-    
+
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -44,7 +44,7 @@ Start-PodeServer -Threads 2 {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 
     Add-PodePage -Name Processes -ScriptBlock { Get-Process }
     Add-PodePage -Name Services -ScriptBlock { Get-Service }
