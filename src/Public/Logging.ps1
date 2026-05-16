@@ -416,7 +416,9 @@ function Add-PodeLogType {
     }
 }
 
-New-Alias Add-PodeLogger -Value Add-PodeLogType
+if (!(Test-Path Alias:Add-PodeLogger)) {
+    New-Alias Add-PodeLogger -Value Add-PodeLogType
+}
 
 <#
 .SYNOPSIS
