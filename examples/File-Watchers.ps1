@@ -39,7 +39,7 @@ catch { throw }
 Start-PodeServer -Verbose {
 
     # enable logging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     Add-PodeFileWatcher -Path $ScriptPath -Include '*.ps1' -ScriptBlock {
         "[$($FileEvent.Type)][$($FileEvent.Parameters['project'])]: $($FileEvent.FullPath)" | Out-Default

@@ -1,6 +1,6 @@
 # Event Viewer
 
-You can log items to the Windows Event Viewer, using Pode's unbuilt Event Viewer logging Method, via [`New-PodeLogEventViewerMethod`](../../../../Functions/Logging/New-PodeLogEventViewerMethod). You can log anything, but it's best to use this in conjunction with [`Enable-PodeErrorLogging`](../../../../Functions/Logging/Enable-PodeErrorLogging) and [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog).
+You can log items to the Windows Event Viewer, using Pode's unbuilt Event Viewer logging Method, via [`New-PodeLogEventViewerMethod`](../../../../Functions/Logging/New-PodeLogEventViewerMethod). You can log anything, but it's best to use this in conjunction with [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType) and [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog).
 
 !!! note
     Errors will be logged using an appropriate error level, but other log items will be logged as Informational.
@@ -23,7 +23,7 @@ Once the source is created, Pode can log to the Event Viewer without being an ad
 To enable and log errors to the Event Viewer, the following will work:
 
 ```powershell
-New-PodeLogEventViewerMethod | Enable-PodeErrorLogging
+New-PodeLogEventViewerMethod | Enable-PodeErrorLogType
 ```
 
 This will log to the `Application` log using `Pode` as the source.
@@ -33,7 +33,7 @@ This will log to the `Application` log using `Pode` as the source.
 To log to a different event log, other than Application, you can specify the log via `-EventLogName`:
 
 ```powershell
-New-PodeLogEventViewerMethod -EventLogName SomeLogName | Enable-PodeErrorLogging
+New-PodeLogEventViewerMethod -EventLogName SomeLogName | Enable-PodeErrorLogType
 ```
 
 ## Event Source
@@ -41,5 +41,5 @@ New-PodeLogEventViewerMethod -EventLogName SomeLogName | Enable-PodeErrorLogging
 To log using a different source, other than Pode, you can specify the source via `-Source`:
 
 ```powershell
-New-PodeLogEventViewerMethod -Source WebsiteName | Enable-PodeErrorLogging
+New-PodeLogEventViewerMethod -Source WebsiteName | Enable-PodeErrorLogType
 ```

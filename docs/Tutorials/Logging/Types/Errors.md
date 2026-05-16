@@ -6,7 +6,7 @@ It also has support for error levels (such as Error, Warning, Verbose), with sup
 
 ## Enabling
 
-To enable and use the Error logging Type you use [`Enable-PodeErrorLogging`](../../../../Functions/Logging/Enable-PodeErrorLogging), supplying a logging Method - such as the [Terminal](../../Methods/Terminal) Method.
+To enable and use the Error logging Type you use [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType), supplying a logging Method - such as the [Terminal](../../Methods/Terminal) Method.
 
 When Pode logs an error, the information being logged is as follows:
 
@@ -59,7 +59,7 @@ The internal error logging will show you unhandled exceptions from routes, middl
 The following example simply enables Error logging, and will output all items to the terminal - by default, only Error level items are logged:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 ```
 
 ### Log Verbose
@@ -67,7 +67,7 @@ New-PodeLogTerminalMethod | Enable-PodeErrorLogging
 The following example will enable Error logging, and it will log all errors levels except Debug:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeErrorLogging -Levels Error, Warning, Informational, Verbose
+New-PodeLogTerminalMethod | Enable-PodeErrorLogType -Levels Error, Warning, Informational, Verbose
 ```
 
 ### Using Raw Item
@@ -80,7 +80,7 @@ $method = New-PodeLogCustomMethod -ScriptBlock {
     "$($item.Server) - $($item.Message)" | Out-Default
 }
 
-$method | Enable-PodeErrorLogging -Raw
+$method | Enable-PodeErrorLogType -Raw
 ```
 
 ## Raw Error

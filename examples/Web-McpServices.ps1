@@ -40,8 +40,8 @@ Start-PodeServer -Threads 2 {
 
     # request logging
     $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
-    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogType
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     # Create a simple default group for MCP tools
     Add-PodeMcpGroup -Name 'Default' -Description 'Default group for MCP tools'

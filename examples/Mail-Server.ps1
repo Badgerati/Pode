@@ -51,7 +51,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Protocol Smtps -SelfSigned -TlsMode Implicit
 
     # enable logging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging -Levels Error, Debug
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType -Levels Error, Debug
 
     # allow the local ip
     #Add-PodeAccessRule -Access Allow -Type IP -Values 127.0.0.1

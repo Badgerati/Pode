@@ -12,5 +12,5 @@ You can log items to the terminal using Pode's inbuilt terminal Method, via [`Ne
 The following example will setup the terminal logging Method for logging Requests:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeRequestLogging
+New-PodeLogTerminalMethod | Enable-PodeRequestLogType
 ```

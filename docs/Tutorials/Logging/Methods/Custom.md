@@ -31,5 +31,5 @@ $s3_logging = New-PodeLogCustomType -ArgumentList $s3_options -ScriptBlock {
         -SecretKey $s3_opts.SecretKey
 }
 
-$s3_logging | Enable-PodeRequestLogging
+$s3_logging | Enable-PodeRequestLogType
 ```

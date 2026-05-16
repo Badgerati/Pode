@@ -15,7 +15,7 @@ Describe 'WebSocket' {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Ws
 
-                New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+                New-PodeLogTerminalMethod | Enable-PodeErrorLogType
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
                 }

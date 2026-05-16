@@ -67,7 +67,7 @@ catch { throw }
 Start-PodeServer -Threads 2 {
 
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     # custom locks
     New-PodeLockable -Name 'TestLock'

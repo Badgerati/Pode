@@ -46,8 +46,8 @@ Start-PodeServer {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLogTerminalMethod | Enable-PodeRequestLogging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeRequestLogType
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     # Add-PodeLimitAccessRule -Name 'DenyLocal' -Action Deny -Component @(
     #     New-PodeLimitIPComponent -IP localhost -Location XForwardedFor

@@ -2,22 +2,22 @@
 param()
 
 InModuleScope -ModuleName 'Pode' {
-    Describe 'Get-PodeLogger' {
+    Describe 'Get-PodeLogType' {
         It 'Returns null as the logger does not exist' {
             $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{}; } }; }
-            Get-PodeLogger -Name 'test' | Should -Be $null
+            Get-PodeLogType -Name 'test' | Should -Be $null
         }
 
         It 'Returns terminal logger for name' {
             $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = $null }; } }; }
-            $result = (Get-PodeLogger -Name 'test')
+            $result = (Get-PodeLogType -Name 'test')
 
             $result | Should -Be $null
         }
 
         It 'Returns custom logger for name' {
             $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = { Write-Host 'hello' } }; } }; }
-            $result = (Get-PodeLogger -Name 'test')
+            $result = (Get-PodeLogType -Name 'test')
 
             $result | Should -Not -Be $null
             $result.ToString() | Should -Be ({ Write-Host 'hello' }).ToString()
@@ -26,7 +26,7 @@ InModuleScope -ModuleName 'Pode' {
 
     Describe 'Write-PodeLog' {
         It 'Does nothing when logging disabled' {
-            Mock Test-PodeLoggerEnabled { return $false }
+            Mock Test-PodeLogTypeEnabled { return $false }
             $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
             Write-PodeLog -Name 'test' -InputObject 'test'
@@ -35,7 +35,7 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Adds a log item' {
-            Mock Test-PodeLoggerEnabled { return $true }
+            Mock Test-PodeLogTypeEnabled { return $true }
             $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
             Write-PodeLog -Name 'test' -InputObject 'test'
@@ -48,7 +48,7 @@ InModuleScope -ModuleName 'Pode' {
 
     Describe 'Write-PodeErrorLog' {
         It 'Does nothing when logging disabled' {
-            Mock Test-PodeLoggerEnabled { return $false }
+            Mock Test-PodeLogTypeEnabled { return $false }
             $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
             Write-PodeLog -Name 'test' -InputObject 'test'
@@ -57,8 +57,8 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Adds an error log item' {
-            Mock Test-PodeLoggerEnabled { return $true }
-            Mock Get-PodeLogger { return @{ Arguments = @{
+            Mock Test-PodeLogTypeEnabled { return $true }
+            Mock Get-PodeLogType { return @{ Arguments = @{
                         Levels = @('Error')
                     }
                 } }
@@ -75,8 +75,8 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Adds an exception log item' {
-            Mock Test-PodeLoggerEnabled { return $true }
-            Mock Get-PodeLogger { return @{ Arguments = @{
+            Mock Test-PodeLogTypeEnabled { return $true }
+            Mock Get-PodeLogType { return @{ Arguments = @{
                         Levels = @('Error')
                     }
                 } }
@@ -91,8 +91,8 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Does not log as Verbose not allowed' {
-            Mock Test-PodeLoggerEnabled { return $true }
-            Mock Get-PodeLogger { return @{ Arguments = @{
+            Mock Test-PodeLogTypeEnabled { return $true }
+            Mock Get-PodeLogType { return @{ Arguments = @{
                         Levels = @('Error')
                     }
                 } }
@@ -106,15 +106,15 @@ InModuleScope -ModuleName 'Pode' {
         }
     }
 
-    Describe 'Get-PodeRequestLoggingName' {
+    Describe 'Get-PodeRequestLogTypeName' {
         It 'Returns logger name' {
-            Get-PodeRequestLoggingName | Should -Be '__pode_log_requests__'
+            Get-PodeRequestLogTypeName | Should -Be '__pode_log_requests__'
         }
     }
 
-    Describe 'Get-PodeErrorLoggingName' {
+    Describe 'Get-PodeErrorLogTypeName' {
         It 'Returns logger name' {
-            Get-PodeErrorLoggingName | Should -Be '__pode_log_errors__'
+            Get-PodeErrorLogTypeName | Should -Be '__pode_log_errors__'
         }
     }
 

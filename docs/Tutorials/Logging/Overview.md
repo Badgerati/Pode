@@ -130,7 +130,7 @@ To help speed this up you can create a batching info object using [`New-PodeLogB
 
 ```powershell
 $batchInfo = New-PodeLogBatchInfo -Size 10
-New-PodeLogTerminalMethod -BatchInfo $batchInfo | Enable-PodeRequestLogging
+New-PodeLogTerminalMethod -BatchInfo $batchInfo | Enable-PodeRequestLogType
 ```
 
 Instead of writing logs one-by-one, the above will cache transformed log items. Once the appropriate number of cached log items is met (in this case 10), all of the log items will be sent to the log Method at once. This means that the log Method's scriptblock will receive an array of items, rather than a single item.

@@ -22,7 +22,7 @@ function New-PodeWebSocketConsumer {
 
     try {
         $consumer = [PodeConsumer]::new([PodeAdapterType]::WebSocket, $PodeContext.Tokens.Cancellation.Token)
-        $consumer.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+        $consumer.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
         $consumer.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
         $PodeContext.Server.WebSockets.Consumer = $consumer
         $PodeContext.Consumers += $consumer

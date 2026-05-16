@@ -41,7 +41,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Hostname 'foo.pode.com' -Port 9000 -Protocol Tcp -Name 'EP2' -Acknowledge 'Hello there!' -CRLFMessageEnd
 
     # enable logging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     # hello verb for endpoint1
     Add-PodeVerb -Verb 'HELLO :forename :surname' -EndpointName EP1 -ScriptBlock {

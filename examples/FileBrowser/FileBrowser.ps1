@@ -45,8 +45,8 @@ Start-PodeServer -ConfigFile '..\Server.psd1' -ScriptBlock {
 
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
 
-    New-PodeLogTerminalMethod | Enable-PodeRequestLogging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeRequestLogType
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     # setup basic auth (base64> username:password in header)
     New-PodeAuthScheme -Basic -Realm 'Pode Static Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {

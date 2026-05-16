@@ -55,7 +55,7 @@ Start-PodeServer -Threads 2 {
 
     # request logging
     $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
-    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogging
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogType
 
     # setup basic auth (base64> username:password in header)
     New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {

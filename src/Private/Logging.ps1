@@ -200,32 +200,15 @@ function Get-PodeLoggingInbuiltType {
     return $script
 }
 
-function Get-PodeRequestLoggingName {
+function Get-PodeRequestLogTypeName {
     return '__pode_log_requests__'
 }
 
-function Get-PodeErrorLoggingName {
+function Get-PodeErrorLogTypeName {
     return '__pode_log_errors__'
 }
 
-<#
-.SYNOPSIS
-    Retrieves a Pode logger by name.
-
-.DESCRIPTION
-    This function allows you to retrieve a Pode logger by specifying its name. It returns the logger object associated with the given name.
-
-.PARAMETER Name
-    The name of the Pode logger to retrieve.
-
-.OUTPUTS
-    A Pode logger object.
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-#>
-function Get-PodeLogger {
-    [CmdletBinding()]
+function Get-PodeLogType {
     [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
@@ -236,7 +219,7 @@ function Get-PodeLogger {
     return $PodeContext.Server.Logging.Types[$Name]
 }
 
-function Test-PodeLoggerEnabled {
+function Test-PodeLogTypeEnabled {
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -246,32 +229,16 @@ function Test-PodeLoggerEnabled {
     return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
 }
 
-<#
-.SYNOPSIS
-    Gets the error logging levels for Pode.
-
-.DESCRIPTION
-    This function retrieves the error logging levels configured for Pode. It returns an array of available error levels.
-
-.PARAMETER Name
-    The name of the Pode logger to retrieve.
-
-.OUTPUTS
-    An array of error logging levels.
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-#>
 function Get-PodeErrorLoggingLevel {
-    return (Get-PodeLogger -Name (Get-PodeErrorLoggingName)).Arguments.Levels
+    return (Get-PodeLogType -Name (Get-PodeErrorLogTypeName)).Arguments.Levels
 }
 
-function Test-PodeErrorLoggingEnabled {
-    return (Test-PodeLoggerEnabled -Name (Get-PodeErrorLoggingName))
+function Test-PodeErrorLogTypeEnabled {
+    return (Test-PodeLogTypeEnabled -Name (Get-PodeErrorLogTypeName))
 }
 
-function Test-PodeRequestLoggingEnabled {
-    return (Test-PodeLoggerEnabled -Name (Get-PodeRequestLoggingName))
+function Test-PodeRequestLogTypeEnabled {
+    return (Test-PodeLogTypeEnabled -Name (Get-PodeRequestLogTypeName))
 }
 
 function Write-PodeRequestLog {
@@ -288,8 +255,8 @@ function Write-PodeRequestLog {
     )
 
     # do nothing if logging is disabled, or request logging isn't setup
-    $name = Get-PodeRequestLoggingName
-    if (!(Test-PodeLoggerEnabled -Name $name)) {
+    $name = Get-PodeRequestLogTypeName
+    if (!(Test-PodeLogTypeEnabled -Name $name)) {
         return
     }
 
@@ -324,7 +291,7 @@ function Write-PodeRequestLog {
 
     # set username - dot spaces
     if (Test-PodeAuthUser -IgnoreSession) {
-        $userProps = (Get-PodeLogger -Name $name).Properties.Username.Split('.')
+        $userProps = (Get-PodeLogType -Name $name).Properties.Username.Split('.')
 
         $user = $WebEvent.Auth.User
         foreach ($atom in $userProps) {
@@ -351,8 +318,8 @@ function Add-PodeRequestLogEndware {
     )
 
     # do nothing if logging is disabled, or request logging isn't setup
-    $name = Get-PodeRequestLoggingName
-    if (!(Test-PodeLoggerEnabled -Name $name)) {
+    $name = Get-PodeRequestLogTypeName
+    if (!(Test-PodeLogTypeEnabled -Name $name)) {
         return
     }
 
@@ -400,8 +367,12 @@ function Start-PodeLoggingRunspace {
                             return $log
                         })
 
+                    if ($null -eq $log) {
+                        continue
+                    }
+
                     # run the log item through the appropriate method
-                    $logger = Get-PodeLogger -Name $log.Name
+                    $logger = Get-PodeLogType -Name $log.Name
                     $now = [datetime]::Now
 
                     # if the log is null, check batch then sleep and skip

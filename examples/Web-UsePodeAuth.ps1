@@ -67,8 +67,8 @@ Start-PodeServer -Threads 2 {
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
-    New-PodeLogFileMethod -Name 'requests' | Enable-PodeRequestLogging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogFileMethod -Name 'requests' | Enable-PodeRequestLogType
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     Use-PodeAuth
 

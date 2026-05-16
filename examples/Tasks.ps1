@@ -42,7 +42,7 @@ catch { throw }
 Start-PodeServer {
 
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     Add-PodeTask -Name 'Test1' -ScriptBlock {
         'a string'

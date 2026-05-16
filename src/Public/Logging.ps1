@@ -191,9 +191,9 @@ An optional property path within the $WebEvent.Auth.User object for the user's U
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeRequestLogging
+New-PodeLogTerminalMethod | Enable-PodeRequestLogType
 #>
-function Enable-PodeRequestLogging {
+function Enable-PodeRequestLogType {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -208,9 +208,7 @@ function Enable-PodeRequestLogging {
         $Raw
     )
 
-    Test-PodeIsServerless -FunctionName 'Enable-PodeRequestLogging' -ThrowError
-
-    $name = Get-PodeRequestLoggingName
+    $name = Get-PodeRequestLogTypeName
 
     # error if it's already enabled
     if ($PodeContext.Server.Logging.Types.Contains($name)) {
@@ -242,32 +240,40 @@ function Enable-PodeRequestLogging {
     }
 }
 
-<#
-.SYNOPSIS
-Disables Request Logging.
-
-.DESCRIPTION
-Disables Request Logging.
-
-.EXAMPLE
-Disable-PodeRequestLogging
-#>
-function Disable-PodeRequestLogging {
-    [CmdletBinding()]
-    param()
-
-    Remove-PodeLogger -Name (Get-PodeRequestLoggingName)
+if (!(Test-Path Alias:Enable-PodeRequestLogging)) {
+    New-Alias Enable-PodeRequestLogging -Value Enable-PodeRequestLogType
 }
 
 <#
 .SYNOPSIS
-Enables Error Logging using a supplied output method.
+Disables Request log Type.
 
 .DESCRIPTION
-Enables Error Logging using a supplied output method.
+Disables Request log Type.
+
+.EXAMPLE
+Disable-PodeRequestLogType
+#>
+function Disable-PodeRequestLogType {
+    [CmdletBinding()]
+    param()
+
+    Remove-PodeLogType -Name (Get-PodeRequestLogTypeName)
+}
+
+IF (!(Test-Path Alias:Disable-PodeRequestLogging)) {
+    New-Alias Disable-PodeRequestLogging -Value Disable-PodeRequestLogType
+}
+
+<#
+.SYNOPSIS
+Enables Error log Type using a supplied log Method.
+
+.DESCRIPTION
+Enables Error log Type using a supplied log Method.
 
 .PARAMETER Method
-The logging Method to use for output the log entry.
+The log Method to use for output the log entry.
 
 .PARAMETER Levels
 The Levels of errors that should be logged (default is Error).
@@ -276,9 +282,9 @@ The Levels of errors that should be logged (default is Error).
 If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 #>
-function Enable-PodeErrorLogging {
+function Enable-PodeErrorLogType {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -295,7 +301,7 @@ function Enable-PodeErrorLogging {
         $Raw
     )
 
-    $name = Get-PodeErrorLoggingName
+    $name = Get-PodeErrorLogTypeName
 
     # error if it's already enabled
     if ($PodeContext.Server.Logging.Types.Contains($name)) {
@@ -325,21 +331,29 @@ function Enable-PodeErrorLogging {
     }
 }
 
+if (!(Test-Path Alias:Enable-PodeErrorLogging)) {
+    New-Alias Enable-PodeErrorLogging -Value Enable-PodeErrorLogType
+}
+
 <#
 .SYNOPSIS
-Disables Error Logging.
+Disables Error log Type.
 
 .DESCRIPTION
-Disables Error Logging.
+Disables Error log Type.
 
 .EXAMPLE
-Disable-PodeErrorLogging
+Disable-PodeErrorLogType
 #>
-function Disable-PodeErrorLogging {
+function Disable-PodeErrorLogType {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogger -Name (Get-PodeErrorLoggingName)
+    Remove-PodeLogType -Name (Get-PodeErrorLogTypeName)
+}
+
+if (!(Test-Path Alias:Disable-PodeErrorLogging)) {
+    New-Alias Disable-PodeErrorLogging -Value Disable-PodeErrorLogType
 }
 
 <#
@@ -422,18 +436,18 @@ if (!(Test-Path Alias:Add-PodeLogger)) {
 
 <#
 .SYNOPSIS
-Removes a configured Logging method.
+Removes a configured Log Type.
 
 .DESCRIPTION
-Removes a configured Logging method.
+Removes a configured Log Type.
 
 .PARAMETER Name
-The Name of the Logging type to remove.
+The Name of the Log Type to remove.
 
 .EXAMPLE
-Remove-PodeLogger -Name 'LogTypeName'
+Remove-PodeLogType -Name 'LogTypeName'
 #>
-function Remove-PodeLogger {
+function Remove-PodeLogType {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -444,22 +458,30 @@ function Remove-PodeLogger {
     $null = $PodeContext.Server.Logging.Types.Remove($Name)
 }
 
+if (!(Test-Path Alias:Remove-PodeLogger)) {
+    New-Alias Remove-PodeLogger -Value Remove-PodeLogType
+}
+
 <#
 .SYNOPSIS
-Clears all Logging methods that have been configured.
+Clears all Log Types that have been configured.
 
 .DESCRIPTION
-Clears all Logging methods that have been configured.
+Clears all Log Types that have been configured.
 
 .EXAMPLE
-Clear-PodeLoggers
+Clear-PodeLogTypes
 #>
-function Clear-PodeLoggers {
+function Clear-PodeLogTypes {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
     $PodeContext.Server.Logging.Types.Clear()
+}
+
+if (!(Test-Path Alias:Clear-PodeLoggers)) {
+    New-Alias Clear-PodeLoggers -Value Clear-PodeLogTypes
 }
 
 <#
@@ -510,8 +532,8 @@ function Write-PodeErrorLog {
     )
 
     # do nothing if logging is disabled, or error logging isn't setup
-    $name = Get-PodeErrorLoggingName
-    if (!(Test-PodeLoggerEnabled -Name $name)) {
+    $name = Get-PodeErrorLogTypeName
+    if (!(Test-PodeLogTypeEnabled -Name $name)) {
         return
     }
 
@@ -587,7 +609,7 @@ function Write-PodeLog {
     )
 
     # do nothing if logging is disabled, or logger isn't setup
-    if (!(Test-PodeLoggerEnabled -Name $Name)) {
+    if (!(Test-PodeLogTypeEnabled -Name $Name)) {
         return
     }
 
@@ -722,7 +744,7 @@ Create a new Terminal logging Method.
 
 .DESCRIPTION
 Creates a new Terminal logging Method for outputting log items to the terminal.
-Can be used with Enable-PodeRequestLogging, Enable-PodeErrorLogging, or Add-PodeLogType.
+Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
 
 .PARAMETER BatchInfo
 An optional hashtable containing batch configuration for writing log items in bulk.
@@ -757,7 +779,7 @@ Create a new File logging Method.
 
 .DESCRIPTION
 Creates a new File logging Method for outputting log items to files.
-Can be used with Enable-PodeRequestLogging, Enable-PodeErrorLogging, or Add-PodeLogType.
+Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
 
 .PARAMETER Name
 The File Name to prepend new log files using.
@@ -835,7 +857,7 @@ Create a new Event Viewer logging Method.
 
 .DESCRIPTION
 Creates a new Event Viewer logging Method for outputting log items to the Windows Event Viewer.
-Can be used with Enable-PodeRequestLogging, Enable-PodeErrorLogging, or Add-PodeLogType.
+Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
 
 .PARAMETER EventLogName
 An Optional Log Name for the Event Viewer (Default: Application)
@@ -906,7 +928,7 @@ Create a new Custom logging Method.
 
 .DESCRIPTION
 Creates a new Custom logging Method for outputting log items using custom logic defined in a ScriptBlock.
-Can be used with Enable-PodeRequestLogging, Enable-PodeErrorLogging, or Add-PodeLogType.
+Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
 
 .PARAMETER ScriptBlock
 The ScriptBlock that defines how to output a log item.

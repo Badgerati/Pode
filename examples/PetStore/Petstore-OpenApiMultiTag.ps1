@@ -103,7 +103,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default -Name 'endpoint_v3'
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port ((Get-PodeConfig).RestFulPort + 1) -Protocol Http -Name 'endpoint_v3.1'
     }
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     #Configure CORS
     Set-PodeSecurityAccessControl -Origin '*'  -Duration 7200   -WithOptions   -AuthorizationHeader -autoMethods -AutoHeader -Credentials -CrossDomainXhrRequests  #-Header 'content-type' # -Header   'Accept','Content-Type' ,'Connection' #-Headers '*' 'x-requested-with' ,'crossdomain'#

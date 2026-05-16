@@ -49,7 +49,7 @@ Start-PodeServer -Threads 3 {
     Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws -NoAutoUpgradeWebSockets
 
     # log errors to the terminal
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging -Levels Error
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType -Levels Error
 
     # register a connect event
     Register-PodeSignalEvent -Name 'Msg' -Type Connect -EventName 'SignalConnected' -ScriptBlock {

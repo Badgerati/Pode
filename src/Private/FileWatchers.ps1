@@ -16,7 +16,7 @@ function New-PodeFileWatcher {
     param()
 
     $watcher = [PodeWatcher]::new([PodeAdapterType]::File, $PodeContext.Tokens.Cancellation.Token)
-    $watcher.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+    $watcher.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
     $watcher.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     return $watcher
 }

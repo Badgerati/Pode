@@ -40,7 +40,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # log requests to the terminal
-    New-PodeLogTerminalMethod | Enable-PodeRequestLogging
+    New-PodeLogTerminalMethod | Enable-PodeRequestLogType
 
     # set view engine to EPS renderer
     Set-PodeViewEngine -Type EPS -ScriptBlock {

@@ -46,7 +46,7 @@ function Start-PodeTcpServer {
 
     # create the listener
     $listener = [PodeTcpListener]::new($PodeContext.Tokens.Cancellation.Token)
-    $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+    $listener.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize

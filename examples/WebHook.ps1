@@ -61,7 +61,7 @@ Start-PodeServer {
     Set-PodeState -Name 'subscriptions' -Value @{} | Out-Null
 
     # Enable terminal logging for errors
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     # Enable OpenAPI documentation
     Enable-PodeOpenApi -Path '/docs/openapi/v3.1' -OpenApiVersion '3.1.0' -DisableMinimalDefinitions -NoDefaultResponses -EnableSchemaValidation

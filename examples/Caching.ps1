@@ -48,7 +48,7 @@ Start-PodeServer -Threads 3 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # log errors
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     Set-PodeCacheDefaultTtl -Value 60
 

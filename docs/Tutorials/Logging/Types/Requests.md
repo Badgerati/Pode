@@ -4,9 +4,9 @@ Pode has an inbuilt Request logging Type, which will parse and transform a valid
 
 ## Enabling
 
-To enable and use the Request logging Type you use [`Enable-PodeRequestLogging`](../../../../Functions/Logging/Enable-PodeRequestLogging), supplying a logging Method - such as the [Terminal](../../Methods/Terminal) Method.
+To enable and use the Request logging Type you use [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType), supplying a logging Method - such as the [Terminal](../../Methods/Terminal) Method.
 
-The Request logging Type will transform a supplied raw log item into a [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) string. This string is then supplied to the logging Method's scriptblock. If you're using a Custom logging method and want the raw log item instead, you can supply `-Raw` to [`Enable-PodeRequestLogging`](../../../../Functions/Logging/Enable-PodeRequestLogging).
+The Request logging Type will transform a supplied raw log item into a [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) string. This string is then supplied to the logging Method's scriptblock. If you're using a Custom logging method and want the raw log item instead, you can supply `-Raw` to [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType).
 
 ## Examples
 
@@ -15,7 +15,7 @@ The Request logging Type will transform a supplied raw log item into a [Combined
 The following example simply enables Request logging, and will output all items to the terminal:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeRequestLogging
+New-PodeLogTerminalMethod | Enable-PodeRequestLogType
 ```
 
 ### Using Raw Item
@@ -28,7 +28,7 @@ $method = New-PodeLogCustomMethod -ScriptBlock {
     "$($item.Host) - $($item.Response.StatusCode)" | Out-Default
 }
 
-$method | Enable-PodeRequestLogging -Raw
+$method | Enable-PodeRequestLogType -Raw
 ```
 
 ### Username
@@ -38,13 +38,13 @@ If you're not using any Authentication then the "user" field in the log will alw
 For example, if the username was actually user "ID":
 
 ```powershell
-Enable-PodeRequestLogging -UsernameProperty 'ID'
+Enable-PodeRequestLogType -UsernameProperty 'ID'
 ```
 
 Or if the username was inside another "Meta" property, and then within a "Username" property inside the Meta object:
 
 ```powershell
-Enable-PodeRequestLogging -UsernameProperty 'Meta.Username'
+Enable-PodeRequestLogType -UsernameProperty 'Meta.Username'
 ```
 
 ## Raw Request

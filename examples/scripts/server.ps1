@@ -1,6 +1,6 @@
 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
     Set-PodeViewEngine -Type Pode
 
     Add-PodeTimer -Name 'Hi' -Interval 4 -ScriptBlock {

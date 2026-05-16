@@ -320,13 +320,13 @@
 
         # logging
         'New-PodeLoggingMethod',
-        'Enable-PodeRequestLogging',
-        'Enable-PodeErrorLogging',
-        'Disable-PodeRequestLogging',
-        'Disable-PodeErrorLogging',
+        'Enable-PodeRequestLogType',
+        'Enable-PodeErrorLogType',
+        'Disable-PodeRequestLogType',
+        'Disable-PodeErrorLogType',
         'Add-PodeLogType',
-        'Remove-PodeLogger',
-        'Clear-PodeLoggers',
+        'Remove-PodeLogType',
+        'Clear-PodeLogTypes',
         'Write-PodeErrorLog',
         'Write-PodeLog',
         'Protect-PodeLogItem',
@@ -614,7 +614,13 @@
         'Enable-PodeOA',
         'Get-PodeOpenApiDefinition',
         'New-PodeOASchemaProperty',
-        'Add-PodeLogger'
+        'Add-PodeLogger',
+        'Remove-PodeLogger',
+        'Clear-PodeLoggers',
+        'Enable-PodeRequestLogging',
+        'Disable-PodeRequestLogging',
+        'Enable-PodeErrorLogging',
+        'Disable-PodeErrorLogging'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
