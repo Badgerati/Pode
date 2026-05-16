@@ -765,15 +765,15 @@ The File Name to prepend new log files using.
 .PARAMETER Path
 The File Path of where to store the logs.
 
-.PARAMETER BatchInfo
-An optional hashtable containing batch configuration for writing log items in bulk.
-Should be created using New-PodeLogBatchInfo.
-
 .PARAMETER MaxDays
 The maximum number of days to keep logs, before Pode automatically removes them.
 
 .PARAMETER MaxSize
 The maximum size of a log file, before Pode starts writing to a new log file.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
 
 .EXAMPLE
 $method = New-PodeLogFileMethod -Name 'requests'
@@ -913,6 +913,10 @@ The ScriptBlock that defines how to output a log item.
 
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Logging output method's ScriptBlock.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
 
 .EXAMPLE
 $method = New-PodeLogCustomMethod -ScriptBlock { /* logic */ }
