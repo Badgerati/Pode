@@ -480,7 +480,7 @@ function New-PodeContext {
     $ctx.Tokens = Initialize-PodeCancellationToken
 
     # requests that should be logged
-    $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
+    $ctx.LogsToProcess = [System.Collections.Concurrent.BlockingCollection[hashtable]]::new()
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()

@@ -660,9 +660,14 @@ function Close-PodeServerInternal {
         if ($null -ne $PodeContext) {
             # Remove any tokens
             $PodeContext.Tokens = $null
+
+            # Dispose of the logs to process collection
+            if ($null -ne $PodeContext.LogsToProcess) {
+                $PodeContext.LogsToProcess.Dispose()
+                $PodeContext.LogsToProcess = $null
+            }
         }
     }
-
 }
 
 function New-PodePSDrive {

@@ -346,6 +346,9 @@ function Start-PodeLoggingRunspace {
     }
 
     $script = {
+        # Waits for the Pode server to fully start before proceeding with further operations.
+        Wait-PodeCancellationTokenRequest -Type Start
+
         try {
             while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
 
@@ -353,21 +356,12 @@ function Start-PodeLoggingRunspace {
                 Test-PodeSuspensionToken
 
                 try {
-                    # if there are no logs to process, just sleep for a few seconds - but after checking the batch
-                    if ($PodeContext.LogsToProcess.Count -eq 0) {
+                    # try and remove an item from the queue, if none check batches then continue
+                    $log = $null
+                    $found = $PodeContext.LogsToProcess.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
+
+                    if (!$found -or ($null -eq $log)) {
                         Test-PodeLoggerBatch
-                        Start-Sleep -Seconds 5
-                        continue
-                    }
-
-                    # safely pop off the first log from the array
-                    $log = (Lock-PodeObject -Return -Object $PodeContext.LogsToProcess -ScriptBlock {
-                            $log = $PodeContext.LogsToProcess[0]
-                            $null = $PodeContext.LogsToProcess.RemoveAt(0)
-                            return $log
-                        })
-
-                    if ($null -eq $log) {
                         continue
                     }
 
@@ -414,8 +408,11 @@ function Start-PodeLoggingRunspace {
                         $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
                     }
 
-                    # small sleep to lower cpu usage
+                    # small sleep to lower cpu usage when there are lots of logs to process
                     Start-Sleep -Milliseconds 100
+                }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
                 }
                 catch {
                     $_ | Write-PodeErrorLog
