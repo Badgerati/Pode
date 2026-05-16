@@ -681,6 +681,22 @@ function Use-PodeLogging {
     Use-PodeFolder -Path $Path -DefaultPath 'logging'
 }
 
+<#
+.SYNOPSIS
+Create a new batch info object for logging.
+
+.DESCRIPTION
+Creates a new batch info object for logging, which can be used to configure batch processing of log items.
+
+.PARAMETER Size
+The number of log items to process in a single batch. (Default: 1)
+
+.PARAMETER Timeout
+The maximum amount of time, in seconds, to wait before processing a batch of log items. (Default: 0, which means no timeout)
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+#>
 function New-PodeLogBatchInfo {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -700,6 +716,25 @@ function New-PodeLogBatchInfo {
     }
 }
 
+<#
+.SYNOPSIS
+Create a new Terminal logging Method.
+
+.DESCRIPTION
+Creates a new Terminal logging Method for outputting log items to the terminal.
+Can be used with Enable-PodeRequestLogging, Enable-PodeErrorLogging, or Add-PodeLogType.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.EXAMPLE
+$method = New-PodeLogTerminalMethod
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$method = New-PodeLogTerminalMethod -BatchInfo $batchInfo
+#>
 function New-PodeLogTerminalMethod {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -716,6 +751,37 @@ function New-PodeLogTerminalMethod {
     }
 }
 
+<#
+.SYNOPSIS
+Create a new File logging Method.
+
+.DESCRIPTION
+Creates a new File logging Method for outputting log items to files.
+Can be used with Enable-PodeRequestLogging, Enable-PodeErrorLogging, or Add-PodeLogType.
+
+.PARAMETER Name
+The File Name to prepend new log files using.
+
+.PARAMETER Path
+The File Path of where to store the logs.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.PARAMETER MaxDays
+The maximum number of days to keep logs, before Pode automatically removes them.
+
+.PARAMETER MaxSize
+The maximum size of a log file, before Pode starts writing to a new log file.
+
+.EXAMPLE
+$method = New-PodeLogFileMethod -Name 'requests'
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$method = New-PodeLogFileMethod -Name 'requests' -BatchInfo $batchInfo -MaxDays 7 -MaxSize 10MB
+#>
 function New-PodeLogFileMethod {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -763,6 +829,34 @@ function New-PodeLogFileMethod {
     }
 }
 
+<#
+.SYNOPSIS
+Create a new Event Viewer logging Method.
+
+.DESCRIPTION
+Creates a new Event Viewer logging Method for outputting log items to the Windows Event Viewer.
+Can be used with Enable-PodeRequestLogging, Enable-PodeErrorLogging, or Add-PodeLogType.
+
+.PARAMETER EventLogName
+An Optional Log Name for the Event Viewer (Default: Application)
+
+.PARAMETER Source
+An Optional Source for the Event Viewer (Default: Pode)
+
+.PARAMETER EventID
+An Optional EventID for the Event Viewer (Default: 0)
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.EXAMPLE
+$method = New-PodeLogEventViewerMethod
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$method = New-PodeLogEventViewerMethod -EventLogName 'MyLog' -Source 'MyApp' -EventID 1001 -BatchInfo $batchInfo
+#>
 function New-PodeLogEventViewerMethod {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -806,6 +900,31 @@ function New-PodeLogEventViewerMethod {
     }
 }
 
+<#
+.SYNOPSIS
+Create a new Custom logging Method.
+
+.DESCRIPTION
+Creates a new Custom logging Method for outputting log items using custom logic defined in a ScriptBlock.
+Can be used with Enable-PodeRequestLogging, Enable-PodeErrorLogging, or Add-PodeLogType.
+
+.PARAMETER ScriptBlock
+The ScriptBlock that defines how to output a log item.
+
+.PARAMETER ArgumentList
+An array of arguments to supply to the Custom Logging output method's ScriptBlock.
+
+.EXAMPLE
+$method = New-PodeLogCustomMethod -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+$arguments = @('arg1', 'arg2')
+$method = New-PodeLogCustomMethod -ScriptBlock { param($args) /* logic using $args */ } -ArgumentList $arguments
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$method = New-PodeLogCustomMethod -ScriptBlock { /* logic */ } -BatchInfo $batchInfo
+#>
 function New-PodeLogCustomMethod {
     [CmdletBinding()]
     [OutputType([hashtable])]
