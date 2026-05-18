@@ -9,6 +9,23 @@ The ScriptBlock will be supplied with the following arguments:
 1. A transformed, or raw, log item to log that was supplied via [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
 2. The arguments that were supplied from [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType)'s `-ArgumentList` parameter.
 
+## Log Levels
+
+The Custom logging Type uses the following log levels (Informational is the default):
+
+* `Error`
+* `Warning`
+* `Informational`
+* `Verbose`
+* `Debug`
+
+You can alter the log level by supplying `-Levels` to [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType) - you can supply one or more.
+
+!!! tip
+    To enable all log levels more easily, simply supply `-Levels '*'`
+
+You can control the log level of custom log items being written, by supplying `-Level` to [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog) - Informational being the default.
+
 ## Examples
 
 ### Write to File

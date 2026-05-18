@@ -170,11 +170,6 @@ function Get-PodeLoggingInbuiltType {
             $script = {
                 param($item, $options)
 
-                # do nothing if the error level isn't present
-                if (@($options.Levels) -inotcontains $item.Level) {
-                    return
-                }
-
                 # just return the item if Raw is set
                 if ($options.Raw) {
                     return $item
@@ -229,8 +224,14 @@ function Test-PodeLogTypeEnabled {
     return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
 }
 
-function Get-PodeErrorLoggingLevel {
-    return (Get-PodeLogType -Name (Get-PodeErrorLogTypeName)).Arguments.Levels
+function Get-PodeLogTypeLogLevel {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    return (Get-PodeLogType -Name $Name).Levels
 }
 
 function Test-PodeErrorLogTypeEnabled {

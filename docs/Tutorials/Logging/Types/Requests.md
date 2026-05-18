@@ -53,21 +53,21 @@ The raw log item that the Request log Type will supply to any Custom logging Met
 
 ```powershell
 @{
-    Host = '10.10.0.3'
+    Host            = '10.10.0.3'
     RfcUserIdentity = '-'
-    User = '-'
-    Date = '14/Jun/2018:20:23:52 +01:00'
+    User            = '-'
+    Date            = '14/Jun/2018:20:23:52 +01:00'
     Request = @{
-        Method = 'GET'
+        Method   = 'GET'
         Resource = '/api/users'
         Protocol = "HTTP/1.1"
         Referrer = '-'
-        Agent = '<user-agent>'
+        Agent    = '<user-agent>'
     }
     Response = @{
-        StatusCode = '200'
+        StatusCode        = '200'
         StatusDescription = 'OK'
-        Size = '9001'
+        Size              = '9001'
     }
 }
 ```

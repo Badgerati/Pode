@@ -292,7 +292,7 @@ Enables Error log Type using a supplied log Method.
 The log Method to use for output the log entry.
 
 .PARAMETER Levels
-The Levels of errors that should be logged (default is Error).
+The Levels of errors that should be logged (Default: Error)
 
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
@@ -308,7 +308,6 @@ function Enable-PodeErrorLogType {
         $Method,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug', '*')]
         [string[]]
         $Levels = @('Error'),
@@ -355,9 +354,9 @@ function Enable-PodeErrorLogType {
         $PodeContext.Server.Logging.Types[$name] = @{
             Method      = $Method
             ScriptBlock = Get-PodeLoggingInbuiltType -Type Errors
+            Levels      = $Levels
             Arguments   = @{
-                Raw    = $Raw
-                Levels = $Levels
+                Raw = $Raw
             }
         }
     }
@@ -404,6 +403,9 @@ The logging Method to use for outputting the log entry.
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that transforms an item, and returns it for outputting.
 
+.PARAMETER Levels
+The Levels of log items that should be logged. (Default: Informational)
+
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Log type's ScriptBlock.
 
@@ -432,6 +434,11 @@ function Add-PodeLogType {
             })]
         [scriptblock]
         $ScriptBlock,
+
+        [Parameter()]
+        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug', '*')]
+        [string[]]
+        $Levels = @('Informational'),
 
         [Parameter()]
         [object[]]
@@ -466,6 +473,11 @@ function Add-PodeLogType {
             $Method = $pipelineMethods
         }
 
+        # all errors?
+        if ($Levels -contains '*') {
+            $Levels = @('Error', 'Warning', 'Informational', 'Verbose', 'Debug')
+        }
+
         # check for scoped vars
         $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
@@ -474,6 +486,7 @@ function Add-PodeLogType {
             Method         = $Method
             ScriptBlock    = $ScriptBlock
             UsingVariables = $usingVars
+            Levels         = $Levels
             Arguments      = $ArgumentList
         }
     }
@@ -547,7 +560,7 @@ An Exception to write.
 An ErrorRecord to write.
 
 .PARAMETER Level
-The Level of the error being logged.
+The Level of the error being logged. (Default: Error)
 
 .PARAMETER CheckInnerException
 If supplied, any exceptions are check for inner exceptions. If one is present, this is also logged.
@@ -570,7 +583,6 @@ function Write-PodeErrorLog {
         $ErrorRecord,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
         [string]
         $Level = 'Error',
@@ -587,7 +599,7 @@ function Write-PodeErrorLog {
     }
 
     # do nothing if the error level isn't present
-    $levels = @(Get-PodeErrorLoggingLevel)
+    $levels = @(Get-PodeLogTypeLogLevel -Name $name)
     if ($levels -inotcontains $Level) {
         return
     }
@@ -639,6 +651,9 @@ Write an object to a configured custom Logging method.
 .PARAMETER Name
 The Name of the Logging type to use.
 
+.PARAMETER Level
+The Level of the log item being logged. (Default: Informational)
+
 .PARAMETER InputObject
 The Object to write.
 
@@ -652,6 +667,11 @@ function Write-PodeLog {
         [string]
         $Name,
 
+        [Parameter()]
+        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
+        [string]
+        $Level = 'Informational',
+
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]
         $InputObject
@@ -659,6 +679,12 @@ function Write-PodeLog {
 
     # do nothing if logging is disabled, or logger isn't setup
     if (!(Test-PodeLogTypeEnabled -Name $Name)) {
+        return
+    }
+
+    # do nothing if the error level isn't present
+    $levels = @(Get-PodeLogTypeLogLevel -Name $Name)
+    if ($levels -inotcontains $Level) {
         return
     }
 

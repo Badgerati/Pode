@@ -19,15 +19,20 @@ When Pode logs an error, the information being logged is as follows:
 | `Message`    | The error message                                     |
 | `StackTrace` | The error StackTrace                                  |
 
-## Error Levels
+## Log Levels
 
-The Error logging logic uses the following Error levels (Error is the default):
+The Error logging Type uses the following log levels (Error is the default):
 
 * `Error`
 * `Warning`
 * `Informational`
 * `Verbose`
 * `Debug`
+
+You can alter the log level by supplying `-Levels` to [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType) - you can supply one or more.
+
+!!! tip
+    To enable all log levels more easily, simply supply `-Levels '*'`
 
 ## Writing Errors
 
@@ -43,8 +48,6 @@ catch {
     $_ | Write-PodeErrorLog
 }
 ```
-
-To log an error at a different level, you can also supply a `-Level`.
 
 ## Internal Logging
 
@@ -89,11 +92,11 @@ The raw log item that the Error log Type will supply to any Custom logging Metho
 
 ```powershell
 @{
-    Date = [datetime]::Now
-    Level = 'Error'
-    Server = 'ComputerName'
-    Category = 'InvalidOperation: (:) [], RuntimeException'
-    Message = 'You cannot call a method on a null-valued expression.'
+    Date       = [datetime]::Now
+    Level      = 'Error'
+    Server     = 'ComputerName'
+    Category   = 'InvalidOperation: (:) [], RuntimeException'
+    Message    = 'You cannot call a method on a null-valued expression.'
     StackTrace = 'at <ScriptBlock>, <No file>: line 45'
 }
 ```

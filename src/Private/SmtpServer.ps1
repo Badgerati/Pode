@@ -52,7 +52,7 @@ function Start-PodeSmtpServer {
     # create the listener
     $listener = [PodeSmtpListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
-    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
+    $listener.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name (Get-PodeErrorLogTypeName))
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
