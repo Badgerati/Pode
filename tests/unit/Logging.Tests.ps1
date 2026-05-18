@@ -36,7 +36,7 @@ InModuleScope -ModuleName 'Pode' {
 
         It 'Adds a log item' {
             Mock Test-PodeLogTypeEnabled { return $true }
-            Mock Get-PodeLogType { return @{ Levels = @('Error') } }
+            Mock Get-PodeLogType { return @{ Levels = @('Informational') } }
             $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
             Write-PodeLog -Name 'test' -InputObject 'test'
