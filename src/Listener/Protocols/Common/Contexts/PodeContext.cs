@@ -280,7 +280,7 @@ namespace Pode.Protocols.Common.Contexts
                     // Check if the request is aborted with a non-StatusCode of 408 (Request Timeout).
                     if (Request?.IsAborted ?? false)
                     {
-                        PodeHelpers.WriteException(Request.Error, Listener, Request.Error.LoggingLevel);
+                        PodeHelpers.WriteException(Request?.Error, Listener, Request?.Error?.LoggingLevel ?? PodeLoggingLevel.Error);
                     }
 
                     Dispose(true);

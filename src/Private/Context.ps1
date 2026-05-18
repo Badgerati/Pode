@@ -602,7 +602,7 @@ function New-PodeRunspacePool {
         $threadsCounts.Schedule = 0
     }
 
-    if (!(Test-PodeLoggersExist)) {
+    if (!(Test-PodeLogTypesExist)) {
         $threadsCounts.Log = 0
     }
 

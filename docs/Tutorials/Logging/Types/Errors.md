@@ -6,7 +6,7 @@ It also has support for error levels (such as Error, Warning, Verbose), with sup
 
 ## Enabling
 
-To enable and use the Error logging Type you use [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType), supplying a logging Method - such as the [Terminal](../../Methods/Terminal) Method.
+To enable and use the Error logging Type you use [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType), supplying one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
 When Pode logs an error, the information being logged is as follows:
 

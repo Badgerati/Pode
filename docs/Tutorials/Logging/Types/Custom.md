@@ -1,6 +1,6 @@
 # Custom
 
-You can define a Custom logging Type in Pode by using [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType). Much like Requests and Errors, this function too accepts any logging Method - such as the [Terminal](../../Methods/Terminal) Method.
+You can define a Custom logging Type in Pode by using [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType). Much like Requests and Errors, this function too accepts one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
 When adding a Custom logging Type, you supply a `-ScriptBlock` plus an array of optional arguments in `-ArgumentList`. The function also requires a unique `-Name`, so that it can be referenced from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
 

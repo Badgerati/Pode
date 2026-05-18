@@ -84,9 +84,22 @@ Start-PodeServer -Threads 2 -Verbose {
     #     New-PodeLimitMethodComponent -Method Get, Post
     # )
 
+    # wire up a custom logger
+    $customLogMethod = New-PodeLogCustomMethod -ScriptBlock {
+        param($item, $options, $raw)
+        $item.HttpMethod | Out-Default
+    }
+
+    $customLogMethod | Add-PodeLogType -Name 'custom' -ScriptBlock {
+        param($item)
+        return @{
+            HttpMethod = $item.HttpMethod
+        }
+    }
+
     # log requests to the terminal
     $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
-    New-PodeLogTerminalMethod -BatchInfo $batchInfo | Enable-PodeRequestLogType
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogType
 
     # log errors to the terminal
     New-PodeLogTerminalMethod | Enable-PodeErrorLogType
@@ -94,19 +107,7 @@ Start-PodeServer -Threads 2 -Verbose {
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
 
-    # wire up a custom logger
-    $logType = New-PodeLogCustomMethod -ScriptBlock {
-        param($item)
-        $item.HttpMethod | Out-Default
-    }
-
-    $logType | Add-PodeLogType -Name 'custom' -ScriptBlock {
-        param($item)
-        return @{
-            HttpMethod = $item.HttpMethod
-        }
-    }
-
+    # load file routes
     Use-PodeRoutes -Path './routes'
 
     # GET request for web page on "localhost:8081/"

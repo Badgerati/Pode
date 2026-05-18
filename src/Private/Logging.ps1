@@ -331,7 +331,7 @@ function Add-PodeRequestLogEndware {
     }
 }
 
-function Test-PodeLoggersExist {
+function Test-PodeLogTypesExist {
     if (($null -eq $PodeContext.Server.Logging) -or ($null -eq $PodeContext.Server.Logging.Types)) {
         return $false
     }
@@ -340,8 +340,8 @@ function Test-PodeLoggersExist {
 }
 
 function Start-PodeLoggingRunspace {
-    # skip if there are no loggers configured, or logging is disabled
-    if (!(Test-PodeLoggersExist)) {
+    # skip if there are no log types configured, or logging is disabled
+    if (!(Test-PodeLogTypesExist)) {
         return
     }
 
@@ -361,51 +361,44 @@ function Start-PodeLoggingRunspace {
                     $found = $PodeContext.LogsToProcess.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
 
                     if (!$found -or ($null -eq $log)) {
-                        Test-PodeLoggerBatch
+                        Test-PodeLogTypeBatchTimeout
                         continue
                     }
 
                     # run the log item through the appropriate method
-                    $logger = Get-PodeLogType -Name $log.Name
+                    $logType = Get-PodeLogType -Name $log.Name
                     $now = [datetime]::Now
 
-                    # if the log is null, check batch then sleep and skip
-                    if ($null -eq $log) {
+                    # convert to log item into a writeable format
+                    $_args = @($log.Item) + @($logType.Arguments)
+                    $result = @(Invoke-PodeScriptBlock -ScriptBlock $logType.ScriptBlock -Arguments $_args -UsingVariables $logType.UsingVariables -Return -Splat)
+                    if ($null -eq $result) {
                         Start-Sleep -Milliseconds 100
                         continue
                     }
 
-                    # convert to log item into a writeable format
-                    $rawItems = $log.Item
-                    $_args = @($log.Item) + @($logger.Arguments)
-                    $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
+                    # loop through each log method available to the log type
+                    foreach ($logMethod in $logType.Method) {
+                        $batch = $logMethod.Batch
 
-                    # check batching
-                    $batch = $logger.Method.Batch
-                    if ($batch.Size -gt 1) {
-                        # add current item to batch
-                        $batch.Items += $result
-                        $batch.RawItems += $log.Item
-                        $batch.LastUpdate = $now
+                        if ($batch.Size -gt 1) {
+                            # add current item to batch
+                            $batch.Items += $result
+                            $batch.RawItems += $log.Item
+                            $batch.LastUpdate = $now
 
-                        # if the current amount of items matches the batch, write
-                        $result = $null
-                        if ($batch.Items.Length -ge $batch.Size) {
-                            $result = $batch.Items
-                            $rawItems = $batch.RawItems
+                            # if the current amount of items matches the batch, send to log method and reset batch
+                            if ($batch.Items.Length -ge $batch.Size) {
+                                Invoke-PodeLogMethod -Method $logMethod -Item $batch.Items -RawItem $batch.RawItems
+                                $batch.Items = @()
+                                $batch.RawItems = @()
+                            }
                         }
 
-                        # if we're writing, reset the items
-                        if ($null -ne $result) {
-                            $batch.Items = @()
-                            $batch.RawItems = @()
+                        # send log item to log method
+                        else {
+                            Invoke-PodeLogMethod -Method $logMethod -Item $result -RawItem $log.Item
                         }
-                    }
-
-                    # send the writeable log item off to the log writer
-                    if ($null -ne $result) {
-                        $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
-                        $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
                     }
 
                     # small sleep to lower cpu usage when there are lots of logs to process
@@ -432,35 +425,49 @@ function Start-PodeLoggingRunspace {
     Add-PodeRunspace -Type Main -Name 'Logging' -ScriptBlock $script
 }
 
-<#
-.SYNOPSIS
-    Tests whether Pode logger batches need to be written.
-
-.DESCRIPTION
-    This function checks each Pode logger and determines if its batch needs to be written. It evaluates the batch size, timeout, and last update timestamp to decide whether to process the batch and write the log entries.
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-#>
-function Test-PodeLoggerBatch {
+function Test-PodeLogTypeBatchTimeout {
     $now = [datetime]::Now
 
-    # check each logger, and see if its batch needs to be written
-    foreach ($logger in $PodeContext.Server.Logging.Types.Values) {
-        $batch = $logger.Method.Batch
-        if (($batch.Size -gt 1) -and ($batch.Items.Length -gt 0) -and ($batch.Timeout -gt 0) `
-                -and ($null -ne $batch.LastUpdate) -and ($batch.LastUpdate.AddSeconds($batch.Timeout) -le $now)
-        ) {
-            $result = $batch.Items
-            $rawItems = $batch.RawItems
+    # check each log Type, and see if its batch needs to be outputted due to timeout
+    foreach ($logType in $PodeContext.Server.Logging.Types.Values) {
+        foreach ($logMethod in $logType.Method) {
+            $batch = $logMethod.Batch
 
+            # do nothing if not batching, or no items
+            if (($batch.Size -le 1) -or ($batch.Timeout -le 0) -or ($batch.Items.Length -eq 0)) {
+                continue
+            }
+
+            # do nothing if the batch timeout hasn't been reached
+            if (($null -eq $batch.LastUpdate) -or ($batch.LastUpdate.AddSeconds($batch.Timeout) -gt $now)) {
+                continue
+            }
+
+            # send batch to log method and reset batch
+            Invoke-PodeLogMethod -Method $logMethod -Item $batch.Items -RawItem $batch.RawItems
             $batch.Items = @()
             $batch.RawItems = @()
-
-            $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
-            $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
         }
     }
+}
+
+function Invoke-PodeLogMethod {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $Method,
+
+        [Parameter(Mandatory = $true)]
+        [object[]]
+        $Item,
+
+        [Parameter()]
+        [object[]]
+        $RawItem
+    )
+
+    $_args = @(, $Item) + @($Method.Arguments) + @(, $RawItem)
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Method.ScriptBlock -Arguments $_args -UsingVariables $Method.UsingVariables -Splat
 }
 
 function New-PodeLogBatchConfig {
