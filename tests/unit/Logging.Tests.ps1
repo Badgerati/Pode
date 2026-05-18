@@ -36,6 +36,7 @@ InModuleScope -ModuleName 'Pode' {
 
         It 'Adds a log item' {
             Mock Test-PodeLogTypeEnabled { return $true }
+            Mock Get-PodeLogType { return @{ Levels = @('Error') } }
             $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
             Write-PodeLog -Name 'test' -InputObject 'test'
@@ -58,10 +59,7 @@ InModuleScope -ModuleName 'Pode' {
 
         It 'Adds an error log item' {
             Mock Test-PodeLogTypeEnabled { return $true }
-            Mock Get-PodeLogType { return @{ Arguments = @{
-                        Levels = @('Error')
-                    }
-                } }
+            Mock Get-PodeLogType { return @{ Levels = @('Error') } }
 
             $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
@@ -76,10 +74,7 @@ InModuleScope -ModuleName 'Pode' {
 
         It 'Adds an exception log item' {
             Mock Test-PodeLogTypeEnabled { return $true }
-            Mock Get-PodeLogType { return @{ Arguments = @{
-                        Levels = @('Error')
-                    }
-                } }
+            Mock Get-PodeLogType { return @{ Levels = @('Error') } }
 
             $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
@@ -92,10 +87,7 @@ InModuleScope -ModuleName 'Pode' {
 
         It 'Does not log as Verbose not allowed' {
             Mock Test-PodeLogTypeEnabled { return $true }
-            Mock Get-PodeLogType { return @{ Arguments = @{
-                        Levels = @('Error')
-                    }
-                } }
+            Mock Get-PodeLogType { return @{ Levels = @('Error') } }
 
             $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
