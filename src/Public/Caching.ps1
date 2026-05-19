@@ -14,6 +14,9 @@ An optional cache Storage name. (Default: in-memory)
 .PARAMETER Metadata
 If supplied, and if supported by the cache storage, an metadata such as expiry times will also be returned.
 
+.PARAMETER Enumerate
+If supplied, and if the value returned from the cache is an IEnumerable, it will be unwrapped per normal PowerShell behaviour.
+
 .EXAMPLE
 $value = Get-PodeCache -Key 'ExampleKey'
 
@@ -28,6 +31,7 @@ $value = $cache:ExampleKey
 #>
 function Get-PodeCache {
     [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -38,7 +42,10 @@ function Get-PodeCache {
         $Storage = $null,
 
         [switch]
-        $Metadata
+        $Metadata,
+
+        [switch]
+        $Enumerate
     )
 
     # inmem or custom storage?
@@ -48,12 +55,24 @@ function Get-PodeCache {
 
     # use inmem cache
     if ([string]::IsNullOrEmpty($Storage)) {
-        return (Get-PodeCacheInternal -Key $Key -Metadata:$Metadata)
+        $item = Get-PodeCacheInternal -Key $Key -Metadata:$Metadata
+
+        if ($Enumerate) {
+            return $item
+        }
+
+        return , $item
     }
 
     # used custom storage
     if (Test-PodeCacheStorage -Name $Storage) {
-        return (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Get -Arguments @($Key, $Metadata.IsPresent) -Splat -Return)
+        $item = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Get -Arguments @($Key, $Metadata.IsPresent) -Splat -Return
+
+        if ($Enumerate) {
+            return $item
+        }
+
+        return , $item
     }
 
     # storage not found!
@@ -75,7 +94,7 @@ The Key to be set.
 The value of the key to be set, can be any object type.
 
 .PARAMETER Ttl
-An optional TTL value, in seconds. The default is whatever "Get-PodeCacheDefaultTtl" retuns, which will be 3600 seconds when not set.
+An optional TTL value, in seconds. The default is whatever "Get-PodeCacheDefaultTtl" returns, which will be 3600 seconds when not set.
 
 .PARAMETER Storage
 An optional cache Storage name. (Default: in-memory)

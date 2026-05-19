@@ -25,7 +25,7 @@ function Get-PodeCacheInternal {
     }
 
     # return just the value as default
-    return $meta.Value
+    return , $meta.Value
 }
 
 function Set-PodeCacheInternal {
