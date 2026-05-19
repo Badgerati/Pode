@@ -46,9 +46,6 @@ function Start-PodeInternalServer {
         # run start event hooks
         Invoke-PodeEvent -Type Starting
 
-        # setup temp drives for internal dirs
-        Add-PodePSInbuiltDrive
-
         # setup inbuilt scoped vars
         Add-PodeScopedVariablesInbuilt
 
@@ -69,6 +66,9 @@ function Start-PodeInternalServer {
 
         $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
         $null = Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
+
+        # setup temp drives for internal dirs
+        Add-PodePSInbuiltDrive
 
         #Validate OpenAPI definitions
         Test-PodeOADefinitionInternal
