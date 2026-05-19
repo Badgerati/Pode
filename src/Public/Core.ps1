@@ -948,6 +948,7 @@ function Set-PodeDefaultFolder {
     )
     if (Test-Path -Path $Path -PathType Container) {
         $PodeContext.Server.DefaultFolders[$Type] = $Path
+        $PodeContext.Server.InbuiltDrives[$Type] = (New-PodePSDrive -Path $path)
     }
     else {
         # Path does not exist
