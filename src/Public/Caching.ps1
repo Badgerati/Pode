@@ -14,8 +14,8 @@ An optional cache Storage name. (Default: in-memory)
 .PARAMETER Metadata
 If supplied, and if supported by the cache storage, an metadata such as expiry times will also be returned.
 
-.PARAMETER Enumerate
-If supplied, and if the value returned from the cache is an IEnumerable, it will be unwrapped per normal PowerShell behaviour.
+.PARAMETER NoEnumerate
+If supplied, and if the value returned from the cache is an IEnumerable, it will not be unwrapped per normal PowerShell behaviour.
 
 .EXAMPLE
 $value = Get-PodeCache -Key 'ExampleKey'
@@ -25,6 +25,9 @@ $value = Get-PodeCache -Key 'ExampleKey' -Storage 'ExampleStorage'
 
 .EXAMPLE
 $value = Get-PodeCache -Key 'ExampleKey' -Metadata
+
+.EXAMPLE
+$value = Get-PodeCache -Key 'ExampleKey' -NoEnumerate
 
 .EXAMPLE
 $value = $cache:ExampleKey
@@ -45,7 +48,7 @@ function Get-PodeCache {
         $Metadata,
 
         [switch]
-        $Enumerate
+        $NoEnumerate
     )
 
     # inmem or custom storage?
@@ -57,22 +60,22 @@ function Get-PodeCache {
     if ([string]::IsNullOrEmpty($Storage)) {
         $item = Get-PodeCacheInternal -Key $Key -Metadata:$Metadata
 
-        if ($Enumerate) {
-            return $item
+        if ($NoEnumerate) {
+            return , $item
         }
 
-        return , $item
+        return $item
     }
 
     # used custom storage
     if (Test-PodeCacheStorage -Name $Storage) {
         $item = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Get -Arguments @($Key, $Metadata.IsPresent) -Splat -Return
 
-        if ($Enumerate) {
-            return $item
+        if ($NoEnumerate) {
+            return , $item
         }
 
-        return , $item
+        return $item
     }
 
     # storage not found!
