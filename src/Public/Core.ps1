@@ -946,6 +946,8 @@ function Set-PodeDefaultFolder {
         [string]
         $Path
     )
+
+    $Path = Join-PodeServerRoot -Folder $Path
     if (Test-Path -Path $Path -PathType Container) {
         $PodeContext.Server.DefaultFolders[$Type] = $Path
     }
