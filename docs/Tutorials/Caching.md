@@ -44,6 +44,11 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 }
 ```
 
+!!! tip
+    If you cache an IEnumerable object, such as: Array, ArrayList, Queue, Stack, etc. PowerShell's default behaviour is to unwrap these, and if they are empty then `$null` will be returned.
+
+    To avoid this, and have Pode instead return the raw object, supply `-NoEnumerate` to `Get-PodeCache`. This doesn't work on `$cache:`, this will always unwrap, so you will need to use `Get-PodeCache` instead.
+
 You can test if an item exists in the cache, and isn't expired, using [`Test-PodeCache`](../../Functions/Caching/Test-PodeCache) - this is useful to call if the cached value for a key happens to genuinely be `$null`, so you can see if the key does exist.
 
 If you need to invalidate a cached value you can use [`Remove-PodeCache`](../../Functions/Caching/Remove-PodeCache), or if you need to invalidate the whole cache you can use [`Clear-PodeCache`](../../Functions/Caching/Clear-PodeCache).
