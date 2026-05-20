@@ -14,7 +14,8 @@ function Invoke-PodeEvent {
     $strType = $Type.ToString()
 
     # do nothing if no events
-    if (!$PodeContext.Server.Events.ContainsKey($strType) -or
+    if ((Test-PodeIsEmpty $PodeContext.Server.Events) -or
+        !$PodeContext.Server.Events.ContainsKey($strType) -or
         $PodeContext.Server.Events[$strType].Count -eq 0) {
         return
     }
