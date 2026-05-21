@@ -912,10 +912,14 @@ function Open-PodeConfiguration {
         return $config
     }
 
-    # where are we loading the config file from, server root or custom path?
+    # where are we loading the config file from, server root, custom path, or current directory?
     $configPath = $ServerRoot
     if (![string]::IsNullOrEmpty($ConfigFile)) {
         $configPath = Join-PodeServerRoot -Folder $ConfigFile -Root $ServerRoot
+    }
+
+    if ([string]::IsNullOrEmpty($configPath)) {
+        $configPath = $PWD.Path
     }
 
     # if path isn't a file, then we need to find the default config file in the folder
