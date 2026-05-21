@@ -217,20 +217,8 @@ function New-PodeContext {
         }
     }
 
-    # Load the server configuration based on the provided parameters.
-    # If $IgnoreServerConfig is set, an empty configuration (@{}) is assigned; otherwise, the configuration is loaded using Open-PodeConfiguration.
-    $ctx.Server.Configuration = if ($IgnoreServerConfig) { @{} }
-    else {
-        Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx -ConfigFile $ConfigFile
-    }
-
-    # Set the 'Enabled' property of the server configuration.
-    # This is based on whether $IgnoreServerConfig is explicitly present (false if present, true otherwise).
-    $ctx.Server.Configuration.Enabled = ! $IgnoreServerConfig.IsPresent
-
-    # Assign the specified configuration file path (if any) to the 'ConfigFile' property of the server configuration.
-    # This allows tracking which configuration file was used, even if overridden.
-    $ctx.Server.Configuration.ConfigFile = $ConfigFile
+    # Load the server configuration based on the provided parameters
+    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx -ConfigFile $ConfigFile -Ignore:$IgnoreServerConfig
 
     # over status page exceptions
     if (!(Test-PodeIsEmpty $StatusPageExceptions)) {
@@ -243,8 +231,8 @@ function New-PodeContext {
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
-    if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
-        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
+    if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Data.Server.Root)) {
+        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Data.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
 
     if (Test-PodeIsEmpty $ctx.Server.Root) {
@@ -875,28 +863,23 @@ function New-PodeStateContext {
         Server        = $Context.Server
     }
 }
+
 <#
 .SYNOPSIS
-    Opens and processes the Pode server configuration.
+Opens and processes the Pode server configuration.
 
 .DESCRIPTION
-    This function handles loading the Pode server configuration file. It supports custom configurations specified by environment variables,
-    a provided file path, or falls back to the default `server.psd1` file. The function sets the configuration for both the server and web contexts.
+This function handles loading the Pode server configuration file. It supports custom configurations specified by environment variables,
+a provided file path, or falls back to the default `server.psd1` file. The function sets the configuration for both the server and web contexts.
 
 .PARAMETER ServerRoot
-    Specifies the root directory of the server. Defaults to `$null` if not provided.
+Specifies the root directory of the server. Defaults to `$null` if not provided.
 
 .PARAMETER Context
-    Specifies the context to set configurations for Pode server and web.
+Specifies the context to set configurations for Pode server and web.
 
 .PARAMETER ConfigFile
-    Allows specifying a custom configuration file path. If provided, it overrides any other configuration file.
-
-.OUTPUTS
-    Hashtable representing the loaded configuration.
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
+Allows specifying a custom configuration file path. If provided, it overrides any other configuration file.
 #>
 function Open-PodeConfiguration {
     [CmdletBinding()]
@@ -911,38 +894,63 @@ function Open-PodeConfiguration {
 
         [Parameter()]
         [string]
-        $ConfigFile
+        $ConfigFile,
+
+        [switch]
+        $Ignore
     )
 
     # Initialize an empty configuration hashtable
-    $config = @{}
+    $config = @{
+        Enabled = !$Ignore.IsPresent
+        Path    = $null
+        Data    = @{}
+    }
 
-    # Set the path to the default root configuration file
-    $configPath = (Join-PodeServerRoot -Folder '.' -FilePath 'server.psd1' -Root $ServerRoot)
+    # return empty config if we're ignoring loading the config file
+    if ($Ignore) {
+        return $config
+    }
 
-    # Check for an environment-specific configuration file if the environment variable is set
-    if (!(Test-PodeIsEmpty $env:PODE_ENVIRONMENT)) {
-        $_path = (Join-PodeServerRoot -Folder '.' -FilePath "server.$($env:PODE_ENVIRONMENT).psd1" -Root $ServerRoot)
-        if (Test-PodePath -Path $_path -NoStatus) {
-            $configPath = $_path
+    # where are we loading the config file from, server root, custom path, or current directory?
+    $configPath = $ServerRoot
+    if (![string]::IsNullOrEmpty($ConfigFile)) {
+        $configPath = Join-PodeServerRoot -Folder $ConfigFile -Root $ServerRoot
+    }
+
+    if ([string]::IsNullOrEmpty($configPath)) {
+        $configPath = $PWD.Path
+    }
+
+    # if path isn't a file, then we need to find the default config file in the folder
+    if (!(Test-Path -Path $configPath -PathType Leaf)) {
+        $tmpPath = [System.IO.Path]::Combine($configPath, 'server.psd1')
+
+        if (![string]::IsNullOrEmpty($env:PODE_ENVIRONMENT)) {
+            $tmpEnvPath = [System.IO.Path]::Combine($configPath, "server.$($env:PODE_ENVIRONMENT).psd1")
+            if (Test-Path -Path $tmpEnvPath) {
+                $tmpPath = $tmpEnvPath
+            }
         }
+
+        $configPath = $tmpPath
     }
 
-    # Override the configuration path if a valid ConfigFile parameter is provided
-    if (!([string]::IsNullOrEmpty($ConfigFile))) {
-        #-and (Test-Path -Path $ConfigFile -PathType Leaf)) {
-        $configPath = Get-PodeRelativePath -Path $ConfigFile -JoinRoot -Resolve -RootPath $ServerRoot -TestPath
+    # ensure the path exists, if not disabled config and return
+    if (!(Test-Path -Path $configPath)) {
+        $config.Enabled = $false
+        return $config
     }
 
-    # check the path exists, and load the config
-    if (Test-PodePath -Path $configPath -NoStatus) {
-        # Import the configuration from the file
-        $config = Import-PowerShellDataFile -Path $configPath -ErrorAction Stop
+    # set the config path
+    $config.Path = $configPath
 
-        # Set the server and web configurations in the provided context
-        Set-PodeServerConfiguration -Configuration $config.Server -Context $Context
-        Set-PodeWebConfiguration -Configuration $config.Web -Context $Context
-    }
+    # Import the configuration from the file
+    $config.Data = Import-PowerShellDataFile -Path $configPath -ErrorAction Stop
+
+    # Set the server and web configurations in the provided context
+    Set-PodeServerConfiguration -Configuration $config.Data.Server -Context $Context
+    Set-PodeWebConfiguration -Configuration $config.Data.Web -Context $Context
 
     # Return the loaded configuration
     return $config
@@ -1079,8 +1087,6 @@ function Set-PodeServerConfiguration {
             Metrics   = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Metrics -Default $Context.Server.Console.KeyBindings.Metrics -EnumType ([type][System.ConsoleKey])
         }
     }
-
-
 }
 
 function Set-PodeWebConfiguration {
