@@ -1,5 +1,25 @@
 # Release Notes
 
+## v2.13.3
+
+Date: 22nd May 2026
+
+```plain
+### Bugs
+* #1710: Fix for default folders whose custom path is not recognized (thanks @CedX!)
+* #1711: Adds -NoEnumerate switch for Get-PodeCache to avoid IEnumerable unwrapping behaviour
+* #1712: Fixes a bug causing the server config to not be reloaded after the first server restart
+
+### Documentation
+* #1702: Removes support for the deprecated Kestrel Listener
+
+### Packaging
+* #1701: Bump actions/add-to-project from 1.0.2 to 2.0.0
+* #1703: Move Docker images to .NET SDK images, on .NET10 and PowerShell 7.6
+* #1705: Bump swagger-ui-dist from 5.32.5 to 5.32.6
+* #1709: Bump openapi-explorer from 2.4.793 to 2.4.799
+```
+
 ## v2.13.2
 
 Date: 1st May 2026

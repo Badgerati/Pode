@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    Custom script for Web-Pages.ps1 and Web-PagesKestrel.ps1
+    Custom script for Web-Pages.ps1
 
 .DESCRIPTION
-    Custom script for Web-Pages.ps1 and Web-PagesKestrel.ps1
+    Custom script for Web-Pages.ps1
 
 .NOTES
     Author: Pode Team

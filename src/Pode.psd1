@@ -146,6 +146,8 @@
         'Use-PodeStream',
         'Use-PodeScript',
         'Get-PodeConfig',
+        'Test-PodeConfigEnabled',
+        'Get-PodeConfigPath',
         'Add-PodeEndware',
         'Use-PodeEndware',
         'Import-PodeModule',

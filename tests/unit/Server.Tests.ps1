@@ -154,7 +154,13 @@ InModuleScope -ModuleName 'Pode' {
                     Output          = @{
                         Variables = @{ 'key' = 'value' }
                     }
-                    Configuration   = @{ Enabled = $false; Server = @{'key' = 'value' } }
+                    Configuration   = @{
+                        Enabled = $false
+                        Path    = 'server.psd1'
+                        Data    = @{
+                            Server = @{'key' = 'value' }
+                        }
+                    }
                     Sockets         = @{
                         Listeners = @()
                         Queues    = @{
@@ -283,9 +289,10 @@ InModuleScope -ModuleName 'Pode' {
             $PodeContext.Server.Sessions.Count | Should -Be 0
             $PodeContext.Server.Authentications.Methods.Count | Should -Be 0
             $PodeContext.Server.State.Count | Should -Be 0
-            $PodeContext.Server.Configuration.Count | Should -Be 2
+            $PodeContext.Server.Configuration.Count | Should -Be 3
+            $PodeContext.Server.Configuration.Data.Count | Should -Be 1
             $PodeContext.Server.Configuration.Enabled | Should -BeFalse
-            $PodeContext.Server.Configuration.Server.Key | Should -Be 'value'
+            $PodeContext.Server.Configuration.Data.Server.Key | Should -Be 'value'
 
             $PodeContext.Timers.Items.Count | Should -Be 0
             $PodeContext.Schedules.Items.Count | Should -Be 0

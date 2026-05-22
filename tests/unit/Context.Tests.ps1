@@ -9,7 +9,12 @@ InModuleScope -ModuleName 'Pode' {
     Describe 'Get-PodeConfig' {
         It 'Returns JSON config' {
             $json = '{ "settings": { "port": 90 } }'
-            $PodeContext.Server = @{ 'Configuration' = ($json | ConvertFrom-Json) }
+            $PodeContext.Server = @{
+                Configuration = @{
+                    Data = ($json | ConvertFrom-Json)
+                }
+            }
+
             $config = Get-PodeConfig
             $config | Should -Not -Be $null
             $config.settings.port | Should -Be 90

@@ -22,7 +22,7 @@ Sometimes there could be more, if patch releases are needed. But sometimes there
 
 ### Features
 
-- [ ] NTLM and/or Kerberos authentication - likely it's own module [#402](https://github.com/Badgerati/Pode/issues/402)
+- [x] NTLM and/or Kerberos authentication - [#402](https://github.com/Badgerati/Pode/issues/402)
 - [ ] More logging provider support - such as Azure, AWS, and Splunk. These could be baked into Pode or be standalone modules
 - [ ] Better support for a more "serverless" Pode feel via Docker, such as auto-loading routes from a folder
 - [ ] Starting Pode as a background job from CLI, instead of blocking [#553](https://github.com/Badgerati/Pode/issues/553)
