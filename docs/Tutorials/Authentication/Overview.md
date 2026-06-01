@@ -430,9 +430,9 @@ Various metadata which triggered the Authentication event is supplied to your sc
 !!! info
     When registering an event against a standard `Add-PodeAuth` method, the `Name` property in `$TriggeredEvent` will always be the name of that Authentication Method.
 
-    However, in the case of `Merge-PodeAuth` methods, the event will be triggered for the child Authentication Method which caused the event to be successful; it will then also be called for each "merge" parent of that child Authentication method.
+    However, in the case of `Merge-PodeAuth` methods, the event will be triggered for the child Authentication Method which caused the event to be successful in the ase of `Valid=OR`, or it will be triggered for just the merged Authentication in the case of `Valid=AND`; it will then also be called for each "merge" parent of that child Authentication method.
 
-    For example, if you have two Authentication methods: "Basic" and "API", and then you merge this into one "OR" Authentication method "MergedAuth", then if "API" caused the Login event to be successful the event will be triggered for "API" but then also for "MergedAuth" (assuming any event registrations exist).
+    For example, in the case of `Valid=OR`: if you have two Authentication methods "Basic" and "API", and then you merge this into one "OR" Authentication method "MergedAuth", then if "API" caused the Login event to be successful the event will be triggered for "API" but then also for "MergedAuth" (assuming any event registrations exist).
 
 ### Unregister
 
