@@ -1504,7 +1504,6 @@ function Test-PodeAuthInternal {
     }
 
     # trigger successful auth event
-    $WebEvent.Auth | Out-Default
     Invoke-PodeAuthEvent -Name $WebEvent.Auth.Name -Type Login -User $WebEvent.Auth.User
 
     # set the status to success
