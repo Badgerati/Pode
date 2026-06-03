@@ -23429,8 +23429,8 @@ This Challenge property is a string and will be automatically appended onto the 
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>When registering an event against a standard <code>Add-PodeAuth</code> method, the <code>Name</code> property in <code>$TriggeredEvent</code> will always be the name of that Authentication Method.</p>
-<p>However, in the case of <code>Merge-PodeAuth</code> methods, the event will be triggered for the child Authentication Method which caused the event to be successful; it will then also be called for each "merge" parent of that child Authentication method.</p>
-<p>For example, if you have two Authentication methods: "Basic" and "API", and then you merge this into one "OR" Authentication method "MergedAuth", then if "API" caused the Login event to be successful the event will be triggered for "API" but then also for "MergedAuth" (assuming any event registrations exist).</p>
+<p>However, in the case of <code>Merge-PodeAuth</code> methods, the event will be triggered for the child Authentication Method which caused the event to be successful in the ase of <code>Valid=One</code>, or it will be triggered for just the merged Authentication in the case of <code>Valid=All</code>. It will then also be called for each "merge" parent of that Authentication method.</p>
+<p>For example, in the case of <code>Valid=One</code>: if you have two Authentication methods "Basic" and "API", and then you merge this into one "OR" Authentication method "MergedAuth", then if "API" caused the Login event to be successful the event will be triggered for "API" but then also for "MergedAuth" (assuming any event registrations exist).</p>
 </div>
 <h3 id="unregister">Unregister</h3>
 <p>To unregister an previous event registration, simply use <a href="../../../Functions/Authentication/Unregister-PodeAuthEvent"><code>Unregister-PodeAuthEvent</code></a>:</p>
