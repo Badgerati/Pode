@@ -1,5 +1,19 @@
 # Release Notes
 
+## v2.13.4
+
+Date: 3rd June 2026
+
+```plain
+### Bugs
+* #1719: Fixes an Empty Parameter issue for Merged Authentication
+* #1720: Ensure connections are closed appropriately on IO and Socket Exceptions
+
+### Packaging
+* #1716: Bump @stoplight/elements from 9.0.19 to 9.0.21
+* #1718: Bump redoc from 2.5.2 to 2.5.3
+```
+
 ## v2.13.3
 
 Date: 22nd May 2026
