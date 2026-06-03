@@ -298,13 +298,6 @@ namespace Pode.Protocols.Common.Requests
             {
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
             }
-            catch (IOException ex)
-            {
-                if (Context.Listener.IsConnected)
-                {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
-                }
-            }
             catch (ObjectDisposedException ex)
             {
                 if (Context.Listener.IsConnected)
@@ -316,26 +309,32 @@ namespace Pode.Protocols.Common.Requests
             {
                 if (Context.Listener.IsConnected)
                 {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
                     Error = Strategy.CreateException(ex, PodeRequestStatusType.ServerError);
                 }
             }
             catch (PodeRequestException ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
                 Error = ex;
+            }
+            catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException)
+            {
+                // let the calling method handle these exceptions
+                throw;
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
-                Error = Strategy.CreateException(ex, PodeRequestStatusType.ServerError);
+                // unexpected exception, log and return a generic error response
+                if (Context.Listener.IsConnected)
+                {
+                    Error = Strategy.CreateException(ex, PodeRequestStatusType.ServerError);
+                }
             }
             finally
             {
                 PartialDispose();
             }
 
-            return false;
+            return true;
         }
 
         /// <summary>
