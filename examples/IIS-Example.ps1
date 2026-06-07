@@ -10,7 +10,6 @@
 .EXAMPLE
     To run the sample: ./IIS-Example.ps1
 
-
     Invoke-RestMethod -Uri http://localhost:8081 -Method Get
 
     Invoke-RestMethod -Uri http://localhost:8081/run-task -Method Get
@@ -43,11 +42,13 @@ catch { throw }
 
 # create a server, and start listening on port 8081
 Start-PodeServer {
-
-    # listen on localhost:8081
+    # listen on localhost:8081 or HTTP_PLATFORM_PORT for httpPlatformHandler
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLogTerminalMethod | Enable-PodeRequestLogType
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+    # Add-PodeEndpoint -Address localhost -Port $env:HTTP_PLATFORM_PORT -Protocol Http
+
+    # enable logging to file
+    New-PodeLogFileMethod -Name 'requests' | Enable-PodeRequestLogging
+    New-PodeLogFileMethod -Name 'errors' | Enable-PodeErrorLogging
 
     # Add-PodeLimitAccessRule -Name 'DenyLocal' -Action Deny -Component @(
     #     New-PodeLimitIPComponent -IP localhost -Location XForwardedFor

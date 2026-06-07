@@ -50,7 +50,7 @@ Pode can run on *nix environments, therefore it only makes sense for there to be
 docker pull badgerati/pode:latest
 
 # or the following for a specific version:
-docker pull badgerati/pode:2.13.2
+docker pull badgerati/pode:2.13.4
 ```
 
 * To pull down the Alpine Pode image you can do:
@@ -60,7 +60,7 @@ docker pull badgerati/pode:2.13.2
 docker pull badgerati/pode:latest-alpine
 
 # or the following for a specific version:
-docker pull badgerati/pode:2.13.2-alpine
+docker pull badgerati/pode:2.13.4-alpine
 ```
 
 * To pull down the ARM32 Pode image you can do:
@@ -70,7 +70,7 @@ docker pull badgerati/pode:2.13.2-alpine
 docker pull badgerati/pode:latest-arm32
 
 # or the following for a specific version:
-docker pull badgerati/pode:2.13.2-arm32
+docker pull badgerati/pode:2.13.4-arm32
 ```
 
 Once pulled, you can [view here](../../Hosting/Docker) on how to use the image.
@@ -86,7 +86,7 @@ You can also get the Pode docker image from the GitHub Package Registry! The ima
 docker pull docker.pkg.github.com/badgerati/pode/pode:latest
 
 # or the following for a specific version:
-docker pull docker.pkg.github.com/badgerati/pode/pode:2.13.2
+docker pull docker.pkg.github.com/badgerati/pode/pode:2.13.4
 ```
 
 * To pull down the Alpine Pode image you can do:
@@ -96,7 +96,7 @@ docker pull docker.pkg.github.com/badgerati/pode/pode:2.13.2
 docker pull docker.pkg.github.com/badgerati/pode/pode:latest-alpine
 
 # or the following for a specific version:
-docker pull docker.pkg.github.com/badgerati/pode/pode:2.13.2-alpine
+docker pull docker.pkg.github.com/badgerati/pode/pode:2.13.4-alpine
 ```
 
 * To pull down the ARM32 Pode image you can do:
@@ -106,7 +106,7 @@ docker pull docker.pkg.github.com/badgerati/pode/pode:2.13.2-alpine
 docker pull docker.pkg.github.com/badgerati/pode/pode:latest-arm32
 
 # or the following for a specific version:
-docker pull docker.pkg.github.com/badgerati/pode/pode:2.13.2-arm32
+docker pull docker.pkg.github.com/badgerati/pode/pode:2.13.4-arm32
 ```
 
 Once pulled, you can [view here](../../Hosting/Docker) on how to use the image.

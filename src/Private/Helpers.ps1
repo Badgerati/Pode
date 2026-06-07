@@ -817,19 +817,19 @@ function Add-PodePSInbuiltDrive {
     # create drive for views, if path exists
     $path = (Join-PodeServerRoot -Folder $PodeContext.Server.DefaultFolders.Views)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Views] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for public content, if path exists
     $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Public)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Public] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for errors, if path exists
     $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Errors)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Errors] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives['errors'] = (New-PodePSDrive -Path $path)
     }
 }
 

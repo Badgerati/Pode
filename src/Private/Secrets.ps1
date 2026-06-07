@@ -220,7 +220,7 @@ function Unlock-PodeSecretCustomVault {
         # unlock the vault, and get back an expiry
         $expiry = Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unlock -Splat -Return -Arguments @(
             $VaultConfig.Parameters,
-        (ConvertFrom-SecureString -SecureString $VaultConfig.Unlock.Secret -AsPlainText)
+            (ConvertFrom-SecureString -SecureString $VaultConfig.Unlock.Secret -AsPlainText)
         )
 
         # return expiry if given, otherwise check interval
@@ -510,7 +510,7 @@ function Unregister-PodeSecretVaultsInternal {
         return
     }
 
-    # Iterate through each vault and attempt unregistration
+    # Iterate through each vault and attempt to unregister it
     foreach ($vault in $PodeContext.Server.Secrets.Vaults.Values.Name) {
         if ([string]::IsNullOrEmpty($vault)) {
             continue
@@ -550,12 +550,12 @@ function Protect-PodeSecretValueType {
     }
 
     if (!(
-         ($Value -is [string]) -or
-         ($Value -is [securestring]) -or
-         ($Value -is [hashtable]) -or
-         ($Value -is [byte[]]) -or
-         ($Value -is [pscredential]) -or
-         ($Value -is [System.Management.Automation.OrderedHashtable])
+            ($Value -is [string]) -or
+            ($Value -is [securestring]) -or
+            ($Value -is [hashtable]) -or
+            ($Value -is [byte[]]) -or
+            ($Value -is [pscredential]) -or
+            ($Value -is [System.Management.Automation.OrderedHashtable])
         )) {
         throw ($PodeLocale.invalidSecretValueTypeExceptionMessage -f $Value.GetType().Name) #"Value to set secret to is of an invalid type. Expected either String, SecureString, HashTable, Byte[], or PSCredential. But got: $($Value.GetType().Name)"
     }

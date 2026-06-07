@@ -46,9 +46,6 @@ function Start-PodeInternalServer {
         # run start event hooks
         Invoke-PodeEvent -Type Starting
 
-        # setup temp drives for internal dirs
-        Add-PodePSInbuiltDrive
-
         # setup inbuilt scoped vars
         Add-PodeScopedVariablesInbuilt
 
@@ -69,6 +66,9 @@ function Start-PodeInternalServer {
 
         $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
         $null = Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
+
+        # setup temp drives for internal dirs
+        Add-PodePSInbuiltDrive
 
         #Validate OpenAPI definitions
         Test-PodeOADefinitionInternal
@@ -297,7 +297,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.EndpointsMap.Clear()
 
         # clear openapi
-        $PodeContext.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $PodeContext.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
+        $PodeContext.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $PodeContext.Server.Configuration.Data.Web.OpenApi.DefaultDefinitionTag
 
         # clear the sockets
         $PodeContext.Server.Http.Listener = $null
@@ -356,10 +356,9 @@ function Restart-PodeInternalServer {
         # recreate the session tokens
         Reset-PodeCancellationToken -Type Cancellation, Restart, Suspend, Resume, Terminate, Disable
 
-        # if the configuration is enable reload it
+        # if the configuration is enabled reload it
         if ($PodeContext.Server.Configuration.Enabled) {
-            # reload the configuration
-            $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext -ConfigFile $PodeContext.Server.Configuration.ConfigFile
+            $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext -ConfigFile $PodeContext.Server.Configuration.Path
         }
 
         # restart the server

@@ -233,7 +233,43 @@ function Get-PodeConfig {
     [OutputType([hashtable])]
     param()
 
-    return $PodeContext.Server.Configuration
+    return $PodeContext.Server.Configuration.Data
+}
+
+<#
+.SYNOPSIS
+Returns whether the loading of a server configuration file is enabled or not.
+
+.DESCRIPTION
+Returns whether the loading of a server configuration file is enabled or not.
+
+.EXAMPLE
+if (Test-PodeConfigEnabled) { /* logic */ }
+#>
+function Test-PodeConfigEnabled {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
+    return [bool]$PodeContext.Server.Configuration.Enabled
+}
+
+<#
+.SYNOPSIS
+Returns the path of the loaded server configuration file.
+
+.DESCRIPTION
+Returns the path of the loaded server configuration file.
+
+.EXAMPLE
+$configPath = Get-PodeConfigPath
+#>
+function Get-PodeConfigPath {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+
+    return $PodeContext.Server.Configuration.Path
 }
 
 <#

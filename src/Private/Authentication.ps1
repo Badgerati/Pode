@@ -2396,7 +2396,7 @@ function Invoke-PodeAuthEvent {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name, # Name of the Auth method connection
+        $Name,
 
         [Parameter(Mandatory = $true)]
         [ValidateSet('Login', 'Logout')]
@@ -2420,7 +2420,7 @@ function Invoke-PodeAuthEvent {
     $auth = $PodeContext.Server.Authentications.Methods[$Name]
 
     # if this is a merged auth, then we need to also attempt to invoke events for the parent auths
-    if ($auth.Merged) {
+    if ($auth.Merged -and ![string]::IsNullOrEmpty($auth.Parent)) {
         Invoke-PodeAuthEvent -Name $auth.Parent -Type $Type -User $User -ArgumentList $ArgumentList
     }
 

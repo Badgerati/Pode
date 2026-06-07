@@ -217,8 +217,11 @@ function Start-PodeServer {
     end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
-        }    # Store the name of the current runspace
+        }
+
+        # Store the name of the current runspace
         $previousRunspaceName = Get-PodeCurrentRunspaceName
+
         # Sets the name of the current runspace
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
@@ -946,6 +949,8 @@ function Set-PodeDefaultFolder {
         [string]
         $Path
     )
+
+    $Path = Join-PodeServerRoot -Folder $Path
     if (Test-Path -Path $Path -PathType Container) {
         $PodeContext.Server.DefaultFolders[$Type] = $Path
     }
