@@ -4,16 +4,17 @@
   "features": {
     "ghcr.io/devcontainers/features/powershell:1": {},
     "ghcr.io/devcontainers/features/dotnet:1": {
-      "version": "8.0"
+      "version": "10.0"
     }
   },
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-vscode.powershell",
-        "pspester.pester-test"
+        "pspester.pester-test",
+        "wayou.vscode-todo-highlight"
       ]
     }
   },
-  "postCreateCommand": "pwsh -Command 'Install-Module -Name InvokeBuild,Pester -Force -SkipPublisherCheck; sleep 5; Invoke-Build Build   '"
+  "postCreateCommand": "pwsh -Command 'Install-Module -Name InvokeBuild, Pester -Force -SkipPublisherCheck'"
 }

@@ -1180,7 +1180,12 @@ function Invoke-PodeAuthValidation {
 
     # if it's a merged auth, re-call this function and check against "succeed" value
     if ($auth.Merged) {
+        # all auth results, used for valid=all
         $results = @{}
+
+        # last failed result with WWW-Auth header, used for valid=one
+        $failResult = $null
+
         foreach ($authName in $auth.Authentications) {
             $result = Invoke-PodeAuthValidation -Name $authName
 
@@ -1194,9 +1199,16 @@ function Invoke-PodeAuthValidation {
                 return $result
             }
 
-            # if the auth failed, but we need all to pass, return current result
-            if (!$result.Success -and !$auth.PassOne) {
-                return $result
+            # if the auth failed and valid=all, return current result; otherwise check www-auth header
+            if (!$result.Success) {
+                if (!$auth.PassOne) {
+                    return $result
+                }
+
+                # keep failed result with ww-auth for valid=one, so we can send back appropriate challenges
+                if (($null -ne $result.Headers) -and $result.Headers.Contains('WWW-Authenticate')) {
+                    $failResult = $result
+                }
             }
 
             # remember result if we need all to pass
@@ -1204,8 +1216,15 @@ function Invoke-PodeAuthValidation {
                 $results[$authName] = $result
             }
         }
-        # if the last auth failed, and we only need one auth to pass, set failure and return
+
+        # if the last auth failed, and valid=one, return appropriate failed result
         if (!$result.Success -and $auth.PassOne) {
+            # www-atuh result
+            if ($null -ne $failResult) {
+                return $failResult
+            }
+
+            # current result
             return $result
         }
 
