@@ -203,7 +203,7 @@ function Set-PodeScheduleConcurrency {
     # set the max schedules
     $PodeContext.Threads.Schedules = $Maximum
     if ($null -ne $PodeContext.RunspacePools.Schedules) {
-        $PodeContext.RunspacePools.Schedules.Pool.SetMaxRunspaces($Maximum)
+        $null = $PodeContext.RunspacePools.Schedules.Pool.SetMaxRunspaces($Maximum)
     }
 }
 
@@ -427,7 +427,7 @@ function Get-PodeSchedule {
                 }
 
                 if (($null -ne $schedule.EndTime) -and
-                (($StartTime -gt $schedule.EndTime) -or
+                    (($StartTime -gt $schedule.EndTime) -or
                     ((Get-PodeScheduleNextTrigger -Name $schedule.Name -DateTime $StartTime) -gt $_end))) {
                     continue
                 }
@@ -449,7 +449,7 @@ function Get-PodeSchedule {
                 }
 
                 if (($null -ne $schedule.StartTime) -and
-                (($EndTime -lt $schedule.StartTime) -or
+                    (($EndTime -lt $schedule.StartTime) -or
                     ((Get-PodeScheduleNextTrigger -Name $schedule.Name -DateTime $_start) -gt $EndTime))) {
                     continue
                 }

@@ -126,7 +126,8 @@ InModuleScope -ModuleName 'Pode' {
                         key = @{}
                     }
                     Logging         = @{
-                        Types = @{ 'key' = 'value' }
+                        Methods = @{ 'key' = 'value' }
+                        Types   = @{ 'key' = 'value' }
                     }
                     Mcp             = @{
                         Tools  = @{}
@@ -283,6 +284,7 @@ InModuleScope -ModuleName 'Pode' {
             Restart-PodeInternalServer | Out-Null
 
             $PodeContext.Server.Routes['GET'].Count | Should -Be 0
+            $PodeContext.Server.Logging.Methods.Count | Should -Be 0
             $PodeContext.Server.Logging.Types.Count | Should -Be 0
             $PodeContext.Server.Middleware.Count | Should -Be 0
             $PodeContext.Server.Endware.Count | Should -Be 0

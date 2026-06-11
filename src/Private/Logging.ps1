@@ -1,111 +1,281 @@
 function Get-PodeLoggingTerminalMethod {
     return {
-        param($item, $options)
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodId
+        )
 
         if ($PodeContext.Server.Quiet) {
             return
         }
 
-        # check if it's an array from batching
-        if ($item -is [array]) {
-            $item = ($item -join [System.Environment]::NewLine)
-        }
+        # wait for the server to fully start
+        Wait-PodeCancellationTokenRequest -Type Start
 
-        # protect then write
-        $item = ($item | Protect-PodeLogItem)
-        $item.ToString() | Out-PodeHost
+        try {
+            $method = $PodeContext.Server.Logging.Methods[$MethodId]
+
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                # check for suspension
+                Test-PodeSuspensionToken
+
+                try {
+                    # try and get a log item
+                    $log = $null
+                    $found = $method.Queue.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
+
+                    if (!$found -or ($null -eq $log)) {
+                        continue
+                    }
+
+                    # check if it's an array from batching
+                    if ($log.Items -is [array]) {
+                        $log.Items = $log.Items -join [System.Environment]::NewLine
+                    }
+
+                    # protect then write
+                    $log.Items = ($log.Items | Protect-PodeLogItem)
+                    $log.Items.ToString() | Out-PodeHost
+                }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
+            }
+        }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
     }
 }
 
 function Get-PodeLoggingFileMethod {
     return {
-        param($item, $options)
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodId
+        )
 
-        # check if it's an array from batching
-        if ($item -is [array]) {
-            $item = ($item -join [System.Environment]::NewLine)
-        }
+        # wait for the server to fully start
+        Wait-PodeCancellationTokenRequest -Type Start
 
-        # mask values
-        $item = ($item | Protect-PodeLogItem)
+        try {
+            $method = $PodeContext.Server.Logging.Methods[$MethodId]
 
-        # variables
-        $date = [DateTime]::Now.ToString('yyyy-MM-dd')
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                # check for suspension
+                Test-PodeSuspensionToken
 
-        # do we need to reset the fileId?
-        if ($options.Date -ine $date) {
-            $options.Date = $date
-            $options.FileId = 0
-        }
+                try {
+                    # try and get a log item
+                    $log = $null
+                    $found = $method.Queue.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
 
-        # get the fileId
-        if ($options.FileId -eq 0) {
-            $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_*.log")
-            $options.FileId = (@(Get-ChildItem -Path $path)).Length
-            if ($options.FileId -eq 0) {
-                $options.FileId = 1
+                    if (!$found -or ($null -eq $log)) {
+                        continue
+                    }
+
+                    # check if it's an array from batching
+                    if ($log.Items -is [array]) {
+                        $log.Items = $log.Items -join [System.Environment]::NewLine
+                    }
+
+                    # mask values
+                    $log.Items = $log.Items | Protect-PodeLogItem
+
+                    # current date
+                    $date = [DateTime]::Now.ToString('yyyy-MM-dd')
+
+                    # do we need to reset the fileId?
+                    if ($method.Arguments.Date -ine $date) {
+                        $method.Arguments.Date = $date
+                        $method.Arguments.FileId = 0
+                    }
+
+                    # get the fileId
+                    if ($method.Arguments.FileId -eq 0) {
+                        $path = [System.IO.Path]::Combine($method.Arguments.Path, "$($method.Arguments.Name)_$($date)_*.log")
+                        $method.Arguments.FileId = (@(Get-ChildItem -Path $path)).Length
+                        if ($method.Arguments.FileId -eq 0) {
+                            $method.Arguments.FileId = 1
+                        }
+                    }
+
+                    $id = "$($method.Arguments.FileId)".PadLeft(3, '0')
+                    if ($method.Arguments.MaxSize -gt 0) {
+                        $path = [System.IO.Path]::Combine($method.Arguments.Path, "$($method.Arguments.Name)_$($date)_$($id).log")
+                        if ((Get-Item -Path $path -Force).Length -ge $method.Arguments.MaxSize) {
+                            $method.Arguments.FileId++
+                            $id = "$($method.Arguments.FileId)".PadLeft(3, '0')
+                        }
+                    }
+
+                    # get the file to write to
+                    $path = [System.IO.Path]::Combine($method.Arguments.Path, "$($method.Arguments.Name)_$($date)_$($id).log")
+
+                    # write the item to the file
+                    $log.Items.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
+
+                    # if set, remove log files beyond days set (ensure this is only run once a day)
+                    if (($method.Arguments.MaxDays -gt 0) -and ($method.Arguments.NextClearDown -le [DateTime]::Now.Date)) {
+                        $date = [DateTime]::Now.Date.AddDays(-$method.Arguments.MaxDays)
+
+                        $null = Get-ChildItem -Path $method.Arguments.Path -Filter "$($method.Arguments.Name)_*.log" -Force |
+                            Where-Object { $_.CreationTime -lt $date } |
+                            Remove-Item -Force
+
+                        $method.Arguments.NextClearDown = [DateTime]::Now.Date.AddDays(1)
+                    }
+                }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
             }
         }
-
-        $id = "$($options.FileId)".PadLeft(3, '0')
-        if ($options.MaxSize -gt 0) {
-            $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
-            if ((Get-Item -Path $path -Force).Length -ge $options.MaxSize) {
-                $options.FileId++
-                $id = "$($options.FileId)".PadLeft(3, '0')
-            }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
         }
-
-        # get the file to write to
-        $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
-
-        # write the item to the file
-        $item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
-
-        # if set, remove log files beyond days set (ensure this is only run once a day)
-        if (($options.MaxDays -gt 0) -and ($options.NextClearDown -le [DateTime]::Now.Date)) {
-            $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
-
-            $null = Get-ChildItem -Path $options.Path -Filter "$($options.Name)_*.log" -Force |
-                Where-Object { $_.CreationTime -lt $date } |
-                Remove-Item -Force
-
-            $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
+        catch {
+            $_ | Write-PodeErrorLog
         }
     }
 }
 
 function Get-PodeLoggingEventViewerMethod {
     return {
-        param($item, $options, $rawItem)
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodId
+        )
 
-        if ($item -isnot [array]) {
-            $item = @($item)
-        }
+        # wait for the server to fully start
+        Wait-PodeCancellationTokenRequest -Type Start
 
-        if ($rawItem -isnot [array]) {
-            $rawItem = @($rawItem)
-        }
+        try {
+            $method = $PodeContext.Server.Logging.Methods[$MethodId]
 
-        for ($i = 0; $i -lt $item.Length; $i++) {
-            # convert log level - info if no level present
-            $entryType = ConvertTo-PodeEventViewerLevel -Level $rawItem[$i].Level
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                # check for suspension
+                Test-PodeSuspensionToken
 
-            # create log instance
-            $entryInstance = [System.Diagnostics.EventInstance]::new($options.ID, 0, $entryType)
+                try {
+                    # try and get a log item
+                    $log = $null
+                    $found = $method.Queue.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
 
-            # create event log
-            $entryLog = [System.Diagnostics.EventLog]::new()
-            $entryLog.Log = $options.LogName
-            $entryLog.Source = $options.Source
+                    if (!$found -or ($null -eq $log)) {
+                        continue
+                    }
 
-            try {
-                $message = ($item[$i] | Protect-PodeLogItem)
-                $entryLog.WriteEvent($entryInstance, $message)
+                    # check if it's an array from batching
+                    if ($log.Items -isnot [array]) {
+                        $log.Items = @($log.Items)
+                    }
+
+                    if ($log.RawItems -isnot [array]) {
+                        $log.RawItems = @($log.RawItems)
+                    }
+
+                    for ($i = 0; $i -lt $log.Items.Length; $i++) {
+                        # convert log level - info if no level present
+                        $entryType = ConvertTo-PodeEventViewerLevel -Level $log.RawItems[$i].Level
+
+                        # create log instance
+                        $entryInstance = [System.Diagnostics.EventInstance]::new($method.Arguments.ID, 0, $entryType)
+
+                        # create event log
+                        $entryLog = [System.Diagnostics.EventLog]::new()
+                        $entryLog.Log = $method.Arguments.LogName
+                        $entryLog.Source = $method.Arguments.Source
+
+                        try {
+                            $message = ($log.Items[$i] | Protect-PodeLogItem)
+                            $entryLog.WriteEvent($entryInstance, $message)
+                        }
+                        catch {
+                            $_ | Write-PodeErrorLog -Level Debug
+                        }
+                    }
+                }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
             }
-            catch {
-                $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+    }
+}
+
+function Get-PodeLoggingCustomMethod {
+    return {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodId
+        )
+
+        # wait for the server to fully start
+        Wait-PodeCancellationTokenRequest -Type Start
+
+        try {
+            $method = $PodeContext.Server.Logging.Methods[$MethodId]
+
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                # check for suspension
+                Test-PodeSuspensionToken
+
+                try {
+                    # try and get a log item
+                    $log = $null
+                    $found = $method.Queue.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
+
+                    if (!$found -or ($null -eq $log)) {
+                        continue
+                    }
+
+                    # invoke the custom scriptblock
+                    $_args = @(, $log.Items) + @($method.Arguments) + @(, $log.RawItems)
+                    $null = Invoke-PodeScriptBlock `
+                        -ScriptBlock $method.Custom.ScriptBlock `
+                        -Arguments $_args `
+                        -UsingVariables $method.Custom.UsingVariables `
+                        -Splat
+                }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
             }
+        }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
         }
     }
 }
@@ -214,6 +384,28 @@ function Get-PodeLogType {
     return $PodeContext.Server.Logging.Types[$Name]
 }
 
+function Get-PodeLogMethod {
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Id
+    )
+
+    return $PodeContext.Server.Logging.Methods[$Id]
+}
+
+function Test-PodeLogMethod {
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Id
+    )
+
+    return $PodeContext.Server.Logging.Methods.ContainsKey($Id)
+}
+
 function Test-PodeLogTypeEnabled {
     param(
         [Parameter(Mandatory = $true)]
@@ -221,7 +413,7 @@ function Test-PodeLogTypeEnabled {
         $Name
     )
 
-    return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
+    return $PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name)
 }
 
 function Get-PodeLogTypeLogLevel {
@@ -370,7 +562,7 @@ function Start-PodeLoggingRunspace {
                     $logType = Get-PodeLogType -Name $log.Name
                     $now = [datetime]::Now
 
-                    # convert to log item into a writeable format
+                    # transform the log item into a writeable format
                     $_args = @($log.Item) + @($logType.Arguments)
                     $result = @(Invoke-PodeScriptBlock -ScriptBlock $logType.ScriptBlock -Arguments $_args -UsingVariables $logType.UsingVariables -Return -Splat)
                     if ($null -eq $result) {
@@ -379,7 +571,8 @@ function Start-PodeLoggingRunspace {
                     }
 
                     # loop through each log method available to the log type
-                    foreach ($logMethod in $logType.Method) {
+                    foreach ($logMethodId in $logType.Method) {
+                        $logMethod = Get-PodeLogMethod -Id $logMethodId
                         $batch = $logMethod.Batch
 
                         if ($batch.Size -gt 1) {
@@ -390,7 +583,12 @@ function Start-PodeLoggingRunspace {
 
                             # if the current amount of items matches the batch, send to log method and reset batch
                             if ($batch.Items.Length -ge $batch.Size) {
-                                Invoke-PodeLogMethod -Method $logMethod -Item $batch.Items -RawItem $batch.RawItems
+                                #TODO: add item/rawItem to method queue
+                                $logMethod.Queue.Add(@{
+                                        Items    = $batch.Items
+                                        RawItems = $batch.RawItems
+                                    })
+                                # Invoke-PodeLogMethod -Method $logMethod -Item $batch.Items -RawItem $batch.RawItems
                                 $batch.Items = @()
                                 $batch.RawItems = @()
                             }
@@ -398,7 +596,12 @@ function Start-PodeLoggingRunspace {
 
                         # send log item to log method
                         else {
-                            Invoke-PodeLogMethod -Method $logMethod -Item $result -RawItem $log.Item
+                            #TODO: add item/rawItem to method queue
+                            $logMethod.Queue.Add(@{
+                                    Items    = $result
+                                    RawItems = $log.Item
+                                })
+                            # Invoke-PodeLogMethod -Method $logMethod -Item $result -RawItem $log.Item
                         }
                     }
 
@@ -422,8 +625,57 @@ function Start-PodeLoggingRunspace {
         }
     }
 
-    Write-Verbose 'Starting the Logging runspace...'
-    Add-PodeRunspace -Type Main -Name 'Logging' -ScriptBlock $script
+    # create and start log method runspaces
+    Write-Verbose 'Starting log method runspaces...'
+    $null = $PodeContext.RunspacePools.Logs.Pool.SetMaxRunspaces($PodeContext.Server.Logging.Methods.Count + 1)
+
+    foreach ($methodId in $PodeContext.Server.Logging.Methods.Keys) {
+        $method = Get-PodeLogMethod -Id $methodId
+        $method.Runspace = Add-PodeRunspace -Type Logs -Name "Method_$($method.Type)" -ScriptBlock $method.ScriptBlock -Parameters @{ MethodId = $methodId } -PassThru
+    }
+
+    # start the log dispatcher runspace
+    Write-Verbose 'Starting the Log Dispatcher runspace...'
+    Add-PodeRunspace -Type Logs -Name 'Dispatcher' -ScriptBlock $script
+}
+
+function Add-PodeLogMethod {
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null,
+
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $Metadata
+    )
+
+    # generate an ID if not supplied
+    if ([string]::IsNullOrWhiteSpace($Id)) {
+        $Id = New-PodeGuid
+    }
+
+    # check if method already exists
+    if (Test-PodeLogMethod -Id $Id) {
+        #TODO: A logging method with the same ID already exists
+        throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Id)
+    }
+
+    # add batching info to metadata
+    $Metadata.Batch = $BatchInfo | New-PodeLogBatchConfig
+
+    # create queue for the method's log items
+    $Metadata.Queue = [System.Collections.Concurrent.BlockingCollection[hashtable]]::new()
+
+    # add method to server
+    $PodeContext.Server.Logging.Methods[$Id] = $Metadata
+
+    # return the method ID
+    return $Id
 }
 
 function Test-PodeLogTypeBatchTimeout {
@@ -431,7 +683,8 @@ function Test-PodeLogTypeBatchTimeout {
 
     # check each log Type, and see if its batch needs to be outputted due to timeout
     foreach ($logType in $PodeContext.Server.Logging.Types.Values) {
-        foreach ($logMethod in $logType.Method) {
+        foreach ($logMethodId in $logType.Method) {
+            $logMethod = Get-PodeLogMethod -Id $logMethodId
             $batch = $logMethod.Batch
 
             # do nothing if not batching, or no items
@@ -445,31 +698,36 @@ function Test-PodeLogTypeBatchTimeout {
             }
 
             # send batch to log method and reset batch
-            Invoke-PodeLogMethod -Method $logMethod -Item $batch.Items -RawItem $batch.RawItems
+            #TODO: add item/rawItem to method queue
+            $logMethod.Queue.Add(@{
+                    Items    = $batch.Items
+                    RawItems = $batch.RawItems
+                })
+            # Invoke-PodeLogMethod -Method $logMethod -Item $batch.Items -RawItem $batch.RawItems
             $batch.Items = @()
             $batch.RawItems = @()
         }
     }
 }
 
-function Invoke-PodeLogMethod {
-    param(
-        [Parameter(Mandatory = $true)]
-        [hashtable]
-        $Method,
+# function Invoke-PodeLogMethod {
+#     param(
+#         [Parameter(Mandatory = $true)]
+#         [hashtable]
+#         $Method,
 
-        [Parameter(Mandatory = $true)]
-        [object[]]
-        $Item,
+#         [Parameter(Mandatory = $true)]
+#         [object[]]
+#         $Item,
 
-        [Parameter()]
-        [object[]]
-        $RawItem
-    )
+#         [Parameter()]
+#         [object[]]
+#         $RawItem
+#     )
 
-    $_args = @(, $Item) + @($Method.Arguments) + @(, $RawItem)
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Method.ScriptBlock -Arguments $_args -UsingVariables $Method.UsingVariables -Splat
-}
+#     $_args = @(, $Item) + @($Method.Arguments) + @(, $RawItem)
+#     $null = Invoke-PodeScriptBlock -ScriptBlock $Method.ScriptBlock -Arguments $_args -UsingVariables $Method.UsingVariables -Splat
+# }
 
 function New-PodeLogBatchConfig {
     param(
@@ -488,5 +746,21 @@ function New-PodeLogBatchConfig {
         LastUpdate = $null
         Items      = @()
         RawItems   = @()
+    }
+}
+
+function Close-PodeLogging {
+    # Dispose of the logs to process collection
+    if ($null -ne $PodeContext.LogsToProcess) {
+        $PodeContext.LogsToProcess.Dispose()
+        $PodeContext.LogsToProcess = $null
+    }
+
+    # Dispose log method queues
+    foreach ($method in $PodeContext.Server.Logging.Methods.Values) {
+        if ($null -ne $method.Queue) {
+            $method.Queue.Dispose()
+            $method.Queue = $null
+        }
     }
 }

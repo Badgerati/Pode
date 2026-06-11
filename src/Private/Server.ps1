@@ -254,6 +254,7 @@ function Restart-PodeInternalServer {
 
         $PodeContext.Server.Views.Clear()
         $PodeContext.Timers.Items.Clear()
+        $PodeContext.Server.Logging.Methods.Clear()
         $PodeContext.Server.Logging.Types.Clear()
 
         # clear client connections

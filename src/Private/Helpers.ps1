@@ -655,17 +655,15 @@ function Close-PodeServerInternal {
         # remove all of the pode temp drives
         Write-Verbose 'Removing internal PSDrives'
         Remove-PodePSDrive
+
+        # remove logging queues
+        Write-Verbose 'Clearing logging queues'
+        Close-PodeLogging
     }
     finally {
         if ($null -ne $PodeContext) {
             # Remove any tokens
             $PodeContext.Tokens = $null
-
-            # Dispose of the logs to process collection
-            if ($null -ne $PodeContext.LogsToProcess) {
-                $PodeContext.LogsToProcess.Dispose()
-                $PodeContext.LogsToProcess = $null
-            }
         }
     }
 }

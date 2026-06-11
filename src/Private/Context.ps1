@@ -494,6 +494,7 @@ function New-PodeContext {
         Tasks     = $null
         Files     = $null
         Timers    = $null
+        Logs      = $null
     }
 
     # threading locks, etc.
@@ -581,7 +582,6 @@ function New-PodeRunspacePool {
     # setup main runspace pool
     $threadsCounts = @{
         Default  = 3
-        Log      = 1
         Schedule = 1
         Misc     = 1
     }
@@ -598,6 +598,13 @@ function New-PodeRunspacePool {
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{
         Pool   = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+        State  = 'Waiting'
+        LastId = 0
+    }
+
+    # logs runspace - for processing logs
+    $PodeContext.RunspacePools.Logs = @{
+        Pool   = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         State  = 'Waiting'
         LastId = 0
     }
@@ -982,6 +989,7 @@ function Set-PodeServerConfiguration {
             Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
             Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
         }
+        Methods = @{}
         Types   = @{}
     }
 
