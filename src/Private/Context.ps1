@@ -135,6 +135,8 @@ function New-PodeContext {
     # basic logging setup
     $ctx.Server.Logging = @{
         Enabled = $true
+        Masking = @{}
+        Methods = @{}
         Types   = @{}
     }
 
@@ -976,21 +978,17 @@ function Set-PodeServerConfiguration {
     # file monitoring
     $Context.Server.FileMonitor = @{
         Enabled   = [bool]$Configuration.FileMonitor.Enable
-        Exclude   = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Exclude))
-        Include   = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Include))
+        Exclude   = Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Exclude)
+        Include   = Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Include)
         ShowFiles = [bool]$Configuration.FileMonitor.ShowFiles
         Files     = @()
     }
 
     # logging
-    $Context.Server.Logging = @{
-        Enabled = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
-        Masking = @{
-            Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
-            Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
-        }
-        Methods = @{}
-        Types   = @{}
+    $Context.Server.Logging.Enabled = ($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable
+    $Context.Server.Logging.Masking = @{
+        Patterns = Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns)
+        Mask     = Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********'
     }
 
     # sockets
@@ -1078,8 +1076,6 @@ function Set-PodeServerConfiguration {
             MetricsHeader     = Protect-PodeValue -Value $Configuration.Console.Colors.MetricsHeader -Default $Context.Server.Console.Colors.MetricsHeader -EnumType ([type][System.ConsoleColor])
             MetricsLabel      = Protect-PodeValue -Value $Configuration.Console.Colors.MetricsLabel -Default $Context.Server.Console.Colors.MetricsLabel -EnumType ([type][System.ConsoleColor])
             MetricsValue      = Protect-PodeValue -Value $Configuration.Console.Colors.MetricsValue -Default $Context.Server.Console.Colors.MetricsValue -EnumType ([type][System.ConsoleColor])
-
-
         }
         KeyBindings         = @{
             Browser   = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Browser -Default $Context.Server.Console.KeyBindings.Browser -EnumType ([type][System.ConsoleKey])
