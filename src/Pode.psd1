@@ -338,6 +338,8 @@
         'New-PodeLogFileMethod',
         'New-PodeLogEventViewerMethod',
         'New-PodeLogCustomMethod',
+        'Clear-PodeLogMethods',
+        'Remove-PodeLogMethod',
 
         # core
         'Start-PodeServer',

@@ -10,6 +10,9 @@ Please use the appropriate new functions for each logging method:
 - New-PodeLogEventViewerMethod
 - New-PodeLogCustomMethod
 
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
 .PARAMETER Terminal
 If supplied, will use the inbuilt Terminal logging output method.
 
@@ -227,7 +230,7 @@ function Enable-PodeRequestLogType {
     process {
         # ensure the Method exists
         if (!(Test-PodeLogMethod -Id $_)) {
-            #TODO: The supplied logging Method for Request Logging doesn't exist
+            # The supplied logging Method for Request Logging doesn't exist
             throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
         }
 
@@ -246,7 +249,7 @@ function Enable-PodeRequestLogType {
             $UsernameProperty = 'Username'
         }
 
-        # add the request logger
+        # add the request log type, associated with the supplied log method(s)
         $PodeContext.Server.Logging.Types[$name] = @{
             Method      = $Method
             ScriptBlock = Get-PodeLoggingInbuiltType -Type Requests
@@ -256,6 +259,11 @@ function Enable-PodeRequestLogType {
             Arguments   = @{
                 Raw = $Raw
             }
+        }
+
+        # then associate the supplied log method(s) with the request log type
+        foreach ($methodId in $Method) {
+            Register-PodeLogTypeToMethod -TypeName $name -MethodId $methodId
         }
     }
 }
@@ -335,7 +343,7 @@ function Enable-PodeErrorLogType {
     process {
         # ensure the Method exists
         if (!(Test-PodeLogMethod -Id $_)) {
-            #TODO: The supplied logging Method for Request Logging doesn't exist
+            # The supplied logging Method for Request Logging doesn't exist
             throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
         }
 
@@ -354,7 +362,7 @@ function Enable-PodeErrorLogType {
             $Levels = @('Error', 'Warning', 'Informational', 'Verbose', 'Debug')
         }
 
-        # add the error logger
+        # add the error log type, associated with the supplied log method(s)
         $PodeContext.Server.Logging.Types[$name] = @{
             Method      = $Method
             ScriptBlock = Get-PodeLoggingInbuiltType -Type Errors
@@ -362,6 +370,11 @@ function Enable-PodeErrorLogType {
             Arguments   = @{
                 Raw = $Raw
             }
+        }
+
+        # then associate the supplied log method(s) with the request log type
+        foreach ($methodId in $Method) {
+            Register-PodeLogTypeToMethod -TypeName $name -MethodId $methodId
         }
     }
 }
@@ -463,7 +476,7 @@ function Add-PodeLogType {
     process {
         # ensure the Method exists
         if (!(Test-PodeLogMethod -Id $_)) {
-            #TODO: The supplied logging Method for Request Logging doesn't exist
+            # The supplied logging Method for Request Logging doesn't exist
             throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
         }
 
@@ -485,13 +498,18 @@ function Add-PodeLogType {
         # check for scoped vars
         $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
-        # add logging method to server
+        # add custom log method to server, associated with the supplied log method(s)
         $PodeContext.Server.Logging.Types[$Name] = @{
             Method         = $Method
             ScriptBlock    = $ScriptBlock
             UsingVariables = $usingVars
             Levels         = $Levels
             Arguments      = $ArgumentList
+        }
+
+        # then associate the supplied log method(s) with the request log type
+        foreach ($methodId in $Method) {
+            Register-PodeLogTypeToMethod -TypeName $Name -MethodId $methodId
         }
     }
 }
@@ -521,7 +539,21 @@ function Remove-PodeLogType {
         $Name
     )
 
-    $null = $PodeContext.Server.Logging.Types.Remove($Name)
+    process {
+        # get the log type
+        $type = Get-PodeLogType -Name $Name
+        if ($null -eq $type) {
+            return
+        }
+
+        # unregister log type from method
+        foreach ($methodId in $type.Method) {
+            Unregister-PodeLogTypeFromMethod -TypeName $Name -MethodId $methodId
+        }
+
+        # remove the log type
+        $null = $PodeContext.Server.Logging.Types.Remove($Name)
+    }
 }
 
 if (!(Test-Path Alias:Remove-PodeLogger)) {
@@ -536,17 +568,35 @@ function Remove-PodeLogMethod {
         $Id
     )
 
-    # dispose of any log method queue
-    $method = Get-PodeLogMethod -Id $Id
-    if ($null -ne $method.Queue) {
-        $method.Queue.Dispose()
+    process {
+        # get the log method
+        $method = Get-PodeLogMethod -Id $Id
+        if ($null -eq $method) {
+            return
+        }
+
+        # close the runspace and reduce max count (not below 1)
+        $method.Runspace.Pipeline.Stop()
+        $method.Runspace.Pipeline.Dispose()
+
+        $maxRunspaces = $PodeContext.RunspacePools.Logs.Pool.GetMaxRunspaces()
+        if ($maxRunspaces -gt 1) {
+            $PodeContext.RunspacePools.Logs.Pool.SetMaxRunspaces($maxRunspaces - 1)
+        }
+
+        # dispose the log method queue
+        if ($null -ne $method.Queue) {
+            $method.Queue.Dispose()
+        }
+
+        # unregister log method from types that reference it
+        foreach ($typeName in $method.Types) {
+            Unregister-PodeLogMethodFromType -TypeName $typeName -MethodId $Id
+        }
+
+        # remove the log method
+        $null = $PodeContext.Server.Logging.Methods.Remove($Id)
     }
-
-    #TODO: remove method from Types that reference it?
-    #TODO: close runspace, and reduce max count (not below 1)
-
-    # remove the log method
-    $null = $PodeContext.Server.Logging.Methods.Remove($Id)
 }
 
 <#
@@ -564,7 +614,10 @@ function Clear-PodeLogTypes {
     [CmdletBinding()]
     param()
 
-    $PodeContext.Server.Logging.Types.Clear()
+    $typeNames = $PodeContext.Server.Logging.Types.Keys
+    foreach ($typeName in $typeNames) {
+        Remove-PodeLogType -Name $typeName
+    }
 }
 
 if (!(Test-Path Alias:Clear-PodeLoggers)) {
@@ -576,18 +629,17 @@ function Clear-PodeLogMethods {
     [CmdletBinding()]
     param()
 
+    $methodIds = $PodeContext.Server.Logging.Methods.Keys
+    foreach ($methodId in $methodIds) {
+        Remove-PodeLogMethod -Id $methodId
+    }
+
     # dispose of any log method queues
     foreach ($method in $PodeContext.Server.Logging.Methods.Values) {
         if ($null -ne $method.Queue) {
             $method.Queue.Dispose()
         }
     }
-
-    #TODO: remove method from Types that reference it?
-    #TODO: close runspace, and reduce max count (not below 1)
-
-    # clear the log methods
-    $PodeContext.Server.Logging.Methods.Clear()
 }
 
 <#
@@ -865,6 +917,9 @@ Create a new Terminal logging Method.
 Creates a new Terminal logging Method for outputting log items to the terminal.
 Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
 
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
 .PARAMETER BatchInfo
 An optional hashtable containing batch configuration for writing log items in bulk.
 Should be created using New-PodeLogBatchInfo.
@@ -904,6 +959,9 @@ Create a new File logging Method.
 .DESCRIPTION
 Creates a new File logging Method for outputting log items to files.
 Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
 
 .PARAMETER Name
 The File Name to prepend new log files using.
@@ -988,6 +1046,9 @@ Create a new Event Viewer logging Method.
 Creates a new Event Viewer logging Method for outputting log items to the Windows Event Viewer.
 Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
 
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
 .PARAMETER EventLogName
 An Optional Log Name for the Event Viewer (Default: Application)
 
@@ -1063,6 +1124,9 @@ Create a new Custom logging Method.
 .DESCRIPTION
 Creates a new Custom logging Method for outputting log items using custom logic defined in a ScriptBlock.
 Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
 
 .PARAMETER ScriptBlock
 The ScriptBlock that defines how to output a log item.

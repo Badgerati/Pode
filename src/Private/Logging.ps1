@@ -544,8 +544,7 @@ function Start-PodeLoggingRunspace {
 
         try {
             while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
-
-                # Check for suspension token and wait for the debugger to reset if active
+                # check for suspension
                 Test-PodeSuspensionToken
 
                 try {
@@ -583,12 +582,11 @@ function Start-PodeLoggingRunspace {
 
                             # if the current amount of items matches the batch, send to log method and reset batch
                             if ($batch.Items.Length -ge $batch.Size) {
-                                #TODO: add item/rawItem to method queue
                                 $logMethod.Queue.Add(@{
                                         Items    = $batch.Items
                                         RawItems = $batch.RawItems
                                     })
-                                # Invoke-PodeLogMethod -Method $logMethod -Item $batch.Items -RawItem $batch.RawItems
+
                                 $batch.Items = @()
                                 $batch.RawItems = @()
                             }
@@ -596,12 +594,10 @@ function Start-PodeLoggingRunspace {
 
                         # send log item to log method
                         else {
-                            #TODO: add item/rawItem to method queue
                             $logMethod.Queue.Add(@{
                                     Items    = $result
                                     RawItems = $log.Item
                                 })
-                            # Invoke-PodeLogMethod -Method $logMethod -Item $result -RawItem $log.Item
                         }
                     }
 
@@ -661,9 +657,12 @@ function Add-PodeLogMethod {
 
     # check if method already exists
     if (Test-PodeLogMethod -Id $Id) {
-        #TODO: A logging method with the same ID already exists
+        # A logging method with the same ID already exists
         throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Id)
     }
+
+    # empty list of log types for later associations
+    $Metadata.Types = @()
 
     # add batching info to metadata
     $Metadata.Batch = $BatchInfo | New-PodeLogBatchConfig
@@ -676,6 +675,54 @@ function Add-PodeLogMethod {
 
     # return the method ID
     return $Id
+}
+
+function Register-PodeLogTypeToMethod {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $TypeName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $MethodId
+    )
+
+    $method = Get-PodeLogMethod -Id $MethodId
+
+    if ($method.Types -inotcontains $TypeName) {
+        $method.Types += $TypeName
+    }
+}
+
+function Unregister-PodeLogTypeFromMethod {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $TypeName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $MethodId
+    )
+
+    $method = Get-PodeLogMethod -Id $MethodId
+    $method.Types = @($method.Types | Where-Object { $_ -ine $TypeName })
+}
+
+function Unregister-PodeLogMethodFromType {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $TypeName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $MethodId
+    )
+
+    $type = Get-PodeLogType -Name $TypeName
+    $type.Method = @($type.Method | Where-Object { $_ -ine $MethodId })
 }
 
 function Test-PodeLogTypeBatchTimeout {
@@ -698,36 +745,16 @@ function Test-PodeLogTypeBatchTimeout {
             }
 
             # send batch to log method and reset batch
-            #TODO: add item/rawItem to method queue
             $logMethod.Queue.Add(@{
                     Items    = $batch.Items
                     RawItems = $batch.RawItems
                 })
-            # Invoke-PodeLogMethod -Method $logMethod -Item $batch.Items -RawItem $batch.RawItems
+
             $batch.Items = @()
             $batch.RawItems = @()
         }
     }
 }
-
-# function Invoke-PodeLogMethod {
-#     param(
-#         [Parameter(Mandatory = $true)]
-#         [hashtable]
-#         $Method,
-
-#         [Parameter(Mandatory = $true)]
-#         [object[]]
-#         $Item,
-
-#         [Parameter()]
-#         [object[]]
-#         $RawItem
-#     )
-
-#     $_args = @(, $Item) + @($Method.Arguments) + @(, $RawItem)
-#     $null = Invoke-PodeScriptBlock -ScriptBlock $Method.ScriptBlock -Arguments $_args -UsingVariables $Method.UsingVariables -Splat
-# }
 
 function New-PodeLogBatchConfig {
     param(

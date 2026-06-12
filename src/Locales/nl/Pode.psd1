@@ -348,4 +348,5 @@
     mcpToolGroupAlreadyExistsExceptionMessage                         = "De MCP-toolgroep '{0}' bestaat al."
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "Statische route-standaarden kunnen geen geroot pad zijn. Ongeldige standaard: '{0}'"
     deprecatedFunctionWarningMessage                                  = "WAARSCHUWING: De functie '{0}' is verouderd en zal in toekomstige versies worden verwijderd. Gebruik in plaats daarvan de functie '{1}'."
+    loggingMethodDoesNotExistExceptionMessage                         = "De logmethode '{0}' bestaat niet."
 }
