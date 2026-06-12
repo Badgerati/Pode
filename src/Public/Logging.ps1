@@ -560,6 +560,19 @@ if (!(Test-Path Alias:Remove-PodeLogger)) {
     New-Alias Remove-PodeLogger -Value Remove-PodeLogType
 }
 
+<#
+.SYNOPSIS
+Removes a configured Log Method.
+
+.DESCRIPTION
+Removes a configured Log Method.
+
+.PARAMETER Id
+The ID of the Log Method to remove.
+
+.EXAMPLE
+Remove-PodeLogMethod -Id '<log-method-id>'
+#>
 function Remove-PodeLogMethod {
     [CmdletBinding()]
     param(
@@ -624,6 +637,16 @@ if (!(Test-Path Alias:Clear-PodeLoggers)) {
     New-Alias Clear-PodeLoggers -Value Clear-PodeLogTypes
 }
 
+<#
+.SYNOPSIS
+Clears all Log Methods that have been configured.
+
+.DESCRIPTION
+Clears all Log Methods that have been configured.
+
+.EXAMPLE
+Clear-PodeLogMethods
+#>
 function Clear-PodeLogMethods {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
