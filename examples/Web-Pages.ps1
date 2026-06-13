@@ -97,6 +97,9 @@ Start-PodeServer -Threads 2 -Verbose {
         }
     }
 
+    # wire up a custom raw logger
+    New-PodeLogTerminalMethod | Add-PodeLogType -Name 'custom-raw' -Raw
+
     # log requests to the terminal
     $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
     New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogType
@@ -113,6 +116,7 @@ Start-PodeServer -Threads 2 -Verbose {
     # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         $WebEvent.Request | Write-PodeLog -Name 'custom'
+        $WebEvent.ContextId | Write-PodeLog -Name 'custom-raw'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
