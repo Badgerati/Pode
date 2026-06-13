@@ -1,4 +1,5 @@
 using namespace Pode.Utilities
+using namespace Pode.Utilities.Logging
 
 function New-PodeContext {
     [CmdletBinding()]
@@ -78,7 +79,6 @@ function New-PodeContext {
         Runspaces     = $null
         RunspaceState = $null
         Tokens        = @{}
-        LogsToProcess = $null
         Threading     = @{}
         Server        = @{}
         Metrics       = @{}
@@ -134,7 +134,7 @@ function New-PodeContext {
 
     # basic logging setup
     $ctx.Server.Logging = @{
-        Enabled = $true
+        Logger  = [PodeLogger]::new()
         Masking = @{}
         Methods = @{}
         Types   = @{}
@@ -468,9 +468,6 @@ function New-PodeContext {
 
     # create new cancellation tokens
     $ctx.Tokens = Initialize-PodeCancellationToken
-
-    # requests that should be logged
-    $ctx.LogsToProcess = [System.Collections.Concurrent.BlockingCollection[hashtable]]::new()
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()
@@ -867,7 +864,6 @@ function New-PodeStateContext {
         RunspacePools = $Context.RunspacePools
         Tokens        = $Context.Tokens
         Metrics       = $Context.Metrics
-        LogsToProcess = $Context.LogsToProcess
         Threading     = $Context.Threading
         Server        = $Context.Server
     }
@@ -985,7 +981,7 @@ function Set-PodeServerConfiguration {
     }
 
     # logging
-    $Context.Server.Logging.Enabled = ($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable
+    $Context.Server.Logging.Logger.IsEnabled = ($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable
     $Context.Server.Logging.Masking = @{
         Patterns = Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns)
         Mask     = Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********'

@@ -9,6 +9,7 @@ using Pode.Protocols.Common.Responses;
 using Pode.Adapters.Listeners;
 using Pode.Utilities;
 using Pode.Transport.Sockets;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Common.Contexts
 {
@@ -138,8 +139,8 @@ namespace Pode.Protocols.Common.Contexts
         {
             try
             {
-                PodeHelpers.WriteErrorMessage("TimeoutCallback triggered", Listener, PodeLoggingLevel.Debug, this);
-                PodeHelpers.WriteErrorMessage($"Request timeout reached: {Listener.RequestTimeout} seconds", Listener, PodeLoggingLevel.Warning, this);
+                PodeHelpers.WriteErrorMessage("TimeoutCallback triggered", Listener, PodeLogLevel.Debug, this);
+                PodeHelpers.WriteErrorMessage($"Request timeout reached: {Listener.RequestTimeout} seconds", Listener, PodeLogLevel.Warning, this);
 
                 State = PodeContextState.Timeout;
                 ContextTimeoutToken.Cancel();
@@ -148,11 +149,11 @@ namespace Pode.Protocols.Common.Contexts
                 Response.StatusCode = Request.Error.StatusCode;
 
                 Dispose();
-                PodeHelpers.WriteErrorMessage($"Request timeout reached: Dispose", Listener, PodeLoggingLevel.Debug, this);
+                PodeHelpers.WriteErrorMessage($"Request timeout reached: Dispose", Listener, PodeLogLevel.Debug, this);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteErrorMessage($"Exception in TimeoutCallback: {ex}", Listener, PodeLoggingLevel.Error);
+                PodeHelpers.WriteErrorMessage($"Exception in TimeoutCallback: {ex}", Listener, PodeLogLevel.Error);
             }
         }
 
@@ -225,7 +226,7 @@ namespace Pode.Protocols.Common.Contexts
 
                 try
                 {
-                    PodeHelpers.WriteErrorMessage($"Receiving request", Listener, PodeLoggingLevel.Verbose, this);
+                    PodeHelpers.WriteErrorMessage($"Receiving request", Listener, PodeLogLevel.Verbose, this);
                     var close = await Request.Receive(ContextTimeoutToken.Token).ConfigureAwait(false);
                     await EndReceive(close).ConfigureAwait(false);
                 }
@@ -239,14 +240,14 @@ namespace Pode.Protocols.Common.Contexts
                 }
                 catch (OperationCanceledException) when (ContextTimeoutToken.IsCancellationRequested)
                 {
-                    PodeHelpers.WriteErrorMessage("Request timed out during receive operation", Listener, PodeLoggingLevel.Warning, this);
+                    PodeHelpers.WriteErrorMessage("Request timed out during receive operation", Listener, PodeLogLevel.Warning, this);
                     State = PodeContextState.Timeout;  // Explicitly set the state to Timeout
                     Request.Timeout();
                 }
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
+                PodeHelpers.WriteException(ex, Listener, PodeLogLevel.Debug);
                 State = PodeContextState.Error;
                 await Handle().ConfigureAwait(false);
             }
@@ -280,7 +281,7 @@ namespace Pode.Protocols.Common.Contexts
                     // Check if the request is aborted with a non-StatusCode of 408 (Request Timeout).
                     if (Request?.IsAborted ?? false)
                     {
-                        PodeHelpers.WriteException(Request?.Error, Listener, Request?.Error?.LoggingLevel ?? PodeLoggingLevel.Error);
+                        PodeHelpers.WriteException(Request?.Error, Listener, Request?.Error?.LoggingLevel ?? PodeLogLevel.Error);
                     }
 
                     Dispose(true);
@@ -325,7 +326,7 @@ namespace Pode.Protocols.Common.Contexts
 
         protected virtual void Process()
         {
-            PodeHelpers.WriteErrorMessage($"Received request", Listener, PodeLoggingLevel.Verbose, this);
+            PodeHelpers.WriteErrorMessage($"Received request", Listener, PodeLogLevel.Verbose, this);
             Listener.AddContext(this);
         }
 
@@ -339,7 +340,7 @@ namespace Pode.Protocols.Common.Contexts
 
         protected void StartReceive(bool newResponse)
         {
-            PodeHelpers.WriteErrorMessage($"Re-receiving Request", Listener, PodeLoggingLevel.Verbose, this);
+            PodeHelpers.WriteErrorMessage($"Re-receiving Request", Listener, PodeLogLevel.Verbose, this);
 
             // if (!IsWebSocketUpgraded)
             if (newResponse)
@@ -349,7 +350,7 @@ namespace Pode.Protocols.Common.Contexts
 
             State = PodeContextState.Receiving;
             PodeSocket.StartReceive(this);
-            PodeHelpers.WriteErrorMessage($"Socket listening", Listener, PodeLoggingLevel.Verbose, this);
+            PodeHelpers.WriteErrorMessage($"Socket listening", Listener, PodeLogLevel.Verbose, this);
         }
 
         /// <summary>
@@ -374,7 +375,7 @@ namespace Pode.Protocols.Common.Contexts
 
             lock (Lockable)
             {
-                PodeHelpers.WriteErrorMessage($"Disposing Context", Listener, PodeLoggingLevel.Verbose, this);
+                PodeHelpers.WriteErrorMessage($"Disposing Context", Listener, PodeLogLevel.Verbose, this);
                 Listener.RemoveProcessingContext(this);
 
                 if (IsClosed)
@@ -450,7 +451,7 @@ namespace Pode.Protocols.Common.Contexts
                 }
                 catch (Exception ex)
                 {
-                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Error);
+                    PodeHelpers.WriteException(ex, Listener, PodeLogLevel.Error);
                 }
                 finally
                 {

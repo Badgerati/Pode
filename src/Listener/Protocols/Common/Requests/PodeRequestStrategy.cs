@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Pode.Utilities;
 using Pode.Protocols.Common.Contexts;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Common.Requests
 {
@@ -132,7 +133,7 @@ namespace Pode.Protocols.Common.Requests
 
             if (disposing)
             {
-                PodeHelpers.WriteErrorMessage($"Request Strategy disposed", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
+                PodeHelpers.WriteErrorMessage($"Request Strategy disposed", Handler.Context.Listener, PodeLogLevel.Verbose, Handler.Context);
             }
         }
 

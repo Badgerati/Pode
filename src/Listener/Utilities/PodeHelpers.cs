@@ -11,6 +11,7 @@ using System.Text;
 using System.IO.Compression;
 using Pode.Adapters;
 using Pode.Protocols.Common.Contexts;
+using Pode.Utilities.Logging;
 
 namespace Pode.Utilities
 {
@@ -47,7 +48,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteException(Exception ex, IPodeAdapter adapter = default, PodeLoggingLevel level = PodeLoggingLevel.Error)
+        public static void WriteException(Exception ex, IPodeAdapter adapter = default, PodeLogLevel level = PodeLogLevel.Error)
         {
             if (ex == default(Exception))
             {
@@ -71,7 +72,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void HandleAggregateException(AggregateException aex, IPodeAdapter adapter = default, PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
+        public static void HandleAggregateException(AggregateException aex, IPodeAdapter adapter = default, PodeLogLevel level = PodeLogLevel.Error, bool handled = false)
         {
             try
             {
@@ -95,7 +96,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteErrorMessage(string message, IPodeAdapter adapter = default, PodeLoggingLevel level = PodeLoggingLevel.Error, IPodeContext context = default)
+        public static void WriteErrorMessage(string message, IPodeAdapter adapter = default, PodeLogLevel level = PodeLogLevel.Error, IPodeContext context = default)
         {
             // do nothing if no message
             if (string.IsNullOrWhiteSpace(message))
@@ -110,7 +111,7 @@ namespace Pode.Utilities
             }
 
             // return if no adapter, and level is not error or higher
-            if (adapter == default && level != PodeLoggingLevel.Error)
+            if (adapter == default && level != PodeLogLevel.Error)
             {
                 return;
             }

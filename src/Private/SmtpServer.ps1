@@ -1,6 +1,7 @@
 using namespace Pode.Protocols.Smtp
 using namespace Pode.Transport.Sockets
 using namespace Pode.Utilities
+using namespace Pode.Utilities.Logging
 
 function Start-PodeSmtpServer {
     # ensure we have smtp handlers
@@ -52,7 +53,7 @@ function Start-PodeSmtpServer {
     # create the listener
     $listener = [PodeSmtpListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
-    $listener.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name (Get-PodeErrorLogTypeName))
+    $listener.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name [PodeLogger]::ERROR_LOG_TYPE_NAME)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 

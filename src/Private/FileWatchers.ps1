@@ -1,6 +1,7 @@
 using namespace Pode.Adapters
 using namespace Pode.Adapters.Watchers
 using namespace Pode.Protocols.File
+using namespace Pode.Utilities.Logging
 
 function Test-PodeFileWatchersExist {
     [CmdletBinding()]
@@ -17,7 +18,7 @@ function New-PodeFileWatcher {
 
     $watcher = [PodeWatcher]::new([PodeAdapterType]::File, $PodeContext.Tokens.Cancellation.Token)
     $watcher.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
-    $watcher.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name (Get-PodeErrorLogTypeName))
+    $watcher.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name [PodeLogger]::ERROR_LOG_TYPE_NAME)
     return $watcher
 }
 

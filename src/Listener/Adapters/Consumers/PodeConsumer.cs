@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Pode.Utilities;
 using Pode.Protocols.WebSockets;
+using Pode.Utilities.Logging;
 
 namespace Pode.Adapters.Consumers
 {
@@ -95,7 +96,7 @@ namespace Pode.Adapters.Consumers
         protected override void Close()
         {
             // disconnect websockets
-            PodeHelpers.WriteErrorMessage($"Closing client web sockets", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing client web sockets", this, PodeLogLevel.Verbose);
 
             foreach (var _webSocket in WebSockets.Values.ToArray())
             {
@@ -103,10 +104,10 @@ namespace Pode.Adapters.Consumers
             }
 
             WebSockets.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed client web sockets", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed client web sockets", this, PodeLogLevel.Verbose);
 
             // close existing websocket requests
-            PodeHelpers.WriteErrorMessage($"Closing client web sockets requests", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing client web sockets requests", this, PodeLogLevel.Verbose);
 
             foreach (var _req in Requests.ToArray())
             {
@@ -114,7 +115,7 @@ namespace Pode.Adapters.Consumers
             }
 
             Requests.Dispose();
-            PodeHelpers.WriteErrorMessage($"Closed client web requests", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed client web requests", this, PodeLogLevel.Verbose);
         }
     }
 }

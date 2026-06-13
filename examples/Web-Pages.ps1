@@ -112,7 +112,7 @@ Start-PodeServer -Threads 2 -Verbose {
 
     # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        # $WebEvent.Request | Write-PodeLog -Name 'custom'
+        $WebEvent.Request | Write-PodeLog -Name 'custom'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
@@ -125,6 +125,11 @@ Start-PodeServer -Threads 2 -Verbose {
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
         Set-PodeResponseStatus -Code 500
+    }
+
+    # GET request throws dummy server exception
+    Add-PodeRoute -Method Get -Path '/exception' -ScriptBlock {
+        throw 'this is a dummy exception'
     }
 
     # GET request to page that merely redirects to google

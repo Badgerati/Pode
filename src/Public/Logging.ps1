@@ -1,3 +1,5 @@
+using namespace Pode.Utilities.Logging
+
 <#
 .SYNOPSIS
 Create a new method of outputting logs.
@@ -217,7 +219,7 @@ function Enable-PodeRequestLogType {
 
     begin {
         # error if it's already enabled
-        $name = Get-PodeRequestLogTypeName
+        $name = [PodeLogger]::REQUEST_LOG_TYPE_NAME
         if ($PodeContext.Server.Logging.Types.Contains($name)) {
             # Request Logging has already been enabled
             throw ($PodeLocale.requestLoggingAlreadyEnabledExceptionMessage)
@@ -260,6 +262,7 @@ function Enable-PodeRequestLogType {
                 Raw = $Raw
             }
         }
+        $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, @([PodeLogLevel]::Informational)))
 
         # then associate the supplied log method(s) with the request log type
         foreach ($methodId in $Method) {
@@ -286,7 +289,7 @@ function Disable-PodeRequestLogType {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogType -Name (Get-PodeRequestLogTypeName)
+    Remove-PodeLogType -Name [PodeLogger]::REQUEST_LOG_TYPE_NAME
 }
 
 if (!(Test-Path Alias:Disable-PodeRequestLogging)) {
@@ -330,7 +333,7 @@ function Enable-PodeErrorLogType {
 
     begin {
         # error if it's already enabled
-        $name = Get-PodeErrorLogTypeName
+        $name = [PodeLogger]::ERROR_LOG_TYPE_NAME
         if ($PodeContext.Server.Logging.Types.Contains($name)) {
             # Error Logging has already been enabled
             throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
@@ -371,6 +374,7 @@ function Enable-PodeErrorLogType {
                 Raw = $Raw
             }
         }
+        $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, $Levels))
 
         # then associate the supplied log method(s) with the request log type
         foreach ($methodId in $Method) {
@@ -397,7 +401,7 @@ function Disable-PodeErrorLogType {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogType -Name (Get-PodeErrorLogTypeName)
+    Remove-PodeLogType -Name [PodeLogger]::ERROR_LOG_TYPE_NAME
 }
 
 if (!(Test-Path Alias:Disable-PodeErrorLogging)) {
@@ -506,6 +510,7 @@ function Add-PodeLogType {
             Levels         = $Levels
             Arguments      = $ArgumentList
         }
+        $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($Name, $Levels))
 
         # then associate the supplied log method(s) with the request log type
         foreach ($methodId in $Method) {
@@ -553,6 +558,7 @@ function Remove-PodeLogType {
 
         # remove the log type
         $null = $PodeContext.Server.Logging.Types.Remove($Name)
+        $PodeContext.Server.Logging.Logger.UnregisterType($Name)
     }
 }
 
@@ -711,48 +717,21 @@ function Write-PodeErrorLog {
         $CheckInnerException
     )
 
-    # do nothing if logging is disabled, or error logging isn't setup
-    $name = Get-PodeErrorLogTypeName
-    if (!(Test-PodeLogTypeEnabled -Name $name)) {
+    # do nothing if error logging isn't setup
+    if (!$PodeContext.Server.Logging.Logger.IsErrorLoggingEnabled) {
         return
     }
 
-    # do nothing if the error level isn't present
-    $levels = @(Get-PodeLogTypeLogLevel -Name $name)
-    if ($levels -inotcontains $Level) {
-        return
-    }
-
-    # build error object for what we need
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'exception' {
-            $item = @{
-                Category   = $Exception.Source
-                Message    = $Exception.Message
-                StackTrace = $Exception.StackTrace
-            }
+    # log error object appropriately based on parameter set
+    switch ($PSCmdlet.ParameterSetName) {
+        'Exception' {
+            $PodeContext.Server.Logging.Logger.AddException($Exception, $Level, [int]$ThreadId)
         }
 
-        'error' {
-            $item = @{
-                Category   = $ErrorRecord.CategoryInfo.ToString()
-                Message    = $ErrorRecord.Exception.Message
-                StackTrace = $ErrorRecord.ScriptStackTrace
-            }
+        'Error' {
+            $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $Level, [int]$ThreadId)
         }
     }
-
-    # add general info
-    $item['Server'] = $PodeContext.Server.ComputerName
-    $item['Level'] = $Level
-    $item['Date'] = [datetime]::Now
-    $item['ThreadId'] = [int]$ThreadId
-
-    # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add(@{
-            Name = $name
-            Item = $item
-        })
 
     # for exceptions, check the inner exception
     if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
@@ -796,22 +775,8 @@ function Write-PodeLog {
         $InputObject
     )
 
-    # do nothing if logging is disabled, or logger isn't setup
-    if (!(Test-PodeLogTypeEnabled -Name $Name)) {
-        return
-    }
-
-    # do nothing if the error level isn't present
-    $levels = @(Get-PodeLogTypeLogLevel -Name $Name)
-    if ($levels -inotcontains $Level) {
-        return
-    }
-
     # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add(@{
-            Name = $Name
-            Item = $InputObject
-        })
+    $PodeContext.Server.Logging.Logger.Add($Name, $Level, $InputObject)
 }
 
 <#

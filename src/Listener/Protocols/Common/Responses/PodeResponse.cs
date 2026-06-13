@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Pode.Utilities;
 using Pode.Protocols.Common.Requests;
 using Pode.Protocols.Common.Contexts;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Common.Responses
 {
@@ -112,7 +113,7 @@ namespace Pode.Protocols.Common.Responses
 
             IsDisposed = true;
             GC.SuppressFinalize(this);
-            PodeHelpers.WriteErrorMessage($"Response disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeHelpers.WriteErrorMessage($"Response disposed", Context.Listener, PodeLogLevel.Verbose, Context);
         }
     }
 }

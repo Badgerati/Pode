@@ -1,3 +1,5 @@
+using namespace Pode.Utilities.Logging
+
 function Get-PodeLoggingTerminalMethod {
     return {
         param(
@@ -365,14 +367,6 @@ function Get-PodeLoggingInbuiltType {
     return $script
 }
 
-function Get-PodeRequestLogTypeName {
-    return '__pode_log_requests__'
-}
-
-function Get-PodeErrorLogTypeName {
-    return '__pode_log_errors__'
-}
-
 function Get-PodeLogType {
     [OutputType([hashtable])]
     param(
@@ -413,7 +407,7 @@ function Test-PodeLogTypeEnabled {
         $Name
     )
 
-    return $PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name)
+    return $PodeContext.Server.Logging.Logger.IsEnabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name)
 }
 
 function Get-PodeLogTypeLogLevel {
@@ -427,11 +421,11 @@ function Get-PodeLogTypeLogLevel {
 }
 
 function Test-PodeErrorLogTypeEnabled {
-    return (Test-PodeLogTypeEnabled -Name (Get-PodeErrorLogTypeName))
+    return Test-PodeLogTypeEnabled -Name [PodeLogger]::ERROR_LOG_TYPE_NAME
 }
 
 function Test-PodeRequestLogTypeEnabled {
-    return (Test-PodeLogTypeEnabled -Name (Get-PodeRequestLogTypeName))
+    return Test-PodeLogTypeEnabled -Name [PodeLogger]::REQUEST_LOG_TYPE_NAME
 }
 
 function Write-PodeRequestLog {
@@ -447,9 +441,8 @@ function Write-PodeRequestLog {
         $Path
     )
 
-    # do nothing if logging is disabled, or request logging isn't setup
-    $name = Get-PodeRequestLogTypeName
-    if (!(Test-PodeLogTypeEnabled -Name $name)) {
+    # do nothing if request logging isn't setup
+    if (!$PodeContext.Server.Logging.Logger.IsRequestLoggingEnabled) {
         return
     }
 
@@ -484,7 +477,7 @@ function Write-PodeRequestLog {
 
     # set username - dot spaces
     if (Test-PodeAuthUser -IgnoreSession) {
-        $userProps = (Get-PodeLogType -Name $name).Properties.Username.Split('.')
+        $userProps = (Get-PodeLogType -Name [PodeLogger]::REQUEST_LOG_TYPE_NAME).Properties.Username.Split('.')
 
         $user = $WebEvent.Auth.User
         foreach ($atom in $userProps) {
@@ -497,10 +490,7 @@ function Write-PodeRequestLog {
     }
 
     # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add(@{
-            Name = $name
-            Item = $item
-        })
+    $PodeContext.Server.Logging.Logger.Add([PodeLogger]::REQUEST_LOG_TYPE_NAME, [PodeLogLevel]::Informational, $item)
 }
 
 function Add-PodeRequestLogEndware {
@@ -511,7 +501,7 @@ function Add-PodeRequestLogEndware {
     )
 
     # do nothing if logging is disabled, or request logging isn't setup
-    $name = Get-PodeRequestLogTypeName
+    $name = [PodeLogger]::REQUEST_LOG_TYPE_NAME
     if (!(Test-PodeLogTypeEnabled -Name $name)) {
         return
     }
@@ -529,7 +519,7 @@ function Test-PodeLogTypesExist {
         return $false
     }
 
-    return (($PodeContext.Server.Logging.Types.Count -gt 0) -or ($PodeContext.Server.Logging.Enabled))
+    return (($PodeContext.Server.Logging.Types.Count -gt 0) -or ($PodeContext.Server.Logging.Logger.IsEnabled))
 }
 
 function Start-PodeLoggingRunspace {
@@ -550,7 +540,7 @@ function Start-PodeLoggingRunspace {
                 try {
                     # try and remove an item from the queue, if none check batches then continue
                     $log = $null
-                    $found = $PodeContext.LogsToProcess.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
+                    $found = $PodeContext.Server.Logging.Logger.TryTake([ref]$log, $PodeContext.Tokens.Cancellation.Token)
 
                     if (!$found -or ($null -eq $log)) {
                         Test-PodeLogTypeBatchTimeout
@@ -668,6 +658,7 @@ function Add-PodeLogMethod {
     $Metadata.Batch = $BatchInfo | New-PodeLogBatchConfig
 
     # create queue for the method's log items
+    #TODO: new PodeLogQueue?
     $Metadata.Queue = [System.Collections.Concurrent.BlockingCollection[hashtable]]::new()
 
     # add method to server
@@ -778,9 +769,9 @@ function New-PodeLogBatchConfig {
 
 function Close-PodeLogging {
     # Dispose of the logs to process collection
-    if ($null -ne $PodeContext.LogsToProcess) {
-        $PodeContext.LogsToProcess.Dispose()
-        $PodeContext.LogsToProcess = $null
+    if ($null -ne $PodeContext.Server.Logging.Logger) {
+        $PodeContext.Server.Logging.Logger.Dispose()
+        $PodeContext.Server.Logging.Logger = $null
     }
 
     # Dispose log method queues

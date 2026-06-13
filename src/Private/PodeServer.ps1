@@ -1,6 +1,7 @@
 using namespace Pode.Protocols.Http
 using namespace Pode.Transport.Sockets
 using namespace Pode.Utilities
+using namespace Pode.Utilities.Logging
 
 function Start-PodeWebServer {
     param(
@@ -74,7 +75,7 @@ function Start-PodeWebServer {
     # Create the listener
     $listener = [PodeHttpListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
-    $listener.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name (Get-PodeErrorLogTypeName))
+    $listener.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name [PodeLogger]::ERROR_LOG_TYPE_NAME)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
     $listener.ShowServerDetails = [bool]$PodeContext.Server.Security.ServerDetails
@@ -257,7 +258,6 @@ function Start-PodeWebServer {
                             }
                             catch {
                                 $_ | Write-PodeErrorLog
-                                $_.Exception | Write-PodeErrorLog -CheckInnerException
                                 Set-PodeResponseStatus -Code 500 -Exception $_
                             }
                             finally {
@@ -278,9 +278,16 @@ function Start-PodeWebServer {
                     $_ | Write-PodeErrorLog -Level Debug
                 }
                 catch {
-                    $_ | Write-PodeErrorLog
-                    $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    throw $_.Exception
+                    try {
+                        $_ | Write-PodeErrorLog
+                        $_.Exception | Write-PodeErrorLog -CheckInnerException
+                    }
+                    catch {
+                        $_ | Out-Default
+                    }
+                    finally {
+                        throw $_.Exception
+                    }
                 }
 
                 # end do-while

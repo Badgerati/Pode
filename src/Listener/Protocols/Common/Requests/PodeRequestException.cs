@@ -1,5 +1,5 @@
 using System;
-using Pode.Utilities;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Common.Requests
 {
@@ -18,7 +18,7 @@ namespace Pode.Protocols.Common.Requests
         public virtual bool IsServerError => false;
 
         // the logging level of the exception
-        public PodeLoggingLevel LoggingLevel => IsClientError ? PodeLoggingLevel.Debug : PodeLoggingLevel.Error;
+        public PodeLogLevel LoggingLevel => IsClientError ? PodeLogLevel.Debug : PodeLogLevel.Error;
 
 
         // constructors

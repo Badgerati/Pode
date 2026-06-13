@@ -25,88 +25,104 @@ InModuleScope -ModuleName 'Pode' {
     }
 
     Describe 'Write-PodeLog' {
-        It 'Does nothing when logging disabled' {
-            Mock Test-PodeLogTypeEnabled { return $false }
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+        BeforeEach {
+            $PodeContext = @{
+                Server = @{
+                    Logging = @{
+                        Logger = [Pode.Utilities.Logging.PodeLogger]::new()
+                    }
+                }
+            }
+        }
 
+        AfterEach {
+            $PodeContext.Server.Logging.Logger.Dispose()
+        }
+
+        It 'Does nothing when logging disabled' {
+            $PodeContext.Server.Logging.Logger.IsEnabled = $false
             Write-PodeLog -Name 'test' -InputObject 'test'
 
-            $PodeContext.LogsToProcess.Count | Should -Be 0
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 0
         }
 
         It 'Adds a log item' {
-            Mock Test-PodeLogTypeEnabled { return $true }
-            Mock Get-PodeLogType { return @{ Levels = @('Informational') } }
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+            $logType = [Pode.Utilities.Logging.PodeLogType]::new('test', @('Informational'))
+            $PodeContext.Server.Logging.Logger.RegisterType($logType)
 
             Write-PodeLog -Name 'test' -InputObject 'test'
 
-            $PodeContext.LogsToProcess.Count | Should -Be 1
-            $PodeContext.LogsToProcess[0].Name | Should -Be 'test'
-            $PodeContext.LogsToProcess[0].Item | Should -Be 'test'
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 1
+
+            $logItem = $null
+            $PodeContext.Server.Logging.Logger.TryTake([ref]$logItem, [System.Threading.CancellationToken]::None) | Should -Be $true
+            $logItem.Name | Should -Be 'test'
+            $logItem.Item | Should -Be 'test'
         }
     }
 
     Describe 'Write-PodeErrorLog' {
-        It 'Does nothing when logging disabled' {
-            Mock Test-PodeLogTypeEnabled { return $false }
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
-
-            Write-PodeLog -Name 'test' -InputObject 'test'
-
-            $PodeContext.LogsToProcess.Count | Should -Be 0
+        BeforeEach {
+            $PodeContext = @{
+                Server = @{
+                    Logging = @{
+                        Logger = [Pode.Utilities.Logging.PodeLogger]::new()
+                    }
+                }
+            }
         }
 
-        It 'Adds an error log item' {
-            Mock Test-PodeLogTypeEnabled { return $true }
-            Mock Get-PodeLogType { return @{ Levels = @('Error') } }
+        AfterEach {
+            $PodeContext.Server.Logging.Logger.Dispose()
+        }
 
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+        It 'Does nothing when logging disabled' {
+            $PodeContext.Server.Logging.Logger.IsEnabled = $false
 
             try { throw 'some error' }
             catch {
                 Write-PodeErrorLog -ErrorRecord $_
             }
 
-            $PodeContext.LogsToProcess.Count | Should -Be 1
-            $PodeContext.LogsToProcess[0].Item.Message | Should -Be 'some error'
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 0
+        }
+
+        It 'Adds an error log item' {
+            $logType = [Pode.Utilities.Logging.PodeLogType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'))
+            $PodeContext.Server.Logging.Logger.RegisterType($logType)
+
+            try { throw 'some error' }
+            catch {
+                Write-PodeErrorLog -ErrorRecord $_
+            }
+
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 1
+
+            $logItem = $null
+            $PodeContext.Server.Logging.Logger.TryTake([ref]$logItem, [System.Threading.CancellationToken]::None) | Should -Be $true
+            $logItem.Item.Message | Should -Be 'some error'
         }
 
         It 'Adds an exception log item' {
-            Mock Test-PodeLogTypeEnabled { return $true }
-            Mock Get-PodeLogType { return @{ Levels = @('Error') } }
-
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+            $logType = [Pode.Utilities.Logging.PodeLogType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'))
+            $PodeContext.Server.Logging.Logger.RegisterType($logType)
 
             $exp = [exception]::new('some error')
             Write-PodeErrorLog -Exception $exp
 
-            $PodeContext.LogsToProcess.Count | Should -Be 1
-            $PodeContext.LogsToProcess[0].Item.Message | Should -Be 'some error'
+            $logItem = $null
+            $PodeContext.Server.Logging.Logger.TryTake([ref]$logItem, [System.Threading.CancellationToken]::None) | Should -Be $true
+            $logItem.Item.Message | Should -Be 'some error'
         }
 
         It 'Does not log as Verbose not allowed' {
-            Mock Test-PodeLogTypeEnabled { return $true }
-            Mock Get-PodeLogType { return @{ Levels = @('Error') } }
-
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+            $logType = [Pode.Utilities.Logging.PodeLogType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'))
+            $PodeContext.Server.Logging.Logger.RegisterType($logType)
 
             $exp = [exception]::new('some error')
             Write-PodeErrorLog -Exception $exp -Level Verbose
 
-            $PodeContext.LogsToProcess.Count | Should -Be 0
-        }
-    }
-
-    Describe 'Get-PodeRequestLogTypeName' {
-        It 'Returns logger name' {
-            Get-PodeRequestLogTypeName | Should -Be '__pode_log_requests__'
-        }
-    }
-
-    Describe 'Get-PodeErrorLogTypeName' {
-        It 'Returns logger name' {
-            Get-PodeErrorLogTypeName | Should -Be '__pode_log_errors__'
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 0
         }
     }
 

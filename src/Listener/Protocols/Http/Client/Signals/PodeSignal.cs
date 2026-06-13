@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Pode.Utilities;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Http.Client.Signals
 {
@@ -172,7 +173,7 @@ namespace Pode.Protocols.Http.Client.Signals
             {
                 // mark as closed, log, dispose
                 IsClosed = true;
-                PodeHelpers.WriteException(ex, Context?.Listener, PodeLoggingLevel.Debug);
+                PodeHelpers.WriteException(ex, Context?.Listener, PodeLogLevel.Debug);
                 Dispose();
             }
             catch (Exception)

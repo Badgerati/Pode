@@ -1,5 +1,6 @@
 using namespace Pode.Adapters
 using namespace Pode.Adapters.Consumers
+using namespace Pode.Utilities.Logging
 
 function Test-PodeWebSocketsExist {
     return (($null -ne $PodeContext.Server.WebSockets) -and (($PodeContext.Server.WebSockets.Enabled) -or ($PodeContext.Server.WebSockets.Connections.Count -gt 0)))
@@ -23,7 +24,7 @@ function New-PodeWebSocketConsumer {
     try {
         $consumer = [PodeConsumer]::new([PodeAdapterType]::WebSocket, $PodeContext.Tokens.Cancellation.Token)
         $consumer.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
-        $consumer.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name (Get-PodeErrorLogTypeName))
+        $consumer.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name [PodeLogger]::ERROR_LOG_TYPE_NAME)
         $PodeContext.Server.WebSockets.Consumer = $consumer
         $PodeContext.Consumers += $consumer
     }

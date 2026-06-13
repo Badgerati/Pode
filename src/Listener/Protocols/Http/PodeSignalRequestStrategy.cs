@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Pode.Utilities;
 using Pode.Protocols.Common.Requests;
 using Pode.Protocols.Http.Client.Signals;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Http
 {
@@ -178,7 +179,7 @@ namespace Pode.Protocols.Http
             catch (Exception ex)
             {
                 // Log the error and return false to indicate failure.
-                PodeHelpers.WriteErrorMessage($"Error decoding WebSocket frame: {ex.Message}", Handler.Context.Listener, PodeLoggingLevel.Error, Handler.Context);
+                PodeHelpers.WriteErrorMessage($"Error decoding WebSocket frame: {ex.Message}", Handler.Context.Listener, PodeLogLevel.Error, Handler.Context);
                 throw;
             }
             finally
@@ -264,7 +265,7 @@ namespace Pode.Protocols.Http
             if (disposing)
             {
                 // Log a message indicating the WebSocket is being closed.
-                PodeHelpers.WriteErrorMessage($"Closing Websocket", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
+                PodeHelpers.WriteErrorMessage($"Closing Websocket", Handler.Context.Listener, PodeLogLevel.Verbose, Handler.Context);
                 Signal.Close().Wait();
 
                 Body = string.Empty;

@@ -6,6 +6,7 @@ using Pode.Protocols.Http.Client;
 using Pode.Protocols.Http.Client.Sse;
 using Pode.Protocols.Http.Client.Signals;
 using Pode.Adapters;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Http
 {
@@ -138,24 +139,24 @@ namespace Pode.Protocols.Http
         protected override void Close()
         {
             // close connected signals
-            PodeHelpers.WriteErrorMessage($"Closing signals", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing signals", this, PodeLogLevel.Verbose);
             foreach (var _signal in Signals.ToArray())
             {
                 _signal.Dispose();
             }
 
             Signals.Dispose();
-            PodeHelpers.WriteErrorMessage($"Closed signals", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed signals", this, PodeLogLevel.Verbose);
 
             // close connected server events
-            PodeHelpers.WriteErrorMessage($"Closing server events", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing server events", this, PodeLogLevel.Verbose);
             foreach (var _sse in ServerEvents.ToArray())
             {
                 _sse.Dispose();
             }
 
             ServerEvents.Dispose();
-            PodeHelpers.WriteErrorMessage($"Closed server events", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed server events", this, PodeLogLevel.Verbose);
 
             // call base close
             base.Close();

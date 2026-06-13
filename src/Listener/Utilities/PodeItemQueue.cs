@@ -106,9 +106,11 @@ namespace Pode.Utilities
 
             IsDisposed = true;
 
+            // dispose the queue
             Items.Dispose();
             Items = null;
 
+            // clear the processing items
             ProcessingItems.Clear();
             ProcessingItems = null;
 

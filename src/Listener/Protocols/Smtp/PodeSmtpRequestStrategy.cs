@@ -11,6 +11,7 @@ using System.Threading;
 using Pode.Utilities;
 using Pode.Protocols.Common.Requests;
 using Pode.Protocols.Common.Forms;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Smtp
 {
@@ -266,7 +267,7 @@ namespace Pode.Protocols.Smtp
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
+            PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLogLevel.Verbose, Handler.Context);
 
             _canProcess = false;
             Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
