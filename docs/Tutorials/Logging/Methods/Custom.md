@@ -2,6 +2,9 @@
 
 Sometimes you don't want to log to a file, or the terminal; instead you want to log to different provider, like LogStash, Splunk, Athena, or any other central logging platform. Although Pode doesn't have these inbuilt (yet!) it is possible to create a custom logging Method, where you define a ScriptBlock with logic to send logs to these platforms. To do this you can use [`New-PodeLogCustomMethod`](../../../../Functions/Logging/New-PodeLogCustomMethod).
 
+!!! important
+    The `New-PodeLoggingMethod` function is now deprecated, please use [`New-PodeLogCustomMethod`](../../../../Functions/Logging/New-PodeLogCustomMethod) instead.
+
 These custom Methods can be used for any log Type - Requests, Error, or Custom Types.
 
 The ScriptBlock you create will be supplied two arguments:

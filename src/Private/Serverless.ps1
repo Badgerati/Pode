@@ -122,7 +122,7 @@ function Start-PodeAzFuncServer {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
     finally {
         $global:WebEvent = $null
@@ -253,7 +253,7 @@ function Start-PodeAwsLambdaServer {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
     finally {
         $global:WebEvent = $null

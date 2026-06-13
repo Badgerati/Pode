@@ -130,11 +130,11 @@ namespace Pode.Protocols.Common.Requests
             {
                 if (ex is AggregateException)
                 {
-                    PodeHelpers.HandleAggregateException(ex as AggregateException, Context.Listener, PodeLogLevel.Debug, true);
+                    PodeHelpers.HandleAggregateException(ex as AggregateException, PodeLogLevel.Debug, handled: true);
                 }
                 else
                 {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLogLevel.Debug);
+                    PodeHelpers.WriteException(ex, PodeLogLevel.Debug);
                 }
 
                 State = PodeStreamState.Error;
@@ -183,7 +183,7 @@ namespace Pode.Protocols.Common.Requests
             }
             catch (Exception ex) when (ex is OperationCanceledException || ex is IOException || ex is ObjectDisposedException)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLogLevel.Verbose);
+                PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
                 ssl?.Dispose();
                 State = PodeStreamState.Error;
                 SslUpgradeStatus = PodeUpgradeStatus.Failed;
@@ -191,7 +191,7 @@ namespace Pode.Protocols.Common.Requests
             }
             catch (AuthenticationException ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLogLevel.Debug);
+                PodeHelpers.WriteException(ex, PodeLogLevel.Debug);
                 ssl?.Dispose();
                 State = PodeStreamState.Error;
                 SslUpgradeStatus = PodeUpgradeStatus.Failed;
@@ -199,7 +199,7 @@ namespace Pode.Protocols.Common.Requests
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLogLevel.Error);
+                PodeHelpers.WriteException(ex);
                 ssl?.Dispose();
                 State = PodeStreamState.Error;
                 SslUpgradeStatus = PodeUpgradeStatus.Failed;
@@ -297,13 +297,13 @@ namespace Pode.Protocols.Common.Requests
             }
             catch (OperationCanceledException ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLogLevel.Verbose);
+                PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
             }
             catch (ObjectDisposedException ex)
             {
                 if (Context.Listener.IsConnected)
                 {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLogLevel.Debug);
+                    PodeHelpers.WriteException(ex, PodeLogLevel.Debug);
                 }
             }
             catch (NullReferenceException ex)
@@ -512,12 +512,12 @@ namespace Pode.Protocols.Common.Requests
             }
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex, Context.Listener);
+                PodeHelpers.HandleAggregateException(aex);
                 return false;
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener);
+                PodeHelpers.WriteException(ex);
                 throw;
             }
         }
@@ -545,7 +545,7 @@ namespace Pode.Protocols.Common.Requests
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLogLevel.Error);
+                PodeHelpers.WriteException(ex);
             }
         }
 
@@ -580,7 +580,7 @@ namespace Pode.Protocols.Common.Requests
                 }
 
                 PartialDispose();
-                PodeHelpers.WriteErrorMessage($"Request disposed", Context.Listener, PodeLogLevel.Verbose, Context);
+                PodeHelpers.WriteErrorMessage($"Request disposed", PodeLogLevel.Verbose, Context);
             }
         }
 

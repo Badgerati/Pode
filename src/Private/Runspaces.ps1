@@ -164,7 +164,7 @@ function Add-PodeRunspace {
     catch {
         # Log and throw any exceptions encountered during execution.
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
 }
 
@@ -320,7 +320,7 @@ function Close-PodeRunspace {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
 }
 

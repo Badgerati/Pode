@@ -1,23 +1,14 @@
-using System;
-
 namespace Pode.Utilities.Logging
 {
-    public class PodeLogItem
+    public class PodeLogItem : IPodeLogItem
     {
-        public string Name { get; private set; }
-        public PodeLogLevel Level { get; private set; }
-        public object Item { get; private set; }
+        public object Items { get; set; }
+        public object RawItems { get; set; }
 
-        public PodeLogItem(string name, PodeLogLevel level, object item)
+        public PodeLogItem(object items, object rawItems)
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                throw new ArgumentException("Log item name cannot be null or empty.", nameof(name));
-            }
-
-            Name = name;
-            Level = level;
-            Item = item;
+            Items = items;
+            RawItems = rawItems;
         }
     }
 }

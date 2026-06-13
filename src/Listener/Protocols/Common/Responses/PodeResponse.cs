@@ -113,7 +113,7 @@ namespace Pode.Protocols.Common.Responses
 
             IsDisposed = true;
             GC.SuppressFinalize(this);
-            PodeHelpers.WriteErrorMessage($"Response disposed", Context.Listener, PodeLogLevel.Verbose, Context);
+            PodeHelpers.WriteErrorMessage($"Response disposed", PodeLogLevel.Verbose, Context);
         }
     }
 }

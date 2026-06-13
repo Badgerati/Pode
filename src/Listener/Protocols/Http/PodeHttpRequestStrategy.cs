@@ -122,7 +122,7 @@ namespace Pode.Protocols.Http
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLogLevel.Verbose, Handler.Context);
+            PodeHelpers.WriteErrorMessage($"Request reset", PodeLogLevel.Verbose, Handler.Context);
 
             HttpMethod = string.Empty;
             QueryString = default;

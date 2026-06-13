@@ -372,7 +372,7 @@ function Restart-PodeInternalServer {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
 }
 

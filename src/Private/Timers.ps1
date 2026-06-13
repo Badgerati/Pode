@@ -85,7 +85,7 @@ function Start-PodeTimerRunspace {
         }
         catch {
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
     }
 

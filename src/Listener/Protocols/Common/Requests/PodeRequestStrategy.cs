@@ -133,7 +133,7 @@ namespace Pode.Protocols.Common.Requests
 
             if (disposing)
             {
-                PodeHelpers.WriteErrorMessage($"Request Strategy disposed", Handler.Context.Listener, PodeLogLevel.Verbose, Handler.Context);
+                PodeHelpers.WriteErrorMessage($"Request Strategy disposed", PodeLogLevel.Verbose, Handler.Context);
             }
         }
 

@@ -131,7 +131,7 @@ function Start-PodeGuiRunspace {
         }
         catch {
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
         finally {
             # invoke the cancellation token to close the server

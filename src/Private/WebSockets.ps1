@@ -22,17 +22,14 @@ function New-PodeWebSocketConsumer {
     }
 
     try {
-        $consumer = [PodeConsumer]::new([PodeAdapterType]::WebSocket, $PodeContext.Tokens.Cancellation.Token)
-        $consumer.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
-        $consumer.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name [PodeLogger]::ERROR_LOG_TYPE_NAME)
+        $consumer = [PodeConsumer]::new([PodeAdapterType]::WebSocket, $PodeContext.Server.Logging.Logger, $PodeContext.Tokens.Cancellation.Token)
         $PodeContext.Server.WebSockets.Consumer = $consumer
         $PodeContext.Consumers += $consumer
     }
     catch {
         $_ | Write-PodeErrorLog
-        $_.Exception | Write-PodeErrorLog -CheckInnerException
         Close-PodeDisposable -Disposable $consumer
-        throw $_.Exception
+        throw
     }
 }
 
@@ -91,7 +88,6 @@ function Start-PodeWebSocketRunspace {
                         }
                         catch {
                             $_ | Write-PodeErrorLog
-                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
                     }
                     finally {
@@ -105,8 +101,7 @@ function Start-PodeWebSocketRunspace {
             }
             catch {
                 $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
+                throw
             }
 
             # end do-while
@@ -138,8 +133,7 @@ function Start-PodeWebSocketRunspace {
         }
         catch {
             $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
+            throw
         }
         finally {
             Close-PodeDisposable -Disposable $Consumer

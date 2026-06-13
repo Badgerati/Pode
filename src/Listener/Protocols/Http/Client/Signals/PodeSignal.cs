@@ -173,7 +173,7 @@ namespace Pode.Protocols.Http.Client.Signals
             {
                 // mark as closed, log, dispose
                 IsClosed = true;
-                PodeHelpers.WriteException(ex, Context?.Listener, PodeLogLevel.Debug);
+                PodeHelpers.WriteException(ex, PodeLogLevel.Debug);
                 Dispose();
             }
             catch (Exception)

@@ -25,7 +25,7 @@ function Get-PodeLoggingTerminalMethod {
                 try {
                     # try and get a log item
                     $log = $null
-                    $found = $method.Queue.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
+                    $found = $method.Queue.TryTake([ref]$log, $PodeContext.Tokens.Cancellation.Token)
 
                     if (!$found -or ($null -eq $log)) {
                         continue
@@ -44,7 +44,7 @@ function Get-PodeLoggingTerminalMethod {
                     $_ | Write-PodeErrorLog -Level Debug
                 }
                 catch {
-                    $_ | Write-PodeErrorLog
+                    $_ | Out-Default
                 }
             }
         }
@@ -52,8 +52,8 @@ function Get-PodeLoggingTerminalMethod {
             $_ | Write-PodeErrorLog -Level Debug
         }
         catch {
-            $_ | Write-PodeErrorLog
-            throw $_.Exception
+            $_ | Out-Default
+            throw
         }
     }
 }
@@ -79,7 +79,7 @@ function Get-PodeLoggingFileMethod {
                 try {
                     # try and get a log item
                     $log = $null
-                    $found = $method.Queue.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
+                    $found = $method.Queue.TryTake([ref]$log, $PodeContext.Tokens.Cancellation.Token)
 
                     if (!$found -or ($null -eq $log)) {
                         continue
@@ -141,7 +141,7 @@ function Get-PodeLoggingFileMethod {
                     $_ | Write-PodeErrorLog -Level Debug
                 }
                 catch {
-                    $_ | Write-PodeErrorLog
+                    $_ | Out-Default
                 }
             }
         }
@@ -149,7 +149,7 @@ function Get-PodeLoggingFileMethod {
             $_ | Write-PodeErrorLog -Level Debug
         }
         catch {
-            $_ | Write-PodeErrorLog
+            $_ | Out-Default
         }
     }
 }
@@ -175,7 +175,7 @@ function Get-PodeLoggingEventViewerMethod {
                 try {
                     # try and get a log item
                     $log = $null
-                    $found = $method.Queue.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
+                    $found = $method.Queue.TryTake([ref]$log, $PodeContext.Tokens.Cancellation.Token)
 
                     if (!$found -or ($null -eq $log)) {
                         continue
@@ -215,7 +215,7 @@ function Get-PodeLoggingEventViewerMethod {
                     $_ | Write-PodeErrorLog -Level Debug
                 }
                 catch {
-                    $_ | Write-PodeErrorLog
+                    $_ | Out-Default
                 }
             }
         }
@@ -223,8 +223,8 @@ function Get-PodeLoggingEventViewerMethod {
             $_ | Write-PodeErrorLog -Level Debug
         }
         catch {
-            $_ | Write-PodeErrorLog
-            throw $_.Exception
+            $_ | Out-Default
+            throw
         }
     }
 }
@@ -250,7 +250,7 @@ function Get-PodeLoggingCustomMethod {
                 try {
                     # try and get a log item
                     $log = $null
-                    $found = $method.Queue.TryTake([ref]$log, 5000, $PodeContext.Tokens.Cancellation.Token)
+                    $found = $method.Queue.TryTake([ref]$log, $PodeContext.Tokens.Cancellation.Token)
 
                     if (!$found -or ($null -eq $log)) {
                         continue
@@ -268,7 +268,7 @@ function Get-PodeLoggingCustomMethod {
                     $_ | Write-PodeErrorLog -Level Debug
                 }
                 catch {
-                    $_ | Write-PodeErrorLog
+                    $_ | Out-Default
                 }
             }
         }
@@ -276,8 +276,8 @@ function Get-PodeLoggingCustomMethod {
             $_ | Write-PodeErrorLog -Level Debug
         }
         catch {
-            $_ | Write-PodeErrorLog
-            throw $_.Exception
+            $_ | Out-Default
+            throw
         }
     }
 }
@@ -352,6 +352,7 @@ function Get-PodeLoggingInbuiltType {
                     "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
                     "Level: $($item.Level)",
                     "ThreadId: $($item.ThreadId)",
+                    "ContextId: $($item.ContextId)",
                     "Server: $($item.Server)",
                     "Category: $($item.Category)",
                     "Message: $($item.Message)",
@@ -398,34 +399,6 @@ function Test-PodeLogMethod {
     )
 
     return $PodeContext.Server.Logging.Methods.ContainsKey($Id)
-}
-
-function Test-PodeLogTypeEnabled {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name
-    )
-
-    return $PodeContext.Server.Logging.Logger.IsEnabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name)
-}
-
-function Get-PodeLogTypeLogLevel {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name
-    )
-
-    return (Get-PodeLogType -Name $Name).Levels
-}
-
-function Test-PodeErrorLogTypeEnabled {
-    return Test-PodeLogTypeEnabled -Name [PodeLogger]::ERROR_LOG_TYPE_NAME
-}
-
-function Test-PodeRequestLogTypeEnabled {
-    return Test-PodeLogTypeEnabled -Name [PodeLogger]::REQUEST_LOG_TYPE_NAME
 }
 
 function Write-PodeRequestLog {
@@ -501,8 +474,7 @@ function Add-PodeRequestLogEndware {
     )
 
     # do nothing if logging is disabled, or request logging isn't setup
-    $name = [PodeLogger]::REQUEST_LOG_TYPE_NAME
-    if (!(Test-PodeLogTypeEnabled -Name $name)) {
+    if (!$PodeContext.Server.Logging.Logger.IsRequestLoggingEnabled) {
         return
     }
 
@@ -538,7 +510,7 @@ function Start-PodeLoggingRunspace {
                 Test-PodeSuspensionToken
 
                 try {
-                    # try and remove an item from the queue, if none check batches then continue
+                    # try and remove an event from the queue, if none check batches then continue
                     $log = $null
                     $found = $PodeContext.Server.Logging.Logger.TryTake([ref]$log, $PodeContext.Tokens.Cancellation.Token)
 
@@ -572,22 +544,15 @@ function Start-PodeLoggingRunspace {
 
                             # if the current amount of items matches the batch, send to log method and reset batch
                             if ($batch.Items.Length -ge $batch.Size) {
-                                $logMethod.Queue.Add(@{
-                                        Items    = $batch.Items
-                                        RawItems = $batch.RawItems
-                                    })
-
+                                $logMethod.Queue.Add([Pode.Utilities.Logging.PodeLogItem]::new($batch.Items, $batch.RawItems))
                                 $batch.Items = @()
                                 $batch.RawItems = @()
                             }
                         }
 
-                        # send log item to log method
+                        # send log message to log method
                         else {
-                            $logMethod.Queue.Add(@{
-                                    Items    = $result
-                                    RawItems = $log.Item
-                                })
+                            $logMethod.Queue.Add([Pode.Utilities.Logging.PodeLogItem]::new($result, $log.Item))
                         }
                     }
 
@@ -598,6 +563,7 @@ function Start-PodeLoggingRunspace {
                     $_ | Write-PodeErrorLog -Level Debug
                 }
                 catch {
+                    $_ | Out-Default
                     $_ | Write-PodeErrorLog
                 }
             }
@@ -607,7 +573,7 @@ function Start-PodeLoggingRunspace {
         }
         catch {
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
     }
 
@@ -658,8 +624,7 @@ function Add-PodeLogMethod {
     $Metadata.Batch = $BatchInfo | New-PodeLogBatchConfig
 
     # create queue for the method's log items
-    #TODO: new PodeLogQueue?
-    $Metadata.Queue = [System.Collections.Concurrent.BlockingCollection[hashtable]]::new()
+    $Metadata.Queue = [Pode.Utilities.Logging.PodeLogQueue[Pode.Utilities.Logging.IPodeLogItem]]::new()
 
     # add method to server
     $PodeContext.Server.Logging.Methods[$Id] = $Metadata
@@ -736,10 +701,7 @@ function Test-PodeLogTypeBatchTimeout {
             }
 
             # send batch to log method and reset batch
-            $logMethod.Queue.Add(@{
-                    Items    = $batch.Items
-                    RawItems = $batch.RawItems
-                })
+            $logMethod.Queue.Add([Pode.Utilities.Logging.PodeLogItem]::new($batch.Items, $batch.RawItems))
 
             $batch.Items = @()
             $batch.RawItems = @()
@@ -781,4 +743,24 @@ function Close-PodeLogging {
             $method.Queue = $null
         }
     }
+}
+
+function Get-PodeLoggingContextId {
+    if ($null -ne $WebEvent) {
+        return $WebEvent.ContextId
+    }
+
+    if ($null -ne $SignalEvent) {
+        return $SignalEvent.ContextId
+    }
+
+    if ($null -ne $script:SmtpEvent) {
+        return $script:SmtpEvent.ContextId
+    }
+
+    if ($null -ne $TcpEvent) {
+        return $TcpEvent.ContextId
+    }
+
+    return [string]::Empty
 }

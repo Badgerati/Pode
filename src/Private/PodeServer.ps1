@@ -73,9 +73,7 @@ function Start-PodeWebServer {
     }
 
     # Create the listener
-    $listener = [PodeHttpListener]::new($PodeContext.Tokens.Cancellation.Token)
-    $listener.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
-    $listener.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name [PodeLogger]::ERROR_LOG_TYPE_NAME)
+    $listener = [PodeHttpListener]::new($PodeContext.Server.Logging.Logger, $PodeContext.Tokens.Cancellation.Token)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
     $listener.ShowServerDetails = [bool]$PodeContext.Server.Security.ServerDetails
@@ -102,9 +100,8 @@ function Start-PodeWebServer {
     }
     catch {
         $_ | Write-PodeErrorLog
-        $_.Exception | Write-PodeErrorLog -CheckInnerException
         Close-PodeDisposable -Disposable $listener
-        throw $_.Exception
+        throw
     }
 
     # only if HTTP endpoint
@@ -165,6 +162,7 @@ function Start-PodeWebServer {
                                     Ranges           = $null
                                     Sse              = $null
                                     Signal           = $null
+                                    ContextId        = $context.ID
                                     Metadata         = @{}
                                 }
 
@@ -280,13 +278,12 @@ function Start-PodeWebServer {
                 catch {
                     try {
                         $_ | Write-PodeErrorLog
-                        $_.Exception | Write-PodeErrorLog -CheckInnerException
                     }
                     catch {
                         $_ | Out-Default
                     }
                     finally {
-                        throw $_.Exception
+                        throw
                     }
                 }
 
@@ -348,6 +345,7 @@ function Start-PodeWebServer {
                                 ClientId  = $context.Signal.ClientId
                                 Timestamp = $context.Timestamp
                                 Streamed  = $true
+                                ContextId = $context.ID
                                 Metadata  = @{}
                             }
 
@@ -366,7 +364,6 @@ function Start-PodeWebServer {
                         }
                         catch {
                             $_ | Write-PodeErrorLog
-                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
                         finally {
                             Update-PodeServerSignalMetric -SignalEvent $SignalEvent
@@ -379,8 +376,7 @@ function Start-PodeWebServer {
                 }
                 catch {
                     $_ | Write-PodeErrorLog
-                    $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    throw $_.Exception
+                    throw
                 }
 
                 # end do-while
@@ -418,8 +414,7 @@ function Start-PodeWebServer {
         }
         catch {
             $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
+            throw
         }
         finally {
             Close-PodeDisposable -Disposable $Listener
@@ -483,7 +478,6 @@ function Start-PodeWebConnectionEventsRunspace {
                     }
                     catch {
                         $_ | Write-PodeErrorLog
-                        $_.Exception | Write-PodeErrorLog -CheckInnerException
                     }
                     finally {
                         Close-PodeDisposable -Disposable $evt
@@ -496,8 +490,7 @@ function Start-PodeWebConnectionEventsRunspace {
             }
             catch {
                 $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
+                throw
             }
         } while (Test-PodeSuspensionToken) # Check for suspension token and wait for the debugger to reset if active
     }

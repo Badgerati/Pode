@@ -9,13 +9,12 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Text;
 using System.IO.Compression;
-using Pode.Adapters;
 using Pode.Protocols.Common.Contexts;
 using Pode.Utilities.Logging;
 
 namespace Pode.Utilities
 {
-    public class PodeHelpers
+    public static class PodeHelpers
     {
         public static readonly string[] HTTP_METHODS = new string[] { "CONNECT", "DELETE", "GET", "HEAD", "MERGE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE" };
         public const string WEB_SOCKET_MAGIC_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -48,34 +47,40 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteException(Exception ex, IPodeAdapter adapter = default, PodeLogLevel level = PodeLogLevel.Error)
+        public static IPodeLogger Logger { get; private set; }
+
+        public static void SetLogger(IPodeLogger logger)
         {
-            if (ex == default(Exception))
+            Logger = logger;
+        }
+
+        public static void WriteException(Exception ex, PodeLogLevel level = PodeLogLevel.Error, IPodeContext context = default)
+        {
+            // do nothing if no exception, or no logger
+            if (ex == default(Exception) || Logger == default(IPodeLogger))
             {
                 return;
             }
 
-            // return if logging disabled, or if level isn't being logged
-            if (adapter != default && (!adapter.ErrorLoggingEnabled || !adapter.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
-            {
-                return;
-            }
-
-            // write the exception to terminal
-            Console.WriteLine($"[{level}] {ex.GetType().Name}: {ex.Message}");
-            Console.WriteLine(string.IsNullOrEmpty(ex.StackTrace) ? "   [No Stack Trace]" : ex.StackTrace);
-
+            // add the exception to the logger
+            Logger.AddException(ex, context?.ID, level);
             if (ex.InnerException != null)
             {
-                Console.WriteLine($"[{level}] {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
-                Console.WriteLine(string.IsNullOrEmpty(ex.InnerException.StackTrace) ? "   [No Stack Trace]" : ex.InnerException.StackTrace);
+                Logger.AddException(ex.InnerException, context?.ID, level);
             }
         }
 
-        public static void HandleAggregateException(AggregateException aex, IPodeAdapter adapter = default, PodeLogLevel level = PodeLogLevel.Error, bool handled = false)
+        public static void HandleAggregateException(AggregateException aex, PodeLogLevel level = PodeLogLevel.Error, IPodeContext context = default, bool handled = false)
         {
+            // do nothing if no exception, or no logger
+            if (aex == default(AggregateException) || Logger == default(IPodeLogger))
+            {
+                return;
+            }
+
             try
             {
+                // handle the exception, and ignore if it's an IO or OperationCanceled exception
                 aex.Handle((ex) =>
                 {
                     if (ex is IOException || ex is OperationCanceledException)
@@ -83,12 +88,13 @@ namespace Pode.Utilities
                         return true;
                     }
 
-                    WriteException(ex, adapter, level);
+                    WriteException(ex, level, context);
                     return false;
                 });
             }
             catch
             {
+                // rethrow the exception if it wasn't handled
                 if (!handled)
                 {
                     throw;
@@ -96,35 +102,16 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteErrorMessage(string message, IPodeAdapter adapter = default, PodeLogLevel level = PodeLogLevel.Error, IPodeContext context = default)
+        public static void WriteErrorMessage(string message, PodeLogLevel level = PodeLogLevel.Error, IPodeContext context = default)
         {
-            // do nothing if no message
-            if (string.IsNullOrWhiteSpace(message))
+            // do nothing if no message, or no logger
+            if (string.IsNullOrWhiteSpace(message) || Logger == default(IPodeLogger))
             {
                 return;
             }
 
-            // return if logging disabled, or if level isn't being logged
-            if (adapter != default && (!adapter.ErrorLoggingEnabled || !adapter.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
-            {
-                return;
-            }
-
-            // return if no adapter, and level is not error or higher
-            if (adapter == default && level != PodeLogLevel.Error)
-            {
-                return;
-            }
-
-            // write the message to terminal
-            if (context == default)
-            {
-                Console.WriteLine($"[{level}]: {message}");
-            }
-            else
-            {
-                Console.WriteLine($"[{level}]: [ContextId: {context.ID}] {message}");
-            }
+            // add the error message to the logger
+            Logger.AddException(message, context?.ID, level);
         }
 
         public static string NewGuid(int length = 16)

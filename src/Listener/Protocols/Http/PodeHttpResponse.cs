@@ -78,23 +78,23 @@ namespace Pode.Protocols.Http
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Sending response", Context.Listener, PodeLogLevel.Verbose, Context);
+            PodeHelpers.WriteErrorMessage($"Sending response", PodeLogLevel.Verbose, Context);
 
             try
             {
                 await SendHeaders(Context.IsTimeout).ConfigureAwait(false);
                 await SendBody(Context.IsTimeout).ConfigureAwait(false);
-                PodeHelpers.WriteErrorMessage($"Response sent", Context.Listener, PodeLogLevel.Verbose, Context);
+                PodeHelpers.WriteErrorMessage($"Response sent", PodeLogLevel.Verbose, Context);
             }
             catch (OperationCanceledException) { }
             catch (IOException) { }
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex, Context.Listener);
+                PodeHelpers.HandleAggregateException(aex);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener);
+                PodeHelpers.WriteException(ex);
                 throw;
             }
             finally
@@ -110,24 +110,24 @@ namespace Pode.Protocols.Http
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Sending response timed-out", Context.Listener, PodeLogLevel.Verbose, Context);
+            PodeHelpers.WriteErrorMessage($"Sending response timed-out", PodeLogLevel.Verbose, Context);
             StatusCode = 408;
 
             try
             {
                 await SendHeaders(true).ConfigureAwait(false);
                 IsSent = true;
-                PodeHelpers.WriteErrorMessage($"Response timed-out sent", Context.Listener, PodeLogLevel.Verbose, Context);
+                PodeHelpers.WriteErrorMessage($"Response timed-out sent", PodeLogLevel.Verbose, Context);
             }
             catch (OperationCanceledException) { }
             catch (IOException) { }
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex, Context.Listener);
+                PodeHelpers.HandleAggregateException(aex);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener);
+                PodeHelpers.WriteException(ex);
                 throw;
             }
             finally

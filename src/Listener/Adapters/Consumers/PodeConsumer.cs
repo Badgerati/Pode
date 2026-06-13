@@ -15,8 +15,8 @@ namespace Pode.Adapters.Consumers
 
         public PodeItemQueue<PodeWebSocketRequest> Requests { get; private set; }
 
-        public PodeConsumer(PodeAdapterType type, CancellationToken cancellationToken = default)
-            : base(type, cancellationToken)
+        public PodeConsumer(PodeAdapterType type, IPodeLogger logger, CancellationToken cancellationToken = default)
+            : base(type, logger, cancellationToken)
         {
             WebSockets = new Dictionary<string, PodeWebSocket>();
             Requests = new PodeItemQueue<PodeWebSocketRequest>();
@@ -96,7 +96,7 @@ namespace Pode.Adapters.Consumers
         protected override void Close()
         {
             // disconnect websockets
-            PodeHelpers.WriteErrorMessage($"Closing client web sockets", this, PodeLogLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing client web sockets", PodeLogLevel.Verbose);
 
             foreach (var _webSocket in WebSockets.Values.ToArray())
             {
@@ -104,10 +104,10 @@ namespace Pode.Adapters.Consumers
             }
 
             WebSockets.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed client web sockets", this, PodeLogLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed client web sockets", PodeLogLevel.Verbose);
 
             // close existing websocket requests
-            PodeHelpers.WriteErrorMessage($"Closing client web sockets requests", this, PodeLogLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing client web sockets requests", PodeLogLevel.Verbose);
 
             foreach (var _req in Requests.ToArray())
             {
@@ -115,7 +115,7 @@ namespace Pode.Adapters.Consumers
             }
 
             Requests.Dispose();
-            PodeHelpers.WriteErrorMessage($"Closed client web requests", this, PodeLogLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed client web requests", PodeLogLevel.Verbose);
         }
     }
 }

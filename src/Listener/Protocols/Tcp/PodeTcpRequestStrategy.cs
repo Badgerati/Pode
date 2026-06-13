@@ -75,7 +75,7 @@ namespace Pode.Protocols.Tcp
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLogLevel.Verbose, Handler.Context);
+            PodeHelpers.WriteErrorMessage($"Request reset", PodeLogLevel.Verbose, Handler.Context);
             _body = string.Empty;
             RawBody = default;
         }

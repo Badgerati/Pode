@@ -16,10 +16,7 @@ function New-PodeFileWatcher {
     [OutputType([Pode.Adapters.Watchers.PodeWatcher])]
     param()
 
-    $watcher = [PodeWatcher]::new([PodeAdapterType]::File, $PodeContext.Tokens.Cancellation.Token)
-    $watcher.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
-    $watcher.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name [PodeLogger]::ERROR_LOG_TYPE_NAME)
-    return $watcher
+    return [PodeWatcher]::new([PodeAdapterType]::File, $PodeContext.Server.Logging.Logger, $PodeContext.Tokens.Cancellation.Token)
 }
 
 function Start-PodeFileWatcherRunspace {
@@ -51,9 +48,8 @@ function Start-PodeFileWatcherRunspace {
     }
     catch {
         $_ | Write-PodeErrorLog
-        $_.Exception | Write-PodeErrorLog -CheckInnerException
         Close-PodeDisposable -Disposable $watcher
-        throw $_.Exception
+        throw
     }
 
     $watchScript = {
@@ -120,7 +116,6 @@ function Start-PodeFileWatcherRunspace {
                         }
                         catch {
                             $_ | Write-PodeErrorLog
-                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
                     }
                     finally {
@@ -134,8 +129,7 @@ function Start-PodeFileWatcherRunspace {
             }
             catch {
                 $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
+                throw
             }
 
             # end do-while
@@ -165,8 +159,7 @@ function Start-PodeFileWatcherRunspace {
         }
         catch {
             $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
+            throw
         }
         finally {
             Close-PodeDisposable -Disposable $Watcher

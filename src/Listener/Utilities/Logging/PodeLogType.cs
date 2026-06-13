@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Pode.Utilities.Logging
 {
-    public class PodeLogType
+    public class PodeLogType : IPodeLogType
     {
         public string Name { get; private set; }
         public HashSet<PodeLogLevel> Levels { get; private set; }

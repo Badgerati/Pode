@@ -722,14 +722,17 @@ function Write-PodeErrorLog {
         return
     }
 
+    # attempt to get current contextId
+    $contextId = Get-PodeLoggingContextId
+
     # log error object appropriately based on parameter set
     switch ($PSCmdlet.ParameterSetName) {
         'Exception' {
-            $PodeContext.Server.Logging.Logger.AddException($Exception, $Level, [int]$ThreadId)
+            $PodeContext.Server.Logging.Logger.AddException($Exception, $contextId, $Level, [int]$ThreadId)
         }
 
         'Error' {
-            $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $Level, [int]$ThreadId)
+            $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $contextId, $Level, [int]$ThreadId)
         }
     }
 

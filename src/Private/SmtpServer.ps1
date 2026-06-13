@@ -51,9 +51,7 @@ function Start-PodeSmtpServer {
     }
 
     # create the listener
-    $listener = [PodeSmtpListener]::new($PodeContext.Tokens.Cancellation.Token)
-    $listener.ErrorLoggingEnabled = Test-PodeErrorLogTypeEnabled
-    $listener.ErrorLoggingLevels = @(Get-PodeLogTypeLogLevel -Name [PodeLogger]::ERROR_LOG_TYPE_NAME)
+    $listener = [PodeSmtpListener]::new($PodeContext.Server.Logging.Logger, $PodeContext.Tokens.Cancellation.Token)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
@@ -76,9 +74,8 @@ function Start-PodeSmtpServer {
     }
     catch {
         $_ | Write-PodeErrorLog
-        $_.Exception | Write-PodeErrorLog -CheckInnerException
         Close-PodeDisposable -Disposable $listener
-        throw $_.Exception
+        throw
     }
 
     # script for listening out of for incoming requests
@@ -129,6 +126,7 @@ function Start-PodeSmtpServer {
                                     Name     = $context.EndpointName
                                 }
                                 Timestamp = [datetime]::UtcNow
+                                ContextId = $context.ID
                                 Metadata  = @{}
                             }
 
@@ -163,7 +161,6 @@ function Start-PodeSmtpServer {
                         }
                         catch {
                             $_ | Write-PodeErrorLog
-                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
                     }
                     finally {
@@ -177,8 +174,7 @@ function Start-PodeSmtpServer {
             }
             catch {
                 $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
+                throw
             }
 
             # end do-while
@@ -210,8 +206,7 @@ function Start-PodeSmtpServer {
         }
         catch {
             $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
+            throw
         }
         finally {
             Close-PodeDisposable -Disposable $Listener

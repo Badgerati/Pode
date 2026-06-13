@@ -589,10 +589,6 @@ function New-PodeRunspacePool {
         $threadsCounts.Schedule = 0
     }
 
-    if (!(Test-PodeLogTypesExist)) {
-        $threadsCounts.Log = 0
-    }
-
     # main runspace - for timers, schedules, etc
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{

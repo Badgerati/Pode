@@ -5,6 +5,9 @@ You can log items to a file using Pode's inbuilt file logging Method, via [`New-
 !!! note
     This will convert the supplied transformed log items into a string, if it isn't one already.
 
+!!! important
+    The `New-PodeLoggingMethod` function is now deprecated, please use [`New-PodeLogFileMethod`](../../../../Functions/Logging/New-PodeLogFileMethod) instead.
+
 By default, Pode will store all log files in a `./logs` directory at the root of your server. Each log file will be stored by day, eg: `<name>_2019-08-02_001.log`. The last `001` number specifies the log number for that day - if files are be limited by size.
 
 ## Examples

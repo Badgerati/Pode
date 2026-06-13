@@ -8,6 +8,9 @@ You can log items to the Windows Event Viewer, using Pode's unbuilt Event Viewer
 !!! important
     By default, Pode will log to the Application log with a source of Pode, and an Event ID of 0.
 
+!!! important
+    The `New-PodeLoggingMethod` function is now deprecated, please use [`New-PodeLogEventViewerMethod`](../../../../Functions/Logging/New-PodeLogEventViewerMethod) instead.
+
 ## Usage
 
 When using this log method, Pode will first check if the source exists, and will then attempt to create it. To do this, you will need to be running Pode as an administrator.
