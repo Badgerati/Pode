@@ -1,5 +1,6 @@
 using namespace Pode.Adapters
 using namespace Pode.Adapters.Consumers
+using namespace Pode.Utilities.Logging
 
 function Test-PodeWebSocketsExist {
     return (($null -ne $PodeContext.Server.WebSockets) -and (($PodeContext.Server.WebSockets.Enabled) -or ($PodeContext.Server.WebSockets.Connections.Count -gt 0)))
@@ -21,17 +22,14 @@ function New-PodeWebSocketConsumer {
     }
 
     try {
-        $consumer = [PodeConsumer]::new([PodeAdapterType]::WebSocket, $PodeContext.Tokens.Cancellation.Token)
-        $consumer.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-        $consumer.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
+        $consumer = [PodeConsumer]::new([PodeAdapterType]::WebSocket, $PodeContext.Server.Logging.Logger, $PodeContext.Tokens.Cancellation.Token)
         $PodeContext.Server.WebSockets.Consumer = $consumer
         $PodeContext.Consumers += $consumer
     }
     catch {
         $_ | Write-PodeErrorLog
-        $_.Exception | Write-PodeErrorLog -CheckInnerException
         Close-PodeDisposable -Disposable $consumer
-        throw $_.Exception
+        throw
     }
 }
 
@@ -90,7 +88,6 @@ function Start-PodeWebSocketRunspace {
                         }
                         catch {
                             $_ | Write-PodeErrorLog
-                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
                     }
                     finally {
@@ -104,8 +101,7 @@ function Start-PodeWebSocketRunspace {
             }
             catch {
                 $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
+                throw
             }
 
             # end do-while
@@ -137,8 +133,7 @@ function Start-PodeWebSocketRunspace {
         }
         catch {
             $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
+            throw
         }
         finally {
             Close-PodeDisposable -Disposable $Consumer

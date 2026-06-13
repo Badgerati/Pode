@@ -1,6 +1,7 @@
 using namespace Pode.Adapters
 using namespace Pode.Adapters.Watchers
 using namespace Pode.Protocols.File
+using namespace Pode.Utilities.Logging
 
 function Test-PodeFileWatchersExist {
     [CmdletBinding()]
@@ -15,10 +16,7 @@ function New-PodeFileWatcher {
     [OutputType([Pode.Adapters.Watchers.PodeWatcher])]
     param()
 
-    $watcher = [PodeWatcher]::new([PodeAdapterType]::File, $PodeContext.Tokens.Cancellation.Token)
-    $watcher.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-    $watcher.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
-    return $watcher
+    return [PodeWatcher]::new([PodeAdapterType]::File, $PodeContext.Server.Logging.Logger, $PodeContext.Tokens.Cancellation.Token)
 }
 
 function Start-PodeFileWatcherRunspace {
@@ -50,9 +48,8 @@ function Start-PodeFileWatcherRunspace {
     }
     catch {
         $_ | Write-PodeErrorLog
-        $_.Exception | Write-PodeErrorLog -CheckInnerException
         Close-PodeDisposable -Disposable $watcher
-        throw $_.Exception
+        throw
     }
 
     $watchScript = {
@@ -119,7 +116,6 @@ function Start-PodeFileWatcherRunspace {
                         }
                         catch {
                             $_ | Write-PodeErrorLog
-                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
                     }
                     finally {
@@ -133,8 +129,7 @@ function Start-PodeFileWatcherRunspace {
             }
             catch {
                 $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
+                throw
             }
 
             # end do-while
@@ -164,8 +159,7 @@ function Start-PodeFileWatcherRunspace {
         }
         catch {
             $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
+            throw
         }
         finally {
             Close-PodeDisposable -Disposable $Watcher

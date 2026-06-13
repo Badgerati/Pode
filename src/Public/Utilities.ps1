@@ -41,13 +41,13 @@ function Close-PodeDisposable {
                 $Disposable.Close()
             }
         }
-        catch [exception] {
+        catch {
             if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
                 return
             }
 
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
         finally {
             $Disposable.Dispose()
@@ -119,7 +119,7 @@ function Start-PodeStopwatch {
         }
         catch {
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
         finally {
             $watch.Stop()
@@ -162,7 +162,7 @@ function Use-PodeStream {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
     finally {
         $Stream.Dispose()

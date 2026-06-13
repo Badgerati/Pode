@@ -46,10 +46,11 @@ Start-PodeServer -Threads 2 {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
     # request logging
-    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
+    $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogType
 
     # setup access
     New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'Rbac'

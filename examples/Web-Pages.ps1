@@ -84,31 +84,39 @@ Start-PodeServer -Threads 2 -Verbose {
     #     New-PodeLimitMethodComponent -Method Get, Post
     # )
 
-    # log requests to the terminal
-    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-
-    # set view engine to pode renderer
-    Set-PodeViewEngine -Type Pode
-
     # wire up a custom logger
-    $logType = New-PodeLoggingMethod -Custom -ScriptBlock {
-        param($item)
+    $customLogMethod = New-PodeLogCustomMethod -ScriptBlock {
+        param($item, $options, $raw)
         $item.HttpMethod | Out-Default
     }
 
-    $logType | Add-PodeLogger -Name 'custom' -ScriptBlock {
+    $customLogMethod | Add-PodeLogType -Name 'custom' -ScriptBlock {
         param($item)
         return @{
             HttpMethod = $item.HttpMethod
         }
     }
 
+    # wire up a custom raw logger
+    New-PodeLogTerminalMethod | Add-PodeLogType -Name 'custom-raw' -Raw
+
+    # log requests to the terminal
+    $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogType
+
+    # log errors to the terminal
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+
+    # set view engine to pode renderer
+    Set-PodeViewEngine -Type Pode
+
+    # load file routes
     Use-PodeRoutes -Path './routes'
 
     # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        # $WebEvent.Request | Write-PodeLog -Name 'custom'
+        $WebEvent.Request | Write-PodeLog -Name 'custom'
+        $WebEvent.ContextId | Write-PodeLog -Name 'custom-raw'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
@@ -121,6 +129,11 @@ Start-PodeServer -Threads 2 -Verbose {
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
         Set-PodeResponseStatus -Code 500
+    }
+
+    # GET request throws dummy server exception
+    Add-PodeRoute -Method Get -Path '/exception' -ScriptBlock {
+        throw 'this is a dummy exception'
     }
 
     # GET request to page that merely redirects to google

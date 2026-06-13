@@ -112,7 +112,7 @@ function Start-PodeScheduleRunspace {
         }
         catch {
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
     }
 

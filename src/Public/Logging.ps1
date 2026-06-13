@@ -1,9 +1,19 @@
+using namespace Pode.Utilities.Logging
+
 <#
 .SYNOPSIS
 Create a new method of outputting logs.
 
 .DESCRIPTION
-Create a new method of outputting logs.
+This function has been deprecated and will be removed in future versions. It creates various logging methods for outputting logs.
+Please use the appropriate new functions for each logging method:
+- New-PodeLogTerminalMethod
+- New-PodeLogFileMethod
+- New-PodeLogEventViewerMethod
+- New-PodeLogCustomMethod
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
 
 .PARAMETER Terminal
 If supplied, will use the inbuilt Terminal logging output method.
@@ -51,18 +61,22 @@ The ScriptBlock that defines how to output a log item.
 An array of arguments to supply to the Custom Logging output method's ScriptBlock.
 
 .EXAMPLE
-$term_logging = New-PodeLoggingMethod -Terminal
+$term_logging_id = New-PodeLoggingMethod -Terminal
 
 .EXAMPLE
-$file_logging = New-PodeLoggingMethod -File -Path ./logs -Name 'requests'
+$file_logging_id = New-PodeLoggingMethod -File -Path ./logs -Name 'requests'
 
 .EXAMPLE
-$custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
+$custom_logging_id = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
 #>
 function New-PodeLoggingMethod {
     [CmdletBinding(DefaultParameterSetName = 'Terminal')]
-    [OutputType([hashtable])]
+    [OutputType([string])]
     param(
+        [Parameter()]
+        [string]
+        $Id,
+
         [Parameter(ParameterSetName = 'Terminal')]
         [switch]
         $Terminal,
@@ -104,26 +118,12 @@ function New-PodeLoggingMethod {
         $BatchTimeout = 0,
 
         [Parameter(ParameterSetName = 'File')]
-        [ValidateScript({
-                if ($_ -lt 0) {
-                    # MaxDays must be 0 or greater, but got
-                    throw ($PodeLocale.maxDaysInvalidExceptionMessage -f $MaxDays)
-                }
-
-                return $true
-            })]
+        [ValidateRange(0, [int]::MaxValue)]
         [int]
         $MaxDays = 0,
 
         [Parameter(ParameterSetName = 'File')]
-        [ValidateScript({
-                if ($_ -lt 0) {
-                    # MaxSize must be 0 or greater, but got
-                    throw ($PodeLocale.maxSizeInvalidExceptionMessage -f $MaxSize)
-                }
-
-                return $true
-            })]
+        [ValidateRange(0, [int]::MaxValue)]
         [int]
         $MaxSize = 0,
 
@@ -149,80 +149,39 @@ function New-PodeLoggingMethod {
     )
 
     # batch details
-    $batchInfo = @{
-        Size       = $Batch
-        Timeout    = $BatchTimeout
-        LastUpdate = $null
-        Items      = @()
-        RawItems   = @()
-    }
+    $batchInfo = New-PodeLogBatchInfo -Size $Batch -Timeout $BatchTimeout
 
     # return info on appropriate logging type
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'terminal' {
-            return @{
-                ScriptBlock = (Get-PodeLoggingTerminalMethod)
-                Batch       = $batchInfo
-                Arguments   = @{}
-            }
+            # WARNING: Function `New-PodeLoggingMethod` is deprecated.
+            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogTerminalMethod')  -ForegroundColor Yellow
+
+            return New-PodeLogTerminalMethod -Id $Id -BatchInfo $batchInfo
         }
 
         'file' {
-            $Path = (Protect-PodeValue -Value $Path -Default './logs')
-            $Path = (Get-PodeRelativePath -Path $Path -JoinRoot)
-            $null = New-Item -Path $Path -ItemType Directory -Force
+            # WARNING: Function `New-PodeLoggingMethod` is deprecated.
+            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogFileMethod')  -ForegroundColor Yellow
 
-            return @{
-                ScriptBlock = (Get-PodeLoggingFileMethod)
-                Batch       = $batchInfo
-                Arguments   = @{
-                    Name          = $Name
-                    Path          = $Path
-                    MaxDays       = $MaxDays
-                    MaxSize       = $MaxSize
-                    FileId        = 0
-                    Date          = $null
-                    NextClearDown = [datetime]::Now.Date
-                }
-            }
+            return New-PodeLogFileMethod -Id $Id -Name $Name -Path $Path -MaxDays $MaxDays -MaxSize $MaxSize -BatchInfo $batchInfo
         }
 
         'eventviewer' {
-            # only windows
-            if (!(Test-PodeIsWindows)) {
-                # Event Viewer logging only supported on Windows
-                throw ($PodeLocale.eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage)
-            }
+            # WARNING: Function `New-PodeLoggingMethod` is deprecated.
+            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogEventViewerMethod')  -ForegroundColor Yellow
 
-            # create source
-            if (![System.Diagnostics.EventLog]::SourceExists($Source)) {
-                $null = [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName)
-            }
-
-            return @{
-                ScriptBlock = (Get-PodeLoggingEventViewerMethod)
-                Batch       = $batchInfo
-                Arguments   = @{
-                    LogName = $EventLogName
-                    Source  = $Source
-                    ID      = $EventID
-                }
-            }
+            return New-PodeLogEventViewerMethod -Id $Id -EventLogName $EventLogName -Source $Source -EventID $EventID -BatchInfo $batchInfo
         }
 
         'custom' {
-            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            # WARNING: Function `New-PodeLoggingMethod` is deprecated.
+            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogCustomMethod')  -ForegroundColor Yellow
 
-            return @{
-                ScriptBlock    = $ScriptBlock
-                UsingVariables = $usingVars
-                Batch          = $batchInfo
-                Arguments      = $ArgumentList
-            }
+            return New-PodeLogCustomMethod -Id $Id -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -BatchInfo $batchInfo
         }
     }
 }
-
 
 <#
 .SYNOPSIS
@@ -232,7 +191,7 @@ Enables Request Logging using a supplied output method.
 Enables Request Logging using a supplied output method.
 
 .PARAMETER Method
-The Method to use for output the log entry (From New-PodeLoggingMethod).
+The logging Method ID to use for output the log entry.
 
 .PARAMETER UsernameProperty
 An optional property path within the $WebEvent.Auth.User object for the user's Username. (Default: Username).
@@ -241,13 +200,13 @@ An optional property path within the $WebEvent.Auth.User object for the user's U
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
-New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+New-PodeLogTerminalMethod | Enable-PodeRequestLogType
 #>
-function Enable-PodeRequestLogging {
+function Enable-PodeRequestLogType {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [hashtable]
+        [string[]]
         $Method,
 
         [Parameter()]
@@ -258,85 +217,111 @@ function Enable-PodeRequestLogging {
         $Raw
     )
 
-    Test-PodeIsServerless -FunctionName 'Enable-PodeRequestLogging' -ThrowError
-
-    $name = Get-PodeRequestLoggingName
-
-    # error if it's already enabled
-    if ($PodeContext.Server.Logging.Types.Contains($name)) {
-        # Request Logging has already been enabled
-        throw ($PodeLocale.requestLoggingAlreadyEnabledExceptionMessage)
-    }
-
-    # ensure the Method contains a scriptblock
-    if (Test-PodeIsEmpty $Method.ScriptBlock) {
-        # The supplied output Method for Request Logging requires a valid ScriptBlock
-        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Request')
-    }
-
-    # username property
-    if ([string]::IsNullOrWhiteSpace($UsernameProperty)) {
-        $UsernameProperty = 'Username'
-    }
-
-    # add the request logger
-    $PodeContext.Server.Logging.Types[$name] = @{
-        Method      = $Method
-        ScriptBlock = (Get-PodeLoggingInbuiltType -Type Requests)
-        Properties  = @{
-            Username = $UsernameProperty
+    begin {
+        # error if it's already enabled
+        $name = [PodeLogger]::REQUEST_LOG_TYPE_NAME
+        if ($PodeContext.Server.Logging.Types.Contains($name)) {
+            # Request Logging has already been enabled
+            throw ($PodeLocale.requestLoggingAlreadyEnabledExceptionMessage)
         }
-        Arguments   = @{
-            Raw = $Raw
+
+        # setup array for log methods being piped in
+        $pipelineMethods = @()
+    }
+
+    process {
+        # ensure the Method exists
+        if (!(Test-PodeLogMethod -Id $_)) {
+            # The supplied logging Method for Request Logging doesn't exist
+            throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
+        }
+
+        # add to pipeline methods array
+        $pipelineMethods += $_
+    }
+
+    end {
+        # multiple methods from pipeline?
+        if ($pipelineMethods.Length -gt 1) {
+            $Method = $pipelineMethods
+        }
+
+        # username property
+        if ([string]::IsNullOrWhiteSpace($UsernameProperty)) {
+            $UsernameProperty = 'Username'
+        }
+
+        # add the request log type, associated with the supplied log method(s)
+        $PodeContext.Server.Logging.Types[$name] = @{
+            Method      = $Method
+            ScriptBlock = Get-PodeLoggingInbuiltType -Type Requests
+            Raw         = $Raw.IsPresent
+            Properties  = @{
+                Username = $UsernameProperty
+            }
+            Arguments   = @{}
+        }
+        $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, @([PodeLogLevel]::Informational)))
+
+        # then associate the supplied log method(s) with the request log type
+        foreach ($methodId in $Method) {
+            Register-PodeLogTypeToMethod -TypeName $name -MethodId $methodId
         }
     }
 }
 
+if (!(Test-Path Alias:Enable-PodeRequestLogging)) {
+    New-Alias Enable-PodeRequestLogging -Value Enable-PodeRequestLogType
+}
+
 <#
 .SYNOPSIS
-Disables Request Logging.
+Disables Request log Type.
 
 .DESCRIPTION
-Disables Request Logging.
+Disables Request log Type.
 
 .EXAMPLE
-Disable-PodeRequestLogging
+Disable-PodeRequestLogType
 #>
-function Disable-PodeRequestLogging {
+function Disable-PodeRequestLogType {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogger -Name (Get-PodeRequestLoggingName)
+    Remove-PodeLogType -Name [PodeLogger]::REQUEST_LOG_TYPE_NAME
+}
+
+if (!(Test-Path Alias:Disable-PodeRequestLogging)) {
+    New-Alias Disable-PodeRequestLogging -Value Disable-PodeRequestLogType
 }
 
 <#
 .SYNOPSIS
-Enables Error Logging using a supplied output method.
+Enables Error log Type using a supplied log Method.
 
 .DESCRIPTION
-Enables Error Logging using a supplied output method.
+Enables Error log Type using a supplied log Method.
 
 .PARAMETER Method
-The Method to use for output the log entry (From New-PodeLoggingMethod).
+The log Method ID to use for output the log entry.
 
 .PARAMETER Levels
-The Levels of errors that should be logged (default is Error).
+The Levels of errors that should be logged (Default: Error)
 
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
-New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 #>
-function Enable-PodeErrorLogging {
+function Enable-PodeErrorLogType {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [hashtable]
+        [string[]]
         $Method,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug', '*')]
         [string[]]
         $Levels = @('Error'),
@@ -345,87 +330,125 @@ function Enable-PodeErrorLogging {
         $Raw
     )
 
-    $name = Get-PodeErrorLoggingName
+    begin {
+        # error if it's already enabled
+        $name = [PodeLogger]::ERROR_LOG_TYPE_NAME
+        if ($PodeContext.Server.Logging.Types.Contains($name)) {
+            # Error Logging has already been enabled
+            throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
+        }
 
-    # error if it's already enabled
-    if ($PodeContext.Server.Logging.Types.Contains($name)) {
-        # Error Logging has already been enabled
-        throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
+        # setup array for log methods being piped in
+        $pipelineMethods = @()
     }
 
-    # ensure the Method contains a scriptblock
-    if (Test-PodeIsEmpty $Method.ScriptBlock) {
-        # The supplied output Method for Error Logging requires a valid ScriptBlock
-        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Error')
+    process {
+        # ensure the Method exists
+        if (!(Test-PodeLogMethod -Id $_)) {
+            # The supplied logging Method for Request Logging doesn't exist
+            throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
+        }
+
+        # add to pipeline methods array
+        $pipelineMethods += $_
     }
 
-    # all errors?
-    if ($Levels -contains '*') {
-        $Levels = @('Error', 'Warning', 'Informational', 'Verbose', 'Debug')
-    }
+    end {
+        # multiple methods from pipeline?
+        if ($pipelineMethods.Length -gt 1) {
+            $Method = $pipelineMethods
+        }
 
-    # add the error logger
-    $PodeContext.Server.Logging.Types[$name] = @{
-        Method      = $Method
-        ScriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
-        Arguments   = @{
-            Raw    = $Raw
-            Levels = $Levels
+        # all errors?
+        if ($Levels -contains '*') {
+            $Levels = @('Error', 'Warning', 'Informational', 'Verbose', 'Debug')
+        }
+
+        # add the error log type, associated with the supplied log method(s)
+        $PodeContext.Server.Logging.Types[$name] = @{
+            Method      = $Method
+            ScriptBlock = Get-PodeLoggingInbuiltType -Type Errors
+            Levels      = $Levels
+            Raw         = $Raw.IsPresent
+            Arguments   = @{}
+        }
+        $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, $Levels))
+
+        # then associate the supplied log method(s) with the request log type
+        foreach ($methodId in $Method) {
+            Register-PodeLogTypeToMethod -TypeName $name -MethodId $methodId
         }
     }
 }
 
-<#
-.SYNOPSIS
-Disables Error Logging.
-
-.DESCRIPTION
-Disables Error Logging.
-
-.EXAMPLE
-Disable-PodeErrorLogging
-#>
-function Disable-PodeErrorLogging {
-    [CmdletBinding()]
-    param()
-
-    Remove-PodeLogger -Name (Get-PodeErrorLoggingName)
+if (!(Test-Path Alias:Enable-PodeErrorLogging)) {
+    New-Alias Enable-PodeErrorLogging -Value Enable-PodeErrorLogType
 }
 
 <#
 .SYNOPSIS
-Adds a custom Logging method for parsing custom log items.
+Disables Error log Type.
 
 .DESCRIPTION
-Adds a custom Logging method for parsing custom log items.
+Disables Error log Type.
+
+.EXAMPLE
+Disable-PodeErrorLogType
+#>
+function Disable-PodeErrorLogType {
+    [CmdletBinding()]
+    param()
+
+    Remove-PodeLogType -Name [PodeLogger]::ERROR_LOG_TYPE_NAME
+}
+
+if (!(Test-Path Alias:Disable-PodeErrorLogging)) {
+    New-Alias Disable-PodeErrorLogging -Value Disable-PodeErrorLogType
+}
+
+<#
+.SYNOPSIS
+Adds a custom Logging type for parsing custom log items.
+
+.DESCRIPTION
+Adds a custom Logging type for parsing custom log items.
 
 .PARAMETER Name
-A unique Name for the Logging method.
+A unique Name for the Log type.
 
 .PARAMETER Method
-The Method to use for output the log entry (From New-PodeLoggingMethod).
+The logging Method ID to use for outputting the log entry.
 
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that transforms an item, and returns it for outputting.
 
+.PARAMETER Levels
+The Levels of log items that should be logged. (Default: Informational)
+
 .PARAMETER ArgumentList
-An array of arguments to supply to the Custom Logger's ScriptBlock.
+An array of arguments to supply to the Custom Log type's ScriptBlock.
+
+.PARAMETER Raw
+If supplied, the log item returned will be the raw Request item as a hashtable and not a string.
 
 .EXAMPLE
-New-PodeLoggingMethod -Terminal | Add-PodeLogger -Name 'Main' -ScriptBlock { /* logic */ }
+New-PodeLogTerminalMethod | Add-PodeLogType -Name 'LogTypeName' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Add-PodeLogType -Name 'LogTypeName' -Raw
 #>
-function Add-PodeLogger {
-    [CmdletBinding()]
+function Add-PodeLogType {
+    [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
     param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [hashtable]
+        [string[]]
         $Method,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptBlock')]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the logging method
@@ -438,48 +461,93 @@ function Add-PodeLogger {
         $ScriptBlock,
 
         [Parameter()]
+        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug', '*')]
+        [string[]]
+        $Levels = @('Informational'),
+
+        [Parameter(ParameterSetName = 'ScriptBlock')]
         [object[]]
-        $ArgumentList
+        $ArgumentList,
+
+        [Parameter(ParameterSetName = 'Raw')]
+        [switch]
+        $Raw
     )
 
-    # ensure the name doesn't already exist
-    if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
-        # Logging method already defined
-        throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
+    begin {
+        # ensure the name doesn't already exist
+        if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
+            # Logging method already defined
+            throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
+        }
+
+        # setup array for log methods being piped in
+        $pipelineMethods = @()
     }
 
-    # ensure the Method contains a scriptblock
-    if (Test-PodeIsEmpty $Method.ScriptBlock) {
-        # The supplied output Method for the Logging method requires a valid ScriptBlock
-        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
+    process {
+        # ensure the Method exists
+        if (!(Test-PodeLogMethod -Id $_)) {
+            # The supplied logging Method for Request Logging doesn't exist
+            throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
+        }
+
+        # add to pipeline methods array
+        $pipelineMethods += $_
     }
 
-    # check for scoped vars
-    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    end {
+        # multiple methods from pipeline?
+        if ($pipelineMethods.Length -gt 1) {
+            $Method = $pipelineMethods
+        }
 
-    # add logging method to server
-    $PodeContext.Server.Logging.Types[$Name] = @{
-        Method         = $Method
-        ScriptBlock    = $ScriptBlock
-        UsingVariables = $usingVars
-        Arguments      = $ArgumentList
+        # all errors?
+        if ($Levels -contains '*') {
+            $Levels = @('Error', 'Warning', 'Informational', 'Verbose', 'Debug')
+        }
+
+        # check for scoped vars
+        if ($PSCmdlet.ParameterSetName -eq 'ScriptBlock') {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        }
+
+        # add custom log method to server, associated with the supplied log method(s)
+        $PodeContext.Server.Logging.Types[$Name] = @{
+            Method         = $Method
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+            Levels         = $Levels
+            Raw            = $Raw.IsPresent
+            Arguments      = $ArgumentList
+        }
+        $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($Name, $Levels))
+
+        # then associate the supplied log method(s) with the request log type
+        foreach ($methodId in $Method) {
+            Register-PodeLogTypeToMethod -TypeName $Name -MethodId $methodId
+        }
     }
+}
+
+if (!(Test-Path Alias:Add-PodeLogger)) {
+    New-Alias Add-PodeLogger -Value Add-PodeLogType
 }
 
 <#
 .SYNOPSIS
-Removes a configured Logging method.
+Removes a configured Log Type.
 
 .DESCRIPTION
-Removes a configured Logging method.
+Removes a configured Log Type.
 
 .PARAMETER Name
-The Name of the Logging method.
+The Name of the Log Type to remove.
 
 .EXAMPLE
-Remove-PodeLogger -Name 'LogName'
+Remove-PodeLogType -Name 'LogTypeName'
 #>
-function Remove-PodeLogger {
+function Remove-PodeLogType {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -487,25 +555,131 @@ function Remove-PodeLogger {
         $Name
     )
 
-    $null = $PodeContext.Server.Logging.Types.Remove($Name)
+    process {
+        # get the log type
+        $type = Get-PodeLogType -Name $Name
+        if ($null -eq $type) {
+            return
+        }
+
+        # unregister log type from method
+        foreach ($methodId in $type.Method) {
+            Unregister-PodeLogTypeFromMethod -TypeName $Name -MethodId $methodId
+        }
+
+        # remove the log type
+        $null = $PodeContext.Server.Logging.Types.Remove($Name)
+        $PodeContext.Server.Logging.Logger.UnregisterType($Name)
+    }
+}
+
+if (!(Test-Path Alias:Remove-PodeLogger)) {
+    New-Alias Remove-PodeLogger -Value Remove-PodeLogType
 }
 
 <#
 .SYNOPSIS
-Clears all Logging methods that have been configured.
+Removes a configured Log Method.
 
 .DESCRIPTION
-Clears all Logging methods that have been configured.
+Removes a configured Log Method.
+
+.PARAMETER Id
+The ID of the Log Method to remove.
 
 .EXAMPLE
-Clear-PodeLoggers
+Remove-PodeLogMethod -Id '<log-method-id>'
 #>
-function Clear-PodeLoggers {
+function Remove-PodeLogMethod {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [string]
+        $Id
+    )
+
+    process {
+        # get the log method
+        $method = Get-PodeLogMethod -Id $Id
+        if ($null -eq $method) {
+            return
+        }
+
+        # close the runspace and reduce max count (not below 1)
+        $method.Runspace.Pipeline.Stop()
+        $method.Runspace.Pipeline.Dispose()
+
+        $maxRunspaces = $PodeContext.RunspacePools.Logs.Pool.GetMaxRunspaces()
+        if ($maxRunspaces -gt 1) {
+            $PodeContext.RunspacePools.Logs.Pool.SetMaxRunspaces($maxRunspaces - 1)
+        }
+
+        # dispose the log method queue
+        if ($null -ne $method.Queue) {
+            $method.Queue.Dispose()
+        }
+
+        # unregister log method from types that reference it
+        foreach ($typeName in $method.Types) {
+            Unregister-PodeLogMethodFromType -TypeName $typeName -MethodId $Id
+        }
+
+        # remove the log method
+        $null = $PodeContext.Server.Logging.Methods.Remove($Id)
+    }
+}
+
+<#
+.SYNOPSIS
+Clears all Log Types that have been configured.
+
+.DESCRIPTION
+Clears all Log Types that have been configured.
+
+.EXAMPLE
+Clear-PodeLogTypes
+#>
+function Clear-PodeLogTypes {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
-    $PodeContext.Server.Logging.Types.Clear()
+    $typeNames = $PodeContext.Server.Logging.Types.Keys
+    foreach ($typeName in $typeNames) {
+        Remove-PodeLogType -Name $typeName
+    }
+}
+
+if (!(Test-Path Alias:Clear-PodeLoggers)) {
+    New-Alias Clear-PodeLoggers -Value Clear-PodeLogTypes
+}
+
+<#
+.SYNOPSIS
+Clears all Log Methods that have been configured.
+
+.DESCRIPTION
+Clears all Log Methods that have been configured.
+
+.EXAMPLE
+Clear-PodeLogMethods
+#>
+function Clear-PodeLogMethods {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
+    [CmdletBinding()]
+    param()
+
+    $methodIds = $PodeContext.Server.Logging.Methods.Keys
+    foreach ($methodId in $methodIds) {
+        Remove-PodeLogMethod -Id $methodId
+    }
+
+    # dispose of any log method queues
+    foreach ($method in $PodeContext.Server.Logging.Methods.Values) {
+        if ($null -ne $method.Queue) {
+            $method.Queue.Dispose()
+        }
+    }
 }
 
 <#
@@ -522,7 +696,7 @@ An Exception to write.
 An ErrorRecord to write.
 
 .PARAMETER Level
-The Level of the error being logged.
+The Level of the error being logged. (Default: Error)
 
 .PARAMETER CheckInnerException
 If supplied, any exceptions are check for inner exceptions. If one is present, this is also logged.
@@ -545,7 +719,6 @@ function Write-PodeErrorLog {
         $ErrorRecord,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
         [string]
         $Level = 'Error',
@@ -555,48 +728,24 @@ function Write-PodeErrorLog {
         $CheckInnerException
     )
 
-    # do nothing if logging is disabled, or error logging isn't setup
-    $name = Get-PodeErrorLoggingName
-    if (!(Test-PodeLoggerEnabled -Name $name)) {
+    # do nothing if error logging isn't setup
+    if (!$PodeContext.Server.Logging.Logger.IsErrorLoggingEnabled) {
         return
     }
 
-    # do nothing if the error level isn't present
-    $levels = @(Get-PodeErrorLoggingLevel)
-    if ($levels -inotcontains $Level) {
-        return
-    }
+    # attempt to get current contextId
+    $contextId = Get-PodeLoggingContextId
 
-    # build error object for what we need
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'exception' {
-            $item = @{
-                Category   = $Exception.Source
-                Message    = $Exception.Message
-                StackTrace = $Exception.StackTrace
-            }
+    # log error object appropriately based on parameter set
+    switch ($PSCmdlet.ParameterSetName) {
+        'Exception' {
+            $PodeContext.Server.Logging.Logger.AddException($Exception, $contextId, $Level, [int]$ThreadId)
         }
 
-        'error' {
-            $item = @{
-                Category   = $ErrorRecord.CategoryInfo.ToString()
-                Message    = $ErrorRecord.Exception.Message
-                StackTrace = $ErrorRecord.ScriptStackTrace
-            }
+        'Error' {
+            $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $contextId, $Level, [int]$ThreadId)
         }
     }
-
-    # add general info
-    $item['Server'] = $PodeContext.Server.ComputerName
-    $item['Level'] = $Level
-    $item['Date'] = [datetime]::Now
-    $item['ThreadId'] = [int]$ThreadId
-
-    # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add(@{
-            Name = $name
-            Item = $item
-        })
 
     # for exceptions, check the inner exception
     if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
@@ -612,13 +761,16 @@ Write an object to a configured custom Logging method.
 Write an object to a configured custom Logging method.
 
 .PARAMETER Name
-The Name of the Logging method.
+The Name of the Logging type to use.
+
+.PARAMETER Level
+The Level of the log item being logged. (Default: Informational)
 
 .PARAMETER InputObject
 The Object to write.
 
 .EXAMPLE
-$object | Write-PodeLog -Name 'LogName'
+$object | Write-PodeLog -Name 'LogTypeName'
 #>
 function Write-PodeLog {
     [CmdletBinding()]
@@ -627,21 +779,18 @@ function Write-PodeLog {
         [string]
         $Name,
 
+        [Parameter()]
+        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
+        [string]
+        $Level = 'Informational',
+
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]
         $InputObject
     )
 
-    # do nothing if logging is disabled, or logger isn't setup
-    if (!(Test-PodeLoggerEnabled -Name $Name)) {
-        return
-    }
-
     # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add(@{
-            Name = $Name
-            Item = $InputObject
-        })
+    $PodeContext.Server.Logging.Logger.Add($Name, $Level, $InputObject)
 }
 
 <#
@@ -725,4 +874,323 @@ function Use-PodeLogging {
     )
 
     Use-PodeFolder -Path $Path -DefaultPath 'logging'
+}
+
+<#
+.SYNOPSIS
+Create a new batch info object for logging.
+
+.DESCRIPTION
+Creates a new batch info object for logging, which can be used to configure batch processing of log items.
+
+.PARAMETER Size
+The number of log items to process in a single batch. (Default: 1)
+
+.PARAMETER Timeout
+The maximum amount of time, in seconds, to wait before processing a batch of log items. (Default: 0, which means no timeout)
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+#>
+function New-PodeLogBatchInfo {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [int]
+        $Size = 1,
+
+        [Parameter()]
+        [int]
+        $Timeout = 0
+    )
+
+    return @{
+        Size    = $Size
+        Timeout = $Timeout
+    }
+}
+
+<#
+.SYNOPSIS
+Create a new Terminal logging Method.
+
+.DESCRIPTION
+Creates a new Terminal logging Method for outputting log items to the terminal.
+Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.EXAMPLE
+$methodId = New-PodeLogTerminalMethod
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$methodId = New-PodeLogTerminalMethod -BatchInfo $batchInfo
+#>
+function New-PodeLogTerminalMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null
+    )
+
+    # add method to server
+    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+        Type        = 'Terminal'
+        ScriptBlock = Get-PodeLoggingTerminalMethod
+        Arguments   = @{}
+    }
+}
+
+<#
+.SYNOPSIS
+Create a new File logging Method.
+
+.DESCRIPTION
+Creates a new File logging Method for outputting log items to files.
+Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER Name
+The File Name to prepend new log files using.
+
+.PARAMETER Path
+The File Path of where to store the logs.
+
+.PARAMETER MaxDays
+The maximum number of days to keep logs, before Pode automatically removes them.
+
+.PARAMETER MaxSize
+The maximum size of a log file, before Pode starts writing to a new log file.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.EXAMPLE
+$methodId = New-PodeLogFileMethod -Name 'requests'
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$methodId = New-PodeLogFileMethod -Name 'requests' -BatchInfo $batchInfo -MaxDays 7 -MaxSize 10MB
+#>
+function New-PodeLogFileMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path = './logs',
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $MaxDays = 0,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $MaxSize = 0,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null
+    )
+
+    # resolve path and ensure it exists
+    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+    $null = New-Item -Path $Path -ItemType Directory -Force
+
+    # add method to server
+    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+        Arguments = @{
+            Type          = 'File'
+            ScriptBlock   = Get-PodeLoggingFileMethod
+            Name          = $Name
+            Path          = $Path
+            MaxDays       = $MaxDays
+            MaxSize       = $MaxSize
+            FileId        = 0
+            Date          = $null
+            NextClearDown = [datetime]::Now.Date
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Create a new Event Viewer logging Method.
+
+.DESCRIPTION
+Creates a new Event Viewer logging Method for outputting log items to the Windows Event Viewer.
+Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER EventLogName
+An Optional Log Name for the Event Viewer (Default: Application)
+
+.PARAMETER Source
+An Optional Source for the Event Viewer (Default: Pode)
+
+.PARAMETER EventID
+An Optional EventID for the Event Viewer (Default: 0)
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.EXAMPLE
+$methodId = New-PodeLogEventViewerMethod
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$methodId = New-PodeLogEventViewerMethod -EventLogName 'MyLog' -Source 'MyApp' -EventID 1001 -BatchInfo $batchInfo
+#>
+function New-PodeLogEventViewerMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $EventLogName = 'Application',
+
+        [Parameter()]
+        [string]
+        $Source = 'Pode',
+
+        [Parameter()]
+        [int]
+        $EventID = 0,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null
+    )
+
+    # only windows
+    if (!(Test-PodeIsWindows)) {
+        # Event Viewer logging only supported on Windows
+        throw ($PodeLocale.eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage)
+    }
+
+    # create source
+    if (![System.Diagnostics.EventLog]::SourceExists($Source)) {
+        $null = [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName)
+    }
+
+    # add method to server
+    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+        Arguments = @{
+            Type        = 'EventViewer'
+            ScriptBlock = Get-PodeLoggingEventViewerMethod
+            LogName     = $EventLogName
+            Source      = $Source
+            ID          = $EventID
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Create a new Custom logging Method.
+
+.DESCRIPTION
+Creates a new Custom logging Method for outputting log items using custom logic defined in a ScriptBlock.
+Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER ScriptBlock
+The ScriptBlock that defines how to output a log item.
+
+.PARAMETER ArgumentList
+An array of arguments to supply to the Custom Logging output method's ScriptBlock.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.EXAMPLE
+$method = New-PodeLogCustomMethod -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+$arguments = @('arg1', 'arg2')
+$methodId = New-PodeLogCustomMethod -ScriptBlock { param($args) /* logic using $args */ } -ArgumentList $arguments
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$methodId = New-PodeLogCustomMethod -ScriptBlock { /* logic */ } -BatchInfo $batchInfo
+#>
+function New-PodeLogCustomMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateScript({
+                if (Test-PodeIsEmpty $_) {
+                    # A non-empty ScriptBlock is required for the Custom logging output method
+                    throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage)
+                }
+
+                return $true
+            })]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null
+    )
+
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+    # add method to server
+    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+        Type        = 'Custom'
+        ScriptBlock = Get-PodeLoggingCustomMethod
+        Custom      = @{
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+        }
+        Arguments   = $ArgumentList
+    }
 }

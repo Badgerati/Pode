@@ -1,4 +1,5 @@
 using namespace Pode.Utilities
+using namespace Pode.Utilities.Logging
 
 function New-PodeContext {
     [CmdletBinding()]
@@ -78,7 +79,6 @@ function New-PodeContext {
         Runspaces     = $null
         RunspaceState = $null
         Tokens        = @{}
-        LogsToProcess = $null
         Threading     = @{}
         Server        = @{}
         Metrics       = @{}
@@ -134,7 +134,9 @@ function New-PodeContext {
 
     # basic logging setup
     $ctx.Server.Logging = @{
-        Enabled = $true
+        Logger  = [PodeLogger]::new()
+        Masking = @{}
+        Methods = @{}
         Types   = @{}
     }
 
@@ -467,9 +469,6 @@ function New-PodeContext {
     # create new cancellation tokens
     $ctx.Tokens = Initialize-PodeCancellationToken
 
-    # requests that should be logged
-    $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
-
     # middleware that needs to run
     $ctx.Server.Middleware = @()
     $ctx.Server.BodyParsers = @{}
@@ -494,6 +493,7 @@ function New-PodeContext {
         Tasks     = $null
         Files     = $null
         Timers    = $null
+        Logs      = $null
     }
 
     # threading locks, etc.
@@ -581,7 +581,6 @@ function New-PodeRunspacePool {
     # setup main runspace pool
     $threadsCounts = @{
         Default  = 3
-        Log      = 1
         Schedule = 1
         Misc     = 1
     }
@@ -590,14 +589,17 @@ function New-PodeRunspacePool {
         $threadsCounts.Schedule = 0
     }
 
-    if (!(Test-PodeLoggersExist)) {
-        $threadsCounts.Log = 0
-    }
-
     # main runspace - for timers, schedules, etc
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{
         Pool   = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+        State  = 'Waiting'
+        LastId = 0
+    }
+
+    # logs runspace - for processing logs
+    $PodeContext.RunspacePools.Logs = @{
+        Pool   = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         State  = 'Waiting'
         LastId = 0
     }
@@ -858,7 +860,6 @@ function New-PodeStateContext {
         RunspacePools = $Context.RunspacePools
         Tokens        = $Context.Tokens
         Metrics       = $Context.Metrics
-        LogsToProcess = $Context.LogsToProcess
         Threading     = $Context.Threading
         Server        = $Context.Server
     }
@@ -969,20 +970,17 @@ function Set-PodeServerConfiguration {
     # file monitoring
     $Context.Server.FileMonitor = @{
         Enabled   = [bool]$Configuration.FileMonitor.Enable
-        Exclude   = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Exclude))
-        Include   = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Include))
+        Exclude   = Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Exclude)
+        Include   = Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Include)
         ShowFiles = [bool]$Configuration.FileMonitor.ShowFiles
         Files     = @()
     }
 
     # logging
-    $Context.Server.Logging = @{
-        Enabled = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
-        Masking = @{
-            Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
-            Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
-        }
-        Types   = @{}
+    $Context.Server.Logging.Logger.IsEnabled = ($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable
+    $Context.Server.Logging.Masking = @{
+        Patterns = Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns)
+        Mask     = Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********'
     }
 
     # sockets
@@ -1070,8 +1068,6 @@ function Set-PodeServerConfiguration {
             MetricsHeader     = Protect-PodeValue -Value $Configuration.Console.Colors.MetricsHeader -Default $Context.Server.Console.Colors.MetricsHeader -EnumType ([type][System.ConsoleColor])
             MetricsLabel      = Protect-PodeValue -Value $Configuration.Console.Colors.MetricsLabel -Default $Context.Server.Console.Colors.MetricsLabel -EnumType ([type][System.ConsoleColor])
             MetricsValue      = Protect-PodeValue -Value $Configuration.Console.Colors.MetricsValue -Default $Context.Server.Console.Colors.MetricsValue -EnumType ([type][System.ConsoleColor])
-
-
         }
         KeyBindings         = @{
             Browser   = Protect-PodeValue -Value $Configuration.Console.KeyBindings.Browser -Default $Context.Server.Console.KeyBindings.Browser -EnumType ([type][System.ConsoleKey])

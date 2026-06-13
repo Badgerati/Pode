@@ -43,7 +43,7 @@ function Set-PodeWebSocketConcurrency {
     # set the max tasks
     $PodeContext.Threads.WebSockets = $Maximum
     if ($null -ne $PodeContext.RunspacePools.WebSockets) {
-        $PodeContext.RunspacePools.WebSockets.Pool.SetMaxRunspaces($Maximum)
+        $null = $PodeContext.RunspacePools.WebSockets.Pool.SetMaxRunspaces($Maximum)
     }
 }
 

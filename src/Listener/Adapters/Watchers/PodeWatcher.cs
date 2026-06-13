@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Pode.Utilities;
 using Pode.Protocols.File;
+using Pode.Utilities.Logging;
 
 namespace Pode.Adapters.Watchers
 {
@@ -12,8 +13,8 @@ namespace Pode.Adapters.Watchers
 
         public PodeItemQueue<PodeFileEvent> FileEvents { get; private set; }
 
-        public PodeWatcher(PodeAdapterType type, CancellationToken cancellationToken = default)
-            : base(type, cancellationToken)
+        public PodeWatcher(PodeAdapterType type, IPodeLogger logger, CancellationToken cancellationToken = default)
+            : base(type, logger, cancellationToken)
         {
             FileWatchers = new List<PodeFileWatcher>();
             FileEvents = new PodeItemQueue<PodeFileEvent>();
@@ -53,7 +54,7 @@ namespace Pode.Adapters.Watchers
         protected override void Close()
         {
             // dispose watchers
-            PodeHelpers.WriteErrorMessage($"Closing file watchers", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing file watchers", PodeLogLevel.Verbose);
 
             foreach (var _watcher in FileWatchers.ToArray())
             {
@@ -61,10 +62,10 @@ namespace Pode.Adapters.Watchers
             }
 
             FileWatchers.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed file watchers", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed file watchers", PodeLogLevel.Verbose);
 
             // dispose existing file events
-            PodeHelpers.WriteErrorMessage($"Closing file events", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing file events", PodeLogLevel.Verbose);
 
             foreach (var _evt in FileEvents.ToArray())
             {
@@ -72,7 +73,7 @@ namespace Pode.Adapters.Watchers
             }
 
             FileEvents.Dispose();
-            PodeHelpers.WriteErrorMessage($"Closed file events", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed file events", PodeLogLevel.Verbose);
         }
     }
 }

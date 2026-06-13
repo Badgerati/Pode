@@ -1,12 +1,15 @@
 # Requests
 
-Pode has inbuilt Request logging logic, that will parse and return a valid log item for whatever method of logging you supply.
+Pode has an inbuilt Request logging Type, which will parse and transform a valid log item for use with any supplied logging Method.
 
 ## Enabling
 
-To enable and use the Request logging you use the [`Enable-PodeRequestLogging`](../../../../Functions/Logging/Enable-PodeRequestLogging) function, supplying a logging method from [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod).
+To enable and use the Request logging Type you use [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType), supplying one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
-The Request type logic will format a string using [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined). This string is then supplied to the logging method's scriptblock. If you're using a Custom logging method and want the raw hashtable instead, you can supply `-Raw` to [`Enable-PodeRequestLogging`](../../../../Functions/Logging/Enable-PodeRequestLogging).
+!!! important
+    The `Enable-PodeRequestLogging` function is now deprecated, please use [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType) instead.
+
+The Request logging Type will transform a supplied raw log item into a [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) string. This string is then supplied to the logging Method's scriptblock. If you're using a Custom logging method and want the raw log item instead, you can supply `-Raw` to [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType).
 
 ## Examples
 
@@ -15,20 +18,20 @@ The Request type logic will format a string using [Combined Log Format](https://
 The following example simply enables Request logging, and will output all items to the terminal:
 
 ```powershell
-New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+New-PodeLogTerminalMethod | Enable-PodeRequestLogType
 ```
 
 ### Using Raw Item
 
-The following example uses a Custom logging method, and sets Request logging to return and supply the raw hashtable to the Custom method's scriptblock. The Custom method simply logs the Host an StatusCode to the terminal (but could be to something like an S3 bucket):
+The following example uses a Custom logging Method, and sets Request logging Type to return and supply the raw log item to the Custom method's scriptblock instead of a transformed one. The Custom Method simply logs the Host and StatusCode to the terminal (but could be to something like an S3 bucket):
 
 ```powershell
-$method = New-PodeLoggingMethod -Custom -ScriptBlock {
+$method = New-PodeLogCustomMethod -ScriptBlock {
     param($item)
     "$($item.Host) - $($item.Response.StatusCode)" | Out-Default
 }
 
-$method | Enable-PodeRequestLogging -Raw
+$method | Enable-PodeRequestLogType -Raw
 ```
 
 ### Username
@@ -38,36 +41,40 @@ If you're not using any Authentication then the "user" field in the log will alw
 For example, if the username was actually user "ID":
 
 ```powershell
-Enable-PodeRequestLogging -UsernameProperty 'ID'
+Enable-PodeRequestLogType -UsernameProperty 'ID'
 ```
 
 Or if the username was inside another "Meta" property, and then within a "Username" property inside the Meta object:
 
 ```powershell
-Enable-PodeRequestLogging -UsernameProperty 'Meta.Username'
+Enable-PodeRequestLogType -UsernameProperty 'Meta.Username'
 ```
 
 ## Raw Request
 
-The raw Request hashtable that will be supplied to any Custom logging methods will look as follows:
+The raw log item that the Request log Type will supply to any Custom logging Methods will look as follows:
 
 ```powershell
 @{
-    Host = '10.10.0.3'
+    Host            = '10.10.0.3'
     RfcUserIdentity = '-'
-    User = '-'
-    Date = '14/Jun/2018:20:23:52 +01:00'
+    User            = '-'
+    Date            = '14/Jun/2018:20:23:52 +01:00'
+    UtcDate         = [datetime]
     Request = @{
-        Method = 'GET'
+        Method   = 'GET'
+        Hostname = '127.0.0.1:8090'
+        Scheme   = 'http'
         Resource = '/api/users'
+        Query    = 'limit=100'
         Protocol = "HTTP/1.1"
         Referrer = '-'
-        Agent = '<user-agent>'
+        Agent    = '<user-agent>'
     }
     Response = @{
-        StatusCode = '200'
+        StatusCode        = '200'
         StatusDescription = 'OK'
-        Size = '9001'
+        Size              = '9001'
     }
 }
 ```
