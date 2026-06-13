@@ -255,12 +255,11 @@ function Enable-PodeRequestLogType {
         $PodeContext.Server.Logging.Types[$name] = @{
             Method      = $Method
             ScriptBlock = Get-PodeLoggingInbuiltType -Type Requests
+            Raw         = $Raw.IsPresent
             Properties  = @{
                 Username = $UsernameProperty
             }
-            Arguments   = @{
-                Raw = $Raw
-            }
+            Arguments   = @{}
         }
         $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, @([PodeLogLevel]::Informational)))
 
@@ -370,9 +369,8 @@ function Enable-PodeErrorLogType {
             Method      = $Method
             ScriptBlock = Get-PodeLoggingInbuiltType -Type Errors
             Levels      = $Levels
-            Arguments   = @{
-                Raw = $Raw
-            }
+            Raw         = $Raw.IsPresent
+            Arguments   = @{}
         }
         $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, $Levels))
 
@@ -430,11 +428,17 @@ The Levels of log items that should be logged. (Default: Informational)
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Log type's ScriptBlock.
 
+.PARAMETER Raw
+If supplied, the log item returned will be the raw Request item as a hashtable and not a string.
+
 .EXAMPLE
 New-PodeLogTerminalMethod | Add-PodeLogType -Name 'LogTypeName' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Add-PodeLogType -Name 'LogTypeName' -Raw
 #>
 function Add-PodeLogType {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -444,7 +448,7 @@ function Add-PodeLogType {
         [string[]]
         $Method,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptBlock')]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the logging method
@@ -461,9 +465,13 @@ function Add-PodeLogType {
         [string[]]
         $Levels = @('Informational'),
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'ScriptBlock')]
         [object[]]
-        $ArgumentList
+        $ArgumentList,
+
+        [Parameter(ParameterSetName = 'Raw')]
+        [switch]
+        $Raw
     )
 
     begin {
@@ -500,7 +508,9 @@ function Add-PodeLogType {
         }
 
         # check for scoped vars
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        if ($PSCmdlet.ParameterSetName -eq 'ScriptBlock') {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        }
 
         # add custom log method to server, associated with the supplied log method(s)
         $PodeContext.Server.Logging.Types[$Name] = @{
@@ -508,6 +518,7 @@ function Add-PodeLogType {
             ScriptBlock    = $ScriptBlock
             UsingVariables = $usingVars
             Levels         = $Levels
+            Raw            = $Raw.IsPresent
             Arguments      = $ArgumentList
         }
         $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($Name, $Levels))

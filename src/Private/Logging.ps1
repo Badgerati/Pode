@@ -317,11 +317,7 @@ function Get-PodeLoggingInbuiltType {
             $script = {
                 param($item, $options)
 
-                # just return the item if Raw is set
-                if ($options.Raw) {
-                    return $item
-                }
-
+                # safeguard for null or whitespace values
                 function sg($value) {
                     if ([string]::IsNullOrWhiteSpace($value)) {
                         return '-'
@@ -341,11 +337,6 @@ function Get-PodeLoggingInbuiltType {
         'errors' {
             $script = {
                 param($item, $options)
-
-                # just return the item if Raw is set
-                if ($options.Raw) {
-                    return $item
-                }
 
                 # build the exception details
                 $row = @(
@@ -524,8 +515,14 @@ function Start-PodeLoggingRunspace {
                     $now = [datetime]::Now
 
                     # transform the log item into a writeable format
-                    $_args = @($log.Item) + @($logType.Arguments)
-                    $result = @(Invoke-PodeScriptBlock -ScriptBlock $logType.ScriptBlock -Arguments $_args -UsingVariables $logType.UsingVariables -Return -Splat)
+                    if ($logType.Raw) {
+                        $result = $log.Item
+                    }
+                    else {
+                        $_args = @($log.Item) + @($logType.Arguments)
+                        $result = @(Invoke-PodeScriptBlock -ScriptBlock $logType.ScriptBlock -Arguments $_args -UsingVariables $logType.UsingVariables -Return -Splat)
+                    }
+
                     if ($null -eq $result) {
                         Start-Sleep -Milliseconds 100
                         continue

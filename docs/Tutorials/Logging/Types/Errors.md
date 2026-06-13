@@ -8,6 +8,9 @@ It also has support for error levels (such as Error, Warning, Verbose), with sup
 
 To enable and use the Error logging Type you use [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType), supplying one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
+!!! important
+    The `Enable-PodeErrorLogging` function is now deprecated, please use [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType) instead.
+
 When Pode logs an error, the information being logged is as follows:
 
 | Property     | Description                                           |
@@ -95,6 +98,7 @@ The raw log item that the Error log Type will supply to any Custom logging Metho
     Date       = [datetime]::Now
     Level      = 'Error'
     Server     = 'ComputerName'
+    ContextId  = '6087a032-8e02-43ed-bbd8-e783b9839f3a'
     Category   = 'InvalidOperation: (:) [], RuntimeException'
     Message    = 'You cannot call a method on a null-valued expression.'
     StackTrace = 'at <ScriptBlock>, <No file>: line 45'

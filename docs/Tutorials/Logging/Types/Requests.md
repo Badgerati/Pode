@@ -6,6 +6,9 @@ Pode has an inbuilt Request logging Type, which will parse and transform a valid
 
 To enable and use the Request logging Type you use [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType), supplying one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
+!!! important
+    The `Enable-PodeRequestLogging` function is now deprecated, please use [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType) instead.
+
 The Request logging Type will transform a supplied raw log item into a [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) string. This string is then supplied to the logging Method's scriptblock. If you're using a Custom logging method and want the raw log item instead, you can supply `-Raw` to [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType).
 
 ## Examples
@@ -57,9 +60,13 @@ The raw log item that the Request log Type will supply to any Custom logging Met
     RfcUserIdentity = '-'
     User            = '-'
     Date            = '14/Jun/2018:20:23:52 +01:00'
+    UtcDate         = [datetime]
     Request = @{
         Method   = 'GET'
+        Hostname = '127.0.0.1:8090'
+        Scheme   = 'http'
         Resource = '/api/users'
+        Query    = 'limit=100'
         Protocol = "HTTP/1.1"
         Referrer = '-'
         Agent    = '<user-agent>'

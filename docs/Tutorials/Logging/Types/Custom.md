@@ -2,6 +2,9 @@
 
 You can define a Custom logging Type in Pode by using [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType). Much like Requests and Errors, this function too accepts one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
+!!! important
+    The `Add-PodeLogger` function is now deprecated, please use [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType) instead.
+
 When adding a Custom logging Type, you supply a `-ScriptBlock` plus an array of optional arguments in `-ArgumentList`. The function also requires a unique `-Name`, so that it can be referenced from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
 
 The ScriptBlock will be supplied with the following arguments:
@@ -44,3 +47,16 @@ Write-PodeLog -Name 'Main' -InputObject @{
     Key3 = 'Value3'
 }
 ```
+
+### Using Raw Item
+
+The following example uses the Terminal logging Method, and sets a Custom logging Type to return and supply the raw log item to the Terminal Method's scriptblock. The Terminal Method simply outputs the raw item to the CLI.
+
+```powershell
+New-PodeLogTerminalMethod | Add-PodeLogType -Name 'Example' -Raw
+
+# then log to it via:
+Write-PodeLog -Name 'Example' -InputObject 'This message will simply be outputted to CLI'
+```
+
+This is useful when all you're supplying to your Custom log Type is strings or other primitive value types.
