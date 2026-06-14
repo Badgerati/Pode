@@ -68,6 +68,19 @@ The following example simply enables Error logging, and will output all items to
 New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 ```
 
+### Log to Multiple
+
+The following example will also enable Error logging, but will output all items to the Terminal and to a File:
+
+```powershell
+$methods = @(
+    New-PodeLogTerminalMethod
+    New-PodeLogFileMethod -Name 'errors'
+)
+
+$methods | Enable-PodeErrorLogType
+```
+
 ### Log Verbose
 
 The following example will enable Error logging, and it will log all errors levels except Debug:

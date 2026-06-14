@@ -26,14 +26,14 @@ While we're technically not "extracting" data, the log item is the initial entit
 
 For example when you supply an Exception to [`Write-PodeErrorLog`](../../../Functions/Logging/Write-PodeErrorLog), the Exception passed to Pode's inbuilt Error logging Type which transforms it into a string; which is then passed to a logging Method - like a File or Terminal - to be outputted/recorded.
 
-Pode has several inbuilt logging Methods for you to use:
+Pode has several built-in logging Methods for you to use:
 
 * [Terminal](../Methods/Terminal)
 * [File](../Methods/File)
 * [Event Viewer](../Methods/EventViewer)
 * [Custom](../Methods/Custom)
 
-As well as some inbuilt logging Types:
+As well as some built-in logging Types:
 
 * [Error](../Types/Errors)
 * [Requests](../Types/Requests)

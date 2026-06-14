@@ -1026,9 +1026,9 @@ function New-PodeLogFileMethod {
 
     # add method to server
     return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
-        Arguments = @{
-            Type          = 'File'
-            ScriptBlock   = Get-PodeLoggingFileMethod
+        Type        = 'File'
+        ScriptBlock = Get-PodeLoggingFileMethod
+        Arguments   = @{
             Name          = $Name
             Path          = $Path
             MaxDays       = $MaxDays
@@ -1109,12 +1109,12 @@ function New-PodeLogEventViewerMethod {
 
     # add method to server
     return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
-        Arguments = @{
-            Type        = 'EventViewer'
-            ScriptBlock = Get-PodeLoggingEventViewerMethod
-            LogName     = $EventLogName
-            Source      = $Source
-            ID          = $EventID
+        Type        = 'EventViewer'
+        ScriptBlock = Get-PodeLoggingEventViewerMethod
+        Arguments   = @{
+            LogName = $EventLogName
+            Source  = $Source
+            ID      = $EventID
         }
     }
 }

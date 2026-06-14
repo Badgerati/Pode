@@ -15,10 +15,23 @@ The Request logging Type will transform a supplied raw log item into a [Combined
 
 ### Log to Terminal
 
-The following example simply enables Request logging, and will output all items to the terminal:
+The following example simply enables Request logging, and will output all items to the Terminal:
 
 ```powershell
 New-PodeLogTerminalMethod | Enable-PodeRequestLogType
+```
+
+### Log to Multiple
+
+The following example will also enable Request logging, but will output all items to the Terminal and to a File:
+
+```powershell
+$methods = @(
+    New-PodeLogTerminalMethod
+    New-PodeLogFileMethod -Name 'requests'
+)
+
+$methods | Enable-PodeRequestLogType
 ```
 
 ### Using Raw Item

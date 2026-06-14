@@ -31,12 +31,34 @@ You can control the log level of custom log items being written, by supplying `-
 
 ## Examples
 
-### Write to File
+### Log to File
 
 This example will create a Custom logging Type that will take some custom hashtable, transform it into a string, and then pass that to the inbuilt File logging Method:
 
 ```powershell
 New-PodeLogFileMethod -Name 'Custom' | Add-PodeLogType -Name 'Main' -ScriptBlock {
+    param($item, $arg1, $arg2)
+    return "$($item.Key1), $($item.Key2), $($item.Key3)"
+} -ArgumentList $arg1, $arg2
+
+Write-PodeLog -Name 'Main' -InputObject @{
+    Key1 = 'Value1'
+    Key2 = 'Value2'
+    Key3 = 'Value3'
+}
+```
+
+### Log to Multiple
+
+The following example will also enable a Custom logging Type, but will output all items to the Terminal and to a File:
+
+```powershell
+$methods = @(
+    New-PodeLogTerminalMethod
+    New-PodeLogFileMethod -Name 'Custom'
+)
+
+$methods | Add-PodeLogType -Name 'Main' -ScriptBlock {
     param($item, $arg1, $arg2)
     return "$($item.Key1), $($item.Key2), $($item.Key3)"
 } -ArgumentList $arg1, $arg2
