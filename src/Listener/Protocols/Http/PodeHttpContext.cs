@@ -8,6 +8,7 @@ using Pode.Protocols.Common.Contexts;
 using Pode.Protocols.Http.Client;
 using Pode.Protocols.Http.Client.Sse;
 using Pode.Protocols.Http.Client.Signals;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Http
 {
@@ -70,7 +71,7 @@ namespace Pode.Protocols.Http
         {
             if (IsSSEUpgraded || IsWebSocketUpgraded)
             {
-                PodeHelpers.WriteErrorMessage("Timeout ignored due to SSE/WebSocket", Listener, PodeLoggingLevel.Debug, this);
+                PodeHelpers.WriteErrorMessage("Timeout ignored due to SSE/WebSocket", PodeLogLevel.Debug, this);
                 return;
             }
 
@@ -137,7 +138,7 @@ namespace Pode.Protocols.Http
         {
             if (IsWebSocketUpgraded)
             {
-                PodeHelpers.WriteErrorMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, this);
+                PodeHelpers.WriteErrorMessage($"Received client signal", PodeLogLevel.Verbose, this);
                 HttpListener.AddClientSignal(Request.GetStrategy<PodeSignalRequestStrategy>().NewClientSignal());
                 Dispose();
             }
@@ -168,7 +169,7 @@ namespace Pode.Protocols.Http
                 return null;
             }
 
-            PodeHelpers.WriteErrorMessage($"Upgrading SSE", Listener, PodeLoggingLevel.Verbose, this);
+            PodeHelpers.WriteErrorMessage($"Upgrading SSE", PodeLogLevel.Verbose, this);
 
             // ensure the HTTP method is GET or POST
             if (Request.GetStrategy<PodeHttpRequestStrategy>().HttpMethod != "GET" && Request.GetStrategy<PodeHttpRequestStrategy>().HttpMethod != "POST")
@@ -196,7 +197,7 @@ namespace Pode.Protocols.Http
             HttpListener.AddSseConnection(SSE);
 
             // return the SSE connection
-            PodeHelpers.WriteErrorMessage($"SSE upgraded for client {clientId}", Listener, PodeLoggingLevel.Verbose, this);
+            PodeHelpers.WriteErrorMessage($"SSE upgraded for client {clientId}", PodeLogLevel.Verbose, this);
             return SSE;
         }
 
@@ -211,7 +212,7 @@ namespace Pode.Protocols.Http
                 return null;
             }
 
-            PodeHelpers.WriteErrorMessage($"Upgrading Websocket", Listener, PodeLoggingLevel.Verbose, this);
+            PodeHelpers.WriteErrorMessage($"Upgrading Websocket", PodeLogLevel.Verbose, this);
 
             // ensure the HTTP method is GET
             if (Request.GetStrategy<PodeHttpRequestStrategy>().HttpMethod != "GET")
@@ -244,7 +245,7 @@ namespace Pode.Protocols.Http
             httpStrategy.Dispose();
 
             // return the Signal
-            PodeHelpers.WriteErrorMessage($"WebSocket upgraded for client {clientId}", Listener, PodeLoggingLevel.Verbose, this);
+            PodeHelpers.WriteErrorMessage($"WebSocket upgraded for client {clientId}", PodeLogLevel.Verbose, this);
             return Signal;
         }
 

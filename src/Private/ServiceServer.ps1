@@ -36,7 +36,7 @@ function Start-PodeServiceServer {
         }
         catch {
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
     }
 

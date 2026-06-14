@@ -161,7 +161,7 @@ function Set-PodeTaskConcurrency {
     # set the max tasks
     $PodeContext.Threads.Tasks = $Maximum
     if ($null -ne $PodeContext.RunspacePools.Tasks) {
-        $PodeContext.RunspacePools.Tasks.Pool.SetMaxRunspaces($Maximum)
+        $null = $PodeContext.RunspacePools.Tasks.Pool.SetMaxRunspaces($Maximum)
     }
 }
 
@@ -469,8 +469,8 @@ function Test-PodeTaskCompleted {
 
     process {
         return ([bool]$Process.Runspace.Handler.IsCompleted) -or
-            ($Process.State -ieq 'Completed') -or
-            ($Process.State -ieq 'Failed')
+        ($Process.State -ieq 'Completed') -or
+        ($Process.State -ieq 'Failed')
     }
 }
 

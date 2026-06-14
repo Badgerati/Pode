@@ -47,7 +47,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 
 
     # secret manage local vault

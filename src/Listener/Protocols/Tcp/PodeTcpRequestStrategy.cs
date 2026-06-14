@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Pode.Utilities;
 using Pode.Protocols.Common.Requests;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Tcp
 {
@@ -74,7 +75,7 @@ namespace Pode.Protocols.Tcp
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
+            PodeHelpers.WriteErrorMessage($"Request reset", PodeLogLevel.Verbose, Handler.Context);
             _body = string.Empty;
             RawBody = default;
         }

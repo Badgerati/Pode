@@ -192,7 +192,7 @@ function Test-PodeIsAdminUser {
 
         return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
     }
-    catch [exception] {
+    catch {
         Write-PodeHost 'Error checking user administrator privileges' -ForegroundColor Red
         Write-PodeHost $_.Exception.Message -ForegroundColor Red
         return $false
@@ -323,7 +323,7 @@ function Test-PodeIPAddress {
         $null = [System.Net.IPAddress]::Parse($IP)
         return $true
     }
-    catch [exception] {
+    catch {
         return $false
     }
 }
@@ -655,6 +655,10 @@ function Close-PodeServerInternal {
         # remove all of the pode temp drives
         Write-Verbose 'Removing internal PSDrives'
         Remove-PodePSDrive
+
+        # remove logging queues
+        Write-Verbose 'Clearing logging queues'
+        Close-PodeLogging
     }
     finally {
         if ($null -ne $PodeContext) {
@@ -662,7 +666,6 @@ function Close-PodeServerInternal {
             $PodeContext.Tokens = $null
         }
     }
-
 }
 
 function New-PodePSDrive {

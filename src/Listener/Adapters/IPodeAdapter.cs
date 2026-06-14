@@ -7,8 +7,6 @@ namespace Pode.Adapters
     {
         bool IsConnected { get; }
         bool IsDisposed { get; }
-        bool ErrorLoggingEnabled { get; set; }
-        string[] ErrorLoggingLevels { get; set; }
         CancellationToken CancellationToken { get; }
         PodeAdapterType Type { get; }
 

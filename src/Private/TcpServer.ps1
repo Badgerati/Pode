@@ -1,6 +1,7 @@
 using namespace Pode.Protocols.Tcp
 using namespace Pode.Transport.Sockets
 using namespace Pode.Utilities
+using namespace Pode.Utilities.Logging
 
 function Start-PodeTcpServer {
     # work out which endpoints to listen on
@@ -45,9 +46,7 @@ function Start-PodeTcpServer {
     }
 
     # create the listener
-    $listener = [PodeTcpListener]::new($PodeContext.Tokens.Cancellation.Token)
-    $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
+    $listener = [PodeTcpListener]::new($PodeContext.Server.Logging.Logger, $PodeContext.Tokens.Cancellation.Token)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
@@ -71,9 +70,8 @@ function Start-PodeTcpServer {
     }
     catch {
         $_ | Write-PodeErrorLog
-        $_.Exception | Write-PodeErrorLog -CheckInnerException
         Close-PodeDisposable -Disposable $listener
-        throw $_.Exception
+        throw
     }
 
     # script for listening out of for incoming requests
@@ -112,6 +110,7 @@ function Start-PodeTcpServer {
                                 }
                                 Parameters = $null
                                 Timestamp  = [datetime]::UtcNow
+                                ContextId  = $context.ID
                                 Metadata   = @{}
                             }
 
@@ -177,7 +176,6 @@ function Start-PodeTcpServer {
                         }
                         catch {
                             $_ | Write-PodeErrorLog
-                            $_.Exception | Write-PodeErrorLog -CheckInnerException
                         }
                     }
                     finally {
@@ -191,8 +189,7 @@ function Start-PodeTcpServer {
             }
             catch {
                 $_ | Write-PodeErrorLog
-                $_.Exception | Write-PodeErrorLog -CheckInnerException
-                throw $_.Exception
+                throw
             }
 
             # end do-while
@@ -224,8 +221,7 @@ function Start-PodeTcpServer {
         }
         catch {
             $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
+            throw
         }
         finally {
             Close-PodeDisposable -Disposable $Listener
