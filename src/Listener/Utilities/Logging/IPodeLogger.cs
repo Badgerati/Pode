@@ -20,5 +20,6 @@ namespace Pode.Utilities.Logging
         void AddException(string message, string contextId, PodeLogLevel level, int threadId = 0);
         void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, int threadId = 0);
         bool TryTake(out IPodeLogEvent logEvent, CancellationToken cancellationToken);
+        void Reset();
     }
 }

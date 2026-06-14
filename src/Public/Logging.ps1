@@ -695,6 +695,9 @@ An Exception to write.
 .PARAMETER ErrorRecord
 An ErrorRecord to write.
 
+.PARAMETER Message
+A Message to write.
+
 .PARAMETER Level
 The Level of the error being logged. (Default: Error)
 
@@ -706,6 +709,9 @@ try { /* logic */ } catch { $_ | Write-PodeErrorLog }
 
 .EXAMPLE
 [System.Exception]::new('error message') | Write-PodeErrorLog
+
+.EXAMPLE
+Write-PodeErrorLog -Message 'error message' -Level 'Warning'
 #>
 function Write-PodeErrorLog {
     [CmdletBinding()]
@@ -717,6 +723,10 @@ function Write-PodeErrorLog {
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Error')]
         [System.Management.Automation.ErrorRecord]
         $ErrorRecord,
+
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Message')]
+        [string]
+        $Message,
 
         [Parameter()]
         [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
@@ -744,6 +754,11 @@ function Write-PodeErrorLog {
 
         'Error' {
             $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $contextId, $Level, [int]$ThreadId)
+        }
+
+        'Message' {
+            $category = (Get-PSCallStack)[1].Location
+            $PodeContext.Server.Logging.Logger.AddException($category, $Message, [string]::Empty, $contextId, $Level, [int]$ThreadId)
         }
     }
 

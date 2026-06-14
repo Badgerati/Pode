@@ -39,7 +39,7 @@ You can alter the log level by supplying `-Levels` to [`Enable-PodeErrorLogType`
 
 ## Writing Errors
 
-You can log additional errors by using [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog), which takes an Exception or an ErrorRecord (both of which can be piped). If you log an Exception you can optionally pass `-CheckInnerException`, which will also log the inner exception.
+You can log additional errors by using [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog), which takes an Exception, ErrorRecord, or Message. If you log an Exception you can optionally pass `-CheckInnerException`, which will also log the inner exception.
 
 For example, to log an error:
 
@@ -50,6 +50,12 @@ try {
 catch {
     $_ | Write-PodeErrorLog
 }
+```
+
+Or, a raw string message:
+
+```powershell
+'Some error message' | Write-PodeErrorLog -Level Warning
 ```
 
 ## Internal Logging

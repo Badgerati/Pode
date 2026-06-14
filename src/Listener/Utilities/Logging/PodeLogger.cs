@@ -162,6 +162,17 @@ namespace Pode.Utilities.Logging
             return Queue.TryTake(out logEvent, cancellationToken);
         }
 
+        public void Reset()
+        {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            // clear log types
+            LogTypes.Clear();
+        }
+
         public void Dispose()
         {
             if (IsDisposed)
