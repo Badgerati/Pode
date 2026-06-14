@@ -11,6 +11,7 @@ using System.IO;
 using Pode.Adapters.Listeners;
 using Pode.Utilities;
 using Pode.Protocols.Common.Contexts;
+using Pode.Utilities.Logging;
 
 namespace Pode.Transport.Sockets
 {
@@ -185,7 +186,7 @@ namespace Pode.Transport.Sockets
 
             // Create the context for the connection.
             var context = PodeContextFactory.Create(Type, acceptedSocket, this, Listener);
-            PodeHelpers.WriteErrorMessage($"Opening Receive", Listener, PodeLoggingLevel.Verbose, context);
+            PodeHelpers.WriteErrorMessage($"Opening Receive", PodeLogLevel.Verbose, context);
 
             // Initialize the context.
             await context.Initialise().ConfigureAwait(false);
@@ -205,7 +206,7 @@ namespace Pode.Transport.Sockets
         /// <param name="context">The context to start receiving for.</param>
         public void StartReceive(IPodeContext context)
         {
-            PodeHelpers.WriteErrorMessage($"Starting Receive", Listener, PodeLoggingLevel.Verbose, context);
+            PodeHelpers.WriteErrorMessage($"Starting Receive", PodeLogLevel.Verbose, context);
 
             try
             {
@@ -215,23 +216,23 @@ namespace Pode.Transport.Sockets
             catch (OperationCanceledException ex)
             {
                 // Handle cancellation.
-                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+                PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
             }
             catch (IOException ex)
             {
                 // Handle I/O exceptions.
-                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+                PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
             }
             catch (AggregateException aex)
             {
                 // Handle aggregated exceptions.
-                PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
+                PodeHelpers.HandleAggregateException(aex, handled: true);
                 context.Socket.Close();
             }
             catch (Exception ex)
             {
                 // Handle any other exceptions.
-                PodeHelpers.WriteException(ex, Listener);
+                PodeHelpers.WriteException(ex);
                 context.Socket.Close();
             }
         }
@@ -255,7 +256,7 @@ namespace Pode.Transport.Sockets
             {
                 if (error != SocketError.Success)
                 {
-                    PodeHelpers.WriteErrorMessage($"Closing accepting socket: {error}", Listener, PodeLoggingLevel.Debug);
+                    PodeHelpers.WriteErrorMessage($"Closing accepting socket: {error}", PodeLogLevel.Debug);
                 }
 
                 // Close socket if it was accepted but there's an error.
@@ -274,22 +275,22 @@ namespace Pode.Transport.Sockets
                 catch (OperationCanceledException ex)
                 {
                     // Handle cancellation.
-                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+                    PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
                 }
                 catch (IOException ex)
                 {
                     // Handle I/O exceptions.
-                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+                    PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
                 }
                 catch (AggregateException aex)
                 {
                     // Handle aggregated exceptions.
-                    PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
+                    PodeHelpers.HandleAggregateException(aex, handled: true);
                 }
                 catch (Exception ex)
                 {
                     // Handle any other exceptions.
-                    PodeHelpers.WriteException(ex, Listener);
+                    PodeHelpers.WriteException(ex);
                 }
             }
 
@@ -399,7 +400,7 @@ namespace Pode.Transport.Sockets
                 }
                 catch (Exception ex)
                 {
-                    PodeHelpers.WriteException(ex, Listener);
+                    PodeHelpers.WriteException(ex);
                 }
             }
             finally

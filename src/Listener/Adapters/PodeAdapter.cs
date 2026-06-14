@@ -1,5 +1,7 @@
 using System;
 using System.Threading;
+using Pode.Utilities;
+using Pode.Utilities.Logging;
 
 namespace Pode.Adapters
 {
@@ -7,14 +9,13 @@ namespace Pode.Adapters
     {
         public bool IsConnected { get; private set; }
         public bool IsDisposed { get; private set; }
-        public bool ErrorLoggingEnabled { get; set; }
-        public string[] ErrorLoggingLevels { get; set; }
         public CancellationToken CancellationToken { get; private set; }
         public PodeAdapterType Type { get; private set; }
 
-        public PodeAdapter(PodeAdapterType type, CancellationToken cancellationToken = default)
+        public PodeAdapter(PodeAdapterType type, IPodeLogger logger, CancellationToken cancellationToken = default)
         {
             Type = type;
+            PodeHelpers.SetLogger(logger);
 
             CancellationToken = cancellationToken == default
                 ? cancellationToken

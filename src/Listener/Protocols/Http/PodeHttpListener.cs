@@ -6,6 +6,7 @@ using Pode.Protocols.Http.Client;
 using Pode.Protocols.Http.Client.Sse;
 using Pode.Protocols.Http.Client.Signals;
 using Pode.Adapters;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Http
 {
@@ -26,8 +27,8 @@ namespace Pode.Protocols.Http
             }
         }
 
-        public PodeHttpListener(CancellationToken cancellationToken = default)
-            : base(PodeAdapterType.Web, cancellationToken)
+        public PodeHttpListener(IPodeLogger logger, CancellationToken cancellationToken = default)
+            : base(PodeAdapterType.Web, logger, cancellationToken)
         {
             Signals = new PodeClientConnectionNestedMap<PodeSignal>(this);
             ServerEvents = new PodeClientConnectionNestedMap<PodeServerEvent>(this);
@@ -138,24 +139,24 @@ namespace Pode.Protocols.Http
         protected override void Close()
         {
             // close connected signals
-            PodeHelpers.WriteErrorMessage($"Closing signals", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing signals", PodeLogLevel.Verbose);
             foreach (var _signal in Signals.ToArray())
             {
                 _signal.Dispose();
             }
 
             Signals.Dispose();
-            PodeHelpers.WriteErrorMessage($"Closed signals", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed signals", PodeLogLevel.Verbose);
 
             // close connected server events
-            PodeHelpers.WriteErrorMessage($"Closing server events", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing server events", PodeLogLevel.Verbose);
             foreach (var _sse in ServerEvents.ToArray())
             {
                 _sse.Dispose();
             }
 
             ServerEvents.Dispose();
-            PodeHelpers.WriteErrorMessage($"Closed server events", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed server events", PodeLogLevel.Verbose);
 
             // call base close
             base.Close();

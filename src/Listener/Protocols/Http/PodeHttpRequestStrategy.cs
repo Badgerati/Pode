@@ -15,6 +15,7 @@ using Pode.Protocols.Common.Forms;
 using Pode.Protocols.Http.Client;
 using Pode.Protocols.Http.Client.Sse;
 using Pode.Protocols.Http.Client.Signals;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Http
 {
@@ -121,7 +122,7 @@ namespace Pode.Protocols.Http
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Request reset", Handler.Context.Listener, PodeLoggingLevel.Verbose, Handler.Context);
+            PodeHelpers.WriteErrorMessage($"Request reset", PodeLogLevel.Verbose, Handler.Context);
 
             HttpMethod = string.Empty;
             QueryString = default;

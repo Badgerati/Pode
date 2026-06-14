@@ -87,7 +87,7 @@ function Lock-PodeObject {
         }
         catch {
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
         finally {
             if ([string]::IsNullOrEmpty($Name)) {
@@ -578,7 +578,7 @@ function Use-PodeMutex {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
     finally {
         if ($acquired) {
@@ -881,7 +881,7 @@ function Use-PodeSemaphore {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
     finally {
         if ($acquired) {

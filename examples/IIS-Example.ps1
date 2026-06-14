@@ -47,8 +47,8 @@ Start-PodeServer {
     # Add-PodeEndpoint -Address localhost -Port $env:HTTP_PLATFORM_PORT -Protocol Http
 
     # enable logging to file
-    New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -File -Name 'errors' | Enable-PodeErrorLogging
+    New-PodeLogFileMethod -Name 'requests' | Enable-PodeRequestLogging
+    New-PodeLogFileMethod -Name 'errors' | Enable-PodeErrorLogging
 
     # Add-PodeLimitAccessRule -Name 'DenyLocal' -Action Deny -Component @(
     #     New-PodeLimitIPComponent -IP localhost -Location XForwardedFor
