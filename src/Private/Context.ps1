@@ -135,9 +135,10 @@ function New-PodeContext {
     # basic logging setup
     $ctx.Server.Logging = @{
         Logger  = [PodeLogger]::new()
+        Running = $false
         Masking = @{}
-        Methods = @{}
-        Types   = @{}
+        Methods = [hashtable]::Synchronized(@{})
+        Types   = [hashtable]::Synchronized(@{})
     }
 
     # set thread counts

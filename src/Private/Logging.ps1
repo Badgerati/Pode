@@ -441,7 +441,7 @@ function Write-PodeRequestLog {
 
     # set username - dot spaces
     if (Test-PodeAuthUser -IgnoreSession) {
-        $userProps = (Get-PodeLogType -Name [PodeLogger]::REQUEST_LOG_TYPE_NAME).Properties.Username.Split('.')
+        $userProps = (Get-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)).Properties.Username.Split('.')
 
         $user = $WebEvent.Auth.User
         foreach ($atom in $userProps) {
@@ -512,6 +512,10 @@ function Start-PodeLoggingRunspace {
 
                     # run the log item through the appropriate method
                     $logType = Get-PodeLogType -Name $log.Name
+                    if ($null -eq $logType) {
+                        continue
+                    }
+
                     $now = [datetime]::Now
 
                     # transform the log item into a writeable format
@@ -586,6 +590,7 @@ function Start-PodeLoggingRunspace {
     # start the log dispatcher runspace
     Write-Verbose 'Starting the Log Dispatcher runspace...'
     Add-PodeRunspace -Type Logs -Name 'Dispatcher' -ScriptBlock $script
+    $PodeContext.Server.Logging.Running = $true
 }
 
 function Add-PodeLogMethod {
@@ -625,6 +630,12 @@ function Add-PodeLogMethod {
 
     # add method to server
     $PodeContext.Server.Logging.Methods[$Id] = $Metadata
+
+    # extend runspace pool, and create runspace for the method - if logging is already running
+    if ($PodeContext.Server.Logging.Running) {
+        $null = $PodeContext.RunspacePools.Logs.Pool.SetMaxRunspaces($PodeContext.Server.Logging.Methods.Count + 1)
+        $Metadata.Runspace = Add-PodeRunspace -Type Logs -Name "Method_$($Metadata.Type)" -ScriptBlock $Metadata.ScriptBlock -Parameters @{ MethodId = $Id } -PassThru
+    }
 
     # return the method ID
     return $Id

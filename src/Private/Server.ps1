@@ -257,6 +257,9 @@ function Restart-PodeInternalServer {
 
         $PodeContext.Server.Views.Clear()
         $PodeContext.Timers.Items.Clear()
+
+        # clear up logging
+        $PodeContext.Server.Logging.Running = $false
         $PodeContext.Server.Logging.Methods.Clear()
         $PodeContext.Server.Logging.Types.Clear()
         $PodeContext.Server.Logging.Logger.Reset()

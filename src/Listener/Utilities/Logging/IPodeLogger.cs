@@ -13,7 +13,7 @@ namespace Pode.Utilities.Logging
         bool IsErrorLoggingEnabled { get; }
 
         void RegisterType(IPodeLogType logType);
-        void UnregisterType(IPodeLogType logType);
+        void UnregisterType(string name);
         void Add(string name, PodeLogLevel level, object item);
         void Add(IPodeLogEvent logEvent);
         void AddException(Exception exception, string contextId, PodeLogLevel level, int threadId = 0);

@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Threading;
 
@@ -12,7 +12,7 @@ namespace Pode.Utilities.Logging
         public const string ERROR_LOG_TYPE_NAME = "__pode_log_errors__";
 
         private readonly PodeLogQueue<IPodeLogEvent> Queue;
-        private readonly Dictionary<string, IPodeLogType> LogTypes;
+        private readonly ConcurrentDictionary<string, IPodeLogType> LogTypes;
 
         public bool IsDisposed { get; private set; } = false;
         public int Count => Queue.Count;
@@ -29,7 +29,7 @@ namespace Pode.Utilities.Logging
 
         public PodeLogger()
         {
-            LogTypes = new Dictionary<string, IPodeLogType>();
+            LogTypes = new ConcurrentDictionary<string, IPodeLogType>();
             Queue = new PodeLogQueue<IPodeLogEvent>();
         }
 
@@ -40,17 +40,17 @@ namespace Pode.Utilities.Logging
                 return;
             }
 
-            LogTypes.Add(logType.Name, logType);
+            LogTypes.TryAdd(logType.Name, logType);
         }
 
-        public void UnregisterType(IPodeLogType logType)
+        public void UnregisterType(string name)
         {
             if (IsDisposed || !IsEnabled)
             {
                 return;
             }
 
-            LogTypes.Remove(logType.Name);
+            LogTypes.TryRemove(name, out _);
         }
 
         public void Add(string name, PodeLogLevel level, object item)
@@ -71,7 +71,7 @@ namespace Pode.Utilities.Logging
             }
 
             // does the log type exist?
-            if (!LogTypes.TryGetValue(logEvent.Name, out IPodeLogType logType))
+            if (!LogTypes.TryGetValue(logEvent.Name, out var logType))
             {
                 return;
             }
@@ -109,7 +109,7 @@ namespace Pode.Utilities.Logging
             }
 
             // does the log type exist?
-            if (!LogTypes.TryGetValue(ERROR_LOG_TYPE_NAME, out IPodeLogType logType))
+            if (!LogTypes.TryGetValue(ERROR_LOG_TYPE_NAME, out var logType))
             {
                 return;
             }
@@ -159,7 +159,16 @@ namespace Pode.Utilities.Logging
                 return false;
             }
 
-            return Queue.TryTake(out logEvent, cancellationToken);
+            var found = Queue.TryTake(out var _event, cancellationToken);
+
+            if (!found || string.IsNullOrEmpty(_event?.Name) || !LogTypes.ContainsKey(_event?.Name))
+            {
+                logEvent = null;
+                return false;
+            }
+
+            logEvent = _event;
+            return found;
         }
 
         public void Reset()

@@ -288,7 +288,7 @@ function Disable-PodeRequestLogType {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogType -Name [PodeLogger]::REQUEST_LOG_TYPE_NAME
+    Remove-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)
 }
 
 if (!(Test-Path Alias:Disable-PodeRequestLogging)) {
@@ -399,7 +399,7 @@ function Disable-PodeErrorLogType {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogType -Name [PodeLogger]::ERROR_LOG_TYPE_NAME
+    Remove-PodeLogType -Name ([PodeLogger]::ERROR_LOG_TYPE_NAME)
 }
 
 if (!(Test-Path Alias:Disable-PodeErrorLogging)) {
