@@ -111,7 +111,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Invoke-PodeEvent {}
         }
 
-        It 'Resetting the server values' {
+        BeforeEach {
             $PodeContext = @{
                 Tokens    = Initialize-PodeCancellationToken
                 Server    = @{
@@ -126,6 +126,7 @@ InModuleScope -ModuleName 'Pode' {
                         key = @{}
                     }
                     Logging         = @{
+                        Logger  = [Pode.Utilities.Logging.PodeLogger]::new()
                         Methods = @{ 'key' = 'value' }
                         Types   = @{ 'key' = 'value' }
                     }
@@ -280,6 +281,13 @@ InModuleScope -ModuleName 'Pode' {
                     Semaphores = @{}
                 }
             }
+        }
+
+        AfterEach {
+            $PodeContext.Server.Logging.Logger.Dispose()
+        }
+
+        It 'Resetting the server values' {
             Restart-PodeServer
             Restart-PodeInternalServer | Out-Null
 
