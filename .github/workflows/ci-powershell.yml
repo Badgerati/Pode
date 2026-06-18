@@ -32,7 +32,7 @@ jobs:
         os: [windows-latest]
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Check PowerShell version
       shell: powershell
