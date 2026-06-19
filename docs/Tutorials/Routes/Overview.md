@@ -39,96 +39,21 @@ The scriptblock for the route will have access to the `$WebEvent` variable which
 
 You can add your routes straight into the [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer) scriptblock, or separate them into different files. These files can then be dot-sourced, or you can use [`Use-PodeRoutes`](../../../Functions/Routes/Use-PodeRoutes) to automatically load all ps1 files within a `/routes` directory at the root of your server.
 
-## Payloads
+## Retrieving Client Parameters
 
-The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` property on the `$WebEvent` variable to a route's logic.
+When working with REST calls, data can be passed by the client using various methods, including Cookies, Headers, Paths, Queries, and Body. Each of these methods has specific ways to retrieve the data:
 
-Depending the the Content-Type supplied, Pode has inbuilt body-parsing logic for JSON, XML, CSV, and Form data.
+- **Cookies**: Cookies sent by the client can be accessed using the `$WebEvent.Cookies` property or the `Get-PodeCookie` function for more advanced handling. For more details, refer to the [Cookies Documentation](./Parameters/Cookies.md).
 
-This example will get the `userId` and "find" user, returning the users data:
+- **Headers**: Headers can be retrieved using the `$WebEvent.Request.Headers` property or the `Get-PodeHeader` function, which provides additional deserialization options. Learn more in the [Headers Documentation](./Parameters/Headers.md).
 
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+- **Paths**: Parameters passed through the URL path can be accessed using the `$WebEvent.Parameters` property or the `Get-PodePathParameter` function. Detailed information can be found in the [Path Parameters Documentation](./Parameters/Paths.md).
 
-    Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
-        # get the user
-        $user = Get-DummyUser -UserId $WebEvent.Data.userId
+- **Queries**: Query parameters from the URL can be accessed via `$WebEvent.Query` or retrieved using the `Get-PodeQueryParameter` function for deserialization support. Check the [Query Parameters Documentation](./Parameters/Queries.md).
 
-        # return the user
-        Write-PodeJsonResponse -Value @{
-            Username = $user.username
-            Age = $user.age
-        }
-    }
-}
-```
+- **Body**: Data sent in the request body, such as in POST requests, can be retrieved using the `$WebEvent.Data` property or the `Get-PodeBodyData` function for enhanced deserialization capabilities. See the [Body Data Documentation](./Parameters/Body.md) for more information.
 
-The following request will invoke the above route:
-
-```powershell
-Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "userId": 12345 }' -ContentType 'application/json'
-```
-
-!!! important
-    The `ContentType` is required as it informs Pode on how to parse the requests payload. For example, if the content type were `application/json`, then Pode will attempt to parse the body of the request as JSON - converting it to a hashtable.
-
-!!! important
-    On PowerShell 5 referencing JSON data on `$WebEvent.Data` must be done as `$WebEvent.Data.userId`. This also works in PowerShell 6+, but you can also use `$WebEvent.Data['userId']` on PowerShell 6+.
-
-## Query Strings
-
-The following is an example of using data from a request's query string. To retrieve values from the query string you can use the `.Query` property from the `$WebEvent` variable. This example will return a user based on the `userId` supplied:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {
-        # get the user
-        $user = Get-DummyUser -UserId $WebEvent.Query['userId']
-
-        # return the user
-        Write-PodeJsonResponse -Value @{
-            Username = $user.username
-            Age = $user.age
-        }
-    }
-}
-```
-
-The following request will invoke the above route:
-
-```powershell
-Invoke-WebRequest -Uri 'http://localhost:8080/users?userId=12345' -Method Get
-```
-
-## Parameters
-
-The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters you can use the `.Parameters` property from the `$WebEvent` variable. This example will get the `:userId` and "find" user, returning the users data:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Get -Path '/users/:userId' -ScriptBlock {
-        # get the user
-        $user = Get-DummyUser -UserId $WebEvent.Parameters['userId']
-
-        # return the user
-        Write-PodeJsonResponse -Value @{
-            Username = $user.username
-            Age = $user.age
-        }
-    }
-}
-```
-
-The following request will invoke the above route:
-
-```powershell
-Invoke-WebRequest -Uri 'http://localhost:8080/users/12345' -Method Get
-```
+Each link provides detailed usage and examples to help you retrieve and manipulate the parameters passed by the client effectively.
 
 ## Script from File
 
