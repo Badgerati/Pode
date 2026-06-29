@@ -629,22 +629,22 @@ InModuleScope -ModuleName 'Pode' {
 
         It 'Calls Add-PodeRoute twice for commands' {
             ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Invoke-Expression') -NoOpenApi
-            Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
+            Should -Invoke Add-PodeRoute -Times 2 -Scope It
         }
 
         It 'Calls Add-PodeRoute twice for commands by pipe' {
             @('Get-ChildItem', 'Invoke-Expression') | ConvertTo-PodeRoute   -NoOpenApi
-            Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
+            Should -Invoke Add-PodeRoute -Times 2 -Scope It
         }
 
         It 'Calls Add-PodeRoute twice for module commands' {
             ConvertTo-PodeRoute -Module Example -NoOpenApi
-            Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
+            Should -Invoke Add-PodeRoute -Times 2 -Scope It
         }
 
         It 'Calls Add-PodeRoute once for module filtered commands' {
             ConvertTo-PodeRoute -Module Example -Commands 'Some-ModuleCommand1' -NoOpenApi
-            Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
+            Should -Invoke Add-PodeRoute -Times 1 -Scope It
         }
     }
 
@@ -668,18 +668,18 @@ InModuleScope -ModuleName 'Pode' {
 
         It 'Call Add-PodeRoute once for ScriptBlock page' {
             Add-PodePage -Name 'Name' -ScriptBlock { Get-Service }
-            Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
+            Should -Invoke Add-PodeRoute -Times 1 -Scope It
         }
 
         It 'Call Add-PodeRoute once for FilePath page' {
             Mock Get-PodeRelativePath { return $Path }
             Add-PodePage -Name 'Name' -FilePath './fake/path'
-            Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
+            Should -Invoke Add-PodeRoute -Times 1 -Scope It
         }
 
         It 'Call Add-PodeRoute once for FilePath page' {
             Add-PodePage -Name 'Name' -View 'index'
-            Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
+            Should -Invoke Add-PodeRoute -Times 1 -Scope It
         }
     }
 

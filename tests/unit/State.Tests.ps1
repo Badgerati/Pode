@@ -72,7 +72,7 @@ InModuleScope -ModuleName 'Pode' {
             Set-PodeState -Name 'test' -Value 8
             Save-PodeState -Path './state.json'
 
-            Assert-MockCalled Out-File -Times 1 -Scope It
+            Should -Invoke Out-File -Times 1 -Scope It
         }
 
         It 'Saves the state to file with Include' {
@@ -83,7 +83,7 @@ InModuleScope -ModuleName 'Pode' {
             Set-PodeState -Name 'test' -Value 8
             Save-PodeState -Path './state.json' -Include 'test'
 
-            Assert-MockCalled Out-File -Times 1 -Scope It
+            Should -Invoke Out-File -Times 1 -Scope It
         }
 
         It 'Saves the state to file with Exclude' {
@@ -94,7 +94,7 @@ InModuleScope -ModuleName 'Pode' {
             Set-PodeState -Name 'test' -Value 8
             Save-PodeState -Path './state.json' -Exclude 'test'
 
-            Assert-MockCalled Out-File -Times 1 -Scope It
+            Should -Invoke Out-File -Times 1 -Scope It
         }
     }
 

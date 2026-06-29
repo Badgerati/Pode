@@ -10,7 +10,7 @@ InModuleScope -ModuleName 'Pode' {
         It 'Runs the logic for a single endware' {
             Mock Invoke-PodeScriptBlock { }
             Invoke-PodeEndware -Endware @(@{ Logic = { 'test' | Out-Null } })
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
         }
 
         It 'Runs the logic for 2 endwares' {
@@ -19,7 +19,7 @@ InModuleScope -ModuleName 'Pode' {
                 @{ Logic = { 'test' | Out-Null } },
                 @{ Logic = { 'test2' | Out-Null } }
             )
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 2 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 2 -Scope It
         }
 
         It 'Runs the logic for a single endware and errors' {
@@ -28,8 +28,8 @@ InModuleScope -ModuleName 'Pode' {
 
             Invoke-PodeEndware -Endware @(@{ Logic = { 'test' | Out-Null } })
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-            Assert-MockCalled Write-PodeErrorLog -Times 1 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke Write-PodeErrorLog -Times 1 -Scope It
         }
     }
 

@@ -134,13 +134,13 @@ InModuleScope -ModuleName 'Pode' {
         It 'Returns false for non-unix' {
             Mock Get-PodePSVersionTable { return @{ 'Platform' = 'Windows' } }
             Test-PodeIsUnix | Should -Be $false
-            Assert-MockCalled Get-PodePSVersionTable -Times 1
+            Should -Invoke Get-PodePSVersionTable -Times 1
         }
 
         It 'Returns true for unix' {
             Mock Get-PodePSVersionTable { return @{ 'Platform' = 'Unix' } }
             Test-PodeIsUnix | Should -Be $true
-            Assert-MockCalled Get-PodePSVersionTable -Times 1
+            Should -Invoke Get-PodePSVersionTable -Times 1
         }
     }
 
@@ -148,19 +148,19 @@ InModuleScope -ModuleName 'Pode' {
         It 'Returns false for non-windows' {
             Mock Get-PodePSVersionTable { return @{ 'Platform' = 'Unix' } }
             Test-PodeIsWindows | Should -Be $false
-            Assert-MockCalled Get-PodePSVersionTable -Times 1
+            Should -Invoke Get-PodePSVersionTable -Times 1
         }
 
         It 'Returns true for windows and desktop' {
             Mock Get-PodePSVersionTable { return @{ 'PSEdition' = 'Desktop' } }
             Test-PodeIsWindows | Should -Be $true
-            Assert-MockCalled Get-PodePSVersionTable -Times 1
+            Should -Invoke Get-PodePSVersionTable -Times 1
         }
 
         It 'Returns true for windows and core' {
             Mock Get-PodePSVersionTable { return @{ 'Platform' = 'Win32NT'; 'PSEdition' = 'Core' } }
             Test-PodeIsWindows | Should -Be $true
-            Assert-MockCalled Get-PodePSVersionTable -Times 1
+            Should -Invoke Get-PodePSVersionTable -Times 1
         }
     }
 
@@ -168,13 +168,13 @@ InModuleScope -ModuleName 'Pode' {
         It 'Returns false for non-core' {
             Mock Get-PodePSVersionTable { return @{ 'PSEdition' = 'Desktop' } }
             Test-PodeIsPSCore | Should -Be $false
-            Assert-MockCalled Get-PodePSVersionTable -Times 1
+            Should -Invoke Get-PodePSVersionTable -Times 1
         }
 
         It 'Returns true for unix' {
             Mock Get-PodePSVersionTable { return @{ 'PSEdition' = 'Core' } }
             Test-PodeIsPSCore | Should -Be $true
-            Assert-MockCalled Get-PodePSVersionTable -Times 1
+            Should -Invoke Get-PodePSVersionTable -Times 1
         }
     }
 
@@ -1141,8 +1141,8 @@ InModuleScope -ModuleName 'Pode' {
             }
 
             Close-PodeServerInternal
-            Assert-MockCalled Write-PodeHost -Times 0 -Scope It
-            Assert-MockCalled Close-PodeDisposable -Times 2 -Scope It
+            Should -Invoke Write-PodeHost -Times 0 -Scope It
+            Should -Invoke Close-PodeDisposable -Times 2 -Scope It
         }
 
     }
@@ -1280,22 +1280,22 @@ InModuleScope -ModuleName 'Pode' {
         }
         It 'Writes a message to the Host by parameters' {
             Out-PodeHost -InputObject 'Hello'
-            Assert-MockCalled Out-Default -Scope It -Times 1
+            Should -Invoke Out-Default -Scope It -Times 1
         }
 
         It 'Writes a message to the Host by pipeline' {
             'Hello' | Out-PodeHost
-            Assert-MockCalled Out-Default -Scope It -Times 1
+            Should -Invoke Out-Default -Scope It -Times 1
         }
 
         It 'Writes a hashtable to the Host by pipeline' {
             @{ Name = 'Rick' } | Out-PodeHost
-            Assert-MockCalled Out-Default -Scope It -Times 1
+            Should -Invoke Out-Default -Scope It -Times 1
         }
 
         It 'Writes an Array to the Host by pipeline' {
             @('France', 'Rick', 21 , 'male') | Out-PodeHost
-            Assert-MockCalled Out-Default -Scope It -Times 1
+            Should -Invoke Out-Default -Scope It -Times 1
         }
     }
 
@@ -1487,13 +1487,13 @@ InModuleScope -ModuleName 'Pode' {
         It 'Errors when no encoding matches, and identity disabled' {
             $PodeContext.Server.Web.Compression.Enabled = $true
             { Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
-            Assert-MockCalled New-PodeRequestException -Scope It -Times 1
+            Should -Invoke New-PodeRequestException -Scope It -Times 1
         }
 
         It 'Errors when no encoding matches, and wildcard disabled' {
             $PodeContext.Server.Web.Compression.Enabled = $true
             { Get-PodeAcceptEncoding -AcceptEncoding 'br,*;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
-            Assert-MockCalled New-PodeRequestException -Scope It -Times 1
+            Should -Invoke New-PodeRequestException -Scope It -Times 1
         }
 
         It 'Returns empty if identity is allowed, but wildcard disabled' {
@@ -1536,7 +1536,7 @@ InModuleScope -ModuleName 'Pode' {
 
         It 'Errors when no encoding matches' {
             { Get-PodeTransferEncoding -TransferEncoding 'compress,chunked' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
-            Assert-MockCalled New-PodeRequestException -Scope It -Times 1
+            Should -Invoke New-PodeRequestException -Scope It -Times 1
         }
     }
 

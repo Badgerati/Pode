@@ -243,8 +243,8 @@ InModuleScope -ModuleName 'Pode' {
 
             Set-PodeSession
 
-            Assert-MockCalled Set-PodeCookie -Times 1 -Scope It
-            Assert-MockCalled Get-PodeSessionExpiry -Times 1 -Scope It
+            Should -Invoke Set-PodeCookie -Times 1 -Scope It
+            Should -Invoke Get-PodeSessionExpiry -Times 1 -Scope It
         }
     }
 
@@ -261,7 +261,7 @@ InModuleScope -ModuleName 'Pode' {
             $WebEvent = @{}
             Remove-PodeSession
 
-            Assert-MockCalled Remove-PodeAuthSession -Times 0 -Scope It
+            Should -Invoke Remove-PodeAuthSession -Times 0 -Scope It
         }
 
         It 'Call removes the session' {
@@ -271,7 +271,7 @@ InModuleScope -ModuleName 'Pode' {
             $WebEvent = @{ Session = @{} }
             Remove-PodeSession
 
-            Assert-MockCalled Remove-PodeAuthSession -Times 1 -Scope It
+            Should -Invoke Remove-PodeAuthSession -Times 1 -Scope It
         }
     }
 
@@ -297,7 +297,7 @@ InModuleScope -ModuleName 'Pode' {
             }
 
             Save-PodeSession
-            Assert-MockCalled Save-PodeSessionInternal -Times 1 -Scope It
+            Should -Invoke Save-PodeSessionInternal -Times 1 -Scope It
         }
     }
 }
