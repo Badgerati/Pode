@@ -30,6 +30,10 @@ function New-PodeContext {
 
         [Parameter()]
         [string]
+        $AppName = $null,
+
+        [Parameter()]
+        [string]
         $ServerlessType,
 
         [Parameter()]
@@ -61,6 +65,11 @@ function New-PodeContext {
         $Name = Get-PodeRandomName
     }
 
+    # set default app name if one not supplied
+    if (Test-PodeIsEmpty $AppName) {
+        $AppName = 'Pode'
+    }
+
     # are we running in a serverless context
     $isServerless = ![string]::IsNullOrWhiteSpace($ServerlessType)
 
@@ -90,6 +99,7 @@ function New-PodeContext {
 
     # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
+    $ctx.Server.AppName = $AppName
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
@@ -134,11 +144,16 @@ function New-PodeContext {
 
     # basic logging setup
     $ctx.Server.Logging = @{
-        Logger  = [PodeLogger]::new()
-        Running = $false
-        Masking = @{}
-        Methods = [hashtable]::Synchronized(@{})
-        Types   = [hashtable]::Synchronized(@{})
+        Logger     = [PodeLogger]::new()
+        Running    = $false
+        Masking    = @{}
+        Formatting = @{
+            Log       = [PodeLogFormat]::None
+            Syslog    = [PodeSyslogFormat]::RFC5424
+            Serialise = [PodeSerialiseFormat]::Custom
+        }
+        Methods    = [hashtable]::Synchronized(@{})
+        Types      = [hashtable]::Synchronized(@{})
     }
 
     # set thread counts
@@ -983,6 +998,11 @@ function Set-PodeServerConfiguration {
         Patterns = Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns)
         Mask     = Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********'
     }
+    $Context.Server.Logging.Formatting = @{
+        Log       = Protect-PodeValue -Value $Configuration.Logging.Formatting.Log -Default $Context.Server.Logging.Formatting.Log -EnumType ([PodeLogFormat])
+        Syslog    = Protect-PodeValue -Value $Configuration.Logging.Formatting.Syslog -Default $Context.Server.Logging.Formatting.Syslog -EnumType ([PodeSyslogFormat])
+        Serialise = Protect-PodeValue -Value $Configuration.Logging.Formatting.Serialise -Default $Context.Server.Logging.Formatting.Serialise -EnumType ([PodeSerialiseFormat])
+    }
 
     # sockets
     if (!(Test-PodeIsEmpty $Configuration.Ssl.Protocols)) {
@@ -1018,38 +1038,44 @@ function Set-PodeServerConfiguration {
         }
     }
 
+    # server and app names
+    $Context.Server.Name = Protect-PodeValue -Value $Configuration.Name -Default $Context.Server.Name
+    $Context.Server.AppName = Protect-PodeValue -Value $Configuration.AppName -Default $Context.Server.AppName
+
     # debug
     $Context.Server.Debug = @{
         Breakpoints = @{
-            Enabled = [bool](Protect-PodeValue -Value  $Configuration.Debug.Breakpoints.Enable -Default $Context.Server.Debug.Breakpoints.Enable)
+            Enabled = [bool](Protect-PodeValue -Value $Configuration.Debug.Breakpoints.Enable -Default $Context.Server.Debug.Breakpoints.Enable)
         }
     }
 
+    # allowed actions
     $Context.Server.AllowedActions = @{
-        Suspend         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Suspend -Default $Context.Server.AllowedActions.Suspend)
-        Restart         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Restart -Default $Context.Server.AllowedActions.Restart)
-        Disable         = [bool](Protect-PodeValue -Value  $Configuration.AllowedActions.Disable -Default $Context.Server.AllowedActions.Disable)
+        Suspend         = [bool](Protect-PodeValue -Value $Configuration.AllowedActions.Suspend -Default $Context.Server.AllowedActions.Suspend)
+        Restart         = [bool](Protect-PodeValue -Value $Configuration.AllowedActions.Restart -Default $Context.Server.AllowedActions.Restart)
+        Disable         = [bool](Protect-PodeValue -Value $Configuration.AllowedActions.Disable -Default $Context.Server.AllowedActions.Disable)
         DisableSettings = @{
-            RetryAfter    = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.RetryAfter -Default $Context.Server.AllowedActions.DisableSettings.RetryAfter)
-            LimitRuleName = (Protect-PodeValue -Value  $Configuration.AllowedActions.DisableSettings.LimitRuleName -Default $Context.Server.AllowedActions.DisableSettings.LimitRuleName)
+            RetryAfter    = [int](Protect-PodeValue -Value $Configuration.AllowedActions.DisableSettings.RetryAfter -Default $Context.Server.AllowedActions.DisableSettings.RetryAfter)
+            LimitRuleName = (Protect-PodeValue -Value $Configuration.AllowedActions.DisableSettings.LimitRuleName -Default $Context.Server.AllowedActions.DisableSettings.LimitRuleName)
         }
         Timeout         = @{
-            Suspend = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Suspend -Default $Context.Server.AllowedActions.Timeout.Suspend)
-            Resume  = [int](Protect-PodeValue -Value  $Configuration.AllowedActions.Timeout.Resume -Default $Context.Server.AllowedActions.Timeout.Resume)
+            Suspend = [int](Protect-PodeValue -Value $Configuration.AllowedActions.Timeout.Suspend -Default $Context.Server.AllowedActions.Timeout.Suspend)
+            Resume  = [int](Protect-PodeValue -Value $Configuration.AllowedActions.Timeout.Resume -Default $Context.Server.AllowedActions.Timeout.Resume)
         }
     }
 
+    # key bindings and console settings
     $Context.Server.Console = @{
-        DisableTermination  = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableTermination -Default $Context.Server.Console.DisableTermination)
-        DisableConsoleInput = [bool](Protect-PodeValue -Value  $Configuration.Console.DisableConsoleInput -Default $Context.Server.Console.DisableConsoleInput)
-        Quiet               = [bool](Protect-PodeValue -Value  $Configuration.Console.Quiet -Default $Context.Server.Console.Quiet)
-        ClearHost           = [bool](Protect-PodeValue -Value  $Configuration.Console.ClearHost -Default $Context.Server.Console.ClearHost)
-        ShowOpenAPI         = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowOpenAPI -Default $Context.Server.Console.ShowOpenAPI)
-        ShowEndpoints       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowEndpoints -Default $Context.Server.Console.ShowEndpoints)
-        ShowHelp            = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowHelp -Default $Context.Server.Console.ShowHelp)
-        ShowDivider         = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowDivider -Default $Context.Server.Console.ShowDivider)
-        ShowTimeStamp       = [bool](Protect-PodeValue -Value  $Configuration.Console.ShowTimeStamp -Default $Context.Server.Console.ShowTimeStamp)
-        DividerLength       = [int](Protect-PodeValue -Value  $Configuration.Console.DividerLength -Default $Context.Server.Console.DividerLength)
+        DisableTermination  = [bool](Protect-PodeValue -Value $Configuration.Console.DisableTermination -Default $Context.Server.Console.DisableTermination)
+        DisableConsoleInput = [bool](Protect-PodeValue -Value $Configuration.Console.DisableConsoleInput -Default $Context.Server.Console.DisableConsoleInput)
+        Quiet               = [bool](Protect-PodeValue -Value $Configuration.Console.Quiet -Default $Context.Server.Console.Quiet)
+        ClearHost           = [bool](Protect-PodeValue -Value $Configuration.Console.ClearHost -Default $Context.Server.Console.ClearHost)
+        ShowOpenAPI         = [bool](Protect-PodeValue -Value $Configuration.Console.ShowOpenAPI -Default $Context.Server.Console.ShowOpenAPI)
+        ShowEndpoints       = [bool](Protect-PodeValue -Value $Configuration.Console.ShowEndpoints -Default $Context.Server.Console.ShowEndpoints)
+        ShowHelp            = [bool](Protect-PodeValue -Value $Configuration.Console.ShowHelp -Default $Context.Server.Console.ShowHelp)
+        ShowDivider         = [bool](Protect-PodeValue -Value $Configuration.Console.ShowDivider -Default $Context.Server.Console.ShowDivider)
+        ShowTimeStamp       = [bool](Protect-PodeValue -Value $Configuration.Console.ShowTimeStamp -Default $Context.Server.Console.ShowTimeStamp)
+        DividerLength       = [int](Protect-PodeValue -Value $Configuration.Console.DividerLength -Default $Context.Server.Console.DividerLength)
         Colors              = @{
             Header            = Protect-PodeValue $Configuration.Console.Colors.Header -Default $Context.Server.Console.Colors.Header -EnumType ([type][System.ConsoleColor])
             EndpointsHeader   = Protect-PodeValue -Value $Configuration.Console.Colors.EndpointsHeader -Default $Context.Server.Console.Colors.EndpointsHeader -EnumType ([type][System.ConsoleColor])

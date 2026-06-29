@@ -73,6 +73,22 @@ function Get-PodeServerPath {
     return $PodeContext.Server.Root
 }
 
+function Get-PodeServerName {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+
+    return $PodeContext.Server.Name
+}
+
+function Get-PodeAppName {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+
+    return $PodeContext.Server.AppName
+}
+
 <#
 .SYNOPSIS
 Starts a Stopwatch on some ScriptBlock, and outputs the duration at the end.
@@ -521,8 +537,7 @@ function Protect-PodeValue {
 
     $resolvedValue = Resolve-PodeValue -Check (Test-PodeIsEmpty $Value) -TrueValue $Default -FalseValue $Value
 
-    if ($null -ne $EnumType -and [enum]::IsDefined($EnumType, $resolvedValue)) {
-        # Use $CaseSensitive to determine if case sensitivity should apply
+    if (($null -ne $EnumType) -and [enum]::IsDefined($EnumType, $resolvedValue)) {
         return [enum]::Parse($EnumType, $resolvedValue, !$CaseSensitive.IsPresent)
     }
 

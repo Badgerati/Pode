@@ -31,20 +31,18 @@ function Get-PodeLoggingTerminalMethod {
                         continue
                     }
 
-                    # check if it's an array from batching
-                    if ($log.Items -is [array]) {
-                        $log.Items = $log.Items -join [System.Environment]::NewLine
-                    }
-
-                    # protect then write
-                    $log.Items = ($log.Items | Protect-PodeLogItem)
-                    $log.Items.ToString() | Out-PodeHost
+                    $log.ToString() | Protect-PodeLogItem | Out-PodeHost
                 }
                 catch [System.OperationCanceledException] {
                     $_ | Write-PodeErrorLog -Level Debug
                 }
                 catch {
                     $_ | Out-Default
+                }
+                finally {
+                    if ($null -ne $log) {
+                        $log.Dispose()
+                    }
                 }
             }
         }
@@ -85,14 +83,6 @@ function Get-PodeLoggingFileMethod {
                         continue
                     }
 
-                    # check if it's an array from batching
-                    if ($log.Items -is [array]) {
-                        $log.Items = $log.Items -join [System.Environment]::NewLine
-                    }
-
-                    # mask values
-                    $log.Items = $log.Items | Protect-PodeLogItem
-
                     # current date
                     $date = [DateTime]::Now.ToString('yyyy-MM-dd')
 
@@ -124,7 +114,7 @@ function Get-PodeLoggingFileMethod {
                     $path = [System.IO.Path]::Combine($method.Arguments.Path, "$($method.Arguments.Name)_$($date)_$($id).log")
 
                     # write the item to the file
-                    $log.Items.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
+                    $log.ToString() | Protect-PodeLogItem | Out-File -FilePath $path -Encoding utf8 -Append -Force
 
                     # if set, remove log files beyond days set (ensure this is only run once a day)
                     if (($method.Arguments.MaxDays -gt 0) -and ($method.Arguments.NextClearDown -le [DateTime]::Now.Date)) {
@@ -142,6 +132,11 @@ function Get-PodeLoggingFileMethod {
                 }
                 catch {
                     $_ | Out-Default
+                }
+                finally {
+                    if ($null -ne $log) {
+                        $log.Dispose()
+                    }
                 }
             }
         }
@@ -181,18 +176,9 @@ function Get-PodeLoggingEventViewerMethod {
                         continue
                     }
 
-                    # check if it's an array from batching
-                    if ($log.Items -isnot [array]) {
-                        $log.Items = @($log.Items)
-                    }
-
-                    if ($log.RawItems -isnot [array]) {
-                        $log.RawItems = @($log.RawItems)
-                    }
-
-                    for ($i = 0; $i -lt $log.Items.Length; $i++) {
+                    foreach ($item in $log.Items) {
                         # convert log level - info if no level present
-                        $entryType = ConvertTo-PodeEventViewerLevel -Level $log.RawItems[$i].Level
+                        $entryType = ConvertTo-PodeEventViewerLevel -Level $item.Event.Level
 
                         # create log instance
                         $entryInstance = [System.Diagnostics.EventInstance]::new($method.Arguments.ID, 0, $entryType)
@@ -203,7 +189,7 @@ function Get-PodeLoggingEventViewerMethod {
                         $entryLog.Source = $method.Arguments.Source
 
                         try {
-                            $message = ($log.Items[$i] | Protect-PodeLogItem)
+                            $message = $item.ToString() | Protect-PodeLogItem
                             $entryLog.WriteEvent($entryInstance, $message)
                         }
                         catch {
@@ -216,6 +202,11 @@ function Get-PodeLoggingEventViewerMethod {
                 }
                 catch {
                     $_ | Out-Default
+                }
+                finally {
+                    if ($null -ne $log) {
+                        $log.Dispose()
+                    }
                 }
             }
         }
@@ -256,8 +247,17 @@ function Get-PodeLoggingCustomMethod {
                         continue
                     }
 
-                    # invoke the custom scriptblock
-                    $_args = @(, $log.Items) + @($method.Arguments) + @(, $log.RawItems)
+                    # build scriptblock arguments based on the log method version
+                    switch ($method.Version) {
+                        1 {
+                            $_args = @(, ($log.Items | Select-Object -ExpandProperty Value)) + @($method.Arguments) + @(, ($log.Items.Event | Select-Object -ExpandProperty Value))
+                        }
+
+                        2 {
+                            $_args = @(, $log.Items) + @($method.Arguments)
+                        }
+                    }
+
                     $null = Invoke-PodeScriptBlock `
                         -ScriptBlock $method.Custom.ScriptBlock `
                         -Arguments $_args `
@@ -270,6 +270,11 @@ function Get-PodeLoggingCustomMethod {
                 catch {
                     $_ | Out-Default
                 }
+                finally {
+                    if ($null -ne $log) {
+                        $log.Dispose()
+                    }
+                }
             }
         }
         catch [System.OperationCanceledException] {
@@ -279,6 +284,190 @@ function Get-PodeLoggingCustomMethod {
             $_ | Out-Default
             throw
         }
+    }
+}
+
+function Get-PodeLoggingApiMethod {
+    return {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodId
+        )
+
+        # wait for the server to fully start
+        Wait-PodeCancellationTokenRequest -Type Start
+
+        try {
+            $method = $PodeContext.Server.Logging.Methods[$MethodId]
+
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                # check for suspension
+                Test-PodeSuspensionToken
+
+                try {
+                    # try and get a log item
+                    $log = $null
+                    $found = $method.Queue.TryTake([ref]$log, $PodeContext.Tokens.Cancellation.Token)
+
+                    if (!$found -or ($null -eq $log)) {
+                        continue
+                    }
+
+                    # get body
+                    $_args = @($log) + @($method.Arguments.Body.ArgumentList)
+                    $body = Invoke-PodeScriptBlock `
+                        -ScriptBlock $method.Arguments.Body.ScriptBlock `
+                        -Arguments $_args `
+                        -UsingVariables $method.Arguments.Body.UsingVariables `
+                        -Splat -Return
+
+                    if ([string]::IsNullOrWhiteSpace($body)) {
+                        continue
+                    }
+
+                    # get headers
+                    $headers = $method.Arguments.Headers.Value
+                    $headers['Content-Type'] = $method.Arguments.ContentType
+
+                    if ($null -ne $method.Arguments.Headers.ScriptBlock) {
+                        $_args = @($body) + @($method.Arguments.Headers.ArgumentList)
+                        $addHeaders = Invoke-PodeScriptBlock `
+                            -ScriptBlock $method.Arguments.Headers.ScriptBlock `
+                            -Arguments $_args `
+                            -UsingVariables $method.Arguments.Headers.UsingVariables `
+                            -Splat -Return
+
+                        if ($null -ne $addHeaders) {
+                            if ($addHeaders -isnot [hashtable]) {
+                                #TODO: The headers returned from the API headers scriptblock is not a hashtable
+                                throw ($PodeLocale.loggingApiMethodHeadersNotHashtableExceptionMessage)
+                            }
+
+                            foreach ($key in $addHeaders.Keys) {
+                                $headers[$key] = $addHeaders[$key]
+                            }
+                        }
+                    }
+
+                    # invoke the API
+                    Invoke-RestMethod `
+                        -Uri $method.Arguments.Url `
+                        -Method $method.Arguments.Method `
+                        -Headers $headers `
+                        -Body $body `
+                        -SkipCertificateCheck:($method.Arguments.SkipCertificateCheck)
+                }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
+                }
+                catch {
+                    $_ | Out-Default
+                }
+                finally {
+                    if ($null -ne $log) {
+                        $log.Dispose()
+                    }
+                }
+            }
+        }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch {
+            $_ | Out-Default
+            throw
+        }
+    }
+}
+
+function Get-PodeLoggingNetworkMethod {
+    return {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodId
+        )
+
+        # wait for the server to fully start
+        Wait-PodeCancellationTokenRequest -Type Start
+
+        try {
+            $method = $PodeContext.Server.Logging.Methods[$MethodId]
+
+            $client = [Pode.Transport.Clients.PodeClientFactory]::Create(
+                $method.Arguments.Transport,
+                $method.Arguments.Server,
+                $method.Arguments.Port,
+                $method.Arguments.SkipCertificateCheck
+            )
+            $client.Connect()
+
+            while (!(Test-PodeCancellationTokenRequest -Type Terminate)) {
+                # check for suspension
+                Test-PodeSuspensionToken
+
+                try {
+                    # try and get a log item
+                    $log = $null
+                    $found = $method.Queue.TryTake([ref]$log, $PodeContext.Tokens.Cancellation.Token)
+
+                    if (!$found -or ($null -eq $log)) {
+                        continue
+                    }
+
+                    # send each log item over the network
+                    foreach ($item in $log.Items) {
+                        $message = $item.ToString() | Protect-PodeLogItem
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes($message)
+                        $client.Send($bytes)
+                    }
+                }
+                catch [System.OperationCanceledException] {
+                    $_ | Write-PodeErrorLog -Level Debug
+                }
+                catch {
+                    $_ | Out-Default
+                }
+                finally {
+                    if ($null -ne $log) {
+                        $log.Dispose()
+                    }
+                }
+            }
+        }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch {
+            $_ | Out-Default
+            throw
+        }
+        finally {
+            if ($null -ne $client) {
+                $client.Dispose()
+            }
+        }
+    }
+}
+
+function ConvertTo-PodeSyslogLevel {
+    param(
+        [Parameter()]
+        [string]
+        $Level
+    )
+
+    switch ($Level.ToLowerInvariant()) {
+        'emergency' { return 0 }
+        'alert' { return 1 }
+        'critical' { return 2 }
+        'error' { return 3 }
+        'warning' { return 4 }
+        'notice' { return 5 }
+        'informational' { return 6 }
+        'debug' { return 7 }
+        default { return 6 } # default to informational
     }
 }
 
@@ -293,15 +482,75 @@ function ConvertTo-PodeEventViewerLevel {
         return [System.Diagnostics.EventLogEntryType]::Information
     }
 
-    if ($Level -ieq 'error') {
+    if ($Level -iin @('emergency', 'alert', 'critical', 'error')) {
         return [System.Diagnostics.EventLogEntryType]::Error
     }
 
-    if ($Level -ieq 'warning') {
+    if ($Level -iin @('warning', 'notice')) {
         return [System.Diagnostics.EventLogEntryType]::Warning
     }
 
     return [System.Diagnostics.EventLogEntryType]::Information
+}
+
+function ConvertTo-PodeSplunkLevel {
+    param(
+        [Parameter()]
+        [string]
+        $Level
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Level)) {
+        return 'info'
+    }
+
+    if ($Level -iin @('emergency', 'alert', 'critical')) {
+        return 'critical'
+    }
+
+    if ($Level -ieq 'error') {
+        return 'error'
+    }
+
+    if ($Level -iin @('warning', 'notice')) {
+        return 'warning'
+    }
+
+    if ($Level -ieq 'debug') {
+        return 'debug'
+    }
+
+    return 'info'
+}
+
+function ConvertTo-PodeDatadogLevel {
+    param(
+        [Parameter()]
+        [string]
+        $Level
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Level)) {
+        return 'INFO'
+    }
+
+    if ($Level -iin @('emergency', 'alert', 'critical', 'error')) {
+        return 'ERROR'
+    }
+
+    if ($Level -iin @('warning', 'notice')) {
+        return 'WARN'
+    }
+
+    if ($Level -ieq 'debug') {
+        return 'DEBUG'
+    }
+
+    if ($Level -ieq 'verbose') {
+        return 'TRACE'
+    }
+
+    return 'INFO'
 }
 
 function Get-PodeLoggingInbuiltType {
@@ -315,48 +564,65 @@ function Get-PodeLoggingInbuiltType {
     switch ($Type.ToLowerInvariant()) {
         'requests' {
             $script = {
-                param($item, $options)
+                param(
+                    [Pode.Utilities.Logging.IPodeLogEvent]
+                    $logEvent
+                )
 
-                # safeguard for null or whitespace values
-                function sg($value) {
-                    if ([string]::IsNullOrWhiteSpace($value)) {
-                        return '-'
-                    }
+                $method = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Method
+                $resource = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Resource
+                $protocol = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Protocol
 
-                    return $value
+                return [ordered]@{
+                    Host        = Protect-PodeLogRequestItem -Value $logEvent.Data.Host
+                    Identifier  = Protect-PodeLogRequestItem -Value $logEvent.Data.RfcUserIdentity
+                    User        = Protect-PodeLogRequestItem -Value $logEvent.Data.User
+                    Date        = Protect-PodeLogRequestItem -Value $logEvent.Data.Date
+                    RequestLine = "$($method) $($resource) $($protocol)"
+                    StatusCode  = Protect-PodeLogRequestItem -Value $logEvent.Data.Response.StatusCode
+                    Size        = Protect-PodeLogRequestItem -Value $logEvent.Data.Response.Size
+                    Referrer    = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Referrer
+                    UserAgent   = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Agent
                 }
-
-                # build the url with http method
-                $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
-
-                # build and return the request row
-                return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$(sg $item.Date)] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
             }
         }
 
         'errors' {
             $script = {
-                param($item, $options)
-
-                # build the exception details
-                $row = @(
-                    "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
-                    "Level: $($item.Level)",
-                    "ThreadId: $($item.ThreadId)",
-                    "ContextId: $($item.ContextId)",
-                    "Server: $($item.Server)",
-                    "Category: $($item.Category)",
-                    "Message: $($item.Message)",
-                    "StackTrace: $($item.StackTrace)"
+                param(
+                    [Pode.Utilities.Logging.IPodeLogEvent]
+                    $logEvent
                 )
 
-                # join the details and return
-                return "$($row -join "`n")`n"
+                return [ordered]@{
+                    Date       = $logEvent.Data.Date.ToString('yyyy-MM-dd HH:mm:ss')
+                    Level      = $logEvent.Data.Level
+                    ThreadId   = $logEvent.Data.ThreadId
+                    ContextId  = $logEvent.Data.ContextId
+                    Server     = $logEvent.Data.Server
+                    Category   = $logEvent.Data.Category
+                    Message    = $logEvent.Data.Message
+                    StackTrace = $logEvent.Data.StackTrace
+                }
             }
         }
     }
 
     return $script
+}
+
+function Protect-PodeLogRequestItem {
+    param(
+        [Parameter()]
+        [object]
+        $Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return '-'
+    }
+
+    return $Value
 }
 
 function Get-PodeLogType {
@@ -413,8 +679,8 @@ function Write-PodeRequestLog {
     # build a request object
     $item = @{
         Host            = $Request.Handler.RemoteEndPoint.Address.IPAddressToString
-        RfcUserIdentity = '-'
-        User            = '-'
+        RfcUserIdentity = $null
+        User            = $null
         Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
         UtcDate         = [DateTime]::UtcNow
         Request         = @{
@@ -422,7 +688,7 @@ function Write-PodeRequestLog {
             Hostname = $Request.Host.ToLowerInvariant()
             Scheme   = $Request.Handler.Scheme.ToLowerInvariant()
             Resource = $Path
-            Query    = (Protect-PodeValue -Value $Request.Url.Query -Default '-').TrimStart('?')
+            Query    = (Protect-PodeValue -Value $Request.Url.Query -Default ([string]::Empty)).TrimStart('?')
             Protocol = "HTTP/$($Request.ProtocolVersion)"
             Referrer = $Request.UrlReferrer
             Agent    = $Request.UserAgent
@@ -430,7 +696,7 @@ function Write-PodeRequestLog {
         Response        = @{
             StatusCode        = $Response.StatusCode
             StatusDescription = $Response.StatusDescription
-            Size              = '-'
+            Size              = $null
         }
     }
 
@@ -454,7 +720,8 @@ function Write-PodeRequestLog {
     }
 
     # add the item to be processed
-    $PodeContext.Server.Logging.Logger.Add([PodeLogger]::REQUEST_LOG_TYPE_NAME, [PodeLogLevel]::Informational, $item)
+    $logEvent = [PodeLogEvent]::new([PodeLogger]::REQUEST_LOG_TYPE_NAME, [PodeLogLevel]::Informational, $item)
+    $PodeContext.Server.Logging.Logger.Add($logEvent)
 }
 
 function Add-PodeRequestLogEndware {
@@ -502,34 +769,75 @@ function Start-PodeLoggingRunspace {
 
                 try {
                     # try and remove an event from the queue, if none check batches then continue
-                    $log = $null
-                    $found = $PodeContext.Server.Logging.Logger.TryTake([ref]$log, $PodeContext.Tokens.Cancellation.Token)
+                    $logEvent = $null
+                    $found = $PodeContext.Server.Logging.Logger.TryTake([ref]$logEvent, $PodeContext.Tokens.Cancellation.Token)
 
-                    if (!$found -or ($null -eq $log)) {
+                    if (!$found -or ($null -eq $logEvent)) {
                         Test-PodeLogTypeBatchTimeout
                         continue
                     }
 
                     # run the log item through the appropriate method
-                    $logType = Get-PodeLogType -Name $log.Name
+                    $logType = Get-PodeLogType -Name $logEvent.Name
                     if ($null -eq $logType) {
                         continue
                     }
 
-                    $now = [datetime]::Now
-
-                    # transform the log item into a writeable format
+                    # transform the log item into a message item, unless the user wants the raw data to be passed to the log method
                     if ($logType.Raw) {
-                        $result = $log.Item
+                        $result = $logEvent.Data
                     }
                     else {
-                        $_args = @($log.Item) + @($logType.Arguments)
-                        $result = @(Invoke-PodeScriptBlock -ScriptBlock $logType.ScriptBlock -Arguments $_args -UsingVariables $logType.UsingVariables -Return -Splat)
+                        # what version of the log type are we using? (v1 = data only, v2 = full log event)
+                        switch ($logType.Version) {
+                            1 {
+                                $_args = @($logEvent.Data) + @($logType.Arguments)
+                            }
+
+                            2 {
+                                $_args = @($logEvent) + @($logType.Arguments)
+                            }
+                        }
+
+                        # transform the log event
+                        $result = Invoke-PodeScriptBlock -ScriptBlock $logType.ScriptBlock -Arguments $_args -UsingVariables $logType.UsingVariables -Return -Splat
                     }
 
+                    # little sleep if no transform result, to help lower cpu
                     if ($null -eq $result) {
                         Start-Sleep -Milliseconds 100
                         continue
+                    }
+
+                    # transform the result into a specified serialisation format
+                    switch ($logType.Options.Formatting.Serialise.Type) {
+                        'Json' {
+                            $result = $result | ConvertTo-Json -Depth 10 -Compress
+                        }
+
+                        'Xml' {
+                            $result = $result | ConvertTo-PodeXml -Depth 10 -RootName $logType.Options.Formatting.Serialise.XmlRootName -Compress
+                        }
+
+                        'Yaml' {
+                            $result = $result | ConvertTo-PodeYaml -Depth 10 -StringWrapLength 0
+                        }
+
+                        default {
+                            if ($null -ne $logType.Options.Formatting.Serialise.ScriptBlock) {
+                                $_args = @($result) + @($logType.Arguments)
+                                $result = Invoke-PodeScriptBlock -ScriptBlock $logType.Options.Formatting.Serialise.ScriptBlock -Arguments $_args -UsingVariables $logType.Options.Formatting.Serialise.UsingVariables -Return -Splat
+                            }
+                        }
+                    }
+
+                    # transform the result to syslog or other log formats - or leave as is
+                    $logFormat = $logType.Options.Formatting.Log
+
+                    switch ($logFormat) {
+                        'Syslog' {
+                            $result = ConvertTo-PodeSyslogMessage -Message $result -LogEvent $logEvent -AppName $logType.Options.AppName -Tags $logType.Options.Tags -Format $logType.Options.Formatting.Syslog
+                        }
                     }
 
                     # loop through each log method available to the log type
@@ -537,23 +845,13 @@ function Start-PodeLoggingRunspace {
                         $logMethod = Get-PodeLogMethod -Id $logMethodId
                         $batch = $logMethod.Batch
 
-                        if ($batch.Size -gt 1) {
-                            # add current item to batch
-                            $batch.Items += $result
-                            $batch.RawItems += $log.Item
-                            $batch.LastUpdate = $now
+                        # add current item to batch
+                        $batch.Items.Add([Pode.Utilities.Logging.PodeLogItem]::new($result, $logEvent))
 
-                            # if the current amount of items matches the batch, send to log method and reset batch
-                            if ($batch.Items.Length -ge $batch.Size) {
-                                $logMethod.Queue.Add([Pode.Utilities.Logging.PodeLogItem]::new($batch.Items, $batch.RawItems))
-                                $batch.Items = @()
-                                $batch.RawItems = @()
-                            }
-                        }
-
-                        # send log message to log method
-                        else {
-                            $logMethod.Queue.Add([Pode.Utilities.Logging.PodeLogItem]::new($result, $log.Item))
+                        # if the batch is full, send to log method and reset
+                        if ($batch.Items.IsFull) {
+                            $logMethod.Queue.Add($batch.Items)
+                            $batch.Items = [Pode.Utilities.Logging.PodeLogItemCollection]::new($batch.Items.MaxCount, $batch.Items.Timeout)
                         }
                     }
 
@@ -565,7 +863,6 @@ function Start-PodeLoggingRunspace {
                 }
                 catch {
                     $_ | Out-Default
-                    $_ | Write-PodeErrorLog
                 }
             }
         }
@@ -573,7 +870,7 @@ function Start-PodeLoggingRunspace {
             $_ | Write-PodeErrorLog -Level Debug
         }
         catch {
-            $_ | Write-PodeErrorLog
+            $_ | Out-Default
             throw
         }
     }
@@ -626,7 +923,7 @@ function Add-PodeLogMethod {
     $Metadata.Batch = $BatchInfo | New-PodeLogBatchConfig
 
     # create queue for the method's log items
-    $Metadata.Queue = [Pode.Utilities.Logging.PodeLogQueue[Pode.Utilities.Logging.IPodeLogItem]]::new()
+    $Metadata.Queue = [Pode.Utilities.Logging.PodeLogQueue[Pode.Utilities.Logging.IPodeLogItemCollection]]::new()
 
     # add method to server
     $PodeContext.Server.Logging.Methods[$Id] = $Metadata
@@ -690,29 +987,22 @@ function Unregister-PodeLogMethodFromType {
 }
 
 function Test-PodeLogTypeBatchTimeout {
-    $now = [datetime]::Now
-
     # check each log Type, and see if its batch needs to be outputted due to timeout
     foreach ($logType in $PodeContext.Server.Logging.Types.Values) {
         foreach ($logMethodId in $logType.Method) {
             $logMethod = Get-PodeLogMethod -Id $logMethodId
             $batch = $logMethod.Batch
 
-            # do nothing if not batching, or no items
-            if (($batch.Size -le 1) -or ($batch.Timeout -le 0) -or ($batch.Items.Length -eq 0)) {
-                continue
-            }
-
             # do nothing if the batch timeout hasn't been reached
-            if (($null -eq $batch.LastUpdate) -or ($batch.LastUpdate.AddSeconds($batch.Timeout) -gt $now)) {
+            if (!$batch.Items.HasTimedOut) {
                 continue
             }
 
             # send batch to log method and reset batch
-            $logMethod.Queue.Add([Pode.Utilities.Logging.PodeLogItem]::new($batch.Items, $batch.RawItems))
+            $logMethod.Queue.Add($batch.Items)
 
-            $batch.Items = @()
-            $batch.RawItems = @()
+            # reset the batch
+            $batch.Items = [Pode.Utilities.Logging.PodeLogItemCollection]::new($batch.Items.MaxCount, $batch.Items.Timeout)
         }
     }
 }
@@ -729,11 +1019,7 @@ function New-PodeLogBatchConfig {
     }
 
     return @{
-        Size       = $BatchInfo.Size
-        Timeout    = $BatchInfo.Timeout
-        LastUpdate = $null
-        Items      = @()
-        RawItems   = @()
+        Items = [PodeLogItemCollection]::new($BatchInfo.Size, $BatchInfo.Timeout)
     }
 }
 

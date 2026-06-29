@@ -127,6 +127,10 @@ function Start-PodeServer {
         $Name,
 
         [Parameter()]
+        [string]
+        $AppName,
+
+        [Parameter()]
         [int]
         $Threads = 1,
 
@@ -265,6 +269,8 @@ function Start-PodeServer {
                 IgnoreServerConfig   = $IgnoreServerConfig
                 ConfigFile           = $ConfigFile
                 Daemon               = $Daemon
+                Name                 = $Name
+                AppName              = $AppName
             }
 
             # Create main context object

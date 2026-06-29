@@ -203,7 +203,7 @@ If supplied, the log item returned will be the raw Request item as a hashtable a
 New-PodeLogTerminalMethod | Enable-PodeRequestLogType
 #>
 function Enable-PodeRequestLogType {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]
@@ -213,6 +213,39 @@ function Enable-PodeRequestLogType {
         [string]
         $UsernameProperty,
 
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeLogFormat]
+        $LogFormat = 'None',
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeSyslogFormat]
+        $SyslogFormat = 'RFC5424',
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeSerialiseFormat]
+        $SerialiseFormat = 'Custom',
+
+        [Parameter()]
+        [scriptblock]
+        $SerialiseScriptBlock,
+
+        [Parameter(ParameterSetName = 'ScriptBlock')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(ParameterSetName = 'ScriptBlock')]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter()]
+        [string]
+        $AppName,
+
+        [Parameter()]
+        [hashtable]
+        $Tags,
+
+        [Parameter(ParameterSetName = 'Raw')]
         [switch]
         $Raw
     )
@@ -251,15 +284,67 @@ function Enable-PodeRequestLogType {
             $UsernameProperty = 'Username'
         }
 
+        # default formatters
+        if (!$PSBoundParameters.ContainsKey('LogFormat')) {
+            $LogFormat = Get-PodeLogDefaultFormat
+        }
+
+        if (!$PSBoundParameters.ContainsKey('SyslogFormat')) {
+            $SyslogFormat = Get-PodeLogDefaultSyslogFormat
+        }
+
+        if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
+            $SerialiseFormat = Get-PodeLogDefaultSerialiseFormat
+        }
+
+        # are we using a custom scriptblock for the request log type, or the inbuilt one?
+        if ($null -eq $ScriptBlock) {
+            $ScriptBlock = Get-PodeLoggingInbuiltType -Type Requests
+        }
+        else {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        }
+
+        # are we using a custom scriptblock for serialising the request log type, or the inbuilt one?
+        if ($SerialiseFormat -ieq 'Custom') {
+            # if we have a custom scriptblock, don't use the inbuilt serialise logic
+            if (!$PSBoundParameters.ContainsKey('ScriptBlock') -and ($null -eq $SerialiseScriptBlock)) {
+                $SerialiseScriptBlock = {
+                    param($data)
+                    return "$($data.Host) $($data.Identifier) $($data.User) [$($data.Date)] `"$($data.RequestLine)`" $($data.StatusCode) $($data.Size) `"$($data.Referrer)`" `"$($data.UserAgent)`""
+                }
+            }
+
+            if ($null -ne $SerialiseScriptBlock) {
+                $SerialiseScriptBlock, $serialiseUsingVars = Convert-PodeScopedVariables -ScriptBlock $SerialiseScriptBlock -PSSession $PSCmdlet.SessionState
+            }
+        }
+
         # add the request log type, associated with the supplied log method(s)
         $PodeContext.Server.Logging.Types[$name] = @{
-            Method      = $Method
-            ScriptBlock = Get-PodeLoggingInbuiltType -Type Requests
-            Raw         = $Raw.IsPresent
-            Properties  = @{
+            Method         = $Method
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+            Raw            = $Raw.IsPresent
+            Version        = 2
+            Properties     = @{
                 Username = $UsernameProperty
             }
-            Arguments   = @{}
+            Options        = @{
+                Formatting = @{
+                    Log       = $LogFormat
+                    Syslog    = $SyslogFormat
+                    Serialise = @{
+                        Type           = $SerialiseFormat
+                        ScriptBlock    = $SerialiseScriptBlock
+                        UsingVariables = $serialiseUsingVars
+                        XmlRootName    = 'Request'
+                    }
+                }
+                AppName    = $AppName
+                Tags       = $Tags
+            }
+            Arguments      = $ArgumentList
         }
         $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, @([PodeLogLevel]::Informational)))
 
@@ -306,7 +391,7 @@ Enables Error log Type using a supplied log Method.
 The log Method ID to use for output the log entry.
 
 .PARAMETER Levels
-The Levels of errors that should be logged (Default: Error)
+The Levels of errors that should be logged (Default: Emergency, Alert, Critical, Error)
 
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
@@ -315,17 +400,50 @@ If supplied, the log item returned will be the raw Error item as a hashtable and
 New-PodeLogTerminalMethod | Enable-PodeErrorLogType
 #>
 function Enable-PodeErrorLogType {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]
         $Method,
 
         [Parameter()]
-        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug', '*')]
+        [ValidateSet('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug', '*')]
         [string[]]
-        $Levels = @('Error'),
+        $Levels = @('Emergency', 'Alert', 'Critical', 'Error'),
 
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeLogFormat]
+        $LogFormat = 'None',
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeSyslogFormat]
+        $SyslogFormat = 'RFC5424',
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeSerialiseFormat]
+        $SerialiseFormat = 'Custom',
+
+        [Parameter()]
+        [scriptblock]
+        $SerialiseScriptBlock,
+
+        [Parameter(ParameterSetName = 'ScriptBlock')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(ParameterSetName = 'ScriptBlock')]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter()]
+        [string]
+        $AppName,
+
+        [Parameter()]
+        [hashtable]
+        $Tags,
+
+        [Parameter(ParameterSetName = 'Raw')]
         [switch]
         $Raw
     )
@@ -345,7 +463,7 @@ function Enable-PodeErrorLogType {
     process {
         # ensure the Method exists
         if (!(Test-PodeLogMethod -Id $_)) {
-            # The supplied logging Method for Request Logging doesn't exist
+            # The supplied logging Method for Error Logging doesn't exist
             throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
         }
 
@@ -361,20 +479,76 @@ function Enable-PodeErrorLogType {
 
         # all errors?
         if ($Levels -contains '*') {
-            $Levels = @('Error', 'Warning', 'Informational', 'Verbose', 'Debug')
+            $Levels = @('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug')
+        }
+
+        # default formatters
+        if (!$PSBoundParameters.ContainsKey('LogFormat')) {
+            $LogFormat = Get-PodeLogDefaultFormat
+        }
+
+        if (!$PSBoundParameters.ContainsKey('SyslogFormat')) {
+            $SyslogFormat = Get-PodeLogDefaultSyslogFormat
+        }
+
+        if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
+            $SerialiseFormat = Get-PodeLogDefaultSerialiseFormat
+        }
+
+        # are we using a custom scriptblock for the error log type, or the inbuilt one?
+        if ($null -eq $ScriptBlock) {
+            $ScriptBlock = Get-PodeLoggingInbuiltType -Type Errors
+        }
+        else {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        }
+
+        # are we using a custom scriptblock for serialising the error log type, or the inbuilt one?
+        if ($SerialiseFormat -ieq 'Custom') {
+            # if we have a custom scriptblock, don't use the inbuilt serialise logic
+            if (!$PSBoundParameters.ContainsKey('ScriptBlock') -and ($null -eq $SerialiseScriptBlock)) {
+                $SerialiseScriptBlock = {
+                    param($data)
+                    $msg = @(foreach ($key in $data.Keys) {
+                            "$($key): $($data[$key])"
+                        }) -join "`n"
+
+                    return "$($msg)`n"
+                }
+            }
+
+            if ($null -ne $SerialiseScriptBlock) {
+                $SerialiseScriptBlock, $serialiseUsingVars = Convert-PodeScopedVariables -ScriptBlock $SerialiseScriptBlock -PSSession $PSCmdlet.SessionState
+            }
         }
 
         # add the error log type, associated with the supplied log method(s)
         $PodeContext.Server.Logging.Types[$name] = @{
-            Method      = $Method
-            ScriptBlock = Get-PodeLoggingInbuiltType -Type Errors
-            Levels      = $Levels
-            Raw         = $Raw.IsPresent
-            Arguments   = @{}
+            Method         = $Method
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+            Levels         = $Levels
+            Raw            = $Raw.IsPresent
+            Version        = 2
+            Options        = @{
+                Formatting = @{
+                    Log       = $LogFormat
+                    Syslog    = $SyslogFormat
+                    Serialise = @{
+                        Type           = $SerialiseFormat
+                        ScriptBlock    = $SerialiseScriptBlock
+                        UsingVariables = $serialiseUsingVars
+                        XmlRootName    = 'Error'
+                    }
+                }
+                AppName    = $AppName
+                Tags       = $Tags
+            }
+            Arguments      = $ArgumentList
         }
         $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, $Levels))
 
-        # then associate the supplied log method(s) with the request log type
+        # then associate the supplied log method(s) with the error log type
         foreach ($methodId in $Method) {
             Register-PodeLogTypeToMethod -TypeName $name -MethodId $methodId
         }
@@ -461,13 +635,46 @@ function Add-PodeLogType {
         $ScriptBlock,
 
         [Parameter()]
-        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug', '*')]
+        [ValidateSet('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug', '*')]
         [string[]]
         $Levels = @('Informational'),
 
         [Parameter(ParameterSetName = 'ScriptBlock')]
         [object[]]
         $ArgumentList,
+
+        [Parameter(ParameterSetName = 'ScriptBlock')]
+        [ValidateSet(1, 2)]
+        [int]
+        $Version = 1,
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeLogFormat]
+        $LogFormat = 'None',
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeSyslogFormat]
+        $SyslogFormat = 'RFC5424',
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeSerialiseFormat]
+        $SerialiseFormat = 'Custom',
+
+        [Parameter()]
+        [scriptblock]
+        $SerialiseScriptBlock,
+
+        [Parameter()]
+        [string]
+        $AppName,
+
+        [Parameter()]
+        [hashtable]
+        $Tags,
+
+        [Parameter()]
+        [string]
+        $XmlRootName,
 
         [Parameter(ParameterSetName = 'Raw')]
         [switch]
@@ -488,7 +695,7 @@ function Add-PodeLogType {
     process {
         # ensure the Method exists
         if (!(Test-PodeLogMethod -Id $_)) {
-            # The supplied logging Method for Request Logging doesn't exist
+            # The supplied logging Method for Custom Logging doesn't exist
             throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
         }
 
@@ -504,7 +711,20 @@ function Add-PodeLogType {
 
         # all errors?
         if ($Levels -contains '*') {
-            $Levels = @('Error', 'Warning', 'Informational', 'Verbose', 'Debug')
+            $Levels = @('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug')
+        }
+
+        # default formatters
+        if (!$PSBoundParameters.ContainsKey('LogFormat')) {
+            $LogFormat = Get-PodeLogDefaultFormat
+        }
+
+        if (!$PSBoundParameters.ContainsKey('SyslogFormat')) {
+            $SyslogFormat = Get-PodeLogDefaultSyslogFormat
+        }
+
+        if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
+            $SerialiseFormat = Get-PodeLogDefaultSerialiseFormat
         }
 
         # check for scoped vars
@@ -512,18 +732,38 @@ function Add-PodeLogType {
             $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         }
 
+        if ($null -ne $SerialiseScriptBlock) {
+            $SerialiseScriptBlock, $serialiseUsingVars = Convert-PodeScopedVariables -ScriptBlock $SerialiseScriptBlock -PSSession $PSCmdlet.SessionState
+        }
+
         # add custom log method to server, associated with the supplied log method(s)
         $PodeContext.Server.Logging.Types[$Name] = @{
+            Custom         = $true
             Method         = $Method
             ScriptBlock    = $ScriptBlock
             UsingVariables = $usingVars
             Levels         = $Levels
             Raw            = $Raw.IsPresent
+            Version        = $Version
+            Options        = @{
+                Formatting = @{
+                    Log       = $LogFormat
+                    Syslog    = $SyslogFormat
+                    Serialise = @{
+                        Type           = $SerialiseFormat
+                        ScriptBlock    = $SerialiseScriptBlock
+                        UsingVariables = $serialiseUsingVars
+                        XmlRootName    = Protect-PodeValue -Value $XmlRootName -Default 'Log'
+                    }
+                }
+                AppName    = $AppName
+                Tags       = $Tags
+            }
             Arguments      = $ArgumentList
         }
         $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($Name, $Levels))
 
-        # then associate the supplied log method(s) with the request log type
+        # then associate the supplied log method(s) with the custom log type
         foreach ($methodId in $Method) {
             Register-PodeLogTypeToMethod -TypeName $Name -MethodId $methodId
         }
@@ -729,9 +969,13 @@ function Write-PodeErrorLog {
         $Message,
 
         [Parameter()]
-        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
+        [ValidateSet('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug')]
         [string]
         $Level = 'Error',
+
+        [Parameter()]
+        [hashtable]
+        $Metadata,
 
         [Parameter(ParameterSetName = 'Exception')]
         [switch]
@@ -749,16 +993,16 @@ function Write-PodeErrorLog {
     # log error object appropriately based on parameter set
     switch ($PSCmdlet.ParameterSetName) {
         'Exception' {
-            $PodeContext.Server.Logging.Logger.AddException($Exception, $contextId, $Level, [int]$ThreadId)
+            $PodeContext.Server.Logging.Logger.AddException($Exception, $contextId, $Level, $Metadata, [int]$ThreadId)
         }
 
         'Error' {
-            $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $contextId, $Level, [int]$ThreadId)
+            $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $contextId, $Level, $Metadata, [int]$ThreadId)
         }
 
         'Message' {
             $category = (Get-PSCallStack)[1].Location
-            $PodeContext.Server.Logging.Logger.AddException($category, $Message, [string]::Empty, $contextId, $Level, [int]$ThreadId)
+            $PodeContext.Server.Logging.Logger.AddException($category, $Message, [string]::Empty, $contextId, $Level, $Metadata, [int]$ThreadId)
         }
     }
 
@@ -795,17 +1039,22 @@ function Write-PodeLog {
         $Name,
 
         [Parameter()]
-        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
+        [ValidateSet('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug')]
         [string]
         $Level = 'Informational',
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]
-        $InputObject
+        $InputObject,
+
+        [Parameter()]
+        [hashtable]
+        $Metadata
     )
 
     # add the item to be processed
-    $PodeContext.Server.Logging.Logger.Add($Name, $Level, $InputObject)
+    $logEvent = [PodeLogEvent]::new($Name, $Level, $InputObject, $Metadata)
+    $PodeContext.Server.Logging.Logger.Add($logEvent)
 }
 
 <#
@@ -832,32 +1081,34 @@ function Protect-PodeLogItem {
     )
 
     # do nothing if there are no masks
-    if (Test-PodeIsEmpty $PodeContext.Server.Logging.Masking.Patterns) {
-        return $item
+    if (($null -eq $PodeContext.Server.Logging.Masking.Patterns) -or ($PodeContext.Server.Logging.Masking.Patterns.Count -eq 0)) {
+        return $Item
     }
 
     # attempt to apply each mask
     foreach ($mask in $PodeContext.Server.Logging.Masking.Patterns) {
-        if ($Item -imatch $mask) {
-            # has both keep before/after
-            if ($Matches.ContainsKey('keep_before') -and $Matches.ContainsKey('keep_after')) {
-                $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
-            }
+        if ($Item -inotmatch $mask) {
+            continue
+        }
 
-            # has just keep before
-            elseif ($Matches.ContainsKey('keep_before')) {
-                $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)")
-            }
+        # has both keep before/after
+        if ($Matches.ContainsKey('keep_before') -and $Matches.ContainsKey('keep_after')) {
+            $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
+        }
 
-            # has just keep after
-            elseif ($Matches.ContainsKey('keep_after')) {
-                $Item = ($Item -ireplace $mask, "$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
-            }
+        # has just keep before
+        elseif ($Matches.ContainsKey('keep_before')) {
+            $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)")
+        }
 
-            # normal mask
-            else {
-                $Item = ($Item -ireplace $mask, $PodeContext.Server.Logging.Masking.Mask)
-            }
+        # has just keep after
+        elseif ($Matches.ContainsKey('keep_after')) {
+            $Item = ($Item -ireplace $mask, "$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
+        }
+
+        # normal mask
+        else {
+            $Item = ($Item -ireplace $mask, $PodeContext.Server.Logging.Masking.Mask)
         }
     }
 
@@ -1190,6 +1441,11 @@ function New-PodeLogCustomMethod {
         [object[]]
         $ArgumentList,
 
+        [Parameter(ParameterSetName = 'ScriptBlock')]
+        [ValidateSet(1, 2)]
+        [int]
+        $Version = 1,
+
         [Parameter()]
         [hashtable]
         $BatchInfo = $null
@@ -1207,5 +1463,733 @@ function New-PodeLogCustomMethod {
             UsingVariables = $usingVars
         }
         Arguments   = $ArgumentList
+        Version     = $Version
     }
+}
+
+function New-PodeLogApiMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Url,
+
+        [Parameter()]
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [string]
+        $ContentType = 'application/json',
+
+        [Parameter()]
+        [ValidateSet('GET', 'POST', 'PUT', 'PATCH')]
+        [string]
+        $Method = 'POST',
+
+        [Parameter()]
+        [hashtable]
+        $Headers = @{},
+
+        [Parameter()]
+        [scriptblock]
+        $HeadersScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $HeadersArgumentList,
+
+        [Parameter(Mandatory = $true)]
+        [scriptblock]
+        $BodyScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $BodyArgumentList,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null,
+
+        [switch]
+        $SkipCertificateCheck,
+
+        [switch]
+        $Compress
+    )
+
+    # default type
+    if ([string]::IsNullOrWhiteSpace($Type)) {
+        $Type = 'API'
+    }
+
+    # default headers
+    if ($null -eq $Headers) {
+        $Headers = @{}
+    }
+
+    if ($Compress -and !$Headers.ContainsKey('Content-Encoding')) {
+        $Headers['Content-Encoding'] = 'gzip'
+    }
+
+    # headers scriptblock + using vars
+    if ($null -ne $HeadersScriptBlock) {
+        $HeadersScriptBlock, $headerUsingVars = Convert-PodeScopedVariables -ScriptBlock $HeadersScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
+    # body scriptblock + using vars
+    if ($null -ne $BodyScriptBlock) {
+        $BodyScriptBlock, $bodyUsingVars = Convert-PodeScopedVariables -ScriptBlock $BodyScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
+    # add method to server
+    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+        Type        = $Type
+        ScriptBlock = Get-PodeLoggingApiMethod
+        Arguments   = @{
+            Url                  = $Url
+            ContentType          = $ContentType
+            Method               = $Method
+            Headers              = @{
+                Value          = $Headers
+                ScriptBlock    = $HeadersScriptBlock
+                UsingVariables = $headerUsingVars
+                ArgumentList   = $HeadersArgumentList
+            }
+            Body                 = @{
+                ScriptBlock    = $BodyScriptBlock
+                UsingVariables = $bodyUsingVars
+                ArgumentList   = $BodyArgumentList
+            }
+            SkipCertificateCheck = $SkipCertificateCheck.IsPresent
+        }
+    }
+}
+
+function New-PodeLogSplunkMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $BaseUrl,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Token,
+
+        [Parameter()]
+        [string]
+        $SourceType,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter()]
+        [string]
+        $Index,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null,
+
+        [switch]
+        $SkipCertificateCheck
+    )
+
+    # default source
+    $Source = Protect-PodeValue -Value $Source -Default $PodeContext.Server.AppName
+
+    # build body scriptblock
+    $bodyScriptBlock = {
+        param($log, $sourceType, $source, $index)
+
+        # build array of events
+        $events = @(foreach ($item in $log.Items) {
+                # build base event object
+                $evt = @{
+                    event  = $item.Data
+                    host   = $PodeContext.Server.ComputerName
+                    time   = ConvertTo-PodeUnixEpoch -DateTime $item.Event.Timestamp
+                    fields = @{
+                        severity = ConvertTo-PodeSplunkLevel -Level $item.Event.Level
+                    }
+                }
+
+                # add source type
+                $sourceType = Protect-PodeValue -Value $item.Event.Metadata['SourceType'] -Default $sourceType
+                if (![string]::IsNullOrEmpty($sourceType)) {
+                    $evt.sourcetype = $sourceType
+                }
+
+                # add source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $source
+                if (![string]::IsNullOrEmpty($source)) {
+                    $evt.source = $source
+                }
+
+                # add index
+                $index = Protect-PodeValue -Value $item.Event.Metadata['Index'] -Default $index
+                if (![string]::IsNullOrEmpty($index)) {
+                    $evt.index = $index
+                }
+
+                $evt
+            })
+
+        # convert to json and return
+        return $events | ConvertTo-Json -Compress -Depth 10 | Protect-PodeLogItem
+    }
+
+    # default headers
+    $headers = @{
+        'Authorization' = "Splunk $($Token)"
+    }
+
+    # add method to server
+    return New-PodeLogApiMethod `
+        -Id $Id `
+        -Type 'Splunk' `
+        -BatchInfo $BatchInfo `
+        -Url "$($BaseUrl.TrimEnd('/'))/services/collector" `
+        -Headers $headers `
+        -BodyScriptBlock $bodyScriptBlock `
+        -BodyArgumentList @($SourceType, $Source, $Index) `
+        -SkipCertificateCheck:$SkipCertificateCheck.IsPresent
+}
+
+# BaseUrl, ie: 'https://http-intake.logs.datadoghq.com'
+function New-PodeLogDatadogMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $BaseUrl,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ApiKey,
+
+        [Parameter()]
+        [hashtable]
+        $Tags,
+
+        [Parameter()]
+        [string]
+        $Service,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null,
+
+        [switch]
+        $SkipCertificateCheck
+    )
+
+    # default service
+    $Service = Protect-PodeValue -Value $Service -Default $PodeContext.Server.AppName
+
+    # build body scriptblock
+    $bodyScriptBlock = {
+        param($log, $service, $source, $tags)
+
+        # build array of events
+        $events = @(foreach ($item in $log.Items) {
+                # build base event object
+                $evt = @{
+                    message   = $item.Data
+                    hostname  = $PodeContext.Server.ComputerName
+                    status    = ConvertTo-PodeDatadogLevel -Level $item.Event.Level
+                    timestamp = $item.Event.Timestamp.ToString('yyyy-MM-ddTHH:mm:ssZ')
+                }
+
+                # add service
+                $service = Protect-PodeValue -Value $item.Event.Metadata['Service'] -Default $service
+                if (![string]::IsNullOrEmpty($service)) {
+                    $evt.service = $service
+                }
+
+                # add source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $source
+                if (![string]::IsNullOrEmpty($source)) {
+                    $evt.ddsource = $source
+                }
+
+                # add tags
+                $_tags = @{}
+                foreach ($key in $tags.Keys) {
+                    $_tags[$key] = $tags[$key]
+                }
+                if (($null -ne $item.Event.Metadata.Tags) -and ($item.Event.Metadata.Tags -is [hashtable])) {
+                    foreach ($key in $item.Event.Metadata.Tags.Keys) {
+                        $_tags[$key] = $item.Event.Metadata.Tags[$key]
+                    }
+                }
+
+                if ($_tags.Count -gt 0) {
+                    $evt.ddtags = @(foreach ($key in $_tags.Keys) { "$($key):$($_tags[$key])" }) -join ','
+                }
+
+                $evt
+            })
+
+        # convert to json and return
+        return $events | ConvertTo-Json -Compress -Depth 10 | Protect-PodeLogItem
+    }
+
+    # default headers
+    $headers = @{
+        'DD-API-KEY' = $ApiKey
+    }
+
+    # default tags
+    if ($null -eq $Tags) {
+        $Tags = @{}
+    }
+
+    # add method to server
+    return New-PodeLogApiMethod `
+        -Id $Id `
+        -Type 'Datadog' `
+        -BatchInfo $BatchInfo `
+        -Url "$($BaseUrl.TrimEnd('/'))/api/v2/logs" `
+        -Headers $headers `
+        -BodyScriptBlock $bodyScriptBlock `
+        -BodyArgumentList @($Service, $Source, $Tags) `
+        -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
+        -Compress
+}
+
+function New-PodeLogAzureMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $WorkspaceId,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $SharedKey,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $LogType,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null,
+
+        [switch]
+        $SkipCertificateCheck
+    )
+
+    # default source
+    $Source = Protect-PodeValue -Value $Source -Default $PodeContext.Server.AppName
+
+    # build body scriptblock
+    $bodyScriptBlock = {
+        param($log, $source)
+
+        # build array of events
+        $events = @(foreach ($item in $log.Items) {
+                # build base event object
+                $evt = @{
+                    Message   = $item.Data
+                    Level     = $item.Event.Level
+                    Timestamp = $item.Event.Timestamp.ToString('yyyy-MM-ddTHH:mm:ssZ')
+                }
+
+                # add source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $source
+                if (![string]::IsNullOrEmpty($source)) {
+                    $evt.Source = $source
+                }
+
+                $evt
+            })
+
+        # convert to json and return
+        return $events | ConvertTo-Json -Compress -Depth 10 | Protect-PodeLogItem
+    }
+
+    # build headers scriptblock
+    $headersScriptBlock = {
+        param($body, $sharedKey)
+
+        # the x-ms-date header
+        $date = [datetime]::Now.ToString('R')
+
+        # build signature string
+        $contentLength = $body.Length
+        $method = 'POST'
+        $contentType = 'application/json'
+        $dateHeader = "x-ms-date:$($date)"
+        $urlPath = '/api/logs'
+        $stringToSign = "$($method)`n$($contentLength)`n$($contentType)`n$($dateHeader)`n$($urlPath)"
+
+        # build authorization header
+        $bytesToSign = [System.Text.Encoding]::UTF8.GetBytes($stringToSign)
+        $keyBytes = [System.Convert]::FromBase64String($sharedKey)
+        $hmacsha256 = [System.Security.Cryptography.HMACSHA256]::new()
+        $hmacsha256.Key = $keyBytes
+        $signatureBytes = $hmacsha256.ComputeHash($bytesToSign)
+        $signature = [System.Convert]::ToBase64String($signatureBytes)
+        $authorizationHeader = "SharedKey $($workspaceId):$($signature)"
+
+        return @{
+            'Authorization' = $authorizationHeader
+            'x-ms-date'     = $date
+        }
+    }
+
+    # default headers
+    $headers = @{
+        'Log-Type'             = $LogType
+        'time-generated-field' = 'Timestamp'
+    }
+
+    # add method to server
+    return New-PodeLogApiMethod `
+        -Id $Id `
+        -Type 'Azure' `
+        -BatchInfo $BatchInfo `
+        -Url "https://$($WorkspaceId).ods.opinsights.azure.com/api/logs?api-version=2016-04-01" `
+        -Headers $headers `
+        -HeadersScriptBlock $headersScriptBlock `
+        -HeadersArgumentList @($SharedKey) `
+        -BodyScriptBlock $bodyScriptBlock `
+        -BodyArgumentList @($Source) `
+        -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
+        -Compress
+}
+
+function New-PodeLogAwsMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $LogGroupName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $LogStreamName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Token,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Region,
+
+        [Parameter()]
+        [string]
+        $SourceType,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter()]
+        [string]
+        $Index,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null,
+
+        [switch]
+        $SkipCertificateCheck
+    )
+
+    # default source
+    $Source = Protect-PodeValue -Value $Source -Default $PodeContext.Server.AppName
+
+    # build body scriptblock
+    $bodyScriptBlock = {
+        param($log, $sourceType, $source, $index)
+
+        # build array of events
+        $events = @(foreach ($item in $log.Items) {
+                # build base event object
+                $evt = @{
+                    event    = $item.Data
+                    host     = $PodeContext.Server.ComputerName
+                    time     = ConvertTo-PodeUnixEpoch -DateTime $item.Event.Timestamp
+                    severity = ConvertTo-PodeSplunkLevel -Level $item.Event.Level
+                }
+
+                # add source type
+                $sourceType = Protect-PodeValue -Value $item.Event.Metadata['SourceType'] -Default $sourceType
+                if (![string]::IsNullOrEmpty($sourceType)) {
+                    $evt.sourcetype = $sourceType
+                }
+
+                # add source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $source
+                if (![string]::IsNullOrEmpty($source)) {
+                    $evt.source = $source
+                }
+
+                # add index
+                $index = Protect-PodeValue -Value $item.Event.Metadata['Index'] -Default $index
+                if (![string]::IsNullOrEmpty($index)) {
+                    $evt.index = $index
+                }
+
+                $evt
+            })
+
+        # convert to json and return
+        return $events | ConvertTo-Json -Compress -Depth 10 | Protect-PodeLogItem
+    }
+
+    # default headers
+    $headers = @{
+        'Authorization' = "Bearer $($Token)"
+    }
+
+    # add method to server
+    return New-PodeLogApiMethod `
+        -Id $Id `
+        -Type 'AWS' `
+        -BatchInfo $BatchInfo `
+        -Url "https://logs.$($Region).amazonaws.com/services/collector/event?logGroup=$($LogGroupName)&logStream=$($LogStreamName)" `
+        -Headers $headers `
+        -BodyScriptBlock $bodyScriptBlock `
+        -BodyArgumentList @($Source, $SourceType, $Index) `
+        -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
+        -Compress
+}
+
+function New-PodeLogNetworkMethod {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Server,
+
+        [Parameter()]
+        [ValidateSet('Udp', 'Tcp', 'Tls')]
+        [string]
+        $Transport = 'Udp',
+
+        [Parameter()]
+        [ValidateRange(1, 65535)]
+        [int]
+        $Port = 514,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null,
+
+        [switch]
+        $SkipCertificateCheck
+    )
+
+    # add method to server
+    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+        Type        = 'Network'
+        ScriptBlock = Get-PodeLoggingNetworkMethod
+        Arguments   = @{
+            Server               = $Server
+            Transport            = $Transport
+            Port                 = $Port
+            SkipCertificateCheck = $SkipCertificateCheck.IsPresent
+        }
+    }
+}
+
+function ConvertTo-PodeSyslogMessage {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]
+        $Message,
+
+        [Parameter(Mandatory = $true)]
+        [Pode.Utilities.Logging.IPodeLogEvent]
+        $LogEvent,
+
+        [Parameter()]
+        [ValidateRange(0, 23)]
+        [int]
+        $Facility = 16, # local0 for web/app logs
+
+        [Parameter()]
+        [string]
+        $AppName,
+
+        [Parameter()]
+        [hashtable]
+        $Tags,
+
+        [Parameter(ParameterSetName = 'Format')]
+        [Pode.Utilities.Logging.PodeSyslogFormat]
+        $Format,
+
+        [Parameter(ParameterSetName = 'Default')]
+        [switch]
+        $DefaultFormat
+    )
+
+    process {
+        # set default format
+        if ($DefaultFormat) {
+            $Format = Get-PodeLogDefaultSyslogFormat
+        }
+
+        # set default app-name
+        $AppName = Protect-PodeValue -Value $AppName -Default $PodeContext.Server.AppName
+
+        # generate priority value
+        $priority = ($Facility * 8) + (ConvertTo-PodeSyslogLevel -Level $LogEvent.Level)
+
+        # get process ID
+        $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+        # ensure message is a string, and escape newlines and carriage returns in message
+        if ($Message -isnot [string]) {
+            $Message = $Message | Out-String
+        }
+
+        $Message = $Message.Trim().Replace("`n", '\n').Replace("`r", '\r')
+
+        # build message based on format
+        switch ($Format) {
+            'RFC3164' {
+                $timestamp = $LogEvent.Timestamp.ToString('MMM dd HH:mm:ss')
+                $Message = "<$($priority)>$($timestamp) $($PodeContext.Server.ComputerName) $($AppName)[$($processId)]: $($Message)"
+            }
+
+            'RFC5424' {
+                $timestamp = $LogEvent.Timestamp.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+
+                $_tags = @{}
+
+                if ($null -ne $Tags) {
+                    foreach ($key in $Tags.Keys) {
+                        $_tags[$key] = $Tags[$key]
+                    }
+                }
+
+                if (($null -ne $LogEvent.Metadata.Tags) -and ($LogEvent.Metadata.Tags -is [hashtable])) {
+                    foreach ($key in $LogEvent.Metadata.Tags.Keys) {
+                        $_tags[$key] = $LogEvent.Metadata.Tags[$key]
+                    }
+                }
+
+                $strTags = '-'
+                if ($_tags.Count -gt 0) {
+                    $strTags = @(
+                        foreach ($key in $_tags.Keys) {
+                            $value = $_tags[$key].Replace('\', '\\').Replace('"', '\"').Replace("`n", '\n').Replace("`r", '\r').Replace(']', '\]')
+                            "$($key)=`"$($value)`""
+                        }
+                    ) -join ' '
+
+                    $strTags = "[$($strTags)]"
+                }
+
+                $Message = "<$($priority)>1 $($timestamp) $($PodeContext.Server.ComputerName) $($AppName) $($processId) - $strTags $($Message)"
+            }
+        }
+
+        return $message
+    }
+}
+
+function Get-PodeLogDefaultFormat {
+    [CmdletBinding()]
+    [OutputType([Pode.Utilities.Logging.PodeLogFormat])]
+    param()
+
+    return $PodeContext.Server.Logging.Formatting.Log
+}
+
+function Set-PodeLogDefaultFormat {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [Pode.Utilities.Logging.PodeLogFormat]
+        $Format
+    )
+
+    $PodeContext.Server.Logging.Formatting.Log = $Format
+}
+
+function Get-PodeLogDefaultSyslogFormat {
+    [CmdletBinding()]
+    [OutputType([Pode.Utilities.Logging.PodeSyslogFormat])]
+    param()
+
+    return $PodeContext.Server.Logging.Formatting.Syslog
+}
+
+function Set-PodeLogDefaultSyslogFormat {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [Pode.Utilities.Logging.PodeSyslogFormat]
+        $Format
+    )
+
+    $PodeContext.Server.Logging.Formatting.Syslog = $Format
+}
+
+function Get-PodeLogDefaultSerialiseFormat {
+    [CmdletBinding()]
+    [OutputType([Pode.Utilities.Logging.PodeSerialiseFormat])]
+    param()
+
+    return $PodeContext.Server.Logging.Formatting.Serialise
+}
+
+function Set-PodeLogDefaultSerialiseFormat {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [Pode.Utilities.Logging.PodeSerialiseFormat]
+        $Format
+    )
+
+    $PodeContext.Server.Logging.Formatting.Serialise = $Format
 }

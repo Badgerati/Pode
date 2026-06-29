@@ -85,15 +85,15 @@ Start-PodeServer -Threads 2 -Verbose {
     # )
 
     # wire up a custom logger
-    $customLogMethod = New-PodeLogCustomMethod -ScriptBlock {
-        param($item, $options, $raw)
-        $item.HttpMethod | Out-Default
+    $customLogMethod = New-PodeLogCustomMethod -Version 2 -ScriptBlock {
+        param($items, $options)
+        $items[0].Data.HttpMethod | Out-Default
     }
 
-    $customLogMethod | Add-PodeLogType -Name 'custom' -ScriptBlock {
-        param($item)
+    $customLogMethod | Add-PodeLogType -Name 'custom' -Version 2 -ScriptBlock {
+        param($logEvent)
         return @{
-            HttpMethod = $item.HttpMethod
+            HttpMethod = $logEvent.Data.HttpMethod
         }
     }
 
