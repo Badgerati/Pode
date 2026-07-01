@@ -286,15 +286,20 @@ function Enable-PodeRequestLogType {
 
         # default formatters
         if (!$PSBoundParameters.ContainsKey('LogFormat')) {
-            $LogFormat = Get-PodeLogDefaultFormat
+            $LogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultFormat) -Default $LogFormat -EnumType ([PodeLogFormat])
         }
 
         if (!$PSBoundParameters.ContainsKey('SyslogFormat')) {
-            $SyslogFormat = Get-PodeLogDefaultSyslogFormat
+            $SyslogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSyslogFormat) -Default $SyslogFormat -EnumType ([PodeSyslogFormat])
         }
 
         if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
-            $SerialiseFormat = Get-PodeLogDefaultSerialiseFormat
+            $defSerialiseFormat = Get-PodeLogDefaultSerialiseFormat
+            if (($null -eq $defSerialiseFormat) -and $Raw) {
+                $defSerialiseFormat = 'None'
+            }
+
+            $SerialiseFormat = Protect-PodeValue -Value $defSerialiseFormat -Default $SerialiseFormat -EnumType ([PodeSerialiseFormat])
         }
 
         # are we using a custom scriptblock for the request log type, or the inbuilt one?
@@ -307,8 +312,8 @@ function Enable-PodeRequestLogType {
 
         # are we using a custom scriptblock for serialising the request log type, or the inbuilt one?
         if ($SerialiseFormat -ieq 'Custom') {
-            # if we have a custom scriptblock, don't use the inbuilt serialise logic
-            if (!$PSBoundParameters.ContainsKey('ScriptBlock') -and ($null -eq $SerialiseScriptBlock)) {
+            # use inbuilt serialise logic if no custom serialise scriptblock supplied
+            if ($null -eq $SerialiseScriptBlock) {
                 $SerialiseScriptBlock = {
                     param($data)
                     return "$($data.Host) $($data.Identifier) $($data.User) [$($data.Date)] `"$($data.RequestLine)`" $($data.StatusCode) $($data.Size) `"$($data.Referrer)`" `"$($data.UserAgent)`""
@@ -484,15 +489,20 @@ function Enable-PodeErrorLogType {
 
         # default formatters
         if (!$PSBoundParameters.ContainsKey('LogFormat')) {
-            $LogFormat = Get-PodeLogDefaultFormat
+            $LogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultFormat) -Default $LogFormat -EnumType ([PodeLogFormat])
         }
 
         if (!$PSBoundParameters.ContainsKey('SyslogFormat')) {
-            $SyslogFormat = Get-PodeLogDefaultSyslogFormat
+            $SyslogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSyslogFormat) -Default $SyslogFormat -EnumType ([PodeSyslogFormat])
         }
 
         if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
-            $SerialiseFormat = Get-PodeLogDefaultSerialiseFormat
+            $defSerialiseFormat = Get-PodeLogDefaultSerialiseFormat
+            if (($null -eq $defSerialiseFormat) -and $Raw) {
+                $defSerialiseFormat = 'None'
+            }
+
+            $SerialiseFormat = Protect-PodeValue -Value $defSerialiseFormat -Default $SerialiseFormat -EnumType ([PodeSerialiseFormat])
         }
 
         # are we using a custom scriptblock for the error log type, or the inbuilt one?
@@ -505,8 +515,8 @@ function Enable-PodeErrorLogType {
 
         # are we using a custom scriptblock for serialising the error log type, or the inbuilt one?
         if ($SerialiseFormat -ieq 'Custom') {
-            # if we have a custom scriptblock, don't use the inbuilt serialise logic
-            if (!$PSBoundParameters.ContainsKey('ScriptBlock') -and ($null -eq $SerialiseScriptBlock)) {
+            # use inbuilt serialise logic if no custom serialise scriptblock supplied
+            if ($null -eq $SerialiseScriptBlock) {
                 $SerialiseScriptBlock = {
                     param($data)
                     $msg = @(foreach ($key in $data.Keys) {
@@ -658,7 +668,7 @@ function Add-PodeLogType {
 
         [Parameter()]
         [Pode.Utilities.Logging.PodeSerialiseFormat]
-        $SerialiseFormat = 'Custom',
+        $SerialiseFormat = 'None',
 
         [Parameter()]
         [scriptblock]
@@ -716,23 +726,29 @@ function Add-PodeLogType {
 
         # default formatters
         if (!$PSBoundParameters.ContainsKey('LogFormat')) {
-            $LogFormat = Get-PodeLogDefaultFormat
+            $LogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultFormat) -Default $LogFormat -EnumType ([PodeLogFormat])
         }
 
         if (!$PSBoundParameters.ContainsKey('SyslogFormat')) {
-            $SyslogFormat = Get-PodeLogDefaultSyslogFormat
+            $SyslogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSyslogFormat) -Default $SyslogFormat -EnumType ([PodeSyslogFormat])
         }
 
         if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
-            $SerialiseFormat = Get-PodeLogDefaultSerialiseFormat
+            $SerialiseFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSerialiseFormat) -Default $SerialiseFormat -EnumType ([PodeSerialiseFormat])
         }
 
-        # check for scoped vars
+        # check for scoped vars in scriptblock
         if ($PSCmdlet.ParameterSetName -eq 'ScriptBlock') {
             $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         }
 
-        if ($null -ne $SerialiseScriptBlock) {
+        # if custom serialisation, ensure we have a scriptblock, and check for scoped vars in scriptblock
+        if ($SerialiseFormat -ieq 'Custom') {
+            if ($null -eq $SerialiseScriptBlock) {
+                # A non-empty ScriptBlock is required for the Custom serialisation format
+                throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage)
+            }
+
             $SerialiseScriptBlock, $serialiseUsingVars = Convert-PodeScopedVariables -ScriptBlock $SerialiseScriptBlock -PSSession $PSCmdlet.SessionState
         }
 
@@ -1080,39 +1096,46 @@ function Protect-PodeLogItem {
         $Item
     )
 
-    # do nothing if there are no masks
-    if (($null -eq $PodeContext.Server.Logging.Masking.Patterns) -or ($PodeContext.Server.Logging.Masking.Patterns.Count -eq 0)) {
+    process {
+        # do nothing if there are no masks
+        if (($null -eq $PodeContext.Server.Logging.Masking.Patterns) -or ($PodeContext.Server.Logging.Masking.Patterns.Count -eq 0)) {
+            return $Item
+        }
+
+        # do nothing if the item is null or empty
+        if ([string]::IsNullOrWhiteSpace($Item)) {
+            return $Item
+        }
+
+        # attempt to apply each mask
+        foreach ($mask in $PodeContext.Server.Logging.Masking.Patterns) {
+            if ($Item -inotmatch $mask) {
+                continue
+            }
+
+            # has both keep before/after
+            if ($Matches.ContainsKey('keep_before') -and $Matches.ContainsKey('keep_after')) {
+                $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
+            }
+
+            # has just keep before
+            elseif ($Matches.ContainsKey('keep_before')) {
+                $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)")
+            }
+
+            # has just keep after
+            elseif ($Matches.ContainsKey('keep_after')) {
+                $Item = ($Item -ireplace $mask, "$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
+            }
+
+            # normal mask
+            else {
+                $Item = ($Item -ireplace $mask, $PodeContext.Server.Logging.Masking.Mask)
+            }
+        }
+
         return $Item
     }
-
-    # attempt to apply each mask
-    foreach ($mask in $PodeContext.Server.Logging.Masking.Patterns) {
-        if ($Item -inotmatch $mask) {
-            continue
-        }
-
-        # has both keep before/after
-        if ($Matches.ContainsKey('keep_before') -and $Matches.ContainsKey('keep_after')) {
-            $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
-        }
-
-        # has just keep before
-        elseif ($Matches.ContainsKey('keep_before')) {
-            $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)")
-        }
-
-        # has just keep after
-        elseif ($Matches.ContainsKey('keep_after')) {
-            $Item = ($Item -ireplace $mask, "$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
-        }
-
-        # normal mask
-        else {
-            $Item = ($Item -ireplace $mask, $PodeContext.Server.Logging.Masking.Mask)
-        }
-    }
-
-    return $Item
 }
 
 <#
@@ -1556,6 +1579,7 @@ function New-PodeLogApiMethod {
             Url                  = $Url
             ContentType          = $ContentType
             Method               = $Method
+            Compress             = $Compress.IsPresent
             Headers              = @{
                 Value          = $Headers
                 ScriptBlock    = $HeadersScriptBlock
@@ -1613,10 +1637,10 @@ function New-PodeLogSplunkMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($log, $sourceType, $source, $index)
+        param($logCol, $sourceType, $source, $index)
 
         # build array of events
-        $events = @(foreach ($item in $log.Items) {
+        $events = @(foreach ($item in $logCol.Items) {
                 # build base event object
                 $evt = @{
                     event  = $item.Data
@@ -1666,7 +1690,8 @@ function New-PodeLogSplunkMethod {
         -Headers $headers `
         -BodyScriptBlock $bodyScriptBlock `
         -BodyArgumentList @($SourceType, $Source, $Index) `
-        -SkipCertificateCheck:$SkipCertificateCheck.IsPresent
+        -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
+        -Compress
 }
 
 # BaseUrl, ie: 'https://http-intake.logs.datadoghq.com'
@@ -1711,16 +1736,16 @@ function New-PodeLogDatadogMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($log, $service, $source, $tags)
+        param($logCol, $service, $source, $tags)
 
         # build array of events
-        $events = @(foreach ($item in $log.Items) {
+        $events = @(foreach ($item in $logCol.Items) {
                 # build base event object
                 $evt = @{
                     message   = $item.Data
                     hostname  = $PodeContext.Server.ComputerName
                     status    = ConvertTo-PodeDatadogLevel -Level $item.Event.Level
-                    timestamp = $item.Event.Timestamp.ToString('yyyy-MM-ddTHH:mm:ssZ')
+                    timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
                 }
 
                 # add service
@@ -1817,15 +1842,15 @@ function New-PodeLogAzureMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($log, $source)
+        param($logCol, $source)
 
         # build array of events
-        $events = @(foreach ($item in $log.Items) {
+        $events = @(foreach ($item in $logCol.Items) {
                 # build base event object
                 $evt = @{
                     Message   = $item.Data
                     Level     = $item.Event.Level
-                    Timestamp = $item.Event.Timestamp.ToString('yyyy-MM-ddTHH:mm:ssZ')
+                    Timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
                 }
 
                 # add source
@@ -1941,10 +1966,10 @@ function New-PodeLogAwsMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($log, $sourceType, $source, $index)
+        param($logCol, $sourceType, $source, $index)
 
         # build array of events
-        $events = @(foreach ($item in $log.Items) {
+        $events = @(foreach ($item in $logCol.Items) {
                 # build base event object
                 $evt = @{
                     event    = $item.Data
@@ -2192,4 +2217,28 @@ function Set-PodeLogDefaultSerialiseFormat {
     )
 
     $PodeContext.Server.Logging.Formatting.Serialise = $Format
+}
+
+function Convert-PodeLogItemToString {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Collection')]
+        [Pode.Utilities.Logging.IPodeLogItemCollection]
+        $Collection,
+
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Item')]
+        [Pode.Utilities.Logging.IPodeLogItem]
+        $Item
+    )
+
+    process {
+        switch ($PSCmdlet.ParameterSetName) {
+            'Collection' {
+                return ($Collection.Items.Data | ConvertTo-PodeString) -join ([Environment]::NewLine)
+            }
+            'Item' {
+                return $Item.Data | ConvertTo-PodeString
+            }
+        }
+    }
 }

@@ -282,22 +282,43 @@ namespace Pode.Utilities
         // decompress bytes into either a gzip or deflate stream, and return the string
         public static string DecompressBytes(byte[] bytes, PodeCompressionType type, Encoding encoding = default)
         {
-            var stream = CompressStream(new MemoryStream(bytes), type, CompressionMode.Decompress);
-            return ReadStreamToEnd(stream, encoding);
+            using (var stream = CompressStream(new MemoryStream(bytes), type, CompressionMode.Decompress))
+            {
+                return ReadStreamToEnd(stream, encoding);
+            }
         }
 
         // compress bytes into either a gzip or deflate stream, and return the bytes
-        public static byte[] CompressBytes(byte[] bytes, PodeCompressionType type)
+        public static byte[] CompressString(string value, PodeCompressionType type, Encoding encoding = default)
         {
-            var ms = new MemoryStream();
-
-            using (var stream = CompressStream(ms, type, CompressionMode.Compress))
+            // return empty bytes if no value
+            if (string.IsNullOrEmpty(value))
             {
-                stream.Write(bytes, 0, bytes.Length);
+                return Array.Empty<byte>();
             }
 
-            ms.Position = 0;
-            return ms.ToArray();
+            // set the encoding if not provided
+            if (encoding == default)
+            {
+                encoding = Encoding;
+            }
+
+            var bytes = encoding.GetBytes(value);
+            return CompressBytes(bytes, type);
+        }
+
+        public static byte[] CompressBytes(byte[] bytes, PodeCompressionType type)
+        {
+            using (var ms = new MemoryStream())
+            {
+                using (var stream = CompressStream(ms, type, CompressionMode.Compress))
+                {
+                    stream.Write(bytes, 0, bytes.Length);
+                }
+
+                ms.Position = 0;
+                return ms.ToArray();
+            }
         }
 
         // compress stream into either a gzip or deflate stream

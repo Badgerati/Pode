@@ -3785,6 +3785,7 @@ function ConvertTo-PodeXml {
     }
 }
 
+# based on https://blog.wannemacher.us/posts/p430/, by Eric Wannemacher
 function ConvertTo-PodeXmlInternal {
     [CmdletBinding()]
     [OutputType([string])]

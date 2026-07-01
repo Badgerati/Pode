@@ -505,12 +505,12 @@ function Import-PodeSnapin {
 
 .EXAMPLE
     # Example 2: Resolve and parse a value as a case-insensitive enum
-    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([type][System.ConsoleColor])
+    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([System.ConsoleColor])
     Write-Output $resolvedEnum  # Output: Red
 
 .EXAMPLE
     # Example 3: Resolve and parse a value as a case-sensitive enum
-    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([type][System.ConsoleColor]) -CaseSensitive
+    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([System.ConsoleColor]) -CaseSensitive
     # Throws an error if "red" does not match an enum member exactly (case-sensitive).
 
 .NOTES
@@ -532,12 +532,20 @@ function Protect-PodeValue {
         $EnumType,
 
         [switch]
-        $CaseSensitive
+        $CaseSensitive,
+
+        [switch]
+        $AllowNullEnum
     )
 
     $resolvedValue = Resolve-PodeValue -Check (Test-PodeIsEmpty $Value) -TrueValue $Default -FalseValue $Value
 
-    if (($null -ne $EnumType) -and [enum]::IsDefined($EnumType, $resolvedValue)) {
+    if ($null -ne $EnumType) {
+        # -and ![string]::IsNullOrWhiteSpace($resolvedValue) -and [enum]::IsDefined($EnumType, $resolvedValue)) {
+        if ($AllowNullEnum -and [string]::IsNullOrWhiteSpace($resolvedValue)) {
+            return $null
+        }
+
         return [enum]::Parse($EnumType, $resolvedValue, !$CaseSensitive.IsPresent)
     }
 
@@ -1704,5 +1712,29 @@ function Start-PodeSleep {
     }
 }
 
+function ConvertTo-PodeString {
+    param(
+        [Parameter(ValueFromPipeline = $true)]
+        $InputObject
+    )
 
+    process {
+        # empty for nulls
+        if ([string]::IsNullOrEmpty($InputObject)) {
+            return [string]::Empty
+        }
 
+        # return if a string
+        if ($InputObject -is [string]) {
+            return $InputObject
+        }
+
+        # ToString for value types
+        if ($InputObject -is [System.ValueType]) {
+            return $InputObject.ToString()
+        }
+
+        # out-string with newline trimming for other objects
+        return ($InputObject | Out-String).TrimEnd("`r", "`n")
+    }
+}
