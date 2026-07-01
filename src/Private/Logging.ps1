@@ -838,7 +838,16 @@ function Start-PodeLoggingRunspace {
                     # transform the result to syslog or other log formats (None just leaves "result" as it - no formatting
                     switch ($logType.Options.Formatting.Log) {
                         'Syslog' {
-                            $result = ConvertTo-PodeSyslogMessage -Message $result -LogEvent $logEvent -AppName $logType.Options.AppName -Tags $logType.Options.Tags -Format $logType.Options.Formatting.Syslog
+                            $params = @{
+                                Message   = $result
+                                Level     = $logEvent.Level
+                                Timestamp = $logEvent.Timestamp
+                                AppName   = $logType.Options.Formatting.SyslogInfo.AppName
+                                Tags      = $logType.Options.Formatting.SyslogInfo.Tags
+                                Format    = $logType.Options.Formatting.SyslogInfo.Format
+                                Facility  = $logType.Options.Formatting.SyslogInfo.Facility
+                            }
+                            $result = ConvertTo-PodeSyslogMessage @params
                         }
                     }
 

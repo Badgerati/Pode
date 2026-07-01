@@ -177,6 +177,9 @@
         'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',
         'Start-PodeSleep',
+        'ConvertTo-PodeString',
+        'Get-PodeServerName',
+        'Get-PodeAppName',
 
         # routes
         'Add-PodeRoute',
@@ -340,6 +343,21 @@
         'New-PodeLogCustomMethod',
         'Clear-PodeLogMethods',
         'Remove-PodeLogMethod',
+        'Convert-PodeLogItemToString',
+        'New-PodeLogSyslogInfo',
+        'ConvertTo-PodeSyslogMessage',
+        'Get-PodeLogDefaultFormat',
+        'Get-PodeLogDefaultSerialiseFormat',
+        'Get-PodeLogDefaultSyslogFormat',
+        'New-PodeLogApiMethod',
+        'New-PodeLogAwsMethod',
+        'New-PodeLogAzureMethod',
+        'New-PodeLogDatadogMethod',
+        'New-PodeLogNetworkMethod',
+        'New-PodeLogSplunkMethod',
+        'Set-PodeLogDefaultFormat',
+        'Set-PodeLogDefaultSerialiseFormat',
+        'Set-PodeLogDefaultSyslogFormat',
 
         # core
         'Start-PodeServer',

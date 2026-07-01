@@ -1120,7 +1120,7 @@ function Get-PodeServerState {
 function Test-PodeServerState {
     param(
         [Parameter(Mandatory = $true)]
-        [PodeServerState]
+        [Pode.Utilities.PodeServerState]
         $State
     )
 

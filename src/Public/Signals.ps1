@@ -843,7 +843,7 @@ function Register-PodeSignalEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [PodeClientConnectionEventType]
+        [Pode.Protocols.Http.Client.PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -922,7 +922,7 @@ function Unregister-PodeSignalEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [PodeClientConnectionEventType]
+        [Pode.Protocols.Http.Client.PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -974,7 +974,7 @@ function Test-PodeSignalEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [PodeClientConnectionEventType[]]
+        [Pode.Protocols.Http.Client.PodeClientConnectionEventType[]]
         $Type,
 
         [Parameter()]
@@ -1018,7 +1018,7 @@ function Get-PodeSignalEvent {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [PodeClientConnectionEventType[]]
+        [Pode.Protocols.Http.Client.PodeClientConnectionEventType[]]
         $Type,
 
         [Parameter()]

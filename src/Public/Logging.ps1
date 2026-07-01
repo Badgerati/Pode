@@ -218,10 +218,6 @@ function Enable-PodeRequestLogType {
         $LogFormat = 'None',
 
         [Parameter()]
-        [Pode.Utilities.Logging.PodeSyslogFormat]
-        $SyslogFormat = 'RFC5424',
-
-        [Parameter()]
         [Pode.Utilities.Logging.PodeSerialiseFormat]
         $SerialiseFormat = 'Custom',
 
@@ -238,12 +234,8 @@ function Enable-PodeRequestLogType {
         $ArgumentList,
 
         [Parameter()]
-        [string]
-        $AppName,
-
-        [Parameter()]
         [hashtable]
-        $Tags,
+        $SyslogInfo,
 
         [Parameter(ParameterSetName = 'Raw')]
         [switch]
@@ -289,10 +281,6 @@ function Enable-PodeRequestLogType {
             $LogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultFormat) -Default $LogFormat -EnumType ([PodeLogFormat])
         }
 
-        if (!$PSBoundParameters.ContainsKey('SyslogFormat')) {
-            $SyslogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSyslogFormat) -Default $SyslogFormat -EnumType ([PodeSyslogFormat])
-        }
-
         if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
             $defSerialiseFormat = Get-PodeLogDefaultSerialiseFormat
             if (($null -eq $defSerialiseFormat) -and $Raw) {
@@ -310,8 +298,13 @@ function Enable-PodeRequestLogType {
             $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         }
 
+        # do we need default syslog info?
+        if (($LogFormat -eq [PodeLogFormat]::Syslog) -and ($null -eq $SyslogInfo)) {
+            $SyslogInfo = New-PodeLogSyslogInfo
+        }
+
         # are we using a custom scriptblock for serialising the request log type, or the inbuilt one?
-        if ($SerialiseFormat -ieq 'Custom') {
+        if ($SerialiseFormat -eq [PodeSerialiseFormat]::Custom) {
             # use inbuilt serialise logic if no custom serialise scriptblock supplied
             if ($null -eq $SerialiseScriptBlock) {
                 $SerialiseScriptBlock = {
@@ -337,17 +330,15 @@ function Enable-PodeRequestLogType {
             }
             Options        = @{
                 Formatting = @{
-                    Log       = $LogFormat
-                    Syslog    = $SyslogFormat
-                    Serialise = @{
+                    Log        = $LogFormat
+                    SyslogInfo = $SyslogInfo
+                    Serialise  = @{
                         Type           = $SerialiseFormat
                         ScriptBlock    = $SerialiseScriptBlock
                         UsingVariables = $serialiseUsingVars
                         XmlRootName    = 'Request'
                     }
                 }
-                AppName    = $AppName
-                Tags       = $Tags
             }
             Arguments      = $ArgumentList
         }
@@ -421,10 +412,6 @@ function Enable-PodeErrorLogType {
         $LogFormat = 'None',
 
         [Parameter()]
-        [Pode.Utilities.Logging.PodeSyslogFormat]
-        $SyslogFormat = 'RFC5424',
-
-        [Parameter()]
         [Pode.Utilities.Logging.PodeSerialiseFormat]
         $SerialiseFormat = 'Custom',
 
@@ -441,12 +428,8 @@ function Enable-PodeErrorLogType {
         $ArgumentList,
 
         [Parameter()]
-        [string]
-        $AppName,
-
-        [Parameter()]
         [hashtable]
-        $Tags,
+        $SyslogInfo,
 
         [Parameter(ParameterSetName = 'Raw')]
         [switch]
@@ -492,10 +475,6 @@ function Enable-PodeErrorLogType {
             $LogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultFormat) -Default $LogFormat -EnumType ([PodeLogFormat])
         }
 
-        if (!$PSBoundParameters.ContainsKey('SyslogFormat')) {
-            $SyslogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSyslogFormat) -Default $SyslogFormat -EnumType ([PodeSyslogFormat])
-        }
-
         if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
             $defSerialiseFormat = Get-PodeLogDefaultSerialiseFormat
             if (($null -eq $defSerialiseFormat) -and $Raw) {
@@ -513,8 +492,13 @@ function Enable-PodeErrorLogType {
             $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         }
 
+        # do we need default syslog info?
+        if (($LogFormat -eq [PodeLogFormat]::Syslog) -and ($null -eq $SyslogInfo)) {
+            $SyslogInfo = New-PodeLogSyslogInfo
+        }
+
         # are we using a custom scriptblock for serialising the error log type, or the inbuilt one?
-        if ($SerialiseFormat -ieq 'Custom') {
+        if ($SerialiseFormat -eq [PodeSerialiseFormat]::Custom) {
             # use inbuilt serialise logic if no custom serialise scriptblock supplied
             if ($null -eq $SerialiseScriptBlock) {
                 $SerialiseScriptBlock = {
@@ -542,17 +526,15 @@ function Enable-PodeErrorLogType {
             Version        = 2
             Options        = @{
                 Formatting = @{
-                    Log       = $LogFormat
-                    Syslog    = $SyslogFormat
-                    Serialise = @{
+                    Log        = $LogFormat
+                    SyslogInfo = $SyslogInfo
+                    Serialise  = @{
                         Type           = $SerialiseFormat
                         ScriptBlock    = $SerialiseScriptBlock
                         UsingVariables = $serialiseUsingVars
                         XmlRootName    = 'Error'
                     }
                 }
-                AppName    = $AppName
-                Tags       = $Tags
             }
             Arguments      = $ArgumentList
         }
@@ -663,10 +645,6 @@ function Add-PodeLogType {
         $LogFormat = 'None',
 
         [Parameter()]
-        [Pode.Utilities.Logging.PodeSyslogFormat]
-        $SyslogFormat = 'RFC5424',
-
-        [Parameter()]
         [Pode.Utilities.Logging.PodeSerialiseFormat]
         $SerialiseFormat = 'None',
 
@@ -675,12 +653,8 @@ function Add-PodeLogType {
         $SerialiseScriptBlock,
 
         [Parameter()]
-        [string]
-        $AppName,
-
-        [Parameter()]
         [hashtable]
-        $Tags,
+        $SyslogInfo,
 
         [Parameter()]
         [string]
@@ -729,10 +703,6 @@ function Add-PodeLogType {
             $LogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultFormat) -Default $LogFormat -EnumType ([PodeLogFormat])
         }
 
-        if (!$PSBoundParameters.ContainsKey('SyslogFormat')) {
-            $SyslogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSyslogFormat) -Default $SyslogFormat -EnumType ([PodeSyslogFormat])
-        }
-
         if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
             $SerialiseFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSerialiseFormat) -Default $SerialiseFormat -EnumType ([PodeSerialiseFormat])
         }
@@ -742,8 +712,13 @@ function Add-PodeLogType {
             $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         }
 
+        # do we need default syslog info?
+        if (($LogFormat -eq [PodeLogFormat]::Syslog) -and ($null -eq $SyslogInfo)) {
+            $SyslogInfo = New-PodeLogSyslogInfo
+        }
+
         # if custom serialisation, ensure we have a scriptblock, and check for scoped vars in scriptblock
-        if ($SerialiseFormat -ieq 'Custom') {
+        if ($SerialiseFormat -eq [PodeSerialiseFormat]::Custom) {
             if ($null -eq $SerialiseScriptBlock) {
                 # A non-empty ScriptBlock is required for the Custom serialisation format
                 throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage)
@@ -763,17 +738,15 @@ function Add-PodeLogType {
             Version        = $Version
             Options        = @{
                 Formatting = @{
-                    Log       = $LogFormat
-                    Syslog    = $SyslogFormat
-                    Serialise = @{
+                    Log        = $LogFormat
+                    SyslogInfo = $SyslogInfo
+                    Serialise  = @{
                         Type           = $SerialiseFormat
                         ScriptBlock    = $SerialiseScriptBlock
                         UsingVariables = $serialiseUsingVars
                         XmlRootName    = Protect-PodeValue -Value $XmlRootName -Default 'Log'
                     }
                 }
-                AppName    = $AppName
-                Tags       = $Tags
             }
             Arguments      = $ArgumentList
         }
@@ -1761,18 +1734,8 @@ function New-PodeLogDatadogMethod {
                 }
 
                 # add tags
-                $_tags = @{}
-                foreach ($key in $tags.Keys) {
-                    $_tags[$key] = $tags[$key]
-                }
-                if (($null -ne $item.Event.Metadata.Tags) -and ($item.Event.Metadata.Tags -is [hashtable])) {
-                    foreach ($key in $item.Event.Metadata.Tags.Keys) {
-                        $_tags[$key] = $item.Event.Metadata.Tags[$key]
-                    }
-                }
-
-                if ($_tags.Count -gt 0) {
-                    $evt.ddtags = @(foreach ($key in $_tags.Keys) { "$($key):$($_tags[$key])" }) -join ','
+                if ($tags.Count -gt 0) {
+                    $evt.ddtags = @(foreach ($key in $tags.Keys) { "$($key):$($tags[$key])" }) -join ','
                 }
 
                 $evt
@@ -2064,15 +2027,56 @@ function New-PodeLogNetworkMethod {
     }
 }
 
+function New-PodeLogSyslogInfo {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [ValidateRange(0, 23)]
+        [int]
+        $Facility = 16, # local0 for web/app logs
+
+        [Parameter()]
+        [string]
+        $AppName,
+
+        [Parameter()]
+        [hashtable]
+        $Tags,
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeSyslogFormat]
+        $Format = 'RFC5424'
+    )
+
+    # check default format if not supplied
+    if (!$PSBoundParameters.ContainsKey('Format')) {
+        $Format = Protect-PodeValue -Value (Get-PodeLogDefaultSyslogFormat) -Default $Format -EnumType ([PodeSyslogFormat])
+    }
+
+    # return syslog info
+    return @{
+        Facility = $Facility
+        AppName  = $AppName
+        Tags     = $Tags
+        Format   = $Format
+    }
+}
+
 function ConvertTo-PodeSyslogMessage {
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
         [object]
         $Message,
 
         [Parameter(Mandatory = $true)]
-        [Pode.Utilities.Logging.IPodeLogEvent]
-        $LogEvent,
+        [Pode.Utilities.Logging.PodeLogLevel]
+        $Level,
+
+        [Parameter(Mandatory = $true)]
+        [datetime]
+        $Timestamp,
 
         [Parameter()]
         [ValidateRange(0, 23)]
@@ -2087,33 +2091,29 @@ function ConvertTo-PodeSyslogMessage {
         [hashtable]
         $Tags,
 
-        [Parameter(ParameterSetName = 'Format')]
+        [Parameter()]
         [Pode.Utilities.Logging.PodeSyslogFormat]
-        $Format,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [switch]
-        $DefaultFormat
+        $Format = 'RFC5424'
     )
 
     process {
         # set default format
-        if ($DefaultFormat) {
-            $Format = Get-PodeLogDefaultSyslogFormat
+        if (!$PSBoundParameters.ContainsKey('Format')) {
+            $Format = Protect-PodeValue -Value (Get-PodeLogDefaultSyslogFormat) -Default $Format -EnumType ([PodeSyslogFormat])
         }
 
         # set default app-name
         $AppName = Protect-PodeValue -Value $AppName -Default $PodeContext.Server.AppName
 
         # generate priority value
-        $priority = ($Facility * 8) + (ConvertTo-PodeSyslogLevel -Level $LogEvent.Level)
+        $priority = ($Facility * 8) + (ConvertTo-PodeSyslogLevel -Level $Level)
 
         # get process ID
         $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
 
         # ensure message is a string, and escape newlines and carriage returns in message
         if ($Message -isnot [string]) {
-            $Message = $Message | Out-String
+            $Message = $Message | ConvertTo-PodeString
         }
 
         $Message = $Message.Trim().Replace("`n", '\n').Replace("`r", '\r')
@@ -2121,32 +2121,18 @@ function ConvertTo-PodeSyslogMessage {
         # build message based on format
         switch ($Format) {
             'RFC3164' {
-                $timestamp = $LogEvent.Timestamp.ToString('MMM dd HH:mm:ss')
+                $timestamp = $Timestamp.ToString('MMM dd HH:mm:ss')
                 $Message = "<$($priority)>$($timestamp) $($PodeContext.Server.ComputerName) $($AppName)[$($processId)]: $($Message)"
             }
 
             'RFC5424' {
-                $timestamp = $LogEvent.Timestamp.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
-
-                $_tags = @{}
-
-                if ($null -ne $Tags) {
-                    foreach ($key in $Tags.Keys) {
-                        $_tags[$key] = $Tags[$key]
-                    }
-                }
-
-                if (($null -ne $LogEvent.Metadata.Tags) -and ($LogEvent.Metadata.Tags -is [hashtable])) {
-                    foreach ($key in $LogEvent.Metadata.Tags.Keys) {
-                        $_tags[$key] = $LogEvent.Metadata.Tags[$key]
-                    }
-                }
+                $timestamp = $Timestamp.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
 
                 $strTags = '-'
-                if ($_tags.Count -gt 0) {
+                if ($Tags.Count -gt 0) {
                     $strTags = @(
-                        foreach ($key in $_tags.Keys) {
-                            $value = $_tags[$key].Replace('\', '\\').Replace('"', '\"').Replace("`n", '\n').Replace("`r", '\r').Replace(']', '\]')
+                        foreach ($key in $Tags.Keys) {
+                            $value = $Tags[$key].Replace('\', '\\').Replace('"', '\"').Replace("`n", '\n').Replace("`r", '\r').Replace(']', '\]')
                             "$($key)=`"$($value)`""
                         }
                     ) -join ' '

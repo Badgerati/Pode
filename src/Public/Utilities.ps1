@@ -73,6 +73,16 @@ function Get-PodeServerPath {
     return $PodeContext.Server.Root
 }
 
+<#
+.SYNOPSIS
+Returns the name of the server.
+
+.DESCRIPTION
+Returns the name of the server.
+
+.EXAMPLE
+$serverName = Get-PodeServerName
+#>
 function Get-PodeServerName {
     [CmdletBinding()]
     [OutputType([string])]
@@ -81,6 +91,16 @@ function Get-PodeServerName {
     return $PodeContext.Server.Name
 }
 
+<#
+.SYNOPSIS
+Returns the name of the application.
+
+.DESCRIPTION
+Returns the name of the application.
+
+.EXAMPLE
+$appName = Get-PodeAppName
+#>
 function Get-PodeAppName {
     [CmdletBinding()]
     [OutputType([string])]
@@ -1031,7 +1051,7 @@ function Write-PodeHost {
 
         # explode object if needed
         if ($Explode) {
-            $strObject = ($Object | Out-String).TrimEnd()
+            $strObject = ($Object | ConvertTo-PodeString).TrimEnd()
             $meta = @()
 
             # add label if needed
@@ -1734,7 +1754,7 @@ function ConvertTo-PodeString {
             return $InputObject.ToString()
         }
 
-        # out-string with newline trimming for other objects
+        # convert other types to string, and trim any trailing newlines
         return ($InputObject | Out-String).TrimEnd("`r", "`n")
     }
 }

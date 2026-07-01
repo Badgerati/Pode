@@ -1390,8 +1390,8 @@ function New-PodeRequestException {
         $Message,
 
         [Parameter()]
-        [PodeProtocolType]
-        $Type = [PodeProtocolType]::Http
+        [Pode.Utilities.PodeProtocolType]
+        $Type = [Pode.Utilities.PodeProtocolType]::Http
     )
 
     return [PodeRequestExceptionFactory]::Create($Type, $Message, $StatusCode)
