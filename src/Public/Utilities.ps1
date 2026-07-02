@@ -496,46 +496,51 @@ function Import-PodeSnapin {
 
 <#
 .SYNOPSIS
-    Resolves and protects a value by ensuring it defaults to a specified fallback and optionally parses it as an enum.
+Resolves and protects a value by ensuring it defaults to a specified fallback and optionally parses it as an enum.
 
 .DESCRIPTION
-    The `Protect-PodeValue` function ensures that a given value is resolved. If the value is empty, a default value is used instead.
-    Additionally, the function can parse the resolved value as an enum type with optional case sensitivity.
+This function ensures that a given value is not null or empty. If the value is empty, a default value is used instead.
+Additionally, the function can parse the resolved value as an enum type with optional case sensitivity.
 
 .PARAMETER Value
-    The input value to be resolved.
+The input value to be resolved.
 
 .PARAMETER Default
-    The default value to fall back to if the input value is empty.
+The default value to fall back to if the input value is empty.
 
 .PARAMETER EnumType
-    The type of enum to parse the resolved value into. If specified, the resolved value must be a valid enum member.
+The type of enum to parse the resolved value into. If specified, the resolved value must be a valid enum member.
 
 .PARAMETER CaseSensitive
-    Specifies whether the enum parsing should be case-sensitive. By default, parsing is case-insensitive.
+Specifies whether the enum parsing should be case-sensitive. By default, parsing is case-insensitive.
+
+.PARAMETER AllowNullEnum
+If specified, allows the resolved value to be null or empty when parsing as an enum.
+If not specified, a null or empty value will throw an error.
 
 .OUTPUTS
-    [object]
-    Returns the resolved value, either as the original value, the default value, or a parsed enum.
+[object]
+Returns the resolved value, either as the original value, the default value, or a parsed enum.
 
 .EXAMPLE
-    # Example 1: Resolve a value with a default fallback
-    $resolved = Protect-PodeValue -Value $null -Default "Fallback"
-    Write-Output $resolved  # Output: Fallback
+# Example 1: Resolve a value with a default fallback
+$resolved = Protect-PodeValue -Value $null -Default "Fallback"
+Write-Output $resolved  # Output: Fallback
 
 .EXAMPLE
-    # Example 2: Resolve and parse a value as a case-insensitive enum
-    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([System.ConsoleColor])
-    Write-Output $resolvedEnum  # Output: Red
+# Example 2: Resolve and parse a value as a case-insensitive enum
+$resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([System.ConsoleColor])
+Write-Output $resolvedEnum  # Output: Red
 
 .EXAMPLE
-    # Example 3: Resolve and parse a value as a case-sensitive enum
-    $resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([System.ConsoleColor]) -CaseSensitive
-    # Throws an error if "red" does not match an enum member exactly (case-sensitive).
+# Example 3: Resolve and parse a value as a case-sensitive enum
+$resolvedEnum = Protect-PodeValue -Value "red" -Default "Blue" -EnumType ([System.ConsoleColor]) -CaseSensitive
+# Throws an error if "red" does not match an enum member exactly (case-sensitive).
 
-.NOTES
-    This function resolves values using `Resolve-PodeValue` and validates enums using `[enum]::IsDefined`.
-
+.EXAMPLE
+# Example 4: Allow null or empty enum value
+$resolvedEnum = Protect-PodeValue -Value "" -Default $null -EnumType ([System.ConsoleColor]) -AllowNullEnum
+Write-Output $resolvedEnum  # Output: null
 #>
 function Protect-PodeValue {
     [CmdletBinding()]
@@ -1732,7 +1737,27 @@ function Start-PodeSleep {
     }
 }
 
+<#
+.SYNOPSIS
+Converts an input object to a string representation.
+
+.DESCRIPTION
+This function takes an input object and converts it to a string representation.
+It handles various types of input, including null values, strings, value types, and other objects.
+The resulting string is trimmed of any trailing newlines in the case of complex objects.
+
+.PARAMETER InputObject
+The object to be converted to a string.
+
+.EXAMPLE
+$stringValue = ConvertTo-PodeString -InputObject $someObject
+
+.EXAMPLE
+$stringValue = $someObject | ConvertTo-PodeString
+#>
 function ConvertTo-PodeString {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(ValueFromPipeline = $true)]
         $InputObject

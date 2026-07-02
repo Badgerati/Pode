@@ -191,16 +191,55 @@ Enables Request Logging using a supplied output method.
 Enables Request Logging using a supplied output method.
 
 .PARAMETER Method
-The logging Method ID to use for output the log entry.
+One or more logging Method IDs to use for outputting the log entry.
 
 .PARAMETER UsernameProperty
 An optional property path within the $WebEvent.Auth.User object for the user's Username. (Default: Username).
+
+.PARAMETER LogFormat
+The format to use for the log output. (Default: Server default, or 'None' if no default set).
+
+.PARAMETER SerialiseFormat
+Specifies the format to use for serialising the log entry. (Default: Server default, or 'Custom' if no default set, or 'None' if Raw is supplied).
+
+.PARAMETER SerialiseScriptBlock
+A ScriptBlock to use for custom serialisation of the log entry.
+
+.PARAMETER ScriptBlock
+A ScriptBlock to use for custom data selection and transforming of the log entry. (Default: inbuilt logic).
+
+.PARAMETER ArgumentList
+An array of arguments to supply to the Custom Log type's ScriptBlock and SerialiseScriptBlock.
+
+.PARAMETER SyslogInfo
+A hashtable containing Syslog configuration information, built using New-PodeSyslogInfo.
 
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeRequestLogType
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeRequestLogType -SerialiseFormat 'Json'
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeRequestLogType -SerialiseFormat 'Custom' -SerialiseScriptBlock {
+    param($data)
+    return "$($data.Host) $($data.Identifier) $($data.User) [$($data.Date)] `"$($data.RequestLine)`" $($data.StatusCode) $($data.Size) `"$($data.Referrer)`" `"$($data.UserAgent)`""
+}
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeRequestLogType -ScriptBlock {
+    param($logEvent)
+    return @{
+        HttpMethod = $logEvent.Data.HttpMethod
+    }
+}
+
+.EXAMPLE
+$syslogInfo = New-PodeLogSyslogInfo -Format RFC3164
+New-PodeLogTerminalMethod | Enable-PodeRequestLogType -LogFormat Syslog -SyslogInfo $syslogInfo
 #>
 function Enable-PodeRequestLogType {
     [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
@@ -384,16 +423,55 @@ Enables Error log Type using a supplied log Method.
 Enables Error log Type using a supplied log Method.
 
 .PARAMETER Method
-The log Method ID to use for output the log entry.
+One or more log Method IDs to use for outputting the log entry.
 
 .PARAMETER Levels
 The Levels of errors that should be logged (Default: Emergency, Alert, Critical, Error)
+
+.PARAMETER LogFormat
+The format to use for the log output. (Default: Server default, or 'None' if no default set).
+
+.PARAMETER SerialiseFormat
+Specifies the format to use for serialising the log entry. (Default: Server default, or 'Custom' if no default set, or 'None' if Raw is supplied).
+
+.PARAMETER SerialiseScriptBlock
+A ScriptBlock to use for custom serialisation of the log entry.
+
+.PARAMETER ScriptBlock
+A ScriptBlock to use for custom data selection and transforming of the log entry. (Default: inbuilt logic).
+
+.PARAMETER ArgumentList
+An array of arguments to supply to the Custom Log type's ScriptBlock and SerialiseScriptBlock.
+
+.PARAMETER SyslogInfo
+A hashtable containing Syslog configuration information, built using New-PodeSyslogInfo.
 
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeErrorLogType -SerialiseFormat 'Json'
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeErrorLogType -SerialiseFormat 'Custom' -SerialiseScriptBlock {
+    param($data)
+    return $data | ConvertTo-PodeString
+}
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeErrorLogType -ScriptBlock {
+    param($logEvent)
+    return @{
+        StackTrace = $logEvent.Data.StackTrace
+    }
+}
+
+.EXAMPLE
+$syslogInfo = New-PodeLogSyslogInfo -Format RFC3164
+New-PodeLogTerminalMethod | Enable-PodeErrorLogType -LogFormat Syslog -SyslogInfo $syslogInfo
 #>
 function Enable-PodeErrorLogType {
     [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
@@ -592,7 +670,31 @@ The ScriptBlock defining logic that transforms an item, and returns it for outpu
 The Levels of log items that should be logged. (Default: Informational)
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Custom Log type's ScriptBlock.
+An array of arguments to supply to the Custom Log type's ScriptBlock and SerialiseScriptBlock.
+
+.PARAMETER Version
+The version of the log type, this determines the arguments which are supplied to the ScriptBlock. (Default: 1)
+Arguments supplied depending on the version:
+
+- Version 1: Log Event Data, ArgumentList
+- Version 2: Log Event, ArgumentList
+
+Under Version 2, the "Log Event" contains references to the log event's data, level, timestamp, and metadata.
+
+.PARAMETER LogFormat
+The format to use for the log output. (Default: Server default, or 'None' if no default set).
+
+.PARAMETER SerialiseFormat
+Specifies the format to use for serialising the log entry. (Default: Server default, or 'None' if no default set).
+
+.PARAMETER SerialiseScriptBlock
+A ScriptBlock defining custom logic for serialising the log data.
+
+.PARAMETER SyslogInfo
+A hashtable containing Syslog configuration information, built using New-PodeSyslogInfo.
+
+.PARAMETER XmlRootName
+An optional name to use for the root element of the log item when serialising to XML.
 
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string.
@@ -602,6 +704,15 @@ New-PodeLogTerminalMethod | Add-PodeLogType -Name 'LogTypeName' -ScriptBlock { /
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Add-PodeLogType -Name 'LogTypeName' -Raw
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Add-PodeLogType -Name 'LogTypeName' -SerialiseFormat 'Json'
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Add-PodeLogType -Name 'LogTypeName' -SerialiseFormat 'Custom' -SerialiseScriptBlock {
+    param($data)
+    return $data | ConvertTo-PodeString
+}
 #>
 function Add-PodeLogType {
     [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
@@ -930,6 +1041,9 @@ A Message to write.
 .PARAMETER Level
 The Level of the error being logged. (Default: Error)
 
+.PARAMETER Metadata
+An optional hashtable of Metadata to include with the log item.
+
 .PARAMETER CheckInnerException
 If supplied, any exceptions are check for inner exceptions. If one is present, this is also logged.
 
@@ -971,33 +1085,35 @@ function Write-PodeErrorLog {
         $CheckInnerException
     )
 
-    # do nothing if error logging isn't setup
-    if (!$PodeContext.Server.Logging.Logger.IsErrorLoggingEnabled) {
-        return
-    }
-
-    # attempt to get current contextId
-    $contextId = Get-PodeLoggingContextId
-
-    # log error object appropriately based on parameter set
-    switch ($PSCmdlet.ParameterSetName) {
-        'Exception' {
-            $PodeContext.Server.Logging.Logger.AddException($Exception, $contextId, $Level, $Metadata, [int]$ThreadId)
+    process {
+        # do nothing if error logging isn't setup
+        if (!$PodeContext.Server.Logging.Logger.IsErrorLoggingEnabled) {
+            return
         }
 
-        'Error' {
-            $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $contextId, $Level, $Metadata, [int]$ThreadId)
+        # attempt to get current contextId
+        $contextId = Get-PodeLoggingContextId
+
+        # log error object appropriately based on parameter set
+        switch ($PSCmdlet.ParameterSetName) {
+            'Exception' {
+                $PodeContext.Server.Logging.Logger.AddException($Exception, $contextId, $Level, $Metadata, [int]$ThreadId)
+            }
+
+            'Error' {
+                $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $contextId, $Level, $Metadata, [int]$ThreadId)
+            }
+
+            'Message' {
+                $category = (Get-PSCallStack)[1].Location
+                $PodeContext.Server.Logging.Logger.AddException($category, $Message, [string]::Empty, $contextId, $Level, $Metadata, [int]$ThreadId)
+            }
         }
 
-        'Message' {
-            $category = (Get-PSCallStack)[1].Location
-            $PodeContext.Server.Logging.Logger.AddException($category, $Message, [string]::Empty, $contextId, $Level, $Metadata, [int]$ThreadId)
+        # for exceptions, check the inner exception
+        if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
+            $Exception.InnerException | Write-PodeErrorLog
         }
-    }
-
-    # for exceptions, check the inner exception
-    if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
-        $Exception.InnerException | Write-PodeErrorLog
     }
 }
 
@@ -1017,8 +1133,14 @@ The Level of the log item being logged. (Default: Informational)
 .PARAMETER InputObject
 The Object to write.
 
+.PARAMETER Metadata
+An optional hashtable of Metadata to include with the log item.
+
 .EXAMPLE
 $object | Write-PodeLog -Name 'LogTypeName'
+
+.EXAMPLE
+$object | Write-PodeLog -Name 'LogTypeName' -Level 'Debug' -Metadata @{ Key = 'Value' }
 #>
 function Write-PodeLog {
     [CmdletBinding()]
@@ -1041,9 +1163,10 @@ function Write-PodeLog {
         $Metadata
     )
 
-    # add the item to be processed
-    $logEvent = [PodeLogEvent]::new($Name, $Level, $InputObject, $Metadata)
-    $PodeContext.Server.Logging.Logger.Add($logEvent)
+    process {
+        $logEvent = [PodeLogEvent]::new($Name, $Level, $InputObject, $Metadata)
+        $PodeContext.Server.Logging.Logger.Add($logEvent)
+    }
 }
 
 <#
@@ -1398,6 +1521,15 @@ The ScriptBlock that defines how to output a log item.
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Logging output method's ScriptBlock.
 
+.PARAMETER Version
+The version of the log method, this determines the arguments which are supplied to the ScriptBlock. (Default: 1)
+Arguments supplied depending on the version:
+
+- Version 1: Transformed Log Items, ArgumentList, Raw Log Items (legacy)
+- Version 2: Log Items, ArgumentList
+
+Under Version 2, the "Log Items" contains references to the transformed and raw log items.
+
 .PARAMETER BatchInfo
 An optional hashtable containing batch configuration for writing log items in bulk.
 Should be created using New-PodeLogBatchInfo.
@@ -1463,6 +1595,62 @@ function New-PodeLogCustomMethod {
     }
 }
 
+<#
+.SYNOPSIS
+Creates a new API logging Method.
+
+.DESCRIPTION
+Creates a new API logging Method for outputting log items to custom API endpoints.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER Type
+An optional Type to assign to the logging method. (Default: API)
+
+.PARAMETER Url
+The URL of the API endpoint to send log items to.
+
+.PARAMETER ContentType
+An optional Content-Type header to include in the API request. (Default: application/json)
+
+.PARAMETER Method
+An optional HTTP Method to use for the API request. (Default: POST)
+
+.PARAMETER Headers
+An optional hashtable of headers to include in the API request, typically used for the Authorization header.
+
+.PARAMETER HeadersScriptBlock
+An optional ScriptBlock that returns a hashtable of headers to include in the API request.
+Useful for dynamically generating headers based on the request body or other elements.
+
+.PARAMETER HeadersArgumentList
+An optional array of arguments to pass to the HeadersScriptBlock.
+
+.PARAMETER BodyScriptBlock
+A ScriptBlock that returns the body of the API request as a valid string, based on a collection of log items.
+Protect-PodeLogItem will be automatically applied to the returned string.
+
+.PARAMETER BodyArgumentList
+An optional array of arguments to pass to the BodyScriptBlock.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.PARAMETER SkipCertificateCheck
+If supplied, the API request will skip certificate validation checks.
+
+.PARAMETER Compress
+If supplied, the API request will include a Content-Encoding: gzip header and compress the request body.
+
+.EXAMPLE
+$headers = @{ 'Authorization' = 'Bearer <token>' }
+$methodId = New-PodeLogApiMethod -Url 'https://api.example.com/logs' -Headers $headers -Compress -BodyScriptBlock {
+    param($logCol)
+    return $logCol.Items.Data | ConvertTo-Json -Compress
+}
+#>
 function New-PodeLogApiMethod {
     [CmdletBinding()]
     [OutputType([string])]
@@ -1569,6 +1757,48 @@ function New-PodeLogApiMethod {
     }
 }
 
+<#
+.SYNOPSIS
+Creates a new Splunk log method.
+
+.DESCRIPTION
+Creates a new Splunk log method for outputting log items to a Splunk HTTP Event Collector (HEC) endpoint.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER BaseUrl
+The base URL of the Splunk HEC endpoint, e.g., 'https://splunk.example.com:8088'.
+
+.PARAMETER Token
+The authentication token for the Splunk HEC endpoint.
+
+.PARAMETER SourceType
+An optional source type to include with the log items.
+
+.PARAMETER Source
+An optional source to include with the log items. (Default: the server's AppName)
+
+.PARAMETER Index
+An optional index to include with the log items.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.PARAMETER SkipCertificateCheck
+If supplied, the API request will skip certificate validation checks.
+
+.EXAMPLE
+$methodId = New-PodeLogSplunkMethod -BaseUrl 'https://splunk.example.com:8088' -Token '<token>' -Source 'my_source'
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$methodId = New-PodeLogSplunkMethod -BaseUrl 'https://splunk.example.com:8088' -Token '<token>' -SourceType 'syslog' -BatchInfo $batchInfo
+
+.EXAMPLE
+$methodId = New-PodeLogSplunkMethod -BaseUrl 'https://localhost:8088' -Token '<token>' -SkipCertificateCheck
+#>
 function New-PodeLogSplunkMethod {
     [CmdletBinding()]
     [OutputType([string])]
@@ -1646,7 +1876,7 @@ function New-PodeLogSplunkMethod {
             })
 
         # convert to json and return
-        return $events | ConvertTo-Json -Compress -Depth 10 | Protect-PodeLogItem
+        return $events | ConvertTo-Json -Compress -Depth 10
     }
 
     # default headers
@@ -1667,7 +1897,48 @@ function New-PodeLogSplunkMethod {
         -Compress
 }
 
-# BaseUrl, ie: 'https://http-intake.logs.datadoghq.com'
+<#
+.SYNOPSIS
+Creates a new Datadog log method.
+
+.DESCRIPTION
+Creates a new Datadog log method for outputting log items to a Datadog's HTTP v2 logging API endpoint.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER BaseUrl
+The base URL of the Datadog API endpoint, e.g., 'https://http-intake.logs.datadoghq.com'.
+
+.PARAMETER ApiKey
+The API key used for authenticating with the Datadog API.
+
+.PARAMETER Tags
+An optional hashtable of tags to include with the log items.
+
+.PARAMETER Service
+An optional service name to include with the log items. (Default: the server's AppName)
+
+.PARAMETER Source
+An optional source name to include with the log items.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.PARAMETER SkipCertificateCheck
+If supplied, the API request will skip certificate validation checks.
+
+.EXAMPLE
+$methodId = New-PodeLogDatadogMethod -BaseUrl 'https://http-intake.logs.datadoghq.com' -ApiKey '<api_key>' -Source 'my_source'
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$methodId = New-PodeLogDatadogMethod -BaseUrl 'https://http-intake.logs.datadoghq.eu' -ApiKey '<api_key>' -Tags @{ env = 'prod' } -BatchInfo $batchInfo
+
+.EXAMPLE
+$methodId = New-PodeLogDatadogMethod -BaseUrl 'https://http-intake.logs.datadoghq.com' -ApiKey '<api_key>' -Service 'my_service' -Source 'my_source' -SkipCertificateCheck
+#>
 function New-PodeLogDatadogMethod {
     [CmdletBinding()]
     [OutputType([string])]
@@ -1742,7 +2013,7 @@ function New-PodeLogDatadogMethod {
             })
 
         # convert to json and return
-        return $events | ConvertTo-Json -Compress -Depth 10 | Protect-PodeLogItem
+        return $events | ConvertTo-Json -Compress -Depth 10
     }
 
     # default headers
@@ -1768,7 +2039,43 @@ function New-PodeLogDatadogMethod {
         -Compress
 }
 
-function New-PodeLogAzureMethod {
+<#
+.SYNOPSIS
+Creates a new Azure Log Analytics log method.
+
+.DESCRIPTION
+Creates a new Azure Log Analytics log method for outputting log items to an Azure Log Analytics workspace.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER WorkspaceId
+The Workspace ID of the Azure Log Analytics workspace.
+
+.PARAMETER SharedKey
+The Shared Key of the Azure Log Analytics workspace.
+
+.PARAMETER LogType
+The Log Type to use for the log items in Azure Log Analytics, used for the Log-Type header.
+
+.PARAMETER Source
+An optional source to include with the log items. (Default: the server's AppName)
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.PARAMETER SkipCertificateCheck
+If supplied, the API request will skip certificate validation checks.
+
+.EXAMPLE
+$methodId = New-PodeLogAzureLogAnalyticsMethod -WorkspaceId '<workspace_id>' -SharedKey '<shared_key>' -LogType 'MyCustomLog'
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$methodId = New-PodeLogAzureLogAnalyticsMethod -WorkspaceId '<workspace_id>' -SharedKey '<shared_key>' -LogType 'MyCustomLog' -BatchInfo $batchInfo -Source 'my_source'
+#>
+function New-PodeLogAzureLogAnalyticsMethod {
     [CmdletBinding()]
     [OutputType([string])]
     param(
@@ -1826,7 +2133,7 @@ function New-PodeLogAzureMethod {
             })
 
         # convert to json and return
-        return $events | ConvertTo-Json -Compress -Depth 10 | Protect-PodeLogItem
+        return $events | ConvertTo-Json -Compress -Depth 10
     }
 
     # build headers scriptblock
@@ -1880,7 +2187,52 @@ function New-PodeLogAzureMethod {
         -Compress
 }
 
-function New-PodeLogAwsMethod {
+<#
+.SYNOPSIS
+Creates a new AWS CloudWatch log method.
+
+.DESCRIPTION
+Creates a new AWS CloudWatch log method for outputting log items to an AWS CloudWatch Logs group and stream.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER LogGroupName
+The name of the AWS CloudWatch Logs group to which log events will be sent.
+
+.PARAMETER LogStreamName
+The name of the AWS CloudWatch Logs stream within the specified log group.
+
+.PARAMETER Token
+The authentication bearer token for the AWS CloudWatch Logs API.
+
+.PARAMETER Region
+The AWS region where the CloudWatch Logs group and stream are located.
+
+.PARAMETER SourceType
+The source type for the log events.
+
+.PARAMETER Source
+The source for the log events. (Default: the server's AppName)
+
+.PARAMETER Index
+The index for the log events.
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.PARAMETER SkipCertificateCheck
+If supplied, the API request will skip certificate validation checks.
+
+.EXAMPLE
+$methodId = New-PodeLogAwsCloudWatchMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Token '<token>' -Region 'us-east-1'
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$methodId = New-PodeLogAwsCloudWatchMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Token '<token>' -Region 'us-east-1' -BatchInfo $batchInfo
+#>
+function New-PodeLogAwsCloudWatchMethod {
     [CmdletBinding()]
     [OutputType([string])]
     param(
@@ -1963,7 +2315,7 @@ function New-PodeLogAwsMethod {
             })
 
         # convert to json and return
-        return $events | ConvertTo-Json -Compress -Depth 10 | Protect-PodeLogItem
+        return $events | ConvertTo-Json -Compress -Depth 10
     }
 
     # default headers
@@ -1984,6 +2336,42 @@ function New-PodeLogAwsMethod {
         -Compress
 }
 
+<#
+.SYNOPSIS
+Creates a new network logging Method.
+
+.DESCRIPTION
+Creates a new network logging Method for outputting log items to a remote server over UDP, TCP, or TLS.
+
+.PARAMETER Id
+An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+
+.PARAMETER Server
+The address (IP or Hostname) of the remote server to send log items to.
+
+.PARAMETER Transport
+The transport protocol to use for sending log items. (Default: 'Udp')
+
+.PARAMETER Port
+The port number to use. (Default: 514)
+
+.PARAMETER BatchInfo
+An optional hashtable containing batch configuration for writing log items in bulk.
+Should be created using New-PodeLogBatchInfo.
+
+.PARAMETER SkipCertificateCheck
+A switch parameter to skip certificate validation when using TLS transport.
+
+.EXAMPLE
+$methodId = New-PodeLogNetworkMethod -Server '192.168.1.100' -Transport 'Tcp' -Port 514
+
+.EXAMPLE
+$methodId = New-PodeLogNetworkMethod -Server 'logs.example.com' -Transport 'Tls' -Port 6514 -SkipCertificateCheck
+
+.EXAMPLE
+$batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
+$methodId = New-PodeLogNetworkMethod -Server 'logs.example.com' -Transport 'Udp' -BatchInfo $batchInfo
+#>
 function New-PodeLogNetworkMethod {
     [CmdletBinding()]
     [OutputType([string])]
@@ -2027,6 +2415,34 @@ function New-PodeLogNetworkMethod {
     }
 }
 
+<#
+.SYNOPSIS
+Creates a new syslog information object.
+
+.DESCRIPTION
+This function creates a new syslog information object with the specified parameters.
+
+.PARAMETER Facility
+The syslog facility code. (Default: 16, which corresponds to local0 for web/app logs)
+
+.PARAMETER AppName
+The name of the application generating the log message. (Default: the server's AppName)
+
+.PARAMETER Tags
+An optional hashtable of tags to include in the syslog message.
+
+.PARAMETER Format
+The syslog format to use. (Default: Server default, or 'RFC5424' if no default set)
+
+.EXAMPLE
+$info = New-PodeLogSyslogInfo -Format 'RFC3164'
+
+.EXAMPLE
+$info = New-PodeLogSyslogInfo -Facility 18 -AppName 'MyApp' -Tags @{ Environment = 'Production'; Version = '1.0' } -Format 'RFC5424'
+
+.EXAMPLE
+$info = New-PodeLogSyslogInfo -AppName 'MyApp'
+#>
 function New-PodeLogSyslogInfo {
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -2063,7 +2479,41 @@ function New-PodeLogSyslogInfo {
     }
 }
 
-function ConvertTo-PodeSyslogMessage {
+<#
+.SYNOPSIS
+Converts a log message to a syslog formatted string.
+
+.DESCRIPTION
+Converts a log message to a syslog formatted string based on the specified parameters.
+
+.PARAMETER Message
+The log message to be converted.
+
+.PARAMETER Level
+The log level of the message.
+
+.PARAMETER Timestamp
+The timestamp of the log message.
+
+.PARAMETER Facility
+The syslog facility code. (Default: 16, which corresponds to local0 for web/app logs)
+
+.PARAMETER AppName
+The name of the application generating the log message. (Default: the server's AppName)
+
+.PARAMETER Tags
+A hashtable of tags to include in the syslog message.
+
+.PARAMETER Format
+The syslog format to use. (Default: Server default, or 'RFC5424' if no default set)
+
+.EXAMPLE
+$msg = ConvertTo-PodeSyslog -Message "This is a test log message" -Level 'Info' -Timestamp (Get-Date) -Tags @{ Environment = "Production"; Version = "1.0" }
+
+.EXAMPLE
+$msg = ConvertTo-PodeSyslog -Message "This is a test log message" -Level 'Error' -Timestamp (Get-Date) -Facility 16 -AppName "MyApp" -Tags @{ Environment = "Staging"; Version = "2.0" } -Format 'RFC3164'
+#>
+function ConvertTo-PodeSyslog {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -2148,6 +2598,16 @@ function ConvertTo-PodeSyslogMessage {
     }
 }
 
+<#
+.SYNOPSIS
+Retrieve the default log format for logging.
+
+.DESCRIPTION
+Retrieves the default log format used by the logging system.
+
+.EXAMPLE
+$format = Get-PodeLogDefaultFormat
+#>
 function Get-PodeLogDefaultFormat {
     [CmdletBinding()]
     [OutputType([Pode.Utilities.Logging.PodeLogFormat])]
@@ -2156,6 +2616,19 @@ function Get-PodeLogDefaultFormat {
     return $PodeContext.Server.Logging.Formatting.Log
 }
 
+<#
+.SYNOPSIS
+Sets the default log format for logging.
+
+.DESCRIPTION
+Sets the default log format used by the logging system.
+
+.PARAMETER Format
+The log format to set as the default.
+
+.EXAMPLE
+Set-PodeLogDefaultFormat -Format 'Syslog'
+#>
 function Set-PodeLogDefaultFormat {
     [CmdletBinding()]
     param(
@@ -2167,6 +2640,16 @@ function Set-PodeLogDefaultFormat {
     $PodeContext.Server.Logging.Formatting.Log = $Format
 }
 
+<#
+.SYNOPSIS
+Retrieve the default syslog format for logging.
+
+.DESCRIPTION
+Retrieves the default syslog format used by the logging system.
+
+.EXAMPLE
+$format = Get-PodeLogDefaultSyslogFormat
+#>
 function Get-PodeLogDefaultSyslogFormat {
     [CmdletBinding()]
     [OutputType([Pode.Utilities.Logging.PodeSyslogFormat])]
@@ -2175,6 +2658,19 @@ function Get-PodeLogDefaultSyslogFormat {
     return $PodeContext.Server.Logging.Formatting.Syslog
 }
 
+<#
+.SYNOPSIS
+Set the default syslog format for logging.
+
+.DESCRIPTION
+Sets the default syslog format used by the logging system.
+
+.PARAMETER Format
+The syslog format to set as the default.
+
+.EXAMPLE
+Set-PodeLogDefaultSyslogFormat -Format 'RFC5424'
+#>
 function Set-PodeLogDefaultSyslogFormat {
     [CmdletBinding()]
     param(
@@ -2186,6 +2682,16 @@ function Set-PodeLogDefaultSyslogFormat {
     $PodeContext.Server.Logging.Formatting.Syslog = $Format
 }
 
+<#
+.SYNOPSIS
+Retrieve the default serialise format for logging.
+
+.DESCRIPTION
+Retrieves the default serialise format used by the logging system.
+
+.EXAMPLE
+$format = Get-PodeLogDefaultSerialiseFormat
+#>
 function Get-PodeLogDefaultSerialiseFormat {
     [CmdletBinding()]
     [OutputType([Pode.Utilities.Logging.PodeSerialiseFormat])]
@@ -2194,6 +2700,19 @@ function Get-PodeLogDefaultSerialiseFormat {
     return $PodeContext.Server.Logging.Formatting.Serialise
 }
 
+<#
+.SYNOPSIS
+Set the default serialise format for logging.
+
+.DESCRIPTION
+Sets the default serialise format used by the logging system.
+
+.PARAMETER Format
+The serialise format to set as the default.
+
+.EXAMPLE
+Set-PodeLogDefaultSerialiseFormat -Format 'Json'
+#>
 function Set-PodeLogDefaultSerialiseFormat {
     [CmdletBinding()]
     param(
@@ -2205,6 +2724,25 @@ function Set-PodeLogDefaultSerialiseFormat {
     $PodeContext.Server.Logging.Formatting.Serialise = $Format
 }
 
+<#
+.SYNOPSIS
+Convert a Pode Log Item or Collection to a string.
+
+.DESCRIPTION
+Converts a Pode Log Item or a collection of Pode Log Items into a string representation.
+
+.PARAMETER Collection
+An optional PodeLogItemCollection to convert to a string, converting all items in the collection.
+
+.PARAMETER Item
+An optional single PodeLogItem to convert to a string.
+
+.EXAMPLE
+Convert-PodeLogItemToString -Collection $logCollection
+
+.EXAMPLE
+Convert-PodeLogItemToString -Item $logItem
+#>
 function Convert-PodeLogItemToString {
     [CmdletBinding()]
     param(

@@ -23,6 +23,9 @@ using namespace Pode.Utilities
 .PARAMETER Name
     An optional name for the server, useful for identification in logs and future extensions.
 
+.PARAMETER AppName
+    An optional application name for the server, which can be used in logging and other contexts.
+
 .PARAMETER Threads
     The number of threads to allocate for Web, SMTP, and TCP servers. Defaults to 1.
 

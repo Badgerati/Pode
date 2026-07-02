@@ -327,6 +327,13 @@ function Get-PodeLoggingApiMethod {
                         continue
                     }
 
+                    if ($body -isnot [string]) {
+                        #TODO: The body returned from the API body scriptblock is not a string
+                        throw ($PodeLocale.loggingApiMethodBodyNotStringExceptionMessage)
+                    }
+
+                    $body = $body | Protect-PodeLogItem
+
                     # get headers
                     $headers = $method.Arguments.Headers.Value
 
@@ -847,7 +854,7 @@ function Start-PodeLoggingRunspace {
                                 Format    = $logType.Options.Formatting.SyslogInfo.Format
                                 Facility  = $logType.Options.Formatting.SyslogInfo.Facility
                             }
-                            $result = ConvertTo-PodeSyslogMessage @params
+                            $result = ConvertTo-PodeSyslog @params
                         }
                     }
 
