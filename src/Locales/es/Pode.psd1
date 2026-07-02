@@ -349,4 +349,7 @@
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "Los valores predeterminados de las rutas estáticas no pueden ser rutas absolutas. Valor predeterminado no válido: '{0}'"
     deprecatedFunctionWarningMessage                                  = "ADVERTENCIA: La función '{0}' está obsoleta y se eliminará en futuras versiones. Por favor, use la función '{1}' en su lugar."
     loggingMethodDoesNotExistExceptionMessage                         = "El método de registro '{0}' no existe."
+    loggingApiMethodBodyNotStringExceptionMessage                     = 'El cuerpo devuelto por el scriptblock del cuerpo de la API de registro no es una cadena.'
+    loggingApiMethodHeadersNotHashtableExceptionMessage               = 'Los encabezados devueltos por el scriptblock de encabezados de la API de registro no son una tabla hash.'
+    nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'Se requiere un ScriptBlock no vacío para el formato de serialización de registro personalizado.'
 }

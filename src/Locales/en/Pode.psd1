@@ -349,4 +349,7 @@
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "Static route defaults cannot be rooted paths. Invalid default: '{0}'"
     deprecatedFunctionWarningMessage                                  = "WARNING: The function '{0}' is deprecated and will be removed in future releases. Please use the '{1}' function instead."
     loggingMethodDoesNotExistExceptionMessage                         = "The logging method '{0}' does not exist."
+    loggingApiMethodBodyNotStringExceptionMessage                     = 'The body returned from the logging API body scriptblock is not a string.'
+    loggingApiMethodHeadersNotHashtableExceptionMessage               = 'The headers returned from the logging API headers scriptblock is not a hashtable.'
+    nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'A non-empty ScriptBlock is required for the Custom logging serialisation format.'
 }

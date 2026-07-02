@@ -831,7 +831,7 @@ function Add-PodeLogType {
         # if custom serialisation, ensure we have a scriptblock, and check for scoped vars in scriptblock
         if ($SerialiseFormat -eq [PodeSerialiseFormat]::Custom) {
             if ($null -eq $SerialiseScriptBlock) {
-                # A non-empty ScriptBlock is required for the Custom serialisation format
+                # A non-empty ScriptBlock is required for the Custom logging serialisation format
                 throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage)
             }
 
@@ -2554,6 +2554,9 @@ function ConvertTo-PodeSyslog {
 
         # set default app-name
         $AppName = Protect-PodeValue -Value $AppName -Default $PodeContext.Server.AppName
+        if ([string]::IsNullOrWhiteSpace($AppName)) {
+            $AppName = '-'
+        }
 
         # generate priority value
         $priority = ($Facility * 8) + (ConvertTo-PodeSyslogLevel -Level $Level)
@@ -2571,12 +2574,12 @@ function ConvertTo-PodeSyslog {
         # build message based on format
         switch ($Format) {
             'RFC3164' {
-                $timestamp = $Timestamp.ToString('MMM dd HH:mm:ss')
-                $Message = "<$($priority)>$($timestamp) $($PodeContext.Server.ComputerName) $($AppName)[$($processId)]: $($Message)"
+                $strTimestamp = $Timestamp.ToString('MMM dd HH:mm:ss')
+                $result = "<$($priority)>$($strTimestamp) $($PodeContext.Server.ComputerName) $($AppName)[$($processId)]: $($Message)"
             }
 
             'RFC5424' {
-                $timestamp = $Timestamp.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+                $strTimestamp = $Timestamp.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
 
                 $strTags = '-'
                 if ($Tags.Count -gt 0) {
@@ -2590,11 +2593,11 @@ function ConvertTo-PodeSyslog {
                     $strTags = "[$($strTags)]"
                 }
 
-                $Message = "<$($priority)>1 $($timestamp) $($PodeContext.Server.ComputerName) $($AppName) $($processId) - $strTags $($Message)"
+                $result = "<$($priority)>1 $($strTimestamp) $($PodeContext.Server.ComputerName) $($AppName) $($processId) - $strTags $($Message)"
             }
         }
 
-        return $message
+        return $result
     }
 }
 

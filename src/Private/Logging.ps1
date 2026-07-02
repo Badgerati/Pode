@@ -328,7 +328,7 @@ function Get-PodeLoggingApiMethod {
                     }
 
                     if ($body -isnot [string]) {
-                        #TODO: The body returned from the API body scriptblock is not a string
+                        # The body returned from the logging API body scriptblock is not a string
                         throw ($PodeLocale.loggingApiMethodBodyNotStringExceptionMessage)
                     }
 
@@ -347,7 +347,7 @@ function Get-PodeLoggingApiMethod {
 
                         if ($null -ne $addHeaders) {
                             if ($addHeaders -isnot [hashtable]) {
-                                #TODO: The headers returned from the API headers scriptblock is not a hashtable
+                                # The headers returned from the logging API headers scriptblock is not a hashtable
                                 throw ($PodeLocale.loggingApiMethodHeadersNotHashtableExceptionMessage)
                             }
 

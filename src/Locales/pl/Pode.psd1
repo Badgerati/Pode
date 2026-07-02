@@ -349,4 +349,7 @@
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "Domyślne wartości statycznej trasy nie mogą być ścieżkami zrootowanymi. Nieprawidłowa wartość domyślna: '{0}'"
     deprecatedFunctionWarningMessage                                  = "UWAGA: Funkcja '{0}' jest przestarzała i zostanie usunięta w przyszłych wersjach. Proszę użyć funkcji '{1}' zamiast niej."
     loggingMethodDoesNotExistExceptionMessage                         = "Metoda logowania '{0}' nie istnieje."
+    loggingApiMethodBodyNotStringExceptionMessage                     = 'Ciało zwrócone przez blok skryptu ciała API logowania nie jest ciągiem znaków.'
+    loggingApiMethodHeadersNotHashtableExceptionMessage               = 'Nagłówki zwrócone przez blok skryptu nagłówków API logowania nie są hashtable.'
+    nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'Niepusty ScriptBlock jest wymagany dla niestandardowego formatu serializacji logowania.'
 }

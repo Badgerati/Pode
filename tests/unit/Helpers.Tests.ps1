@@ -1821,4 +1821,41 @@ InModuleScope -ModuleName 'Pode' {
             Protect-PodePath -Path '/assets/[brackets].txt' -NoEscape | Should -Be '/assets/[brackets].txt'
         }
     }
+
+    Describe 'ConvertTo-PodeString' {
+        It 'Returns empty for null' {
+            ConvertTo-PodeString -InputObject $null | Should -Be ''
+        }
+
+        It 'Returns empty for empty string' {
+            ConvertTo-PodeString -InputObject '' | Should -Be ''
+        }
+
+        It 'Returns string for string' {
+            ConvertTo-PodeString -InputObject 'Hello' | Should -Be 'Hello'
+        }
+
+        It 'Returns string for number' {
+            ConvertTo-PodeString -InputObject 123 | Should -Be '123'
+        }
+
+        It 'Returns string for boolean' {
+            ConvertTo-PodeString -InputObject $true | Should -Be 'True'
+            ConvertTo-PodeString -InputObject $false | Should -Be 'False'
+        }
+
+        It 'Returns string for array' {
+            $array = @(1, 2, 3)
+            $strArray = ($array | Out-String).TrimEnd("`r", "`n")
+
+            ConvertTo-PodeString -InputObject $array | Should -Be $strArray
+        }
+
+        It 'Returns string for hashtable' {
+            $hashtable = @{ Key1 = 'Value1'; Key2 = 'Value2' }
+            $strHashtable = ($hashtable | Out-String).TrimEnd("`r", "`n")
+
+            ConvertTo-PodeString -InputObject $hashtable | Should -Be $strHashtable
+        }
+    }
 }

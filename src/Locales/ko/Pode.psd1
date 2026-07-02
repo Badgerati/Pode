@@ -349,4 +349,7 @@
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "정적 경로의 기본값은 루트 경로일 수 없습니다. 잘못된 기본값: '{0}'"
     deprecatedFunctionWarningMessage                                  = "경고: 함수 '{0}'는 더 이상 사용되지 않으며 향후 릴리스에서 제거될 예정입니다. 대신 '{1}' 함수를 사용하십시오."
     loggingMethodDoesNotExistExceptionMessage                         = "로그 방법 '{0}'은 존재하지 않습니다."
+    loggingApiMethodBodyNotStringExceptionMessage                     = '로그 API 본문 스크립트블록에서 반환된 본문이 문자열이 아닙니다.'
+    loggingApiMethodHeadersNotHashtableExceptionMessage               = '로그 API 헤더 스크립트블록에서 반환된 헤더가 해시테이블이 아닙니다.'
+    nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = '사용자 정의 로그 직렬화 형식에는 비어 있지 않은 ScriptBlock이 필요합니다.'
 }
