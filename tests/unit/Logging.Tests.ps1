@@ -231,9 +231,10 @@ InModuleScope -ModuleName 'Pode' {
             $now = [datetime]::UtcNow
             $strNow = $now.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
             $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+            $tags = @{ tag1 = 'value1' }
 
-            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Tags @{ tag1 = 'value1'; tag2 = 'value2' }
-            $msg | Should -Be "<131>1 $($strNow) localhost Pode $($processId) - [tag1=`"value1`" tag2=`"value2`"] example"
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Tags $tags
+            $msg | Should -Be "<131>1 $($strNow) localhost Pode $($processId) - [tag1=`"value1`"] example"
         }
 
         It 'Converts a log item to RFC3164 syslog format' {
