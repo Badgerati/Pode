@@ -1252,7 +1252,7 @@ function Invoke-PodeAuthValidation {
     }
 
     # main auth validation logic
-    $result = (Test-PodeAuthValidation -Name $Name)
+    $result = Test-PodeAuthValidation -Name $Name
     $result.Auth = $Name
     return $result
 }
@@ -1297,7 +1297,7 @@ function Test-PodeAuthValidation {
                 $_tmp_args = @(Merge-PodeScriptblockArguments -ArgumentList $_inner[$i].Arguments -UsingVariables $_inner[$i].ScriptBlock.UsingVariables)
 
                 $_tmp_args += , $schemes
-                $result = (Invoke-PodeScriptBlock -ScriptBlock $_inner[$i].ScriptBlock.Script -Arguments $_tmp_args -Return -Splat)
+                $result = Invoke-PodeScriptBlock -ScriptBlock $_inner[$i].ScriptBlock.Script -Arguments $_tmp_args -Return -Splat
                 if ($result -is [hashtable]) {
                     break
                 }
@@ -1310,7 +1310,7 @@ function Test-PodeAuthValidation {
         }
 
         if ($null -eq $result) {
-            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.ScriptBlock.Script -Arguments $_args -Return -Splat)
+            $result = Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.ScriptBlock.Script -Arguments $_args -Return -Splat
         }
 
         # if data is a hashtable, then don't call validator (parser either failed, or forced a success)
@@ -1318,12 +1318,12 @@ function Test-PodeAuthValidation {
             $original = $result
 
             $_args = @($result) + @($auth.Arguments)
-            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -UsingVariables $auth.UsingVariables -Return -Splat)
+            $result = Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -UsingVariables $auth.UsingVariables -Return -Splat
 
             # if we have user, then run post validator if present
             if ([string]::IsNullOrEmpty($result.Code) -and ($null -ne $auth.Scheme.PostValidator.Script)) {
                 $_args = @($original) + @($result) + @($auth.Scheme.Arguments)
-                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables -Return -Splat)
+                $result = Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables -Return -Splat
             }
         }
 
@@ -1337,10 +1337,10 @@ function Test-PodeAuthValidation {
 
         # if there's no result, or no user, then the auth failed - but allow auth if anon enabled
         if (($null -eq $result) -or ($result.Count -eq 0) -or (Test-PodeIsEmpty $result.User)) {
-            $code = (Protect-PodeValue -Value $result.Code -Default 401)
+            $code = Protect-PodeValue -Value $result.Code -Default 401
 
             # set the www-auth header
-            $validCode = (($code -eq 401) -or ![string]::IsNullOrEmpty($result.Challenge))
+            $validCode = ($code -eq 401) -or ![string]::IsNullOrEmpty($result.Challenge)
 
             if ($validCode) {
                 if ($null -eq $result) {

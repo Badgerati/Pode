@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Pode.Transport.Sockets;
 using Pode.Utilities;
 using Pode.Protocols.Common.Contexts;
+using Pode.Utilities.Logging;
 
 namespace Pode.Adapters.Listeners
 {
@@ -44,8 +45,8 @@ namespace Pode.Adapters.Listeners
             }
         }
 
-        public PodeListener(PodeAdapterType type, CancellationToken cancellationToken = default)
-            : base(type, cancellationToken)
+        public PodeListener(PodeAdapterType type, IPodeLogger logger, CancellationToken cancellationToken = default)
+            : base(type, logger, cancellationToken)
         {
             Sockets = new List<PodeSocket>();
             Contexts = new PodeItemQueue<PodeContext>();
@@ -105,24 +106,24 @@ namespace Pode.Adapters.Listeners
         protected override void Close()
         {
             // close existing contexts
-            PodeHelpers.WriteErrorMessage($"Closing contexts", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing contexts", PodeLogLevel.Verbose);
             foreach (var _context in Contexts.ToArray())
             {
                 _context.Dispose(true);
             }
 
             Contexts.Dispose();
-            PodeHelpers.WriteErrorMessage($"Closed contexts", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed contexts", PodeLogLevel.Verbose);
 
             // shutdown the sockets
-            PodeHelpers.WriteErrorMessage($"Closing sockets", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closing sockets", PodeLogLevel.Verbose);
             for (var i = Sockets.Count - 1; i >= 0; i--)
             {
                 Sockets[i].Dispose();
             }
 
             Sockets.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed sockets", this, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Closed sockets", PodeLogLevel.Verbose);
         }
     }
 }

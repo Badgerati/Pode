@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Pode.Utilities
 {
-    public class PodeItemQueue<T>
+    public class PodeItemQueue<T> : IDisposable
     {
         private BlockingCollection<T> Items = default;
         private List<T> ProcessingItems = default;
@@ -106,11 +106,15 @@ namespace Pode.Utilities
 
             IsDisposed = true;
 
+            // dispose the queue
             Items.Dispose();
             Items = null;
 
+            // clear the processing items
             ProcessingItems.Clear();
             ProcessingItems = null;
+
+            GC.SuppressFinalize(this);
         }
     }
 }

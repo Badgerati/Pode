@@ -1,6 +1,6 @@
-namespace Pode.Utilities
+namespace Pode.Utilities.Logging
 {
-    public enum PodeLoggingLevel
+    public enum PodeLogLevel
     {
         Error,
         Warning,

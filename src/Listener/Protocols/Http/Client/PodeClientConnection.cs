@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Pode.Utilities;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Http.Client
 {
@@ -65,16 +66,16 @@ namespace Pode.Protocols.Http.Client
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Pinging client connection, ClientId: {ClientId}", Context?.Listener, PodeLoggingLevel.Debug, Context);
+            PodeHelpers.WriteErrorMessage($"Pinging client connection, ClientId: {ClientId}", PodeLogLevel.Debug, Context);
 
             if (await Ping().ConfigureAwait(false))
             {
                 // LastActivity = DateTime.UtcNow;
-                PodeHelpers.WriteErrorMessage($"Ping successful for client connection, ClientId: {ClientId}", Context?.Listener, PodeLoggingLevel.Debug, Context);
+                PodeHelpers.WriteErrorMessage($"Ping successful for client connection, ClientId: {ClientId}", PodeLogLevel.Debug, Context);
             }
             else
             {
-                PodeHelpers.WriteErrorMessage($"Ping failed for client connection, ClientId: {ClientId}", Context?.Listener, PodeLoggingLevel.Debug, Context);
+                PodeHelpers.WriteErrorMessage($"Ping failed for client connection, ClientId: {ClientId}", PodeLogLevel.Debug, Context);
             }
         }
 
