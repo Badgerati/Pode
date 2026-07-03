@@ -899,7 +899,7 @@ function Invoke-PodeBuildPester {
     )
 
     $results = Invoke-Pester -Configuration $Configuration
-    if ($results.FailedCount -gt 0) {
+    if (($results.FailedCount + $results.FailedBlocksCount + $results.FailedContainersCount) -gt 0) {
         throw "$($results.FailedCount) tests failed."
     }
 }
