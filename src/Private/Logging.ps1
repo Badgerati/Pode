@@ -501,7 +501,7 @@ function New-PodeLogAzureWorkspaceMethod {
         $events = @(foreach ($item in $logCol.Items) {
                 # build base event object
                 $evt = @{
-                    Message   = $item.Data
+                    Data      = $item.Data
                     Level     = $item.Event.Level
                     Timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
                 }
@@ -629,9 +629,9 @@ function New-PodeLogAzureDataCollectionMethod {
         $events = @(foreach ($item in $logCol.Items) {
                 # build base event object
                 $evt = @{
-                    Message   = $item.Data
-                    Level     = $item.Event.Level
-                    Timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+                    Data          = $item.Data
+                    Level         = $item.Event.Level
+                    TimeGenerated = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
                 }
 
                 # add source
@@ -657,7 +657,7 @@ function New-PodeLogAzureDataCollectionMethod {
             $body = "client_id=$($options.Client.Id)"
             $body += "&client_secret=$([System.Web.HttpUtility]::UrlEncode($options.Client.Secret))"
             $body += "&scope=$([System.Web.HttpUtility]::UrlEncode('https://monitor.azure.com//.default'))"
-            $body += 'grant_type=client_credentials'
+            $body += '&grant_type=client_credentials'
 
             # request token
             $uri = "https://login.microsoftonline.com/$($options.Client.TenantId)/oauth2/v2.0/token"
