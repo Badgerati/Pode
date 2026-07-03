@@ -316,10 +316,9 @@ function Get-PodeLoggingApiMethod {
                     }
 
                     # get body
-                    $_args = @($logCol) + @($method.Arguments.Body.ArgumentList)
                     $body = Invoke-PodeScriptBlock `
                         -ScriptBlock $method.Arguments.Body.ScriptBlock `
-                        -Arguments $_args `
+                        -Arguments @($logCol, $method.Arguments.Body.Arguments) `
                         -UsingVariables $method.Arguments.Body.UsingVariables `
                         -Splat -Return
 
@@ -338,10 +337,9 @@ function Get-PodeLoggingApiMethod {
                     $headers = $method.Arguments.Headers.Value
 
                     if ($null -ne $method.Arguments.Headers.ScriptBlock) {
-                        $_args = @($body) + @($method.Arguments.Headers.ArgumentList)
                         $addHeaders = Invoke-PodeScriptBlock `
                             -ScriptBlock $method.Arguments.Headers.ScriptBlock `
-                            -Arguments $_args `
+                            -Arguments @($body, $method.Arguments.Headers.Arguments) `
                             -UsingVariables $method.Arguments.Headers.UsingVariables `
                             -Splat -Return
 

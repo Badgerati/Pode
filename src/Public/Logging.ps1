@@ -1122,10 +1122,10 @@ function Write-PodeErrorLog {
 Write an object to a configured custom Logging method.
 
 .DESCRIPTION
-Write an object to a configured custom Logging method.
+Write an object to one or more configured custom Logging methods.
 
 .PARAMETER Name
-The Name of the Logging type to use.
+One or more custom Logging Type Names.
 
 .PARAMETER Level
 The Level of the log item being logged. (Default: Informational)
@@ -1140,13 +1140,16 @@ An optional hashtable of Metadata to include with the log item.
 $object | Write-PodeLog -Name 'LogTypeName'
 
 .EXAMPLE
+$object | Write-PodeLog -Name 'LogTypeName1', 'LogTypeName2'
+
+.EXAMPLE
 $object | Write-PodeLog -Name 'LogTypeName' -Level 'Debug' -Metadata @{ Key = 'Value' }
 #>
 function Write-PodeLog {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string]
+        [string[]]
         $Name,
 
         [Parameter()]
@@ -1164,8 +1167,10 @@ function Write-PodeLog {
     )
 
     process {
-        $logEvent = [PodeLogEvent]::new($Name, $Level, $InputObject, $Metadata)
-        $PodeContext.Server.Logging.Logger.Add($logEvent)
+        foreach ($n in $Name) {
+            $logEvent = [PodeLogEvent]::new($n, $Level, $InputObject, $Metadata)
+            $PodeContext.Server.Logging.Logger.Add($logEvent)
+        }
     }
 }
 
@@ -1624,15 +1629,15 @@ An optional hashtable of headers to include in the API request, typically used f
 An optional ScriptBlock that returns a hashtable of headers to include in the API request.
 Useful for dynamically generating headers based on the request body or other elements.
 
-.PARAMETER HeadersArgumentList
-An optional array of arguments to pass to the HeadersScriptBlock.
+.PARAMETER HeadersArguments
+An optional hashtable of arguments to pass to the HeadersScriptBlock.
 
 .PARAMETER BodyScriptBlock
 A ScriptBlock that returns the body of the API request as a valid string, based on a collection of log items.
 Protect-PodeLogItem will be automatically applied to the returned string.
 
-.PARAMETER BodyArgumentList
-An optional array of arguments to pass to the BodyScriptBlock.
+.PARAMETER BodyArguments
+An optional hashtable of arguments to pass to the BodyScriptBlock.
 
 .PARAMETER BatchInfo
 An optional hashtable containing batch configuration for writing log items in bulk.
@@ -1686,16 +1691,16 @@ function New-PodeLogApiMethod {
         $HeadersScriptBlock,
 
         [Parameter()]
-        [object[]]
-        $HeadersArgumentList,
+        [hashtable]
+        $HeadersArguments,
 
         [Parameter(Mandatory = $true)]
         [scriptblock]
         $BodyScriptBlock,
 
         [Parameter()]
-        [object[]]
-        $BodyArgumentList,
+        [hashtable]
+        $BodyArguments,
 
         [Parameter()]
         [hashtable]
@@ -1745,12 +1750,12 @@ function New-PodeLogApiMethod {
                 Value          = $Headers
                 ScriptBlock    = $HeadersScriptBlock
                 UsingVariables = $headerUsingVars
-                ArgumentList   = $HeadersArgumentList
+                Arguments      = $HeadersArguments
             }
             Body                 = @{
                 ScriptBlock    = $BodyScriptBlock
                 UsingVariables = $bodyUsingVars
-                ArgumentList   = $BodyArgumentList
+                Arguments      = $BodyArguments
             }
             SkipCertificateCheck = $SkipCertificateCheck.IsPresent
         }
@@ -1840,7 +1845,7 @@ function New-PodeLogSplunkMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($logCol, $sourceType, $source, $index)
+        param($logCol, $options)
 
         # build array of events
         $events = @(foreach ($item in $logCol.Items) {
@@ -1855,19 +1860,19 @@ function New-PodeLogSplunkMethod {
                 }
 
                 # add source type
-                $sourceType = Protect-PodeValue -Value $item.Event.Metadata['SourceType'] -Default $sourceType
+                $sourceType = Protect-PodeValue -Value $item.Event.Metadata['SourceType'] -Default $options.SourceType
                 if (![string]::IsNullOrEmpty($sourceType)) {
                     $evt.sourcetype = $sourceType
                 }
 
                 # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
                 if (![string]::IsNullOrEmpty($source)) {
                     $evt.source = $source
                 }
 
                 # add index
-                $index = Protect-PodeValue -Value $item.Event.Metadata['Index'] -Default $index
+                $index = Protect-PodeValue -Value $item.Event.Metadata['Index'] -Default $options.Index
                 if (![string]::IsNullOrEmpty($index)) {
                     $evt.index = $index
                 }
@@ -1885,6 +1890,12 @@ function New-PodeLogSplunkMethod {
     }
 
     # add method to server
+    $bodyArgs = @{
+        SourceType = $SourceType
+        Source     = $Source
+        Index      = $Index
+    }
+
     return New-PodeLogApiMethod `
         -Id $Id `
         -Type 'Splunk' `
@@ -1892,7 +1903,7 @@ function New-PodeLogSplunkMethod {
         -Url "$($BaseUrl.TrimEnd('/'))/services/collector" `
         -Headers $headers `
         -BodyScriptBlock $bodyScriptBlock `
-        -BodyArgumentList @($SourceType, $Source, $Index) `
+        -BodyArguments $bodyArgs `
         -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
         -Compress
 }
@@ -1980,7 +1991,7 @@ function New-PodeLogDatadogMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($logCol, $service, $source, $tags)
+        param($logCol, $options)
 
         # build array of events
         $events = @(foreach ($item in $logCol.Items) {
@@ -1993,20 +2004,20 @@ function New-PodeLogDatadogMethod {
                 }
 
                 # add service
-                $service = Protect-PodeValue -Value $item.Event.Metadata['Service'] -Default $service
+                $service = Protect-PodeValue -Value $item.Event.Metadata['Service'] -Default $options.Service
                 if (![string]::IsNullOrEmpty($service)) {
                     $evt.service = $service
                 }
 
                 # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
                 if (![string]::IsNullOrEmpty($source)) {
                     $evt.ddsource = $source
                 }
 
                 # add tags
-                if ($tags.Count -gt 0) {
-                    $evt.ddtags = @(foreach ($key in $tags.Keys) { "$($key):$($tags[$key])" }) -join ','
+                if ($options.Tags.Count -gt 0) {
+                    $evt.ddtags = @(foreach ($key in $options.Tags.Keys) { "$($key):$($options.Tags[$key])" }) -join ','
                 }
 
                 $evt
@@ -2027,6 +2038,12 @@ function New-PodeLogDatadogMethod {
     }
 
     # add method to server
+    $bodyArgs = @{
+        Service = $Service
+        Source  = $Source
+        Tags    = $Tags
+    }
+
     return New-PodeLogApiMethod `
         -Id $Id `
         -Type 'Datadog' `
@@ -2034,7 +2051,7 @@ function New-PodeLogDatadogMethod {
         -Url "$($BaseUrl.TrimEnd('/'))/api/v2/logs" `
         -Headers $headers `
         -BodyScriptBlock $bodyScriptBlock `
-        -BodyArgumentList @($Service, $Source, $Tags) `
+        -BodyArguments $bodyArgs `
         -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
         -Compress
 }
@@ -2112,7 +2129,7 @@ function New-PodeLogAzureLogAnalyticsMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($logCol, $source)
+        param($logCol, $options)
 
         # build array of events
         $events = @(foreach ($item in $logCol.Items) {
@@ -2124,7 +2141,7 @@ function New-PodeLogAzureLogAnalyticsMethod {
                 }
 
                 # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
                 if (![string]::IsNullOrEmpty($source)) {
                     $evt.Source = $source
                 }
@@ -2138,7 +2155,7 @@ function New-PodeLogAzureLogAnalyticsMethod {
 
     # build headers scriptblock
     $headersScriptBlock = {
-        param($body, $sharedKey)
+        param($body, $options)
 
         # the x-ms-date header
         $date = [datetime]::Now.ToString('R')
@@ -2153,7 +2170,7 @@ function New-PodeLogAzureLogAnalyticsMethod {
 
         # build authorization header
         $bytesToSign = [System.Text.Encoding]::UTF8.GetBytes($stringToSign)
-        $keyBytes = [System.Convert]::FromBase64String($sharedKey)
+        $keyBytes = [System.Convert]::FromBase64String($options.SharedKey)
         $hmacsha256 = [System.Security.Cryptography.HMACSHA256]::new()
         $hmacsha256.Key = $keyBytes
         $signatureBytes = $hmacsha256.ComputeHash($bytesToSign)
@@ -2173,6 +2190,14 @@ function New-PodeLogAzureLogAnalyticsMethod {
     }
 
     # add method to server
+    $bodyArgs = @{
+        Source = $Source
+    }
+
+    $headerArgs = @{
+        SharedKey = $SharedKey
+    }
+
     return New-PodeLogApiMethod `
         -Id $Id `
         -Type 'Azure' `
@@ -2180,9 +2205,9 @@ function New-PodeLogAzureLogAnalyticsMethod {
         -Url "https://$($WorkspaceId).ods.opinsights.azure.com/api/logs?api-version=2016-04-01" `
         -Headers $headers `
         -HeadersScriptBlock $headersScriptBlock `
-        -HeadersArgumentList @($SharedKey) `
+        -HeadersArguments $headerArgs `
         -BodyScriptBlock $bodyScriptBlock `
-        -BodyArgumentList @($Source) `
+        -BodyArguments $bodyArgs `
         -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
         -Compress
 }
@@ -2281,7 +2306,7 @@ function New-PodeLogAwsCloudWatchMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($logCol, $sourceType, $source, $index)
+        param($logCol, $options)
 
         # build array of events
         $events = @(foreach ($item in $logCol.Items) {
@@ -2294,19 +2319,19 @@ function New-PodeLogAwsCloudWatchMethod {
                 }
 
                 # add source type
-                $sourceType = Protect-PodeValue -Value $item.Event.Metadata['SourceType'] -Default $sourceType
+                $sourceType = Protect-PodeValue -Value $item.Event.Metadata['SourceType'] -Default $options.SourceType
                 if (![string]::IsNullOrEmpty($sourceType)) {
                     $evt.sourcetype = $sourceType
                 }
 
                 # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
                 if (![string]::IsNullOrEmpty($source)) {
                     $evt.source = $source
                 }
 
                 # add index
-                $index = Protect-PodeValue -Value $item.Event.Metadata['Index'] -Default $index
+                $index = Protect-PodeValue -Value $item.Event.Metadata['Index'] -Default $options.Index
                 if (![string]::IsNullOrEmpty($index)) {
                     $evt.index = $index
                 }
@@ -2324,6 +2349,12 @@ function New-PodeLogAwsCloudWatchMethod {
     }
 
     # add method to server
+    $bodyArgs = @{
+        SourceType = $SourceType
+        Source     = $Source
+        Index      = $Index
+    }
+
     return New-PodeLogApiMethod `
         -Id $Id `
         -Type 'AWS' `
@@ -2331,7 +2362,7 @@ function New-PodeLogAwsCloudWatchMethod {
         -Url "https://logs.$($Region).amazonaws.com/services/collector/event?logGroup=$($LogGroupName)&logStream=$($LogStreamName)" `
         -Headers $headers `
         -BodyScriptBlock $bodyScriptBlock `
-        -BodyArgumentList @($Source, $SourceType, $Index) `
+        -BodyArguments $bodyArgs `
         -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
         -Compress
 }
