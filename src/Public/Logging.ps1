@@ -1886,7 +1886,7 @@ function New-PodeLogSplunkMethod {
 
     # default headers
     $headers = @{
-        'Authorization' = "Splunk $($Token)"
+        Authorization = "Splunk $($Token)"
     }
 
     # add method to server
@@ -2062,6 +2062,7 @@ Creates a new Azure Log Analytics log method.
 
 .DESCRIPTION
 Creates a new Azure Log Analytics log method for outputting log items to an Azure Log Analytics workspace.
+The Azure logging method created will either use the legacy Workspace method, or the new Data Collection logic.
 
 .PARAMETER Id
 An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
@@ -2075,6 +2076,24 @@ The Shared Key of the Azure Log Analytics workspace.
 .PARAMETER LogType
 The Log Type to use for the log items in Azure Log Analytics, used for the Log-Type header.
 
+.PARAMETER Endpoint
+The Data Collection Endpoint used for ingestion into Azure Monitor/Azure Log Analytics.
+
+.PARAMETER ImmutableId
+The Data Collection Rule Immutable ID.
+
+.PARAMETER StreamName
+The Stream Name in the Data Collection Rule that should handle the logs.
+
+.PARAMETER ClientId
+The Client ID from registering a new app.
+
+.PARAMETER ClientSecret
+The Client Secret from registering a new app.
+
+.PARAMETER TenantId
+The Directory/Tenant ID from registering a new app.
+
 .PARAMETER Source
 An optional source to include with the log items. (Default: the server's AppName)
 
@@ -2086,13 +2105,13 @@ Should be created using New-PodeLogBatchInfo.
 If supplied, the API request will skip certificate validation checks.
 
 .EXAMPLE
-$methodId = New-PodeLogAzureLogAnalyticsMethod -WorkspaceId '<workspace_id>' -SharedKey '<shared_key>' -LogType 'MyCustomLog'
+$methodId = New-PodeLogAzureMethod -WorkspaceId '<workspace_id>' -SharedKey '<shared_key>' -LogType 'MyCustomLog'
 
 .EXAMPLE
 $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
-$methodId = New-PodeLogAzureLogAnalyticsMethod -WorkspaceId '<workspace_id>' -SharedKey '<shared_key>' -LogType 'MyCustomLog' -BatchInfo $batchInfo -Source 'my_source'
+$methodId = New-PodeLogAzureMethod -WorkspaceId '<workspace_id>' -SharedKey '<shared_key>' -LogType 'MyCustomLog' -BatchInfo $batchInfo -Source 'my_source'
 #>
-function New-PodeLogAzureLogAnalyticsMethod {
+function New-PodeLogAzureMethod {
     [CmdletBinding()]
     [OutputType([string])]
     param(
@@ -2100,17 +2119,41 @@ function New-PodeLogAzureLogAnalyticsMethod {
         [string]
         $Id,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Workspace')]
         [string]
         $WorkspaceId,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Workspace')]
         [string]
         $SharedKey,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Workspace')]
         [string]
         $LogType,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'DataCollection')]
+        [string]
+        $Endpoint,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'DataCollection')]
+        [string]
+        $ImmutableId,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'DataCollection')]
+        [string]
+        $StreamName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'DataCollection')]
+        [string]
+        $ClientId,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'DataCollection')]
+        [string]
+        $ClientSecret,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'DataCollection')]
+        [string]
+        $TenantId,
 
         [Parameter()]
         [string]
@@ -2127,89 +2170,33 @@ function New-PodeLogAzureLogAnalyticsMethod {
     # default source
     $Source = Protect-PodeValue -Value $Source -Default $PodeContext.Server.AppName
 
-    # build body scriptblock
-    $bodyScriptBlock = {
-        param($logCol, $options)
+    # return appropriate azure logging
+    switch ($PSCmdlet.ParameterSetName) {
+        'Workspace' {
+            return New-PodeLogAzureWorkspaceMethod `
+                -Id $Id `
+                -WorkspaceId $WorkspaceId `
+                -SharedKey $SharedKey `
+                -LogType $LogType `
+                -Source $Source `
+                -BatchInfo $BatchInfo `
+                -SkipCertificateCheck:$SkipCertificateCheck
+        }
 
-        # build array of events
-        $events = @(foreach ($item in $logCol.Items) {
-                # build base event object
-                $evt = @{
-                    Message   = $item.Data
-                    Level     = $item.Event.Level
-                    Timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-                }
-
-                # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
-                if (![string]::IsNullOrEmpty($source)) {
-                    $evt.Source = $source
-                }
-
-                $evt
-            })
-
-        # convert to json and return
-        return $events | ConvertTo-Json -Compress -Depth 10
-    }
-
-    # build headers scriptblock
-    $headersScriptBlock = {
-        param($body, $options)
-
-        # the x-ms-date header
-        $date = [datetime]::Now.ToString('R')
-
-        # build signature string
-        $contentLength = $body.Length
-        $method = 'POST'
-        $contentType = 'application/json'
-        $dateHeader = "x-ms-date:$($date)"
-        $urlPath = '/api/logs'
-        $stringToSign = "$($method)`n$($contentLength)`n$($contentType)`n$($dateHeader)`n$($urlPath)"
-
-        # build authorization header
-        $bytesToSign = [System.Text.Encoding]::UTF8.GetBytes($stringToSign)
-        $keyBytes = [System.Convert]::FromBase64String($options.SharedKey)
-        $hmacsha256 = [System.Security.Cryptography.HMACSHA256]::new()
-        $hmacsha256.Key = $keyBytes
-        $signatureBytes = $hmacsha256.ComputeHash($bytesToSign)
-        $signature = [System.Convert]::ToBase64String($signatureBytes)
-        $authorizationHeader = "SharedKey $($workspaceId):$($signature)"
-
-        return @{
-            'Authorization' = $authorizationHeader
-            'x-ms-date'     = $date
+        'DataCollection' {
+            return New-PodeLogAzureDataCollectionMethod `
+                -Id $Id `
+                -Endpoint $Endpoint `
+                -ImmutableId $ImmutableId `
+                -StreamName $StreamName `
+                -ClientId $ClientId `
+                -ClientSecret $ClientSecret `
+                -TenantId $TenantId `
+                -Source $Source `
+                -BatchInfo $BatchInfo `
+                -SkipCertificateCheck:$SkipCertificateCheck
         }
     }
-
-    # default headers
-    $headers = @{
-        'Log-Type'             = $LogType
-        'time-generated-field' = 'Timestamp'
-    }
-
-    # add method to server
-    $bodyArgs = @{
-        Source = $Source
-    }
-
-    $headerArgs = @{
-        SharedKey = $SharedKey
-    }
-
-    return New-PodeLogApiMethod `
-        -Id $Id `
-        -Type 'Azure' `
-        -BatchInfo $BatchInfo `
-        -Url "https://$($WorkspaceId).ods.opinsights.azure.com/api/logs?api-version=2016-04-01" `
-        -Headers $headers `
-        -HeadersScriptBlock $headersScriptBlock `
-        -HeadersArguments $headerArgs `
-        -BodyScriptBlock $bodyScriptBlock `
-        -BodyArguments $bodyArgs `
-        -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
-        -Compress
 }
 
 <#
@@ -2251,13 +2238,13 @@ Should be created using New-PodeLogBatchInfo.
 If supplied, the API request will skip certificate validation checks.
 
 .EXAMPLE
-$methodId = New-PodeLogAwsCloudWatchMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Token '<token>' -Region 'us-east-1'
+$methodId = New-PodeLogAwsMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Token '<token>' -Region 'us-east-1'
 
 .EXAMPLE
 $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
-$methodId = New-PodeLogAwsCloudWatchMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Token '<token>' -Region 'us-east-1' -BatchInfo $batchInfo
+$methodId = New-PodeLogAwsMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Token '<token>' -Region 'us-east-1' -BatchInfo $batchInfo
 #>
-function New-PodeLogAwsCloudWatchMethod {
+function New-PodeLogAwsMethod {
     [CmdletBinding()]
     [OutputType([string])]
     param(
@@ -2345,7 +2332,7 @@ function New-PodeLogAwsCloudWatchMethod {
 
     # default headers
     $headers = @{
-        'Authorization' = "Bearer $($Token)"
+        Authorization = "Bearer $($Token)"
     }
 
     # add method to server

@@ -462,6 +462,248 @@ function Get-PodeLoggingNetworkMethod {
     }
 }
 
+function New-PodeLogAzureWorkspaceMethod {
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $WorkspaceId,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $SharedKey,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $LogType,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null,
+
+        [switch]
+        $SkipCertificateCheck
+    )
+
+    # build body scriptblock
+    $bodyScriptBlock = {
+        param($logCol, $options)
+
+        # build array of events
+        $events = @(foreach ($item in $logCol.Items) {
+                # build base event object
+                $evt = @{
+                    Message   = $item.Data
+                    Level     = $item.Event.Level
+                    Timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+                }
+
+                # add source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
+                if (![string]::IsNullOrEmpty($source)) {
+                    $evt.Source = $source
+                }
+
+                $evt
+            })
+
+        # convert to json and return
+        return $events | ConvertTo-Json -Compress -Depth 10
+    }
+
+    # build headers scriptblock
+    $headersScriptBlock = {
+        param($body, $options)
+
+        # the x-ms-date header
+        $date = [datetime]::Now.ToString('R')
+
+        # build signature string
+        $contentLength = $body.Length
+        $method = 'POST'
+        $contentType = 'application/json'
+        $dateHeader = "x-ms-date:$($date)"
+        $urlPath = '/api/logs'
+        $stringToSign = "$($method)`n$($contentLength)`n$($contentType)`n$($dateHeader)`n$($urlPath)"
+
+        # build authorization header
+        $bytesToSign = [System.Text.Encoding]::UTF8.GetBytes($stringToSign)
+        $keyBytes = [System.Convert]::FromBase64String($options.SharedKey)
+        $hmacsha256 = [System.Security.Cryptography.HMACSHA256]::new()
+        $hmacsha256.Key = $keyBytes
+        $signatureBytes = $hmacsha256.ComputeHash($bytesToSign)
+        $signature = [System.Convert]::ToBase64String($signatureBytes)
+        $authorizationHeader = "SharedKey $($workspaceId):$($signature)"
+
+        return @{
+            'Authorization' = $authorizationHeader
+            'x-ms-date'     = $date
+        }
+    }
+
+    # default headers
+    $headers = @{
+        'Log-Type'             = $LogType
+        'time-generated-field' = 'Timestamp'
+    }
+
+    # add method to server
+    $bodyArgs = @{
+        Source = $Source
+    }
+
+    $headerArgs = @{
+        SharedKey = $SharedKey
+    }
+
+    return New-PodeLogApiMethod `
+        -Id $Id `
+        -Type 'Azure' `
+        -BatchInfo $BatchInfo `
+        -Url "https://$($WorkspaceId).ods.opinsights.azure.com/api/logs?api-version=2016-04-01" `
+        -Headers $headers `
+        -HeadersScriptBlock $headersScriptBlock `
+        -HeadersArguments $headerArgs `
+        -BodyScriptBlock $bodyScriptBlock `
+        -BodyArguments $bodyArgs `
+        -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
+        -Compress
+}
+
+function New-PodeLogAzureDataCollectionMethod {
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Endpoint,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ImmutableId,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $StreamName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ClientId,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ClientSecret,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $TenantId,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter()]
+        [hashtable]
+        $BatchInfo = $null,
+
+        [switch]
+        $SkipCertificateCheck
+    )
+
+    # build body scriptblock
+    $bodyScriptBlock = {
+        param($logCol, $options)
+
+        # build array of events
+        $events = @(foreach ($item in $logCol.Items) {
+                # build base event object
+                $evt = @{
+                    Message   = $item.Data
+                    Level     = $item.Event.Level
+                    Timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+                }
+
+                # add source
+                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
+                if (![string]::IsNullOrEmpty($source)) {
+                    $evt.Source = $source
+                }
+
+                $evt
+            })
+
+        # convert to json and return
+        return $events | ConvertTo-Json -Compress -Depth 10
+    }
+
+    # build headers scriptblock
+    $headersScriptBlock = {
+        param($body, $options)
+
+        # has the token expired? if so, generate a new one
+        if ($options.Auth.ExpiryDate -lt [datetime]::Now.AddMinutes(-1)) {
+            # build payload
+            $body = "client_id=$($options.Client.Id)"
+            $body += "&client_secret=$([System.Web.HttpUtility]::UrlEncode($options.Client.Secret))"
+            $body += "&scope=$([System.Web.HttpUtility]::UrlEncode('https://monitor.azure.com//.default'))"
+            $body += 'grant_type=client_credentials'
+
+            # request token
+            $uri = "https://login.microsoftonline.com/$($options.Client.TenantId)/oauth2/v2.0/token"
+            $result = Invoke-RestMethod -Method Post -Uri $uri -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
+
+            # set token and new expiry
+            $options.Auth.Token = $result.access_token
+            $options.Auth.ExpiryDate = [datetime]::Now.AddSeconds($result.expires_in)
+        }
+
+        # return auth header
+        return @{
+            Authorization = "Bearer $($options.Auth.Token)"
+        }
+    }
+
+    # add method to server
+    $bodyArgs = @{
+        Source = $Source
+    }
+
+    $headerArgs = @{
+        Client = @{
+            Id       = $ClientId
+            Secret   = $ClientSecret
+            TenantId = $TenantId
+        }
+        Auth   = @{
+            Token      = $null
+            ExpiryDate = [datetime]::MinValue
+        }
+    }
+
+    return New-PodeLogApiMethod `
+        -Id $Id `
+        -Type 'Azure' `
+        -BatchInfo $BatchInfo `
+        -Url "$($Endpoint)/dataCollectionRules/$($ImmutableId)/streams/$($StreamName)?api-version=2023-01-01" `
+        -HeadersScriptBlock $headersScriptBlock `
+        -HeadersArguments $headerArgs `
+        -BodyScriptBlock $bodyScriptBlock `
+        -BodyArguments $bodyArgs `
+        -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
+        -Compress
+}
+
 function ConvertTo-PodeSyslogLevel {
     param(
         [Parameter()]
