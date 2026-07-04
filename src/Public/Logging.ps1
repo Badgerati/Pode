@@ -348,7 +348,8 @@ function Enable-PodeRequestLogType {
             if ($null -eq $SerialiseScriptBlock) {
                 $SerialiseScriptBlock = {
                     param($data)
-                    return "$($data.Host) $($data.Identifier) $($data.User) [$($data.Date)] `"$($data.RequestLine)`" $($data.StatusCode) $($data.Size) `"$($data.Referrer)`" `"$($data.UserAgent)`""
+                    $reqLine = "$($data.Method) $($data.Resource) $($data.Protocol)"
+                    return "$($data.Host) $($data.Identifier) $($data.User) [$($data.Date)] `"$($reqLine)`" $($data.StatusCode) $($data.Size) `"$($data.Referrer)`" `"$($data.UserAgent)`""
                 }
             }
 

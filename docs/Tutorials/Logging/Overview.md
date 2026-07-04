@@ -2,10 +2,10 @@
 
 There are two aspects to logging in Pode: Types and Methods.
 
-* **Types** define how log items are transformed, and what should be supplied to the Method, such as Error or Request.
+* **Types** define how log items are transformed, serialised, and/or formatted, and what should be supplied to the Method, such as Error or Request.
 * **Methods** define how the transformed log items should be recorded, such as to a file, terminal, or event viewer.
 
-Think of it like an ETL data pipeline:
+Think of it like the phases of an ETL data pipeline:
 
 ```mermaid
 graph LR
@@ -22,9 +22,13 @@ graph LR
     Transform --> Load
 ```
 
-While we're technically not "extracting" data, the log item is the initial entity/data in the pipeline. After which it is transformed by the Log Type (Error, Request, etc.), and then loaded - or "outputted" - to an appropriate log source like file/etc.
+| Phase     | Description                                                                    |
+| --------- | ------------------------------------------------------------------------------ |
+| Extract   | The originating log item, for example from `Write-PodeErrorLog`                |
+| Transform | The log item is transformed by the log type, for example serialisation         |
+| Load      | The resultant log message is outputted via a log method, for example to a file |
 
-For example when you supply an Exception to [`Write-PodeErrorLog`](../../../Functions/Logging/Write-PodeErrorLog), the Exception passed to Pode's inbuilt Error logging Type which transforms it into a string; which is then passed to a logging Method - like a File or Terminal - to be outputted/recorded.
+For example when you supply an Exception to [`Write-PodeErrorLog`](../../../Functions/Logging/Write-PodeErrorLog), the Exception is passed to Pode's inbuilt Error logging Type which transforms it into a string; which is then passed to a logging Method - like a File or Terminal - to be outputted/recorded.
 
 Pode has several built-in logging Methods for you to use:
 

@@ -822,20 +822,18 @@ function Get-PodeLoggingInbuiltType {
                     $logEvent
                 )
 
-                $method = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Method
-                $resource = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Resource
-                $protocol = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Protocol
-
                 return [ordered]@{
-                    Host        = Protect-PodeLogRequestItem -Value $logEvent.Data.Host
-                    Identifier  = Protect-PodeLogRequestItem -Value $logEvent.Data.RfcUserIdentity
-                    User        = Protect-PodeLogRequestItem -Value $logEvent.Data.User
-                    Date        = Protect-PodeLogRequestItem -Value $logEvent.Data.Date
-                    RequestLine = "$($method) $($resource) $($protocol)"
-                    StatusCode  = Protect-PodeLogRequestItem -Value $logEvent.Data.Response.StatusCode
-                    Size        = Protect-PodeLogRequestItem -Value $logEvent.Data.Response.Size
-                    Referrer    = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Referrer
-                    UserAgent   = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Agent
+                    Host       = Protect-PodeLogRequestItem -Value $logEvent.Data.Host
+                    Identifier = Protect-PodeLogRequestItem -Value $logEvent.Data.RfcUserIdentity
+                    User       = Protect-PodeLogRequestItem -Value $logEvent.Data.User
+                    Date       = Protect-PodeLogRequestItem -Value $logEvent.Data.Date
+                    Method     = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Method
+                    Resource   = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Resource
+                    Protocol   = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Protocol
+                    StatusCode = Protect-PodeLogRequestItem -Value $logEvent.Data.Response.StatusCode
+                    Size       = Protect-PodeLogRequestItem -Value $logEvent.Data.Response.Size
+                    Referrer   = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Referrer
+                    UserAgent  = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Agent
                 }
             }
         }

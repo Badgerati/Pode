@@ -3,24 +3,41 @@
 You can define a Custom logging Type in Pode by using [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType). Much like Requests and Errors, this function too accepts one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
 !!! important
-    The `Add-PodeLogger` function is now deprecated, please use [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType) instead.
+    The `Add-PodeLogger` function is now deprecated, please use [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType) instead. The former is aliased to the latter for now.
+
+## Creation
 
 When adding a Custom logging Type, you supply a `-ScriptBlock` plus an array of optional arguments in `-ArgumentList`. The function also requires a unique `-Name`, so that it can be referenced from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
 
-The ScriptBlock will be supplied with the following arguments:
+The ScriptBlock will be supplied with the following parameters depending on the `-Version` supplied (default: 1)
 
-1. A transformed, or raw, log item to log that was supplied via [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
+**Version 1**
+
+1. A raw log item that was supplied via [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
 2. The arguments that were supplied from [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType)'s `-ArgumentList` parameter.
+
+**Version 2**
+
+1. A Log Event object, with references to the raw data from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog), the log Level, Timestamp, any Metadata, and the log type's Name.
+2. The arguments that were supplied from [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType)'s `-ArgumentList` parameter.
+
+## Formatting
+
+More information on formatting can be [found here](../Formatting).
 
 ## Log Levels
 
-The Custom logging Type uses the following log levels (Informational is the default):
+The Custom logging Type uses the following log levels:
 
-* `Error`
-* `Warning`
-* `Informational`
-* `Verbose`
-* `Debug`
+* Emergency
+* Alert
+* Critical
+* Error
+* Warning
+* Notice
+* Informational (default)
+* Verbose
+* Debug
 
 You can alter the log level by supplying `-Levels` to [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType) - you can supply one or more.
 
@@ -40,6 +57,48 @@ New-PodeLogFileMethod -Name 'Custom' | Add-PodeLogType -Name 'Main' -ScriptBlock
     param($item, $arg1, $arg2)
     return "$($item.Key1), $($item.Key2), $($item.Key3)"
 } -ArgumentList $arg1, $arg2
+
+Write-PodeLog -Name 'Main' -InputObject @{
+    Key1 = 'Value1'
+    Key2 = 'Value2'
+    Key3 = 'Value3'
+}
+```
+
+### Log as JSON
+
+This example will create a Custom logging Type that will take some custom hashtable, select appropriate data, serialise it into JSON, and then pass that to the inbuilt File logging Method. This example also uses `-Version 2` of the supplied parameters.
+
+```powershell
+New-PodeLogFileMethod -Name 'Custom' | Add-PodeLogType -Name 'Main' -Version 2 -SerialiseFormat Json -ScriptBlock {
+    param($logEvent)
+    return [ordered]@{
+        Level     = $logEvent.Level
+        Key1      = $logEvent.Data.Key1
+        MergedKey = "$($logEvent.Data.Key2) & $($logEvent.Data.Key3)"
+    }
+}
+
+Write-PodeLog -Name 'Main' -InputObject @{
+    Key1 = 'Value1'
+    Key2 = 'Value2'
+    Key3 = 'Value3'
+}
+```
+
+### Log as Syslog
+
+This example will create a Custom logging Type that will take some custom hashtable, select appropriate data, convert it to Syslog format, and then pass that to the inbuilt File logging Method. This example also uses `-Version 2` of the supplied parameters.
+
+```powershell
+New-PodeLogFileMethod -Name 'Custom' | Add-PodeLogType -Name 'Main' -Version 2 -LogFormat -ScriptBlock {
+    param($logEvent)
+    return [ordered]@{
+        Level     = $logEvent.Level
+        Key1      = $logEvent.Data.Key1
+        MergedKey = "$($logEvent.Data.Key2) & $($logEvent.Data.Key3)"
+    }
+}
 
 Write-PodeLog -Name 'Main' -InputObject @{
     Key1 = 'Value1'
