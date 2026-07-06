@@ -37,7 +37,7 @@
     cronExpressionInvalidExceptionMessage                             = 'Cron expression should only consist of 5 parts: {0}'
     noSessionToSetOnResponseExceptionMessage                          = 'There is no session available to set on the response.'
     valueOutOfRangeExceptionMessage                                   = "Value '{0}' for {1} is invalid, should be between {2} and {3}"
-    loggingMethodAlreadyDefinedExceptionMessage                       = 'Logging method already defined: {0}'
+    loggingMethodAlreadyDefinedExceptionMessage                       = 'Log Method already defined: {0}'
     noSecretForHmac256ExceptionMessage                                = 'No secret supplied for HMAC256 hash.'
     eolPowerShellWarningMessage                                       = '[WARNING] Pode {0} has not been tested on PowerShell {1}, as it is EOL.'
     runspacePoolFailedToLoadExceptionMessage                          = '{0} RunspacePool failed to load.'
@@ -48,7 +48,7 @@
     taskDoesNotExistExceptionMessage                                  = "Task '{0}' does not exist."
     scopedVariableNotFoundExceptionMessage                            = 'Scoped Variable not found: {0}'
     sessionsRequiredForCsrfExceptionMessage                           = 'Sessions are required to use CSRF unless you want to use cookies.'
-    nonEmptyScriptBlockRequiredForLoggingMethodExceptionMessage       = 'A non-empty ScriptBlock is required for the logging method.'
+    nonEmptyScriptBlockRequiredForLoggingMethodExceptionMessage       = 'A non-empty ScriptBlock is required for the Log Method.'
     credentialsPassedWildcardForHeadersLiteralExceptionMessage        = 'When Credentials is passed, The * wildcard for Headers will be taken as a literal string and not a wildcard.'
     podeNotInitializedExceptionMessage                                = 'Pode has not been initialized.'
     multipleEndpointsForGuiMessage                                    = 'Multiple endpoints defined, only the first will be used for the GUI.'
@@ -225,7 +225,7 @@
     validationOfOneOfSchemaNotSupportedExceptionMessage               = "Validation of a schema that includes 'oneof' is not supported."
     routeParameterCannotBeNullExceptionMessage                        = "The parameter 'Route' cannot be null."
     cacheStorageAlreadyExistsExceptionMessage                         = "Cache Storage with name '{0}' already exists."
-    loggingMethodRequiresValidScriptBlockExceptionMessage             = "The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock."
+    loggingMethodRequiresValidScriptBlockExceptionMessage             = "The supplied output Method for the '{0}' Log Method requires a valid ScriptBlock."
     scopedVariableAlreadyDefinedExceptionMessage                      = 'Scoped Variable already defined: {0}'
     oauth2RequiresAuthorizeUrlExceptionMessage                        = "OAuth2 requires an 'AuthoriseUrl' property to be supplied."
     pathNotExistExceptionMessage                                      = 'Path does not exist: {0}'
@@ -348,7 +348,7 @@
     mcpToolGroupAlreadyExistsExceptionMessage                         = "The MCP tool group '{0}' already exists."
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "Static route defaults cannot be rooted paths. Invalid default: '{0}'"
     deprecatedFunctionWarningMessage                                  = "WARNING: The function '{0}' is deprecated and will be removed in future releases. Please use the '{1}' function instead."
-    loggingMethodDoesNotExistExceptionMessage                         = "The logging method '{0}' does not exist."
+    loggingMethodDoesNotExistExceptionMessage                         = "The Log Method '{0}' does not exist."
     loggingApiMethodBodyNotStringExceptionMessage                     = 'The body returned from the logging API body scriptblock is not a string.'
     loggingApiMethodHeadersNotHashtableExceptionMessage               = 'The headers returned from the logging API headers scriptblock is not a hashtable.'
     nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'A non-empty ScriptBlock is required for the Custom logging serialization format.'

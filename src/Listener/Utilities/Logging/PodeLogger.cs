@@ -60,13 +60,13 @@ namespace Pode.Utilities.Logging
                 return;
             }
 
-            // does the log type exist?
+            // does the Log Type exist?
             if (!LogTypes.TryGetValue(logEvent.Name, out var logType))
             {
                 return;
             }
 
-            // is the log level enabled for the log type?
+            // is the log level enabled for the Log Type?
             if (!logType.IsLevelEnabled(logEvent.Level))
             {
                 return;
@@ -98,13 +98,13 @@ namespace Pode.Utilities.Logging
                 return;
             }
 
-            // does the log type exist?
+            // does the Log Type exist?
             if (!LogTypes.TryGetValue(ERROR_LOG_TYPE_NAME, out var logType))
             {
                 return;
             }
 
-            // is the log level enabled for the log type?
+            // is the log level enabled for the Log Type?
             if (!logType.IsLevelEnabled(level))
             {
                 return;
@@ -173,7 +173,7 @@ namespace Pode.Utilities.Logging
                 return;
             }
 
-            // clear log types
+            // clear Log Types
             LogTypes.Clear();
         }
 
@@ -189,7 +189,7 @@ namespace Pode.Utilities.Logging
             // dispose the queue
             Queue.Dispose();
 
-            // clear the log types
+            // clear the Log Types
             LogTypes.Clear();
 
             // suppress finalization

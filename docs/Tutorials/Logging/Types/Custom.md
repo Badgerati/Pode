@@ -1,15 +1,15 @@
 # Custom
 
-You can define a Custom logging Type in Pode by using [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType). Much like Requests and Errors, this function too accepts one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
+You can define a Custom Log Type in Pode by using [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType). Much like Requests and Errors, this function too accepts one or more Log Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
 !!! important
     The `Add-PodeLogger` function is now deprecated, please use [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType) instead. The former is aliased to the latter for now.
 
 ## Creation
 
-When adding a Custom logging Type, you supply a `-ScriptBlock` plus an array of optional arguments in `-ArgumentList`. The function also requires a unique `-Name`, so that it can be referenced from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
+When adding a Custom Log Type, you supply a `-ScriptBlock` plus an array of optional arguments in `-ArgumentList`. The function also requires a unique `-Name`, so that it can be referenced from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
 
-The ScriptBlock will be supplied with the following parameters depending on the `-Version` supplied (default: 1)
+The scriptblock will be supplied with the following parameters, depending on the `-Version` supplied (default: 1)
 
 **Version 1**
 
@@ -18,16 +18,16 @@ The ScriptBlock will be supplied with the following parameters depending on the 
 
 **Version 2**
 
-1. A Log Event object, with references to the raw data from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog), the log Level, Timestamp, any Metadata, and the log type's Name.
+1. A [Log Event](../../Objects#log-event) object, with references to the raw data from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog), the log Level, Timestamp, any Metadata, and the Log Type's Name.
 2. The arguments that were supplied from [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType)'s `-ArgumentList` parameter.
 
 ## Formatting
 
-More information on formatting can be [found here](../Formatting).
+More information on formatting can be [found here](../../Formatting).
 
 ## Log Levels
 
-The Custom logging Type uses the following log levels:
+The Custom Log Type uses the following log levels:
 
 * Emergency
 * Alert
@@ -50,7 +50,7 @@ You can control the log level of custom log items being written, by supplying `-
 
 ### Log to File
 
-This example will create a Custom logging Type that will take some custom hashtable, transform it into a string, and then pass that to the inbuilt File logging Method:
+This example will create a Custom Log Type that will take some custom hashtable, transform it into a string, and then pass that to the inbuilt File Log Method:
 
 ```powershell
 New-PodeLogFileMethod -Name 'Custom' | Add-PodeLogType -Name 'Main' -ScriptBlock {
@@ -67,7 +67,7 @@ Write-PodeLog -Name 'Main' -InputObject @{
 
 ### Log as JSON
 
-This example will create a Custom logging Type that will take some custom hashtable, select appropriate data, serialise it into JSON, and then pass that to the inbuilt File logging Method. This example also uses `-Version 2` of the supplied parameters.
+This example will create a Custom Log Type that will take some custom hashtable, select appropriate data, serialise it into JSON, and then pass that to the inbuilt File Log Method. This example also uses `-Version 2` of the supplied parameters.
 
 ```powershell
 New-PodeLogFileMethod -Name 'Custom' | Add-PodeLogType -Name 'Main' -Version 2 -SerialiseFormat Json -ScriptBlock {
@@ -88,7 +88,7 @@ Write-PodeLog -Name 'Main' -InputObject @{
 
 ### Log as Syslog
 
-This example will create a Custom logging Type that will take some custom hashtable, select appropriate data, convert it to Syslog format, and then pass that to the inbuilt File logging Method. This example also uses `-Version 2` of the supplied parameters.
+This example will create a Custom Log Type that will take some custom hashtable, select appropriate data, convert it to Syslog format, and then pass that to the inbuilt File Log Method. This example also uses `-Version 2` of the supplied parameters.
 
 ```powershell
 New-PodeLogFileMethod -Name 'Custom' | Add-PodeLogType -Name 'Main' -Version 2 -LogFormat -ScriptBlock {
@@ -109,7 +109,7 @@ Write-PodeLog -Name 'Main' -InputObject @{
 
 ### Log to Multiple
 
-The following example will also enable a Custom logging Type, but will output all items to the Terminal and to a File:
+The following example will also enable a Custom Log Type, but will output all items to the Terminal and to a File:
 
 ```powershell
 $methods = @(
@@ -131,7 +131,7 @@ Write-PodeLog -Name 'Main' -InputObject @{
 
 ### Using Raw Item
 
-The following example uses the Terminal logging Method, and sets a Custom logging Type to return and supply the raw log item to the Terminal Method's scriptblock. The Terminal Method simply outputs the raw item to the CLI.
+The following example uses the Terminal Log Method, and sets a Custom Log Type to return and supply the raw log item to the Terminal Method's scriptblock. The Terminal Method simply outputs the raw item to the CLI.
 
 ```powershell
 New-PodeLogTerminalMethod | Add-PodeLogType -Name 'Example' -Raw
@@ -140,4 +140,4 @@ New-PodeLogTerminalMethod | Add-PodeLogType -Name 'Example' -Raw
 Write-PodeLog -Name 'Example' -InputObject 'This message will simply be outputted to CLI'
 ```
 
-This is useful when all you're supplying to your Custom log Type is strings or other primitive value types.
+This is useful when all you're supplying to your Custom Log Type is strings or other primitive value types.

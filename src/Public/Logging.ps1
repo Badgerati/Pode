@@ -5,15 +5,15 @@ using namespace Pode.Utilities.Logging
 Create a new method of outputting logs.
 
 .DESCRIPTION
-This function has been deprecated and will be removed in future versions. It creates various logging methods for outputting logs.
-Please use the appropriate new functions for each logging method:
+This function has been deprecated and will be removed in future versions. It creates various Log Methods for outputting logs.
+Please use the appropriate new functions for each Log Method:
 - New-PodeLogTerminalMethod
 - New-PodeLogFileMethod
 - New-PodeLogEventViewerMethod
 - New-PodeLogCustomMethod
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER Terminal
 If supplied, will use the inbuilt Terminal logging output method.
@@ -151,7 +151,7 @@ function New-PodeLoggingMethod {
     # batch details
     $batchInfo = New-PodeLogBatchInfo -Size $Batch -Timeout $BatchTimeout
 
-    # return info on appropriate logging type
+    # return info on appropriate Log Type
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'terminal' {
             # WARNING: Function `New-PodeLoggingMethod` is deprecated.
@@ -191,7 +191,7 @@ Enables Request Logging using a supplied output method.
 Enables Request Logging using a supplied output method.
 
 .PARAMETER Method
-One or more logging Method IDs to use for outputting the log entry.
+One or more Log Method IDs to use for outputting the log entry.
 
 .PARAMETER UsernameProperty
 An optional property path within the $WebEvent.Auth.User object for the user's Username. (Default: Username).
@@ -209,7 +209,7 @@ A ScriptBlock to use for custom serialisation of the log entry.
 A ScriptBlock to use for custom data selection and transforming of the log entry. (Default: inbuilt logic).
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Custom Log type's ScriptBlock and SerialiseScriptBlock.
+An array of arguments to supply to the Custom Log Type's ScriptBlock and SerialiseScriptBlock.
 
 .PARAMETER SyslogInfo
 A hashtable containing Syslog configuration information, built using New-PodeSyslogInfo.
@@ -218,19 +218,19 @@ A hashtable containing Syslog configuration information, built using New-PodeSys
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeRequestLogType
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeRequestLogType -SerialiseFormat 'Json'
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -SerialiseFormat 'Json'
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeRequestLogType -SerialiseFormat 'Custom' -SerialiseScriptBlock {
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -SerialiseFormat 'Custom' -SerialiseScriptBlock {
     param($data)
     return "$($data.Host) $($data.Identifier) $($data.User) [$($data.Date)] `"$($data.RequestLine)`" $($data.StatusCode) $($data.Size) `"$($data.Referrer)`" `"$($data.UserAgent)`""
 }
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeRequestLogType -ScriptBlock {
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -ScriptBlock {
     param($logEvent)
     return @{
         HttpMethod = $logEvent.Data.HttpMethod
@@ -239,9 +239,9 @@ New-PodeLogTerminalMethod | Enable-PodeRequestLogType -ScriptBlock {
 
 .EXAMPLE
 $syslogInfo = New-PodeLogSyslogInfo -Format RFC3164
-New-PodeLogTerminalMethod | Enable-PodeRequestLogType -LogFormat Syslog -SyslogInfo $syslogInfo
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -LogFormat Syslog -SyslogInfo $syslogInfo
 #>
-function Enable-PodeRequestLogType {
+function Enable-PodeLogRequestType {
     [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -289,14 +289,14 @@ function Enable-PodeRequestLogType {
             throw ($PodeLocale.requestLoggingAlreadyEnabledExceptionMessage)
         }
 
-        # setup array for log methods being piped in
+        # setup array for Log Methods being piped in
         $pipelineMethods = @()
     }
 
     process {
         # ensure the Method exists
         if (!(Test-PodeLogMethod -Id $_)) {
-            # The supplied logging Method for Request Logging doesn't exist
+            # The supplied Log Method for Request Logging doesn't exist
             throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
         }
 
@@ -329,7 +329,7 @@ function Enable-PodeRequestLogType {
             $SerialiseFormat = Protect-PodeValue -Value $defSerialiseFormat -Default $SerialiseFormat -EnumType ([PodeSerialiseFormat])
         }
 
-        # are we using a custom scriptblock for the request log type, or the inbuilt one?
+        # are we using a custom scriptblock for the request Log Type, or the inbuilt one?
         if ($null -eq $ScriptBlock) {
             $ScriptBlock = Get-PodeLoggingInbuiltType -Type Requests
         }
@@ -342,7 +342,7 @@ function Enable-PodeRequestLogType {
             $SyslogInfo = New-PodeLogSyslogInfo
         }
 
-        # are we using a custom scriptblock for serialising the request log type, or the inbuilt one?
+        # are we using a custom scriptblock for serialising the request Log Type, or the inbuilt one?
         if ($SerialiseFormat -eq [PodeSerialiseFormat]::Custom) {
             # use inbuilt serialise logic if no custom serialise scriptblock supplied
             if ($null -eq $SerialiseScriptBlock) {
@@ -358,7 +358,7 @@ function Enable-PodeRequestLogType {
             }
         }
 
-        # add the request log type, associated with the supplied log method(s)
+        # add the request Log Type, associated with the supplied Log Method(s)
         $PodeContext.Server.Logging.Types[$name] = @{
             Method         = $Method
             ScriptBlock    = $ScriptBlock
@@ -384,7 +384,7 @@ function Enable-PodeRequestLogType {
         }
         $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, @([PodeLogLevel]::Informational)))
 
-        # then associate the supplied log method(s) with the request log type
+        # then associate the supplied Log Method(s) with the request Log Type
         foreach ($methodId in $Method) {
             Register-PodeLogTypeToMethod -TypeName $name -MethodId $methodId
         }
@@ -392,20 +392,20 @@ function Enable-PodeRequestLogType {
 }
 
 if (!(Test-Path Alias:Enable-PodeRequestLogging)) {
-    New-Alias Enable-PodeRequestLogging -Value Enable-PodeRequestLogType
+    New-Alias Enable-PodeRequestLogging -Value Enable-PodeLogRequestType
 }
 
 <#
 .SYNOPSIS
-Disables Request log Type.
+Disables Request Log Type.
 
 .DESCRIPTION
-Disables Request log Type.
+Disables Request Log Type.
 
 .EXAMPLE
-Disable-PodeRequestLogType
+Disable-PodeLogRequestType
 #>
-function Disable-PodeRequestLogType {
+function Disable-PodeLogRequestType {
     [CmdletBinding()]
     param()
 
@@ -413,18 +413,18 @@ function Disable-PodeRequestLogType {
 }
 
 if (!(Test-Path Alias:Disable-PodeRequestLogging)) {
-    New-Alias Disable-PodeRequestLogging -Value Disable-PodeRequestLogType
+    New-Alias Disable-PodeRequestLogging -Value Disable-PodeLogRequestType
 }
 
 <#
 .SYNOPSIS
-Enables Error log Type using a supplied log Method.
+Enables Error Log Type using a supplied Log Method.
 
 .DESCRIPTION
-Enables Error log Type using a supplied log Method.
+Enables Error Log Type using a supplied Log Method.
 
 .PARAMETER Method
-One or more log Method IDs to use for outputting the log entry.
+One or more Log Method IDs to use for outputting the log entry.
 
 .PARAMETER Levels
 The Levels of errors that should be logged (Default: Emergency, Alert, Critical, Error)
@@ -442,7 +442,7 @@ A ScriptBlock to use for custom serialisation of the log entry.
 A ScriptBlock to use for custom data selection and transforming of the log entry. (Default: inbuilt logic).
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Custom Log type's ScriptBlock and SerialiseScriptBlock.
+An array of arguments to supply to the Custom Log Type's ScriptBlock and SerialiseScriptBlock.
 
 .PARAMETER SyslogInfo
 A hashtable containing Syslog configuration information, built using New-PodeSyslogInfo.
@@ -451,19 +451,19 @@ A hashtable containing Syslog configuration information, built using New-PodeSys
 If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeErrorLogType -SerialiseFormat 'Json'
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -SerialiseFormat 'Json'
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeErrorLogType -SerialiseFormat 'Custom' -SerialiseScriptBlock {
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -SerialiseFormat 'Custom' -SerialiseScriptBlock {
     param($data)
     return $data | ConvertTo-PodeString
 }
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeErrorLogType -ScriptBlock {
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -ScriptBlock {
     param($logEvent)
     return @{
         StackTrace = $logEvent.Data.StackTrace
@@ -472,9 +472,9 @@ New-PodeLogTerminalMethod | Enable-PodeErrorLogType -ScriptBlock {
 
 .EXAMPLE
 $syslogInfo = New-PodeLogSyslogInfo -Format RFC3164
-New-PodeLogTerminalMethod | Enable-PodeErrorLogType -LogFormat Syslog -SyslogInfo $syslogInfo
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -LogFormat Syslog -SyslogInfo $syslogInfo
 #>
-function Enable-PodeErrorLogType {
+function Enable-PodeLogErrorType {
     [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -523,14 +523,14 @@ function Enable-PodeErrorLogType {
             throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
         }
 
-        # setup array for log methods being piped in
+        # setup array for Log Methods being piped in
         $pipelineMethods = @()
     }
 
     process {
         # ensure the Method exists
         if (!(Test-PodeLogMethod -Id $_)) {
-            # The supplied logging Method for Error Logging doesn't exist
+            # The supplied Log Method for Error Logging doesn't exist
             throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
         }
 
@@ -563,7 +563,7 @@ function Enable-PodeErrorLogType {
             $SerialiseFormat = Protect-PodeValue -Value $defSerialiseFormat -Default $SerialiseFormat -EnumType ([PodeSerialiseFormat])
         }
 
-        # are we using a custom scriptblock for the error log type, or the inbuilt one?
+        # are we using a custom scriptblock for the error Log Type, or the inbuilt one?
         if ($null -eq $ScriptBlock) {
             $ScriptBlock = Get-PodeLoggingInbuiltType -Type Errors
         }
@@ -576,7 +576,7 @@ function Enable-PodeErrorLogType {
             $SyslogInfo = New-PodeLogSyslogInfo
         }
 
-        # are we using a custom scriptblock for serialising the error log type, or the inbuilt one?
+        # are we using a custom scriptblock for serialising the error Log Type, or the inbuilt one?
         if ($SerialiseFormat -eq [PodeSerialiseFormat]::Custom) {
             # use inbuilt serialise logic if no custom serialise scriptblock supplied
             if ($null -eq $SerialiseScriptBlock) {
@@ -595,7 +595,7 @@ function Enable-PodeErrorLogType {
             }
         }
 
-        # add the error log type, associated with the supplied log method(s)
+        # add the error Log Type, associated with the supplied Log Method(s)
         $PodeContext.Server.Logging.Types[$name] = @{
             Method         = $Method
             ScriptBlock    = $ScriptBlock
@@ -619,7 +619,7 @@ function Enable-PodeErrorLogType {
         }
         $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($name, $Levels))
 
-        # then associate the supplied log method(s) with the error log type
+        # then associate the supplied Log Method(s) with the error Log Type
         foreach ($methodId in $Method) {
             Register-PodeLogTypeToMethod -TypeName $name -MethodId $methodId
         }
@@ -627,20 +627,20 @@ function Enable-PodeErrorLogType {
 }
 
 if (!(Test-Path Alias:Enable-PodeErrorLogging)) {
-    New-Alias Enable-PodeErrorLogging -Value Enable-PodeErrorLogType
+    New-Alias Enable-PodeErrorLogging -Value Enable-PodeLogErrorType
 }
 
 <#
 .SYNOPSIS
-Disables Error log Type.
+Disables Error Log Type.
 
 .DESCRIPTION
-Disables Error log Type.
+Disables Error Log Type.
 
 .EXAMPLE
-Disable-PodeErrorLogType
+Disable-PodeLogErrorType
 #>
-function Disable-PodeErrorLogType {
+function Disable-PodeLogErrorType {
     [CmdletBinding()]
     param()
 
@@ -648,21 +648,21 @@ function Disable-PodeErrorLogType {
 }
 
 if (!(Test-Path Alias:Disable-PodeErrorLogging)) {
-    New-Alias Disable-PodeErrorLogging -Value Disable-PodeErrorLogType
+    New-Alias Disable-PodeErrorLogging -Value Disable-PodeLogErrorType
 }
 
 <#
 .SYNOPSIS
-Adds a custom Logging type for parsing custom log items.
+Adds a custom Log Type for parsing custom log items.
 
 .DESCRIPTION
-Adds a custom Logging type for parsing custom log items.
+Adds a custom Log Type for parsing custom log items.
 
 .PARAMETER Name
-A unique Name for the Log type.
+A unique Name for the Log Type.
 
 .PARAMETER Method
-The logging Method ID to use for outputting the log entry.
+The Log Method ID to use for outputting the log entry.
 
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that transforms an item, and returns it for outputting.
@@ -671,10 +671,10 @@ The ScriptBlock defining logic that transforms an item, and returns it for outpu
 The Levels of log items that should be logged. (Default: Informational)
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Custom Log type's ScriptBlock and SerialiseScriptBlock.
+An array of arguments to supply to the Custom Log Type's ScriptBlock and SerialiseScriptBlock.
 
 .PARAMETER Version
-The version of the log type, this determines the arguments which are supplied to the ScriptBlock. (Default: 1)
+The version of the Log Type, this determines the arguments which are supplied to the ScriptBlock. (Default: 1)
 Arguments supplied depending on the version:
 
 - Version 1: Log Event Data, ArgumentList
@@ -729,7 +729,7 @@ function Add-PodeLogType {
         [Parameter(Mandatory = $true, ParameterSetName = 'ScriptBlock')]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
-                    # A non-empty ScriptBlock is required for the logging method
+                    # A non-empty ScriptBlock is required for the Log Method
                     throw ($PodeLocale.nonEmptyScriptBlockRequiredForLoggingMethodExceptionMessage)
                 }
 
@@ -780,18 +780,18 @@ function Add-PodeLogType {
     begin {
         # ensure the name doesn't already exist
         if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
-            # Logging method already defined
+            # Log Method already defined
             throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
         }
 
-        # setup array for log methods being piped in
+        # setup array for Log Methods being piped in
         $pipelineMethods = @()
     }
 
     process {
         # ensure the Method exists
         if (!(Test-PodeLogMethod -Id $_)) {
-            # The supplied logging Method for Custom Logging doesn't exist
+            # The supplied Log Method for Custom Logging doesn't exist
             throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $_)
         }
 
@@ -839,7 +839,7 @@ function Add-PodeLogType {
             $SerialiseScriptBlock, $serialiseUsingVars = Convert-PodeScopedVariables -ScriptBlock $SerialiseScriptBlock -PSSession $PSCmdlet.SessionState
         }
 
-        # add custom log method to server, associated with the supplied log method(s)
+        # add custom Log Method to server, associated with the supplied Log Method(s)
         $PodeContext.Server.Logging.Types[$Name] = @{
             Custom         = $true
             Method         = $Method
@@ -864,7 +864,7 @@ function Add-PodeLogType {
         }
         $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($Name, $Levels))
 
-        # then associate the supplied log method(s) with the custom log type
+        # then associate the supplied Log Method(s) with the custom Log Type
         foreach ($methodId in $Method) {
             Register-PodeLogTypeToMethod -TypeName $Name -MethodId $methodId
         }
@@ -897,18 +897,18 @@ function Remove-PodeLogType {
     )
 
     process {
-        # get the log type
+        # get the Log Type
         $type = Get-PodeLogType -Name $Name
         if ($null -eq $type) {
             return
         }
 
-        # unregister log type from method
+        # unregister Log Type from method
         foreach ($methodId in $type.Method) {
             Unregister-PodeLogTypeFromMethod -TypeName $Name -MethodId $methodId
         }
 
-        # remove the log type
+        # remove the Log Type
         $null = $PodeContext.Server.Logging.Types.Remove($Name)
         $PodeContext.Server.Logging.Logger.UnregisterType($Name)
     }
@@ -940,7 +940,7 @@ function Remove-PodeLogMethod {
     )
 
     process {
-        # get the log method
+        # get the Log Method
         $method = Get-PodeLogMethod -Id $Id
         if ($null -eq $method) {
             return
@@ -955,17 +955,17 @@ function Remove-PodeLogMethod {
             $PodeContext.RunspacePools.Logs.Pool.SetMaxRunspaces($maxRunspaces - 1)
         }
 
-        # dispose the log method queue
+        # dispose the Log Method queue
         if ($null -ne $method.Queue) {
             $method.Queue.Dispose()
         }
 
-        # unregister log method from types that reference it
+        # unregister Log Method from types that reference it
         foreach ($typeName in $method.Types) {
             Unregister-PodeLogMethodFromType -TypeName $typeName -MethodId $Id
         }
 
-        # remove the log method
+        # remove the Log Method
         $null = $PodeContext.Server.Logging.Methods.Remove($Id)
     }
 }
@@ -1015,7 +1015,7 @@ function Clear-PodeLogMethods {
         Remove-PodeLogMethod -Id $methodId
     }
 
-    # dispose of any log method queues
+    # dispose of any Log Method queues
     foreach ($method in $PodeContext.Server.Logging.Methods.Values) {
         if ($null -ne $method.Queue) {
             $method.Queue.Dispose()
@@ -1120,13 +1120,13 @@ function Write-PodeErrorLog {
 
 <#
 .SYNOPSIS
-Write an object to a configured custom Logging method.
+Write an object to a configured custom Log Method.
 
 .DESCRIPTION
-Write an object to one or more configured custom Logging methods.
+Write an object to one or more configured custom Log Methods.
 
 .PARAMETER Name
-One or more custom Logging Type Names.
+One or more custom Log Type Names.
 
 .PARAMETER Level
 The Level of the log item being logged. (Default: Informational)
@@ -1304,14 +1304,14 @@ function New-PodeLogBatchInfo {
 
 <#
 .SYNOPSIS
-Create a new Terminal logging Method.
+Create a new Terminal Log Method.
 
 .DESCRIPTION
-Creates a new Terminal logging Method for outputting log items to the terminal.
-Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+Creates a new Terminal Log Method for outputting log items to the terminal.
+Can be used with Enable-PodeLogRequestType, Enable-PodeLogErrorType, or Add-PodeLogType.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER BatchInfo
 An optional hashtable containing batch configuration for writing log items in bulk.
@@ -1347,14 +1347,14 @@ function New-PodeLogTerminalMethod {
 
 <#
 .SYNOPSIS
-Create a new File logging Method.
+Create a new File Log Method.
 
 .DESCRIPTION
-Creates a new File logging Method for outputting log items to files.
-Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+Creates a new File Log Method for outputting log items to files.
+Can be used with Enable-PodeLogRequestType, Enable-PodeLogErrorType, or Add-PodeLogType.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER Name
 The File Name to prepend new log files using.
@@ -1433,14 +1433,14 @@ function New-PodeLogFileMethod {
 
 <#
 .SYNOPSIS
-Create a new Event Viewer logging Method.
+Create a new Event Viewer Log Method.
 
 .DESCRIPTION
-Creates a new Event Viewer logging Method for outputting log items to the Windows Event Viewer.
-Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+Creates a new Event Viewer Log Method for outputting log items to the Windows Event Viewer.
+Can be used with Enable-PodeLogRequestType, Enable-PodeLogErrorType, or Add-PodeLogType.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER EventLogName
 An Optional Log Name for the Event Viewer (Default: Application)
@@ -1512,14 +1512,14 @@ function New-PodeLogEventViewerMethod {
 
 <#
 .SYNOPSIS
-Create a new Custom logging Method.
+Create a new Custom Log Method.
 
 .DESCRIPTION
-Creates a new Custom logging Method for outputting log items using custom logic defined in a ScriptBlock.
-Can be used with Enable-PodeRequestLogType, Enable-PodeErrorLogType, or Add-PodeLogType.
+Creates a new Custom Log Method for outputting log items using custom logic defined in a ScriptBlock.
+Can be used with Enable-PodeLogRequestType, Enable-PodeLogErrorType, or Add-PodeLogType.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER ScriptBlock
 The ScriptBlock that defines how to output a log item.
@@ -1528,7 +1528,7 @@ The ScriptBlock that defines how to output a log item.
 An array of arguments to supply to the Custom Logging output method's ScriptBlock.
 
 .PARAMETER Version
-The version of the log method, this determines the arguments which are supplied to the ScriptBlock. (Default: 1)
+The version of the Log Method, this determines the arguments which are supplied to the ScriptBlock. (Default: 1)
 Arguments supplied depending on the version:
 
 - Version 1: Transformed Log Items, ArgumentList, Raw Log Items (legacy)
@@ -1603,16 +1603,16 @@ function New-PodeLogCustomMethod {
 
 <#
 .SYNOPSIS
-Creates a new API logging Method.
+Creates a new API Log Method.
 
 .DESCRIPTION
-Creates a new API logging Method for outputting log items to custom API endpoints.
+Creates a new API Log Method for outputting log items to custom API endpoints.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER Type
-An optional Type to assign to the logging method. (Default: API)
+An optional Type to assign to the Log Method. (Default: API)
 
 .PARAMETER Url
 The URL of the API endpoint to send log items to.
@@ -1653,8 +1653,8 @@ If supplied, the API request will include a Content-Encoding: gzip header and co
 .EXAMPLE
 $headers = @{ 'Authorization' = 'Bearer <token>' }
 $methodId = New-PodeLogApiMethod -Url 'https://api.example.com/logs' -Headers $headers -Compress -BodyScriptBlock {
-    param($logCol)
-    return $logCol.Items.Data | ConvertTo-Json -Compress
+    param($logItems)
+    return $logItems.Data | ConvertTo-Json -Compress
 }
 #>
 function New-PodeLogApiMethod {
@@ -1679,9 +1679,9 @@ function New-PodeLogApiMethod {
         $ContentType = 'application/json',
 
         [Parameter()]
-        [ValidateSet('GET', 'POST', 'PUT', 'PATCH')]
+        [ValidateSet('Get', 'Post', 'Put', 'Patch')]
         [string]
-        $Method = 'POST',
+        $Method = 'Post',
 
         [Parameter()]
         [hashtable]
@@ -1765,13 +1765,13 @@ function New-PodeLogApiMethod {
 
 <#
 .SYNOPSIS
-Creates a new Splunk log method.
+Creates a new Splunk Log Method.
 
 .DESCRIPTION
-Creates a new Splunk log method for outputting log items to a Splunk HTTP Event Collector (HEC) endpoint.
+Creates a new Splunk Log Method for outputting log items to a Splunk HTTP Event Collector (HEC) endpoint.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER BaseUrl
 The base URL of the Splunk HEC endpoint, e.g., 'https://splunk.example.com:8088'.
@@ -1846,10 +1846,10 @@ function New-PodeLogSplunkMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($logCol, $options)
+        param($logItems, $options)
 
         # build array of events
-        $events = @(foreach ($item in $logCol.Items) {
+        $events = @(foreach ($item in $logItems) {
                 # build base event object
                 $evt = @{
                     event  = $item.Data
@@ -1911,13 +1911,13 @@ function New-PodeLogSplunkMethod {
 
 <#
 .SYNOPSIS
-Creates a new Datadog log method.
+Creates a new Datadog Log Method.
 
 .DESCRIPTION
-Creates a new Datadog log method for outputting log items to a Datadog's HTTP v2 logging API endpoint.
+Creates a new Datadog Log Method for outputting log items to a Datadog's HTTP v2 logging API endpoint.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER BaseUrl
 The base URL of the Datadog API endpoint, e.g., 'https://http-intake.logs.datadoghq.com'.
@@ -1992,10 +1992,10 @@ function New-PodeLogDatadogMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($logCol, $options)
+        param($logItems, $options)
 
         # build array of events
-        $events = @(foreach ($item in $logCol.Items) {
+        $events = @(foreach ($item in $logItems) {
                 # build base event object
                 $evt = @{
                     message   = $item.Data
@@ -2059,14 +2059,14 @@ function New-PodeLogDatadogMethod {
 
 <#
 .SYNOPSIS
-Creates a new Azure Log Analytics log method.
+Creates a new Azure Log Analytics Log Method.
 
 .DESCRIPTION
-Creates a new Azure Log Analytics log method for outputting log items to an Azure Log Analytics workspace.
-The Azure logging method created will either use the legacy Workspace method, or the new Data Collection logic.
+Creates a new Azure Log Analytics Log Method for outputting log items to an Azure Log Analytics workspace.
+The Azure Log Method created will either use the legacy Workspace method, or the new Data Collection logic.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER WorkspaceId
 The Workspace ID of the Azure Log Analytics workspace.
@@ -2202,13 +2202,13 @@ function New-PodeLogAzureMethod {
 
 <#
 .SYNOPSIS
-Creates a new AWS CloudWatch log method.
+Creates a new AWS CloudWatch Log Method.
 
 .DESCRIPTION
-Creates a new AWS CloudWatch log method for outputting log items to an AWS CloudWatch Logs group and stream.
+Creates a new AWS CloudWatch Log Method for outputting log items to an AWS CloudWatch Logs group and stream.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER LogGroupName
 The name of the AWS CloudWatch Logs group to which log events will be sent.
@@ -2239,11 +2239,11 @@ Should be created using New-PodeLogBatchInfo.
 If supplied, the API request will skip certificate validation checks.
 
 .EXAMPLE
-$methodId = New-PodeLogAwsMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Token '<token>' -Region 'us-east-1'
+$methodId = New-PodeLogAwsMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Region 'us-east-1' -Token '<token>'
 
 .EXAMPLE
 $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
-$methodId = New-PodeLogAwsMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Token '<token>' -Region 'us-east-1' -BatchInfo $batchInfo
+$methodId = New-PodeLogAwsMethod -LogGroupName 'my-log-group' -LogStreamName 'my-log-stream' -Region 'us-east-1' -Token '<token>' -BatchInfo $batchInfo
 #>
 function New-PodeLogAwsMethod {
     [CmdletBinding()]
@@ -2263,11 +2263,11 @@ function New-PodeLogAwsMethod {
 
         [Parameter(Mandatory = $true)]
         [string]
-        $Token,
+        $Region,
 
         [Parameter(Mandatory = $true)]
         [string]
-        $Region,
+        $Token,
 
         [Parameter()]
         [string]
@@ -2294,10 +2294,10 @@ function New-PodeLogAwsMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($logCol, $options)
+        param($logItems, $options)
 
         # build array of events
-        $events = @(foreach ($item in $logCol.Items) {
+        $events = @(foreach ($item in $logItems) {
                 # build base event object
                 $evt = @{
                     event    = $item.Data
@@ -2357,13 +2357,13 @@ function New-PodeLogAwsMethod {
 
 <#
 .SYNOPSIS
-Creates a new network logging Method.
+Creates a new network Log Method.
 
 .DESCRIPTION
-Creates a new network logging Method for outputting log items to a remote server over UDP, TCP, or TLS.
+Creates a new network Log Method for outputting log items to a remote server over UDP, TCP, or TLS.
 
 .PARAMETER Id
-An optional ID to assign to the logging method. If not supplied, a random ID will be generated.
+An optional ID to assign to the Log Method. If not supplied, a random ID will be generated.
 
 .PARAMETER Server
 The address (IP or Hostname) of the remote server to send log items to.

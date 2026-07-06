@@ -66,7 +66,7 @@ The behavior, appearance, and functionality of the console are highly customizab
 ### Configurable Settings via `Start-PodeServer`
 
 | **Parameter**         | **Description**                                                                                  |
-|-----------------------|--------------------------------------------------------------------------------------------------|
+| --------------------- | ------------------------------------------------------------------------------------------------ |
 | `DisableTermination`  | Prevents termination, suspension, or resumption of the server via keyboard interactive commands. |
 | `DisableConsoleInput` | Disables all console keyboard interactions for the server.                                       |
 | `ClearHost`           | Clears the console whenever the server changes state (e.g., running → suspend → resume).         |
@@ -201,12 +201,12 @@ Redefine the key for terminating the server:
 
 ## Customizing Console Colors
 
-The console colors are fully customizable via the `Colors` section of the configuration. Each element of the console can have its color defined using PowerShell color names. Here’s what each color setting controls:
+The console colors are fully customizable via the `Colors` section of the configuration. Each element of the console can have its color defined using PowerShell color names. Here's what each color setting controls:
 
 ### Color Settings
 
 | **Key**             | **Default Value** | **Description**                                                        |
-|---------------------|-------------------|------------------------------------------------------------------------|
+| ------------------- | ----------------- | ---------------------------------------------------------------------- |
 | `Header`            | `White`           | The server's header section, including the Pode version and timestamp. |
 | `EndpointsHeader`   | `Yellow`          | The header for the endpoints list.                                     |
 | `Endpoints`         | `Cyan`            | The endpoints themselves, including protocol and URLs.                 |

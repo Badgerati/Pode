@@ -29,26 +29,26 @@ For inbuilt validators, like Windows AD, you can use [`Add-PodeAuthWindowsAd`](.
 
 In both cases, the `-Type` parameter comes from using [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType).
 
-| Functions |
-| -------- |
-| [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) |
+| Functions                                                                          |
+| ---------------------------------------------------------------------------------- |
+| [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth)                   |
 | [`Add-PodeAuthWindowsAd`](../../../Functions/Authentication/Add-PodeAuthWindowsAd) |
-| [`Remove-PodeAuth`](../../../Functions/Authentication/Remove-PodeAuth) |
-| [`Clear-PodeAuth`](../../../Functions/Authentication/Clear-PodeAuth) |
+| [`Remove-PodeAuth`](../../../Functions/Authentication/Remove-PodeAuth)             |
+| [`Clear-PodeAuth`](../../../Functions/Authentication/Clear-PodeAuth)               |
 
 ## Cookies
 
 Cookies use to be done via actions following the `cookie` function, such as `cookie set`. These actions are now the following functions:
 
-| Action | Function |
-| ------ | -------- |
-| cookie check | [`Test-PodeCookieSigned`](../../../Functions/Cookies/Test-PodeCookieSigned) |
-| cookie exists | [`Test-PodeCookie`](../../../Functions/Cookies/Test-PodeCookie) |
-| cookie extend | [`Update-PodeCookieExpiry`](../../../Functions/Cookies/Update-PodeCookieExpiry) |
-| cookie get | [`Get-PodeCookie`](../../../Functions/Cookies/Get-PodeCookie) |
-| cookie remove | [`Remove-PodeCookie`](../../../Functions/Cookies/Remove-PodeCookie) |
+| Action         | Function                                                                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| cookie check   | [`Test-PodeCookieSigned`](../../../Functions/Cookies/Test-PodeCookieSigned)                                                                             |
+| cookie exists  | [`Test-PodeCookie`](../../../Functions/Cookies/Test-PodeCookie)                                                                                         |
+| cookie extend  | [`Update-PodeCookieExpiry`](../../../Functions/Cookies/Update-PodeCookieExpiry)                                                                         |
+| cookie get     | [`Get-PodeCookie`](../../../Functions/Cookies/Get-PodeCookie)                                                                                           |
+| cookie remove  | [`Remove-PodeCookie`](../../../Functions/Cookies/Remove-PodeCookie)                                                                                     |
 | cookie secrets | [`Get-PodeCookieSecret`](../../../Functions/Cookies/Get-PodeCookieSecret) and [`Set-PodeCookieSecret`](../../../Functions/Cookies/Set-PodeCookieSecret) |
-| cookie set | [`Set-PodeCookie`](../../../Functions/Cookies/Set-PodeCookie) |
+| cookie set     | [`Set-PodeCookie`](../../../Functions/Cookies/Set-PodeCookie)                                                                                           |
 
 ## Configuration
 
@@ -92,14 +92,14 @@ would now be:
 
 Flash messages use to be done via actions following `flash` function, such as `flash add`. These actions are now the following functions:
 
-| Action | Function |
-| ------ | -------- |
-| flash add | [`Add-PodeFlashMessage`](../../../Functions/Flash/Add-PodeFlashMessage) |
-| flash clear | [`Clear-PodeFlashMessages`](../../../Functions/Flash/Clear-PodeFlashMessages) |
-| flash get | [`Get-PodeFlashMessage`](../../../Functions/Flash/Get-PodeFlashMessage) |
-| flash keys | [`Get-PodeFlashMessageNames`](../../../Functions/Flash/Get-PodeFlashMessageNames) |
-| flash remove | [`Remove-PodeFlashMessage`](../../../Functions/Flash/Remove-PodeFlashMessage) |
-| flash test | [`Test-PodeFlashMessage`](../../../Functions/Flash/Test-PodeFlashMessage) |
+| Action       | Function                                                                          |
+| ------------ | --------------------------------------------------------------------------------- |
+| flash add    | [`Add-PodeFlashMessage`](../../../Functions/Flash/Add-PodeFlashMessage)           |
+| flash clear  | [`Clear-PodeFlashMessages`](../../../Functions/Flash/Clear-PodeFlashMessages)     |
+| flash get    | [`Get-PodeFlashMessage`](../../../Functions/Flash/Get-PodeFlashMessage)           |
+| flash keys   | [`Get-PodeFlashMessageNames`](../../../Functions/Flash/Get-PodeFlashMessageNames) |
+| flash remove | [`Remove-PodeFlashMessage`](../../../Functions/Flash/Remove-PodeFlashMessage)     |
+| flash test   | [`Test-PodeFlashMessage`](../../../Functions/Flash/Test-PodeFlashMessage)         |
 
 ## GUI
 
@@ -113,9 +113,9 @@ The `gui` function use to take a Name with a hashtable of options. This function
 
 The biggest change the Handlers is that you can now create multiple handlers for each of SMTP, TCP and Service - rather than just one. With this, the new [`Add-PodeHandler`](../../../Functions/Handlers/Add-PodeHandler) requires a `-Name` to be supplied.
 
-| Functions |
-| -------- |
-| [`Add-PodeHandler`](../../../Functions/Handlers/Add-PodeHandler) |
+| Functions                                                              |
+| ---------------------------------------------------------------------- |
+| [`Add-PodeHandler`](../../../Functions/Handlers/Add-PodeHandler)       |
 | [`Remove-PodeHandler`](../../../Functions/Handlers/Remove-PodeHandler) |
 | [`Clear-PodeHandlers`](../../../Functions/Handlers/Clear-PodeHandlers) |
 
@@ -123,11 +123,11 @@ The biggest change the Handlers is that you can now create multiple handlers for
 
 Headers use to be done via actions following the `header` function, such as `header add`. These actions are now the following functions:
 
-| Action | Function |
-| ------ | -------- |
-| header add | [`Add-PodeHeader`](../../../Functions/Headers/Add-PodeHeader) |
-| header get | [`Get-PodeHeader`](../../../Functions/Headers/Get-PodeHeader) |
-| header set | [`Set-PodeHeader`](../../../Functions/Headers/Set-PodeHeader) |
+| Action        | Function                                                        |
+| ------------- | --------------------------------------------------------------- |
+| header add    | [`Add-PodeHeader`](../../../Functions/Headers/Add-PodeHeader)   |
+| header get    | [`Get-PodeHeader`](../../../Functions/Headers/Get-PodeHeader)   |
+| header set    | [`Set-PodeHeader`](../../../Functions/Headers/Set-PodeHeader)   |
 | header exists | [`Test-PodeHeader`](../../../Functions/Headers/Test-PodeHeader) |
 
 ## Logging
@@ -140,30 +140,30 @@ The old `logging` used to only support logging Requests, whereas now it can log 
 
 ### Methods
 
-Logging methods define how a log item should be logged. The inbuilt File and Terminal logging methods are now reusable, with the ability to now more easily create custom logging methods using [`New-PodeLoggingMethod`](../../../Functions/Logging/New-PodeLoggingMethod). The output from this function can be used when enabling or adding logging types, such as with [`Add-PodeLogger`](../../../Functions/Logging/Add-PodeLogger).
+Log Methods define how a log item should be logged. The inbuilt File and Terminal Log Methods are now reusable, with the ability to now more easily create custom Log Methods using [`New-PodeLoggingMethod`](../../../Functions/Logging/New-PodeLoggingMethod). The output from this function can be used when enabling or adding Log Types, such as with [`Add-PodeLogger`](../../../Functions/Logging/Add-PodeLogger).
 
 ### Types
 
-Request and Error logging are inbuilt logging types that can be enabled using [`Enable-PodeRequestLogging`](../../../Functions/Logging/Enable-PodeRequestLogging) and [`Enable-PodeErrorLogging`](../../../Functions/Logging/Enable-PodeErrorLogging). To create a custom logger you can use the [`Add-PodeLogger`](../../../Functions/Logging/Add-PodeLogger) function. In each case, the `-Method` comes from using [`New-PodeLoggingMethod`](../../../Functions/Logging/New-PodeLoggingMethod).
+Request and Error logging are inbuilt Log Types that can be enabled using [`Enable-PodeRequestLogging`](../../../Functions/Logging/Enable-PodeRequestLogging) and [`Enable-PodeErrorLogging`](../../../Functions/Logging/Enable-PodeErrorLogging). To create a custom logger you can use the [`Add-PodeLogger`](../../../Functions/Logging/Add-PodeLogger) function. In each case, the `-Method` comes from using [`New-PodeLoggingMethod`](../../../Functions/Logging/New-PodeLoggingMethod).
 
-| Functions |
-| -------- |
-| [`Enable-PodeRequestLogging`](../../../Functions/Logging/Enable-PodeRequestLogging) |
-| [`Enable-PodeErrorLogging`](../../../Functions/Logging/Enable-PodeErrorLogging) |
-| [`Add-PodeLogger`](../../../Functions/Logging/Add-PodeLogger) |
+| Functions                                                                             |
+| ------------------------------------------------------------------------------------- |
+| [`Enable-PodeRequestLogging`](../../../Functions/Logging/Enable-PodeRequestLogging)   |
+| [`Enable-PodeErrorLogging`](../../../Functions/Logging/Enable-PodeErrorLogging)       |
+| [`Add-PodeLogger`](../../../Functions/Logging/Add-PodeLogger)                         |
 | [`Disable-PodeRequestLogging`](../../../Functions/Logging/Disable-PodeRequestLogging) |
-| [`Disable-PodeErrorLogging`](../../../Functions/Logging/Disable-PodeErrorLogging) |
-| [`Remove-PodeLogger`](../../../Functions/Logging/Remove-PodeLogger) |
-| [`Clear-PodeLoggers`](../../../Functions/Logging/Clear-PodeLoggers) |
+| [`Disable-PodeErrorLogging`](../../../Functions/Logging/Disable-PodeErrorLogging)     |
+| [`Remove-PodeLogger`](../../../Functions/Logging/Remove-PodeLogger)                   |
+| [`Clear-PodeLoggers`](../../../Functions/Logging/Clear-PodeLoggers)                   |
 
 ### Writing Logs
 
 You can now write items from anywhere in your server to a custom logger, including the inbuilt Error log.
 
-| Functions |
-| -------- |
+| Functions                                                             |
+| --------------------------------------------------------------------- |
 | [`Write-PodeErrorLog`](../../../Functions/Logging/Write-PodeErrorLog) |
-| [`Write-PodeLog`](../../../Functions/Logging/Write-PodeLog) |
+| [`Write-PodeLog`](../../../Functions/Logging/Write-PodeLog)           |
 
 ## Middleware
 
@@ -175,12 +175,12 @@ Middleware has changed a fair bit, however, generally you'll just be using the [
 
 There is a new [`New-PodeMiddleware`](../../../Functions/Middleware/New-PodeMiddleware) function which wil return a valid middleware object to re-use - such as piping into [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware), or using as `-Middleware` for Routes.
 
-| Functions |
-| -------- |
-| [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware) |
-| [`New-PodeMiddleware`](../../../Functions/Middleware/New-PodeMiddleware) |
+| Functions                                                                      |
+| ------------------------------------------------------------------------------ |
+| [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware)       |
+| [`New-PodeMiddleware`](../../../Functions/Middleware/New-PodeMiddleware)       |
 | [`Remove-PodeMiddleware`](../../../Functions/Middleware/Remove-PodeMiddleware) |
-| [`Clear-PodeMiddlewares`](../../../Functions//Clear-PodeMiddlewares) |
+| [`Clear-PodeMiddlewares`](../../../Functions//Clear-PodeMiddlewares)           |
 
 ### Sessions
 
@@ -194,12 +194,12 @@ The `session` function has now been replaced by the new [`Enable-PodeSessionMidd
 
 The `csrf` function used to take actions that defined what it did, such as `csrf token`. Now, each of these actions has been split up into their own functions:
 
-| Action | Function |
-| ------ | -------- |
+| Action          | Function                                                                               |
+| --------------- | -------------------------------------------------------------------------------------- |
 | csrf middleware | [`Enable-PodeCsrfMiddleware`](../../../Functions/Middleware/Enable-PodeCsrfMiddleware) |
-| csrf setup | [`Initialize-PodeCsrf`](../../../Functions/Middleware/Initialize-PodeCsrf) |
-| csrf check | [`Get-PodeCsrfMiddleware`](../../../Functions/Middleware/Get-PodeCsrfMiddleware) |
-| csrf token | [`New-PodeCsrfToken`](../../../Functions/Middleware/New-PodeCsrfToken) |
+| csrf setup      | [`Initialize-PodeCsrf`](../../../Functions/Middleware/Initialize-PodeCsrf)             |
+| csrf check      | [`Get-PodeCsrfMiddleware`](../../../Functions/Middleware/Get-PodeCsrfMiddleware)       |
+| csrf token      | [`New-PodeCsrfToken`](../../../Functions/Middleware/New-PodeCsrfToken)                 |
 
 !!! note
     Similar to the old setup, the [`Initialize-PodeCsrf`](../../../Functions/Middleware/Initialize-PodeCsrf) function must be called before you can use [`Get-PodeCsrfMiddleware`](../../../Functions/Middleware/Get-PodeCsrfMiddleware) or [`New-PodeCsrfToken`](../../../Functions/Middleware/New-PodeCsrfToken). The [`Enable-PodeCsrfMiddleware`](../../../Functions/Middleware/Enable-PodeCsrfMiddleware) does automatically call [`Initialize-PodeCsrf`](../../../Functions/Middleware/Initialize-PodeCsrf)  as well as configure CSRF globally.
@@ -210,31 +210,31 @@ The `csrf` function used to take actions that defined what it did, such as `csrf
 
 The functions to import and load Modules, Scripts and SnapIns have all changed to the following:
 
-| Old | Function |
-| --- | -------- |
+| Old    | Function                                                                                                                                        |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | import | [`Import-PodeModule`](../../../Functions/Utilities/Import-PodeModule) and [`Import-PodeSnapIn`](../../../Functions/Utilities/Import-PodeSnapIn) |
-| load | [`Use-PodeScript`](../../../Functions/Utilities/Use-PodeScript) |
+| load   | [`Use-PodeScript`](../../../Functions/Utilities/Use-PodeScript)                                                                                 |
 
 ## Response Helpers
 
 The old response helpers have all been updated:
 
-| Old | Function |
-| --- | -------- |
-| engine | [`Set-PodeViewEngine`](../../../Functions/Responses/Set-PodeViewEngine) |
-| view | [`Write-PodeViewResponse`](../../../Functions/Responses/Write-PodeViewResponse) |
-| json | [`Write-PodeJsonResponse`](../../../Functions/Responses/Write-PodeJsonResponse) |
-| text | [`Write-PodeTextResponse`](../../../Functions/Responses/Write-PodeTextResponse) |
-| xml | [`Write-PodeXmlResponse`](../../../Functions/Responses/Write-PodeXmlResponse) |
-| csv | [`Write-PodeCsvResponse`](../../../Functions/Responses/Write-PodeCsvResponse) |
-| html | [`Write-PodeHtmlResponse`](../../../Functions/Responses/Write-PodeHtmlResponse) |
-| file | [`Write-PodeFileResponse`](../../../Functions/Responses/Write-PodeFileResponse) |
-| attach | [`Set-PodeResponseAttachment`](../../../Functions/Responses/Set-PodeResponseAttachment) |
-| save | [`Save-PodeRequestFile`](../../../Functions/Responses/Save-PodeRequestFile) |
-| status | [`Set-PodeResponseStatus`](../../../Functions/Responses/Set-PodeResponseStatus) |
-| include | [`Use-PodePartialView`](../../../Functions/Responses/Use-PodePartialView) |
-| redirect | [`Move-PodeResponseUrl`](../../../Functions/Responses/Move-PodeResponseUrl) |
-| tcp | [`Write-PodeTcpClient`](../../../Functions/Responses/Write-PodeTcpClient) and [`Read-PodeTcpClient`](../../../Functions/Responses/Read-PodeTcpClient) |
+| Old      | Function                                                                                                                                              |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| engine   | [`Set-PodeViewEngine`](../../../Functions/Responses/Set-PodeViewEngine)                                                                               |
+| view     | [`Write-PodeViewResponse`](../../../Functions/Responses/Write-PodeViewResponse)                                                                       |
+| json     | [`Write-PodeJsonResponse`](../../../Functions/Responses/Write-PodeJsonResponse)                                                                       |
+| text     | [`Write-PodeTextResponse`](../../../Functions/Responses/Write-PodeTextResponse)                                                                       |
+| xml      | [`Write-PodeXmlResponse`](../../../Functions/Responses/Write-PodeXmlResponse)                                                                         |
+| csv      | [`Write-PodeCsvResponse`](../../../Functions/Responses/Write-PodeCsvResponse)                                                                         |
+| html     | [`Write-PodeHtmlResponse`](../../../Functions/Responses/Write-PodeHtmlResponse)                                                                       |
+| file     | [`Write-PodeFileResponse`](../../../Functions/Responses/Write-PodeFileResponse)                                                                       |
+| attach   | [`Set-PodeResponseAttachment`](../../../Functions/Responses/Set-PodeResponseAttachment)                                                               |
+| save     | [`Save-PodeRequestFile`](../../../Functions/Responses/Save-PodeRequestFile)                                                                           |
+| status   | [`Set-PodeResponseStatus`](../../../Functions/Responses/Set-PodeResponseStatus)                                                                       |
+| include  | [`Use-PodePartialView`](../../../Functions/Responses/Use-PodePartialView)                                                                             |
+| redirect | [`Move-PodeResponseUrl`](../../../Functions/Responses/Move-PodeResponseUrl)                                                                           |
+| tcp      | [`Write-PodeTcpClient`](../../../Functions/Responses/Write-PodeTcpClient) and [`Read-PodeTcpClient`](../../../Functions/Responses/Read-PodeTcpClient) |
 
 ## Routes
 
@@ -244,9 +244,9 @@ The old response helpers have all been updated:
 
 Normal routes defined via `route` can now be done using [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute). The parameters are practically the same, such as `-Method`, `-Path` and `-ScriptBlock`.
 
-| Functions |
-| -------- |
-| [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) |
+| Functions                                                        |
+| ---------------------------------------------------------------- |
+| [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute)       |
 | [`Remove-PodeRoute`](../../../Functions/Routes/Remove-PodeRoute) |
 | [`Clear-PodeRoutes`](../../../Functions/Routes/Clear-PodeRoutes) |
 
@@ -254,9 +254,9 @@ Normal routes defined via `route` can now be done using [`Add-PodeRoute`](../../
 
 Static routes that used to be setup using `route static` are now setup using the new [`Add-PodeStaticRoute`](../../../Functions/Routes/Add-PodeStaticRoute).
 
-| Functions |
-| -------- |
-| [`Add-PodeStaticRoute`](../../../Functions/Routes/Add-PodeStaticRoute) |
+| Functions                                                                    |
+| ---------------------------------------------------------------------------- |
+| [`Add-PodeStaticRoute`](../../../Functions/Routes/Add-PodeStaticRoute)       |
 | [`Remove-PodeStaticRoute`](../../../Functions/Routes/Remove-PodeStaticRoute) |
 | [`Clear-PodeStaticRoutes`](../../../Functions/Routes/Clear-PodeStaticRoutes) |
 
@@ -266,9 +266,9 @@ Static routes that used to be setup using `route static` are now setup using the
 
 Schedules haven't changed too much, though there are now some new functions to remove and clear schedules. The main one is that `schedule` has been changed to [`Add-PodeSchedule`](../../../Functions/Schedules/Add-PodeSchedule).
 
-| Functions |
-| -------- |
-| [`Add-PodeSchedule`](../../../Functions/Schedules/Add-PodeSchedule) |
+| Functions                                                                 |
+| ------------------------------------------------------------------------- |
+| [`Add-PodeSchedule`](../../../Functions/Schedules/Add-PodeSchedule)       |
 | [`Remove-PodeSchedule`](../../../Functions/Schedules/Remove-PodeSchedule) |
 | [`Clear-PodeSchedules`](../../../Functions/Schedules/Clear-PodeSchedules) |
 
@@ -286,14 +286,14 @@ The `server` function itself has been renamed to [`Start-PodeServer`](../../../F
 
 The shared state use to be done via actions following the `state` function, such as `state set`. These actions are now the following functions:
 
-| Action | Function |
-| ------ | -------- |
-| state set | [`Set-PodeState`](../../../Functions/State/Set-PodeState) |
-| state get | [`Get-PodeState`](../../../Functions/State/Get-PodeState) |
-| state remove | [`Remove-PodeState`](../../../Functions/State/Remove-PodeState) |
-| state save | [`Save-PodeState`](../../../Functions/State/Save-PodeState) |
+| Action        | Function                                                          |
+| ------------- | ----------------------------------------------------------------- |
+| state set     | [`Set-PodeState`](../../../Functions/State/Set-PodeState)         |
+| state get     | [`Get-PodeState`](../../../Functions/State/Get-PodeState)         |
+| state remove  | [`Remove-PodeState`](../../../Functions/State/Remove-PodeState)   |
+| state save    | [`Save-PodeState`](../../../Functions/State/Save-PodeState)       |
 | state restore | [`Restore-PodeState`](../../../Functions/State/Restore-PodeState) |
-| state test | [`Test-PodeState`](../../../Functions/State/Test-PodeState) |
+| state test    | [`Test-PodeState`](../../../Functions/State/Test-PodeState)       |
 
 ## Timers
 
@@ -301,8 +301,8 @@ The shared state use to be done via actions following the `state` function, such
 
 Timers haven't changed too much, though there are now some new functions to remove and clear timers. The main one is that `timer` has been changed to [`Add-PodeTimer`](../../../Functions/Timers/Add-PodeTimer).
 
-| Functions |
-| -------- |
-| [`Add-PodeTimer`](../../../Functions/Timers/Add-PodeTimer) |
+| Functions                                                        |
+| ---------------------------------------------------------------- |
+| [`Add-PodeTimer`](../../../Functions/Timers/Add-PodeTimer)       |
 | [`Remove-PodeTimer`](../../../Functions/Timers/Remove-PodeTimer) |
 | [`Clear-PodeTimers`](../../../Functions/Timers/Clear-PodeTimers) |

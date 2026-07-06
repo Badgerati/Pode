@@ -12,7 +12,7 @@ namespace Pode.Utilities.Logging
         {
             if (string.IsNullOrEmpty(name))
             {
-                throw new ArgumentException("Log type name cannot be null or empty.", nameof(name));
+                throw new ArgumentException("Log Type name cannot be null or empty.", nameof(name));
             }
 
             Name = name;

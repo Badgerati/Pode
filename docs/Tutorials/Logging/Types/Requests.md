@@ -1,25 +1,25 @@
 # Requests
 
-Pode has an inbuilt Request logging Type, which will parse and transform web requests for use with any supplied logging Method.
+Pode has an inbuilt Request Log Type, which will parse and transform web requests for use with any supplied Log Method.
 
 !!! note
-    This log type currently only supports web requests.
+    This Log Type currently only supports web requests.
 
 ## Enabling
 
-To enable the Request logging Type use [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType), and supply one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
+To enable the Request Log Type use [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType), and supply one or more Log Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
 !!! important
-    The `Enable-PodeRequestLogging` function is now deprecated, please use [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType) instead. The former is aliased to the latter for now.
+    The `Enable-PodeRequestLogging` function is now deprecated, please use [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType) instead. The former is aliased to the latter for now.
 
 ## Custom Logic
 
 By default, if you supply no `-ScriptBlock`, Pode will use inbuilt data selection logic on request log items. However, if you do supply a custom `-ScriptBlock` then you can select/return your own data.
 
-This custom scriptblock will be supplied the Log Event, and any arguments supplied to `-ArgumentList`, as parameters. The `$logEvent` will be an `IPodeLogEvent` object, and the raw request data can be found under the `Data` property - including Timestamp, log Level, Metadata, and the log type's Name.
+This custom scriptblock will be supplied the [Log Event](../../Objects#log-event), and any arguments supplied to `-ArgumentList`, as parameters.
 
 ```powershell
-Enable-PodeRequestLogType -ScriptBlock {
+Enable-PodeLogRequestType -ScriptBlock {
     param($logEvent)
     return @{
         Method = $logEvent.Data.Request.Method
@@ -32,39 +32,39 @@ Enable-PodeRequestLogType -ScriptBlock {
 
 ## Formatting
 
-More information on formatting can be [found here](../Formatting).
+More information on formatting can be [found here](../../Formatting).
 
-The Request logging Type will transform a supplied raw web request into a [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) string. This string is then supplied to the logging Method's scriptblock. If you're using a Custom logging method and want the raw log item instead, you can supply `-Raw` to [`Enable-PodeRequestLogType`](../../../../Functions/Logging/Enable-PodeRequestLogType).
+The Request Log Type will transform a supplied raw web request into a [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) string. This string is then supplied to the Log Method's scriptblock. If you're using a Custom Log Method and want the raw log item instead, you can supply `-Raw` to [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType).
 
 ## Examples
 
 ### Log to Terminal
 
-The following example enables Request logging type, and will output all items to the Terminal:
+The following example enables the Request Log Type, and will output all items to the Terminal:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeRequestLogType
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType
 ```
 
 ### Log as JSON
 
-The following example enables Request logging type, and will output all items to the Terminal as JSON:
+The following example enables the Request Log Type, and will output all items to the Terminal as JSON:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeRequestLogType -SerialiseFormat Json
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -SerialiseFormat Json
 ```
 
 ### Log as Syslog
 
-The following example enables Request logging type, and will output all items to the Terminal in Syslog format:
+The following example enables the Request Log Type, and will output all items to the Terminal in Syslog format:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeRequestLogType -LogFormat Syslog
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -LogFormat Syslog
 ```
 
 ### Log to Multiple
 
-The following example will also enable Request logging type, but will output all items to the Terminal and to a File:
+The following example will also enable the Request Log Type, but will output all items to the Terminal and to a File:
 
 ```powershell
 $methods = @(
@@ -72,12 +72,12 @@ $methods = @(
     New-PodeLogFileMethod -Name 'requests'
 )
 
-$methods | Enable-PodeRequestLogType
+$methods | Enable-PodeLogRequestType
 ```
 
 ### Using Raw Item
 
-The following example uses a Custom logging Method, and sets the Request logging Type to supply the raw log item to the Custom method's scriptblock instead of a transformed one. The Custom Method simply logs the Host and StatusCode to the terminal (but could be to something like an S3 bucket):
+The following example uses a Custom Log Method, and sets the Request Log Type to supply the raw log item to the Custom method's scriptblock instead of a transformed one. The Custom Method simply logs the Host and StatusCode to the terminal (but could be to something like an S3 bucket):
 
 ```powershell
 $method = New-PodeLogCustomMethod -ScriptBlock {
@@ -85,7 +85,7 @@ $method = New-PodeLogCustomMethod -ScriptBlock {
     "$($item.Host) - $($item.Response.StatusCode)" | Out-Default
 }
 
-$method | Enable-PodeRequestLogType -Raw
+$method | Enable-PodeLogRequestType -Raw
 ```
 
 ### Username
@@ -95,18 +95,18 @@ If you're not using any Authentication then the "user" field in the log will alw
 For example, if the username was actually user "ID":
 
 ```powershell
-Enable-PodeRequestLogType -UsernameProperty 'ID'
+Enable-PodeLogRequestType -UsernameProperty 'ID'
 ```
 
 Or if the "Username" property is instead a sub-property of another "Meta" property:
 
 ```powershell
-Enable-PodeRequestLogType -UsernameProperty 'Meta.Username'
+Enable-PodeLogRequestType -UsernameProperty 'Meta.Username'
 ```
 
 ## Raw Request
 
-The raw log item that the Request log Type will supply to any Custom logging Method will be the following hashtable - this is also the data that will be supplied to any custom `-ScriptBlock`:
+The raw log item that the Request Log Type will supply to any Custom Log Method will be the following hashtable - this is also the data that will be supplied to any custom `-ScriptBlock`:
 
 ```powershell
 @{

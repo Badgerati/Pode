@@ -248,10 +248,10 @@ function Get-PodeLoggingCustomMethod {
                         continue
                     }
 
-                    # build scriptblock arguments based on the log method version
+                    # build scriptblock arguments based on the Log Method version
                     switch ($method.Version) {
                         1 {
-                            $_args = @(, ($logCol.Items | Select-Object -ExpandProperty Value)) + @($method.Arguments) + @(, ($logCol.Items.Event | Select-Object -ExpandProperty Value))
+                            $_args = @(, ($logCol.Items | Select-Object -ExpandProperty 'Data')) + @($method.Arguments) + @(, ($logCol.Items.Event | Select-Object -ExpandProperty 'Data'))
                         }
 
                         2 {
@@ -318,7 +318,7 @@ function Get-PodeLoggingApiMethod {
                     # get body
                     $body = Invoke-PodeScriptBlock `
                         -ScriptBlock $method.Arguments.Body.ScriptBlock `
-                        -Arguments @($logCol, $method.Arguments.Body.Arguments) `
+                        -Arguments @((, $logCol.Items), $method.Arguments.Body.Arguments) `
                         -UsingVariables $method.Arguments.Body.UsingVariables `
                         -Splat -Return
 
@@ -495,10 +495,10 @@ function New-PodeLogAzureWorkspaceMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($logCol, $options)
+        param($logItems, $options)
 
         # build array of events
-        $events = @(foreach ($item in $logCol.Items) {
+        $events = @(foreach ($item in $logItems) {
                 # build base event object
                 $evt = @{
                     Data      = $item.Data
@@ -623,10 +623,10 @@ function New-PodeLogAzureDataCollectionMethod {
 
     # build body scriptblock
     $bodyScriptBlock = {
-        param($logCol, $options)
+        param($logItems, $options)
 
         # build array of events
-        $events = @(foreach ($item in $logCol.Items) {
+        $events = @(foreach ($item in $logItems) {
                 # build base event object
                 $evt = @{
                     Data          = $item.Data
@@ -1004,7 +1004,7 @@ function Test-PodeLogTypesExist {
 }
 
 function Start-PodeLoggingRunspace {
-    # skip if there are no log types configured, or logging is disabled
+    # skip if there are no Log Types configured, or logging is disabled
     if (!(Test-PodeLogTypesExist)) {
         return
     }
@@ -1034,12 +1034,12 @@ function Start-PodeLoggingRunspace {
                         continue
                     }
 
-                    # transform the log item into a message item, unless the user wants the raw data to be passed to the log method
+                    # transform the log item into a message item, unless the user wants the raw data to be passed to the Log Method
                     if ($logType.Raw) {
                         $result = $logEvent.Data
                     }
                     else {
-                        # what version of the log type are we using? (v1 = data only, v2 = full log event)
+                        # what version of the Log Type are we using? (v1 = data only, v2 = full log event)
                         switch ($logType.Version) {
                             1 {
                                 $_args = @($logEvent.Data) + @($logType.Arguments)
@@ -1096,7 +1096,7 @@ function Start-PodeLoggingRunspace {
                         }
                     }
 
-                    # loop through each log method available to the log type
+                    # loop through each Log Method available to the Log Type
                     foreach ($logMethodId in $logType.Method) {
                         $logMethod = Get-PodeLogMethod -Id $logMethodId
                         $batch = $logMethod.Batch
@@ -1104,7 +1104,7 @@ function Start-PodeLoggingRunspace {
                         # add current item to batch
                         $batch.Items.Add([Pode.Utilities.Logging.PodeLogItem]::new($result, $logEvent))
 
-                        # if the batch is full, send to log method and reset
+                        # if the batch is full, send to Log Method and reset
                         if ($batch.Items.IsFull) {
                             $logMethod.Queue.Add($batch.Items)
                             $batch.Items = [Pode.Utilities.Logging.PodeLogItemCollection]::new($batch.Items.MaxCount, $batch.Items.Timeout)
@@ -1131,8 +1131,8 @@ function Start-PodeLoggingRunspace {
         }
     }
 
-    # create and start log method runspaces
-    Write-Verbose 'Starting log method runspaces...'
+    # create and start Log Method runspaces
+    Write-Verbose 'Starting Log Method runspaces...'
     $null = $PodeContext.RunspacePools.Logs.Pool.SetMaxRunspaces($PodeContext.Server.Logging.Methods.Count + 1)
 
     foreach ($methodId in $PodeContext.Server.Logging.Methods.Keys) {
@@ -1168,11 +1168,11 @@ function Add-PodeLogMethod {
 
     # check if method already exists
     if (Test-PodeLogMethod -Id $Id) {
-        # A logging method with the same ID already exists
+        # A Log Method with the same ID already exists
         throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Id)
     }
 
-    # empty list of log types for later associations
+    # empty list of Log Types for later associations
     $Metadata.Types = @()
 
     # add batching info to metadata
@@ -1243,7 +1243,7 @@ function Unregister-PodeLogMethodFromType {
 }
 
 function Test-PodeLogTypeBatchTimeout {
-    # check each log Type, and see if its batch needs to be outputted due to timeout
+    # check each Log Type, and see if its batch needs to be outputted due to timeout
     foreach ($logType in $PodeContext.Server.Logging.Types.Values) {
         foreach ($logMethodId in $logType.Method) {
             $logMethod = Get-PodeLogMethod -Id $logMethodId
@@ -1254,7 +1254,7 @@ function Test-PodeLogTypeBatchTimeout {
                 continue
             }
 
-            # send batch to log method and reset batch
+            # send batch to Log Method and reset batch
             $logMethod.Queue.Add($batch.Items)
 
             # reset the batch
@@ -1286,7 +1286,7 @@ function Close-PodeLogging {
         $PodeContext.Server.Logging.Logger = $null
     }
 
-    # Dispose log method queues
+    # Dispose Log Method queues
     foreach ($method in $PodeContext.Server.Logging.Methods.Values) {
         if ($null -ne $method.Queue) {
             $method.Queue.Dispose()

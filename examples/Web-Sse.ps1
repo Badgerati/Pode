@@ -44,7 +44,7 @@ Start-PodeServer -Threads 3 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # log errors
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogType -Levels Error
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType -Levels Error
 
     # register a connect event
     Register-PodeSseEvent -Name 'Test', 'Data' -Type Connect -EventName 'Connected' -ScriptBlock {

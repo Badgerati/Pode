@@ -30,8 +30,8 @@ catch { throw }
 Start-PodeServer -Threads 6 {
     Add-PodeEndpoint -Address localhost -Port '8081' -Protocol 'Https' -SelfSigned
 
-    New-PodeLogFileMethod -Name 'requests' | Enable-PodeRequestLogType
-    New-PodeLogFileMethod -Name 'errors' | Enable-PodeErrorLogType
+    New-PodeLogFileMethod -Name 'requests' | Enable-PodeLogRequestType
+    New-PodeLogFileMethod -Name 'errors' | Enable-PodeLogErrorType
 
     Add-PodeRoute -Method Get -Path / -ScriptBlock {
         Write-PodeTextResponse -Value 'Test'

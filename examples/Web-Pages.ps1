@@ -102,10 +102,10 @@ Start-PodeServer -Threads 2 -Verbose {
 
     # log requests to the terminal
     $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
-    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogType
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeLogRequestType
 
     # log errors to the terminal
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode

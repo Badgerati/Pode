@@ -1,24 +1,24 @@
 # Errors
 
-Pode has an inbuilt Error logging Type, that parses and transforms Exceptions/ErrorRecords, and will return a valid log item for whatever logging Method you supply.
+Pode has an inbuilt Error Log Type, that parses and transforms Exceptions/ErrorRecords, and will return a valid log item for whatever Log Method you supply.
 
 It also has support for error levels (such as Error, Warning, Verbose), with support for only allowing certain levels to be logged. By default the following levels are always logged if no levels are supplied: Emergency, Alert, Critical, and Error.
 
 ## Enabling
 
-To enable the Error logging Type use [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType), and supply one or more logging Methods - such as the [Terminal](../../Methods/Terminal) Method.
+To enable the Error Log Type use [`Enable-PodeLogErrorType`](../../../../Functions/Logging/Enable-PodeLogErrorType), and supply one or more Log Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
 !!! important
-    The `Enable-PodeErrorLogging` function is now deprecated, please use [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType) instead. The former is aliased to the latter for now.
+    The `Enable-PodeErrorLogging` function is now deprecated, please use [`Enable-PodeLogErrorType`](../../../../Functions/Logging/Enable-PodeLogErrorType) instead. The former is aliased to the latter for now.
 
 ## Custom Logic
 
 By default, if you supply no `-ScriptBlock`, Pode will use inbuilt data selection logic on error log items. However, if you do supply a custom `-ScriptBlock` then you can select/return your own data.
 
-This custom scriptblock will be supplied the Log Event, and any arguments supplied to `-ArgumentList`, as parameters. The `$logEvent` will be an `IPodeLogEvent` object, and the raw request data can be found under the `Data` property - including Timestamp, log Level, Metadata, and the log type's Name.
+This custom scriptblock will be supplied the [Log Event](../../Objects#log-event), and any arguments supplied to `-ArgumentList`, as parameters.
 
 ```powershell
-Enable-PodeRequestLogType -ScriptBlock {
+Enable-PodeLogRequestType -ScriptBlock {
     param($logEvent)
     return @{
         Message = $logEvent.Data.Message
@@ -31,7 +31,7 @@ Enable-PodeRequestLogType -ScriptBlock {
 
 ## Formatting
 
-More information on formatting can be [found here](../Formatting).
+More information on formatting can be [found here](../../Formatting).
 
 When Pode logs an error, the information logged is as follows:
 
@@ -48,7 +48,7 @@ When Pode logs an error, the information logged is as follows:
 
 ## Log Levels
 
-The Error logging Type uses the following log levels:
+The Error Log Type uses the following log levels:
 
 * Emergency (default)
 * Alert (default)
@@ -60,7 +60,7 @@ The Error logging Type uses the following log levels:
 * Verbose
 * Debug
 
-You can alter the log level by supplying `-Levels` to [`Enable-PodeErrorLogType`](../../../../Functions/Logging/Enable-PodeErrorLogType) - you can supply one or more.
+You can alter the log level by supplying `-Levels` to [`Enable-PodeLogErrorType`](../../../../Functions/Logging/Enable-PodeLogErrorType) - you can supply one or more.
 
 !!! tip
     To enable all log levels more easily, simply supply `-Levels '*'`
@@ -96,31 +96,31 @@ The internal error logging will show you unhandled exceptions from routes, middl
 
 ### Log to Terminal
 
-The following example enables Error logging type, and will output all items to the terminal - by default, only Emergency, Alert, Critical, and Error level items are logged:
+The following example enables the Error Log Type, and will output all items to the terminal - by default, only Emergency, Alert, Critical, and Error level items are logged:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 ```
 
 ### Log as JSON
 
-The following example enables Error logging type, and will output all items to the terminal as JSON - by default, only Emergency, Alert, Critical, and Error level items are logged:
+The following example enables the Error Log Type, and will output all items to the terminal as JSON - by default, only Emergency, Alert, Critical, and Error level items are logged:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeErrorLogType -SerialiseFormat Json
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -SerialiseFormat Json
 ```
 
 ### Log as Syslog
 
-The following example enables Error logging type, and will output all items to the terminal in Syslog format - by default, only Emergency, Alert, Critical, and Error level items are logged:
+The following example enables the Error Log Type, and will output all items to the terminal in Syslog format - by default, only Emergency, Alert, Critical, and Error level items are logged:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeErrorLogType -LogFormat Syslog
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -LogFormat Syslog
 ```
 
 ### Log to Multiple
 
-The following example will also enable Error logging type, but will output all items to the Terminal and to a File:
+The following example will also enable the Error Log Type, but will output all items to the Terminal and to a File:
 
 ```powershell
 $methods = @(
@@ -128,7 +128,7 @@ $methods = @(
     New-PodeLogFileMethod -Name 'errors'
 )
 
-$methods | Enable-PodeErrorLogType
+$methods | Enable-PodeLogErrorType
 ```
 
 ### Log Verbose
@@ -136,12 +136,12 @@ $methods | Enable-PodeErrorLogType
 The following example will enable Error logging, and it will log all errors levels except Debug:
 
 ```powershell
-New-PodeLogTerminalMethod | Enable-PodeErrorLogType -Levels Error, Warning, Informational, Verbose
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -Levels Error, Warning, Informational, Verbose
 ```
 
 ### Using Raw Item
 
-The following example uses a Custom logging Method, and sets Error logging to supply the raw log item to the Custom Method's scriptblock instead of a transformed one. The Custom Method simply logs the Server and Message to the terminal (but could be to something like an S3 bucket):
+The following example uses a Custom Log Method, and sets Error logging to supply the raw log item to the Custom Method's scriptblock instead of a transformed one. The Custom Method simply logs the Server and Message to the terminal (but could be to something like an S3 bucket):
 
 ```powershell
 $method = New-PodeLogCustomMethod -ScriptBlock {
@@ -149,12 +149,12 @@ $method = New-PodeLogCustomMethod -ScriptBlock {
     "$($item.Server) - $($item.Message)" | Out-Default
 }
 
-$method | Enable-PodeErrorLogType -Raw
+$method | Enable-PodeLogErrorType -Raw
 ```
 
 ## Raw Error
 
-The raw log item that the Error log Type will supply to any Custom logging Methods will be the following hashtable - this is also the data that will be supplied to any custom `-ScriptBlock`:
+The raw log item that the Error Log Type will supply to any Custom Log Methods will be the following hashtable - this is also the data that will be supplied to any custom `-ScriptBlock`:
 
 ```powershell
 @{
