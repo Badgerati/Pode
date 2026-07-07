@@ -126,7 +126,7 @@ param(
 
 # Dependency Versions
 $Versions = @{
-    Pester      = '6.0.0-rc4'
+    Pester      = '6.0.0'
     MkDocs      = '1.6.1'
     DotNet      = $SdkVersion
     MkDocsTheme = '9.7.6'
