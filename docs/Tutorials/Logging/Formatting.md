@@ -95,6 +95,12 @@ New-PodeLogTerminalMethod | Enable-PodeLogRequestType -SerialiseFormat Json
 
 When serialising custom Log Types into XML the default root element is `<root>`, this can be customised via `-XmlRootName`.
 
+### Global
+
+You can configure a global serialisation format to use via [`Set-PodeLogDefaultSerialiseFormat`]. If you **don't** supply `-SerialiseFormat` then the global default will be used instead.
+
+By default there is no global default; not supplying `-SerialiseFormat` will default to the Log Type's local default value - format inbuilt type this is Custom, and for custom types this is None.
+
 ## Log Format
 
 Log Types support the following formats, which can be supplied using the `-LogFormat` parameter:
@@ -115,7 +121,7 @@ When Syslog is specified, then the resultant data - after serialisation - is set
 
 By default, this will be RFC5424 format with a facility value of 16 (local0). These values can be customised, and tags included, by creating a `SyslogInfo` object via [`New-PodeLogSyslogInfo`](../../../../Functions/Logging/New-PodeLogSyslogInfo); the result of which can then be supplied to a Log Type's `-SyslogInfo` parameter.
 
-For example if you specify `-LogFormat Syslog` on [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType), with no `-SyslogInfo` object, and the default Custom serialisation, then the result syslog message sent to a Log Method would be:
+For example if you specify `-LogFormat Syslog` on [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType), with no `-SyslogInfo` object, then the result syslog message sent to a Log Method would be RFC5424 format:
 
 ```powershell
 New-PodeLogTerminalMethod | Enable-PodeLogRequestType -LogFormat Syslog
@@ -127,3 +133,18 @@ New-PodeLogTerminalMethod | Enable-PodeLogRequestType -LogFormat Syslog
 
 !!! note
     The application name used, if not specified in a SyslogInfo object, will be the [Server's App Name](../../../../Basic#app-name).
+
+To change the format to RFC3164:
+
+```powershell
+$syslogInfo = New-PodeLogSyslogInfo -Format RFC3164
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -LogFormat Syslog -SyslogInfo $syslogInfo
+```
+
+### Global
+
+You can configure a global log format to use via [`Set-PodeLogDefaultFormat`]. If you **don't** supply `-LogFormat` then the global default will be used instead.
+
+By default there is no global default; not supplying `-LogFormat` will default to the Log Type's local default value - usually None.
+
+The same can also be done for syslog formatting using [`Set-PodeLogDefaultSyslogFormat`]. Similar to above this will apply when either no `-SyslogInfo` is supplied, or no `-Format` is supplied to [`New-PodeLogSyslogInfo`].

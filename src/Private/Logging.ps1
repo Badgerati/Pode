@@ -333,6 +333,11 @@ function Get-PodeLoggingApiMethod {
 
                     $body = $body | Protect-PodeLogItem
 
+                    # do we need to compress the body?
+                    if ($method.Arguments.Compress) {
+                        $body = [Pode.Utilities.PodeHelpers]::CompressString($body, [Pode.Utilities.PodeCompressionType]::Gzip)
+                    }
+
                     # get headers
                     $headers = $method.Arguments.Headers.Value
 
@@ -353,11 +358,6 @@ function Get-PodeLoggingApiMethod {
                                 $headers[$key] = $addHeaders[$key]
                             }
                         }
-                    }
-
-                    # do we need to compress the body?
-                    if ($method.Arguments.Compress) {
-                        $body = [Pode.Utilities.PodeHelpers]::CompressString($body, [Pode.Utilities.PodeCompressionType]::Gzip)
                     }
 
                     # invoke the API
@@ -654,14 +654,14 @@ function New-PodeLogAzureDataCollectionMethod {
         # has the token expired? if so, generate a new one
         if ($options.Auth.ExpiryDate -lt [datetime]::Now.AddMinutes(-1)) {
             # build payload
-            $body = "client_id=$($options.Client.Id)"
-            $body += "&client_secret=$([System.Web.HttpUtility]::UrlEncode($options.Client.Secret))"
-            $body += "&scope=$([System.Web.HttpUtility]::UrlEncode('https://monitor.azure.com//.default'))"
-            $body += '&grant_type=client_credentials'
+            $payload = "client_id=$($options.Client.Id)"
+            $payload += "&client_secret=$([System.Web.HttpUtility]::UrlEncode($options.Client.Secret))"
+            $payload += "&scope=$([System.Web.HttpUtility]::UrlEncode('https://monitor.azure.com//.default'))"
+            $payload += '&grant_type=client_credentials'
 
             # request token
             $uri = "https://login.microsoftonline.com/$($options.Client.TenantId)/oauth2/v2.0/token"
-            $result = Invoke-RestMethod -Method Post -Uri $uri -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
+            $result = Invoke-RestMethod -Method Post -Uri $uri -Body $payload -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
 
             # set token and new expiry
             $options.Auth.Token = $result.access_token
