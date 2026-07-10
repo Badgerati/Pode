@@ -352,4 +352,5 @@
     loggingApiMethodBodyNotStringExceptionMessage                     = "Le corps renvoyé par le scriptblock du corps de l'API de journalisation n'est pas une chaîne."
     loggingApiMethodHeadersNotHashtableExceptionMessage               = "Les en-têtes renvoyés par le scriptblock des en-têtes de l'API de journalisation ne sont pas une table de hachage."
     nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'Un ScriptBlock non vide est requis pour le format de sérialisation de journalisation personnalisé.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'Un ScriptBlock non vide est requis pour le format de journalisation personnalisé.'
 }

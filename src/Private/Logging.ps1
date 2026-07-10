@@ -958,7 +958,7 @@ function Write-PodeRequestLog {
 
     # set username - dot spaces
     if (Test-PodeAuthUser -IgnoreSession) {
-        $userProps = (Get-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)).Properties.Username.Split('.')
+        $userProps = (Get-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)).Metadata.Username.Split('.')
 
         $user = $WebEvent.Auth.User
         foreach ($atom in $userProps) {
@@ -1075,13 +1075,13 @@ function Start-PodeLoggingRunspace {
                         }
 
                         'Custom' {
-                            $_args = @($result) + @($logType.Arguments)
+                            $_args = @($result) + @($logEvent) + @($logType.Arguments)
                             $result = Invoke-PodeScriptBlock -ScriptBlock $logType.Options.Formatting.Serialise.ScriptBlock -Arguments $_args -UsingVariables $logType.Options.Formatting.Serialise.UsingVariables -Return -Splat
                         }
                     }
 
                     # transform the result to syslog or other log formats (None just leaves "result" as it - no formatting
-                    switch ($logType.Options.Formatting.Log) {
+                    switch ($logType.Options.Formatting.Log.Format) {
                         'Syslog' {
                             $params = @{
                                 Message   = $result
@@ -1093,6 +1093,11 @@ function Start-PodeLoggingRunspace {
                                 Facility  = $logType.Options.Formatting.SyslogInfo.Facility
                             }
                             $result = ConvertTo-PodeSyslog @params
+                        }
+
+                        'Custom' {
+                            $_args = @($result) + @($logEvent) + @($logType.Arguments)
+                            $result = Invoke-PodeScriptBlock -ScriptBlock $logType.Options.Formatting.Log.ScriptBlock -Arguments $_args -UsingVariables $logType.Options.Formatting.Log.UsingVariables -Return -Splat
                         }
                     }
 

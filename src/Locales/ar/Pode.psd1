@@ -352,4 +352,5 @@
     loggingApiMethodBodyNotStringExceptionMessage                     = 'النص الذي تم إرجاعه من كتلة نص API للتسجيل ليس سلسلة.'
     loggingApiMethodHeadersNotHashtableExceptionMessage               = 'الرؤوس التي تم إرجاعها من كتلة رؤوس API للتسجيل ليست جدول تجزئة.'
     nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'مطلوب ScriptBlock غير فارغ لتنسيق التسلسل المخصص للتسجيل.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'مطلوب ScriptBlock غير فارغ لتنسيق السجل المخصص.'
 }

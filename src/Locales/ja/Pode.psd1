@@ -352,4 +352,5 @@
     loggingApiMethodBodyNotStringExceptionMessage                     = 'ログAPIのボディスクリプトブロックから返されたボディは文字列ではありません。'
     loggingApiMethodHeadersNotHashtableExceptionMessage               = 'ログAPIのヘッダースクリプトブロックから返されたヘッダーはハッシュテーブルではありません。'
     nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'カスタムログシリアル化形式には、空でないScriptBlockが必要です。'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'カスタムログ形式には、空でないScriptBlockが必要です。'
 }

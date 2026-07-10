@@ -352,4 +352,5 @@
     loggingApiMethodBodyNotStringExceptionMessage                     = '로그 API 본문 스크립트블록에서 반환된 본문이 문자열이 아닙니다.'
     loggingApiMethodHeadersNotHashtableExceptionMessage               = '로그 API 헤더 스크립트블록에서 반환된 헤더가 해시테이블이 아닙니다.'
     nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = '사용자 정의 로그 직렬화 형식에는 비어 있지 않은 ScriptBlock이 필요합니다.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = '사용자 정의 로그 형식에는 비어 있지 않은 ScriptBlock이 필요합니다.'
 }

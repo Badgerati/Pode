@@ -352,4 +352,5 @@
     loggingApiMethodBodyNotStringExceptionMessage                     = 'Het lichaam dat wordt geretourneerd door het logging API body scriptblock is geen string.'
     loggingApiMethodHeadersNotHashtableExceptionMessage               = 'De headers die worden geretourneerd door het logging API headers scriptblock zijn geen hashtable.'
     nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'Een niet-leeg ScriptBlock is vereist voor het aangepaste logging serialisatieformaat.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'Een niet-leeg ScriptBlock is vereist voor het aangepaste logformaat.'
 }

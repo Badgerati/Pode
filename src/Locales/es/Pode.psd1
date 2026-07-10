@@ -352,4 +352,5 @@
     loggingApiMethodBodyNotStringExceptionMessage                     = 'El cuerpo devuelto por el scriptblock del cuerpo de la API de registro no es una cadena.'
     loggingApiMethodHeadersNotHashtableExceptionMessage               = 'Los encabezados devueltos por el scriptblock de encabezados de la API de registro no son una tabla hash.'
     nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'Se requiere un ScriptBlock no vacío para el formato de serialización de registro personalizado.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'Se requiere un ScriptBlock no vacío para el formato de registro personalizado.'
 }

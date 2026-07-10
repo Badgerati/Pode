@@ -13,12 +13,12 @@ The scriptblock will be supplied with the following parameters, depending on the
 
 **Version 1**
 
-1. A raw log item that was supplied via [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
+1. The raw log item that was supplied via [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
 2. The arguments that were supplied from [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType)'s `-ArgumentList` parameter.
 
 **Version 2**
 
-1. A [Log Event](../../Objects#log-event) object, with references to the raw data from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog), the log Level, Timestamp, any Metadata, and the Log Type's Name.
+1. The [Log Event](../../Objects#log-event) object, with references to the raw data from [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog), the log Level, Timestamp, any Metadata, and the Log Type's Name.
 2. The arguments that were supplied from [`Add-PodeLogType`](../../../../Functions/Logging/Add-PodeLogType)'s `-ArgumentList` parameter.
 
 ## Formatting

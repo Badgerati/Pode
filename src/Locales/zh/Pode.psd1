@@ -352,4 +352,5 @@
     loggingApiMethodBodyNotStringExceptionMessage                     = '日志 API 本体脚本块返回的本体不是字符串。'
     loggingApiMethodHeadersNotHashtableExceptionMessage               = '日志 API 头脚本块返回的头不是哈希表。'
     nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = '自定义日志序列化格式需要一个非空的 ScriptBlock。'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = '自定义日志格式需要一个非空的 ScriptBlock。'
 }

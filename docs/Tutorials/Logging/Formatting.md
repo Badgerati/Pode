@@ -20,7 +20,7 @@ graph LR
 | ------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | Selection     | Required data from the original log item is selected, and returned (ie, as a hashtable) | `-ScriptBlock`                                 |
 | Serialisation | The resultant data, if required, is serialised (ie, as JSON, custom, etc.)              | `-SerialiseFormat` and `-SerialiseScriptBlock` |
-| Formatting    | The resultant, or serialised, data is converted into some log format (ie, syslog)       | `-LogFormat`                                   |
+| Formatting    | The resultant, or serialised, data is converted into some log format (ie, syslog)       | `-LogFormat` and `-LogScriptBlock`             |
 
 ## Serialisation
 
@@ -47,8 +47,9 @@ When Custom is specified then a `-SerialiseScriptBlock` is required to be suppli
 
 When serialisation occurs, this scriptblock will be invoked. Supplied to this scriptblock are the following parameters:
 
-* The resultant data returned from the Log Type's main `-ScriptBlock`
-* Items supplied to `-ArgumentList`, splatted as individual parameters
+1. The resultant data returned from the Log Type's main `-ScriptBlock`
+2. The [Log Event](../Objects#log-event) object
+3. Items supplied to `-ArgumentList`, splatted as individual parameters
 
 For example, the inbuilt Request Log Type's serialise scriptblock looks as follows; it will serialise the data into Combined Log Format:
 
@@ -106,11 +107,33 @@ By default there is no global default; not supplying `-SerialiseFormat` will def
 Log Types support the following formats, which can be supplied using the `-LogFormat` parameter:
 
 * None (default)
+* Custom
 * Syslog
+
+This occurs after serialisation, so the "message" will typically be the resultant data from the Log Type, and post any serialisation. For example, allowing you to have a syslog formatted message, where the message part is JSON.
 
 ### None
 
 When None is specified, then no formatting is performed on the log item. Whatever resultant data was returned from the Log Type's `-ScriptBlock`, and optionally supplied to any serialisation, will remain as is.
+
+### Custom
+
+When Custom is specified then a `-LogScriptBlock` is required to be supplied as well.
+
+When log formatting occurs, after serialisation, this scriptblock will be invoked. Supplied to this scriptblock are the following parameters:
+
+1. The resultant data returned from the Log Type's main `-ScriptBlock`, and after any serialisation
+2. The [Log Event](../Objects#log-event) object
+3. Items supplied to `-ArgumentList`, splatted as individual parameters
+
+For example, a simple pipe-delimited format of `<LEVEL>|<DATETIME>|<MESSAGE>:
+
+```powershell
+$scriptblock = {
+    param($data, $logEvent)
+    return "$($logEvent.Level)|$($logEvent.Timestamp)|$($data)
+}
+```
 
 ### Syslog
 

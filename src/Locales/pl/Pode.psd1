@@ -352,4 +352,5 @@
     loggingApiMethodBodyNotStringExceptionMessage                     = 'Ciało zwrócone przez blok skryptu ciała API logowania nie jest ciągiem znaków.'
     loggingApiMethodHeadersNotHashtableExceptionMessage               = 'Nagłówki zwrócone przez blok skryptu nagłówków API logowania nie są hashtable.'
     nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'Niepusty ScriptBlock jest wymagany dla niestandardowego formatu serializacji logowania.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'Niepusty ScriptBlock jest wymagany dla niestandardowego formatu logowania.'
 }
