@@ -217,11 +217,17 @@ An array of arguments to supply to the Custom Log Type's ScriptBlock and Seriali
 .PARAMETER SyslogInfo
 A hashtable containing Syslog configuration information, built using New-PodeSyslogInfo.
 
+.PARAMETER RemoteIPHeader
+One or more optional headers to check for the client's remote IP address, if behind a reverse proxy.
+
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogRequestType
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -RemoteIPHeader 'X-Forwarded-For'
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogRequestType -SerialiseFormat 'Json'
@@ -283,6 +289,10 @@ function Enable-PodeLogRequestType {
         [hashtable]
         $SyslogInfo,
 
+        [Parameter()]
+        [string[]]
+        $RemoteIPHeader,
+
         [Parameter(ParameterSetName = 'Raw')]
         [switch]
         $Raw
@@ -320,8 +330,11 @@ function Enable-PodeLogRequestType {
         if ([string]::IsNullOrWhiteSpace($UsernameProperty)) {
             $UsernameProperty = 'Username'
         }
+
+        # add metadata
         $params['Metadata'] = @{
-            Username = $UsernameProperty
+            Username       = $UsernameProperty
+            RemoteIPHeader = $RemoteIPHeader
         }
 
         # add LogFormat if supplied
@@ -783,6 +796,11 @@ function Add-PodeLogType {
         # all errors?
         if ($Levels -contains '*') {
             $Levels = @('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug')
+        }
+
+        # default metadata
+        if ($null -eq $Metadata) {
+            $Metadata = @{}
         }
 
         # default log formatter

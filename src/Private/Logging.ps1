@@ -927,6 +927,9 @@ function Write-PodeRequestLog {
         return
     }
 
+    # get the request log type
+    $logType = Get-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)
+
     # build a request object
     $item = @{
         Host            = $Request.Handler.RemoteEndPoint.Address.IPAddressToString
@@ -956,9 +959,20 @@ function Write-PodeRequestLog {
         $item.Response.Size = $Response.ContentLength64
     }
 
+    # do we need to get the host address from req headers (if behind a reverse proxy)?
+    $remoteIpHeaders = $logType.Metadata.RemoteIPHeader
+    if (($null -ne $remoteIpHeaders) -and ($remoteIpHeaders.Count -gt 0)) {
+        foreach ($header in $remoteIpHeaders) {
+            if (Test-PodeHeader -Name $header) {
+                $item.Host = ((Get-PodeHeader -Name $header) -split ',')[0].Trim()
+                break
+            }
+        }
+    }
+
     # set username - dot spaces
     if (Test-PodeAuthUser -IgnoreSession) {
-        $userProps = (Get-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)).Metadata.Username.Split('.')
+        $userProps = $logType.Metadata.Username.Split('.')
 
         $user = $WebEvent.Auth.User
         foreach ($atom in $userProps) {
