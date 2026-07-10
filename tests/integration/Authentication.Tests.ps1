@@ -14,7 +14,7 @@ Describe 'Authentication Requests' {
             Start-PodeServer -Quiet -ScriptBlock {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
 
-                New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+                New-PodeLogTerminalMethod | Enable-PodeLogErrorType
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
                 }

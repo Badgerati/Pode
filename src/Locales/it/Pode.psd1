@@ -330,12 +330,12 @@
     signalConnectionNameNotFoundExceptionMessage                      = "Nessuna connessione Signal trovata con il nome '{0}'."
     signalFailedToBroadcastExceptionMessage                           = 'Signal fallito durante la trasmissione a causa del livello di trasmissione Signal definito per {0}: {1}.'
     authMethodNotFoundExceptionMessage                                = "Nessuna metodo di autenticazione trovata con il nome '{0}'."
-    authMethodEventAlreadyRegisteredExceptionMessage                  = "L'événement '{0}' est déjà enregistré pour le méthode d'authentification '{1}'."
-    authMethodEventNotRegisteredExceptionMessage                      = "L'événement '{0}' n'est pas enregistré pour le méthode d'authentification '{1}'."
-    signalEventAlreadyRegisteredExceptionMessage                      = "L'événement '{0}' est déjà enregistré pour la connexion Signal '{1}'."
-    signalEventNotRegisteredExceptionMessage                          = "L'événement '{0}' n'est pas enregistré pour la connexion Signal '{1}'."
-    sseEventAlreadyRegisteredExceptionMessage                         = "L'événement '{0}' est déjà enregistré pour la connexion SSE '{1}'."
-    sseEventNotRegisteredExceptionMessage                             = "L'événement '{0}' n'est pas enregistré pour la connexion SSE '{1}'."
+    authMethodEventAlreadyRegisteredExceptionMessage                  = "L'evento '{0}' è già registrato per il metodo di autenticazione '{1}'."
+    authMethodEventNotRegisteredExceptionMessage                      = "L'evento '{0}' non è registrato per il metodo di autenticazione '{1}'."
+    signalEventAlreadyRegisteredExceptionMessage                      = "L'evento '{0}' è già registrato per la connessione Signal '{1}'."
+    signalEventNotRegisteredExceptionMessage                          = "L'evento '{0}' non è registrato per la connessione Signal '{1}'."
+    sseEventAlreadyRegisteredExceptionMessage                         = "L'evento '{0}' è già registrato per la connessione SSE '{1}'."
+    sseEventNotRegisteredExceptionMessage                             = "L'evento '{0}' non è registrato per la connessione SSE '{1}'."
     jsonSchemaObjectPropertyMissingNameExceptionMessage               = "La proprietà di uno schema di oggetto JSON non ha un nome. Assegna un nome a questa proprietà usando il parametro 'Name'."
     jsonSchemaObjectMaxPropsLessThanMinPropsExceptionMessage          = 'MaxProperties non può essere inferiore a MinProperties per la proprietà dello schema JSON di tipo oggetto.'
     jsonSchemaArrayMaxItemsLessThanMinItemsExceptionMessage           = 'MaxItems non può essere inferiore a MinItems per la proprietà dello schema JSON di tipo array.'
@@ -349,4 +349,8 @@
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "I valori predefiniti delle route statiche non possono essere percorsi assoluti. Valore predefinito non valido: '{0}'"
     deprecatedFunctionWarningMessage                                  = "AVVERTENZA: La funzione '{0}' è obsoleta e sarà rimossa nelle versioni future. Si prega di utilizzare la funzione '{1}' invece."
     loggingMethodDoesNotExistExceptionMessage                         = "Il metodo di registrazione '{0}' non esiste."
+    loggingApiMethodBodyNotStringExceptionMessage                     = "Il corpo restituito dallo scriptblock del corpo dell'API di registrazione non è una stringa."
+    loggingApiMethodHeadersNotHashtableExceptionMessage               = "Gli header restituiti dallo scriptblock degli header dell'API di registrazione non sono una tabella hash."
+    nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'È richiesto un ScriptBlock non vuoto per il formato di serializzazione della registrazione personalizzata.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'È richiesto un ScriptBlock non vuoto per il formato di registro personalizzato.'
 }

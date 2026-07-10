@@ -85,15 +85,15 @@ Start-PodeServer -Threads 2 -Verbose {
     # )
 
     # wire up a custom logger
-    $customLogMethod = New-PodeLogCustomMethod -ScriptBlock {
-        param($item, $options, $raw)
-        $item.HttpMethod | Out-Default
+    $customLogMethod = New-PodeLogCustomMethod -Version 2 -ScriptBlock {
+        param($items, $options)
+        $items[0].Data.HttpMethod | Out-Default
     }
 
-    $customLogMethod | Add-PodeLogType -Name 'custom' -ScriptBlock {
-        param($item)
+    $customLogMethod | Add-PodeLogType -Name 'custom' -Version 2 -ScriptBlock {
+        param($logEvent)
         return @{
-            HttpMethod = $item.HttpMethod
+            HttpMethod = $logEvent.Data.HttpMethod
         }
     }
 
@@ -102,10 +102,10 @@ Start-PodeServer -Threads 2 -Verbose {
 
     # log requests to the terminal
     $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
-    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogType
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeLogRequestType
 
     # log errors to the terminal
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode

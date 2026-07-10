@@ -6,7 +6,7 @@ Pode offers a suite of server management operations to provide granular control 
 
 - [**Suspending**](./Suspending/Overview.md): Temporarily pause server activities and later restore them without a full restart.
 - [**Restarting**](./Restarting/Overview.md): Multiple ways to restart the server, including file monitoring, scheduled restarts, and manual commands.
-- [**Disabling**](./Disabling/Overview.md): Block or allow new incoming requests without affecting the server’s state.
+- [**Disabling**](./Disabling/Overview.md): Block or allow new incoming requests without affecting the server's state.
 
 ---
 
@@ -50,7 +50,7 @@ Pode introduces the ability to configure and control server behaviors using the 
 
 ### Benefits of Allowed Actions
 
-- **Customizable Behavior**: Tailor server operations to match your application’s requirements.
+- **Customizable Behavior**: Tailor server operations to match your application's requirements.
 - **Enhanced Control**: Prevent unwanted actions like suspending or restarting during critical operations.
 - **Predictability**: Enforce consistent timeouts for suspend and resume actions to avoid delays.
 - **Middleware Control**: Specify a custom middleware scriptblock for handling specific scenarios, such as client retries during downtime.
@@ -59,7 +59,7 @@ Pode introduces the ability to configure and control server behaviors using the 
 
 ## Monitoring the Server State
 
-In addition to managing operations, Pode allows you to monitor the server's state using the `Get-PodeServerState` function. This command evaluates the server’s internal state and returns a status such as:
+In addition to managing operations, Pode allows you to monitor the server's state using the `Get-PodeServerState` function. This command evaluates the server's internal state and returns a status such as:
 
 - **Starting**: The server is initializing.
 - **Running**: The server is actively processing requests.

@@ -93,7 +93,7 @@ Builds a Textual response object for an MCP tool, which can be returned to the c
 .DESCRIPTION
 This function creates a hashtable representing a textual response for an MCP tool. The hashtable includes a
 'type' key with the value 'text', and a 'text' key containing the provided value. If the provided value is not a string,
-it will be converted to a string using Out-String.
+it will be converted to a string.
 
 .PARAMETER Value
 The value to be included in the textual response. This can be any object, which will be converted to a string if necessary.
@@ -116,16 +116,9 @@ function New-PodeMcpTextContent {
         $Value
     )
 
-    if ($null -eq $Value) {
-        $Value = [string]::Empty
-    }
-    elseif ($Value -isnot [string]) {
-        $Value = $Value | Out-String
-    }
-
     return @{
         type = 'text'
-        text = $Value
+        text = $Value | ConvertTo-PodeString
     }
 }
 

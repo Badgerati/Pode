@@ -23,7 +23,7 @@ Pode is tested against the PowerShell versions it supports at the time of each r
 A warning mechanism within Pode detects the PowerShell version in use at runtime. If a version no longer supported by the current release of Pode is detected—due to reaching EOL—a warning will be issued, advising on the potential risks and recommending an update to a supported version.
 
 ## Version Updates and Communication
-Updates to the PowerShell version support policy will be documented in Pode’s release notes and official documentation. Users are encouraged to review these sources to stay informed about which PowerShell versions are supported by their version of Pode.
+Updates to the PowerShell version support policy will be documented in Pode's release notes and official documentation. Users are encouraged to review these sources to stay informed about which PowerShell versions are supported by their version of Pode.
 
 ## Feedback and Contributions
 Feedback on Pode's PowerShell version support policy is invaluable. We welcome suggestions and contributions from our community to help refine and improve our approach. Please share your thoughts through our GitHub repository or community forums.

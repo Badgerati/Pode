@@ -1390,8 +1390,8 @@ function New-PodeRequestException {
         $Message,
 
         [Parameter()]
-        [PodeProtocolType]
-        $Type = [PodeProtocolType]::Http
+        [Pode.Utilities.PodeProtocolType]
+        $Type = [Pode.Utilities.PodeProtocolType]::Http
     )
 
     return [PodeRequestExceptionFactory]::Create($Type, $Message, $StatusCode)
@@ -3437,13 +3437,17 @@ function ConvertTo-PodeYaml {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
         [AllowNull()]
         $InputObject,
 
-        [parameter()]
+        [Parameter()]
         [int]
-        $Depth = 16
+        $Depth = 16,
+
+        [Parameter()]
+        [int]
+        $StringWrapLength = 80
     )
 
     begin {
@@ -3460,7 +3464,7 @@ function ConvertTo-PodeYaml {
         }
 
         if ($PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
-            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -StringWrapLength $StringWrapLength -NoNewLine
         }
 
         if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
@@ -3471,7 +3475,7 @@ function ConvertTo-PodeYaml {
             return ($InputObject | ConvertTo-Yaml)
         }
         else {
-            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -StringWrapLength $StringWrapLength -NoNewLine
         }
     }
 }
@@ -3508,72 +3512,76 @@ function ConvertTo-PodeYaml {
 .NOTES
     This is an internal function and may change in future releases of Pode.
     It converts only basic PowerShell types, such as strings, integers, booleans, arrays, hashtables, and ordered dictionaries into a YAML format.
-
 #>
 function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]
-    param (
-        [parameter(Mandatory = $true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [AllowNull()]
         $InputObject,
 
-        [parameter()]
+        [Parameter()]
         [int]
         $Depth = 10,
 
-        [parameter()]
+        [Parameter()]
         [int]
         $NestingLevel = 0,
 
-        [parameter()]
+        [Parameter()]
+        [int]
+        $StringWrapLength = 80,
+
+        [Parameter()]
         [switch]
         $NoNewLine
     )
 
     #report the leaves in terms of object type
     if ($Depth -ilt $NestingLevel) {
-        return ''
-    }
-    # if it is null return null
-    If ( !($InputObject) ) {
-        if ($InputObject -is [Object[]]) {
-            return '[]'
-        }
-        else {
-            return ''
-        }
+        return [string]::Empty
     }
 
-    $padding = [string]::new(' ', $NestingLevel * 2) # lets just create our left-padding for the block
-    try {
-        $Type = $InputObject.GetType().Name # we start by getting the object's type
+    # if it is null return null
+    If (!$InputObject) {
         if ($InputObject -is [object[]]) {
-            #what it really is
+            return '[]'
+        }
+
+        return [string]::Empty
+    }
+
+    # the padding for the current level of nesting
+    $padding = [string]::new(' ', $NestingLevel * 2)
+
+    try {
+        # we start by getting the object's type
+        $Type = $InputObject.GetType().Name
+        if ($InputObject -is [object[]]) {
             $Type = "$($InputObject.GetType().BaseType.Name)"
         }
 
-        # Check for specific value types string
+        # override the type if it's an ordered dictionary or list
         if ($Type -ne 'String') {
-            # prevent these values being identified as an object
             if ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
-                $Type = 'hashTable'
+                $Type = 'hashtable'
             }
             elseif ($Type -ieq 'List`1') {
                 $Type = 'array'
             }
             elseif ($InputObject -is [array]) {
                 $Type = 'array'
-            } # whatever it thinks it is called
+            }
             elseif ($InputObject -is [hashtable] ) {
-                $Type = 'hashTable'
-            } # for our purposes it is a hashtable
+                $Type = 'hashtable'
+            }
         }
 
         $output += switch ($Type.ToLower()) {
             'string' {
                 $String = "$InputObject"
-                if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
+                if (($string -match '[\r\n]' -or ($StringWrapLength -gt 0 -and $string.Length -gt $StringWrapLength)) -and ($string -notlike 'http*')) {
                     $multiline = [System.Text.StringBuilder]::new("|`n")
 
                     $items = $string.Split("`n")
@@ -3581,14 +3589,13 @@ function ConvertTo-PodeYamlInternal {
                         $workingString = $items[$i] -replace '\r$'
                         $length = $workingString.Length
                         $index = 0
-                        $wrap = 80
 
                         while ($index -lt $length) {
-                            $breakpoint = $wrap
+                            $breakpoint = $StringWrapLength
                             $linebreak = $false
 
-                            if (($length - $index) -gt $wrap) {
-                                $lastSpaceIndex = $workingString.LastIndexOf(' ', $index + $wrap, $wrap)
+                            if (($StringWrapLength -gt 0) -and (($length - $index) -gt $StringWrapLength)) {
+                                $lastSpaceIndex = $workingString.LastIndexOf(' ', $index + $StringWrapLength, $StringWrapLength)
                                 if ($lastSpaceIndex -ne -1) {
                                     $breakpoint = $lastSpaceIndex - $index
                                 }
@@ -3622,15 +3629,17 @@ function ConvertTo-PodeYamlInternal {
                 }
                 else {
                     # decide if this needs quoting
-                    $needsQuote = ($string -match '^[\-?:,\[\]{}#&*!|>''"%@`]') -or
-                    $string.StartsWith(' ') -or # leading space
-                    $string.EndsWith(' ') -or # trailing space
-                    ($string -match ':\s') -or # contains ": "
-                    ($string -match '^(?:~|null|true|false)$') -or # bare null/boolean
-                    ($string -match '^-?\d+(\.\d+)?$')                # integer or float
+                    $needsQuote = (
+                        ($string -match '^[\-?:,\[\]{}#&*!|>''"%@`]') -or
+                        $string.StartsWith(' ') -or # leading space
+                        $string.EndsWith(' ') -or # trailing space
+                        ($string -match ':\s') -or # contains ": "
+                        ($string -match '^(?:~|null|true|false)$') -or # bare null/boolean
+                        ($string -match '^-?\d+(\.\d+)?$')              # integer or float
+                    )
 
+                    # single-quote style: double any internal ' to ''
                     if ($needsQuote) {
-                        # single-quote style: double any internal ' to ''
                         $s = $string -replace '''', ''''''
                         "'$s'"
                     }
@@ -3660,7 +3669,7 @@ function ConvertTo-PodeYamlInternal {
                         }
                         else {
                             if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
-                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -StringWrapLength $StringWrapLength -NestingLevel ($NestingLevel + $increment)))
                         }
                     }
                     $string.ToString()
@@ -3686,7 +3695,7 @@ function ConvertTo-PodeYamlInternal {
                         }
                         else {
                             if ($InputObject.$item -is [string]) { $increment = 2 } else { $increment = 1 }
-                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject.$item -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject.$item -Depth $Depth -StringWrapLength $StringWrapLength -NestingLevel ($NestingLevel + $increment)))
                         }
                     }
                     $string.ToString()
@@ -3700,25 +3709,268 @@ function ConvertTo-PodeYamlInternal {
                 $index = 0
                 foreach ($item in $InputObject ) {
                     if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                    $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
+                    $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -Depth $Depth -StringWrapLength $StringWrapLength -NestingLevel ($NestingLevel + 1) -NoNewLine))
                 }
                 $string.ToString()
                 break
             }
 
             default {
-                "'$InputObject'"
+                "'$($InputObject)'"
             }
         }
+
         return $Output
     }
     catch {
         $_ | Write-PodeErrorLog
-        $_.Exception | Write-PodeErrorLog -CheckInnerException
-        throw ($PodeLocale.scriptErrorExceptionMessage -f $_, $_.InvocationInfo.ScriptName, $_.InvocationInfo.Line.Trim(), $_.InvocationInfo.ScriptLineNumber, $_.InvocationInfo.OffsetInLine, $_.InvocationInfo.MyCommand, $type, $InputObject, $InputObject.GetType().Name, $InputObject.GetType().BaseType.Name)
+        throw
     }
 }
 
+function ConvertTo-PodeXml {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
+        [object]
+        $InputObject,
+
+        [Parameter()]
+        [int]
+        $Depth = 10,
+
+        [Parameter()]
+        [string]
+        $RootName = 'root',
+
+        [Parameter()]
+        [ValidateSet('Parent', 'Item', 'Parent-Hide')]
+        $ArrayItemName = 'Item',
+
+        [switch]
+        $EncodeNewlines,
+
+        [switch]
+        $Compress,
+
+        [switch]
+        $IncludeDeclaration
+    )
+
+    begin {
+        $pipelineObject = @()
+    }
+
+    process {
+        $pipelineObject += $_
+    }
+
+
+    end {
+        if ($pipelineObject.Count -gt 1) {
+            $InputObject = $pipelineObject
+        }
+
+        ConvertTo-PodeXmlInternal `
+            -InputObject $InputObject `
+            -Depth $Depth `
+            -ElementName $RootName `
+            -IsRoot `
+            -ArrayItemName $ArrayItemName `
+            -EncodeNewlines:$EncodeNewlines `
+            -Compress:$Compress `
+            -IncludeDeclaration:$IncludeDeclaration
+    }
+}
+
+# based on https://blog.wannemacher.us/posts/p430/, by Eric Wannemacher
+function ConvertTo-PodeXmlInternal {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        [object]
+        $InputObject,
+
+        [Parameter()]
+        [int]
+        $Depth = 10,
+
+        [Parameter()]
+        [string]
+        $ElementName = 'root',
+
+        [Parameter()]
+        [int]
+        $NestingLevel = 0,
+
+        [Parameter()]
+        [System.Text.StringBuilder]
+        $StringBuilder,
+
+        [Parameter()]
+        [ValidateSet('Parent', 'Item', 'Parent-Hide')]
+        $ArrayItemName = 'Item',
+
+        [switch]
+        $IsRoot,
+
+        [switch]
+        $EncodeNewlines,
+
+        [switch]
+        $Compress,
+
+        [switch]
+        $IncludeDeclaration
+    )
+
+    # do we need a string builder?
+    if ($null -eq $StringBuilder) {
+        $StringBuilder = [System.Text.StringBuilder]::new()
+    }
+
+    # if this is the root, add the xml declaration
+    if ($IsRoot -and $IncludeDeclaration) {
+        $null = $StringBuilder.Append('<?xml version="1.0" encoding="utf-8"?>')
+        if (!$Compress) {
+            $null = $StringBuilder.AppendLine()
+        }
+    }
+
+    # the padding for this level of nesting
+    $padding = [string]::Empty
+    if (!$Compress) {
+        $padding = [string]::new(' ', $NestingLevel * 2)
+    }
+
+    # are we hiding the array parent elements?
+    $hideArrayParent = ($ArrayItemName -eq 'Parent-Hide') -and ($InputObject -is [array])
+
+    # indent the element and add the opening tag
+    if (!$IsRoot -and !$Compress -and !$hideArrayParent) {
+        $null = $StringBuilder.AppendLine()
+    }
+    if (!$hideArrayParent) {
+        $null = $StringBuilder.Append($padding).Append("<$([System.Web.HttpUtility]::HtmlEncode($ElementName))>")
+    }
+
+    # if we're at the max depth, just show the object type
+    if ($Depth -lt $NestingLevel) {
+        $null = $StringBuilder.Append($InputObject.GetType().FullName)
+        if (!$hideArrayParent) {
+            $null = $StringBuilder.Append("</$([System.Web.HttpUtility]::HtmlEncode($ElementName))>")
+        }
+        return
+    }
+
+    # append new line at end?
+    $newLine = $true
+
+    # get the objects type, and overrides
+    $type = [string]::Empty
+    if (($InputObject -is [hashtable]) -or ($InputObject -is [System.Collections.Specialized.OrderedDictionary])) {
+        $type = 'hashtable'
+    }
+    elseif (($InputObject -is [array]) -or ($InputObject -is [System.Collections.IList])) {
+        $type = 'array'
+    }
+    else {
+        $type = $InputObject.GetType().Name
+    }
+
+    # render based on object type
+    switch ($type.ToLower()) {
+        'pscustomobject' {
+            foreach ($prop in (Get-Member -InputObject $InputObject -MemberType Properties).Name) {
+                ConvertTo-PodeXmlInternal `
+                    -InputObject ($InputObject.$prop) `
+                    -NestingLevel ($NestingLevel + 1) `
+                    -Depth $Depth `
+                    -ElementName $prop `
+                    -StringBuilder $StringBuilder `
+                    -ArrayItemName $ArrayItemName `
+                    -EncodeNewlines:$EncodeNewlines `
+                    -Compress:$Compress
+            }
+        }
+
+        'hashtable' {
+            foreach ($key in $InputObject.Keys) {
+                ConvertTo-PodeXmlInternal `
+                    -InputObject ($InputObject[$key]) `
+                    -NestingLevel ($NestingLevel + 1) `
+                    -Depth $Depth `
+                    -ElementName $key `
+                    -StringBuilder $StringBuilder `
+                    -ArrayItemName $ArrayItemName `
+                    -EncodeNewlines:$EncodeNewlines `
+                    -Compress:$Compress
+            }
+        }
+
+
+        'array' {
+            # are we using "item" or the parent name for the array items?
+            $elName = 'item'
+            if ($ArrayItemName -iin 'parent', 'parent-hide') {
+                $elName = $ElementName
+            }
+
+            # increment the nesting level, unless we're hiding the array parent elements
+            $newNestingLevel = $NestingLevel
+            if (!$hideArrayParent) {
+                $newNestingLevel++
+            }
+
+            foreach ($element in $InputObject) {
+                ConvertTo-PodeXmlInternal `
+                    -InputObject $element `
+                    -NestingLevel $newNestingLevel `
+                    -Depth $Depth `
+                    -ElementName $elName `
+                    -StringBuilder $StringBuilder `
+                    -ArrayItemName $ArrayItemName `
+                    -EncodeNewlines:$EncodeNewlines `
+                    -Compress:$Compress
+            }
+        }
+
+        default {
+            if ($null -eq $InputObject) {
+                $InputObject = [string]::Empty
+            }
+
+            # encode new line chars
+            $value = [System.Web.HttpUtility]::HtmlEncode($InputObject.ToString())
+            if ($EncodeNewlines -or $Compress) {
+                $value = $value.Replace("`n", '&#xA;').Replace("`r", '&#xD;')
+            }
+
+            $null = $StringBuilder.Append($value)
+            $padding = [string]::Empty
+            $newLine = $false
+        }
+    }
+
+    # add new line before closing tag, unless we're compressing or hiding the array parent elements
+    if ($newLine -and !$Compress -and !$hideArrayParent) {
+        $null = $StringBuilder.AppendLine()
+    }
+
+    # close the element, unless we're hiding the array parent elements
+    if (!$hideArrayParent) {
+        $null = $StringBuilder.Append($padding).Append("</$([System.Web.HttpUtility]::HtmlEncode($ElementName))>")
+    }
+
+    # at the end, if this is the root, return the final string
+    if ($IsRoot) {
+        return $StringBuilder.ToString()
+    }
+}
 
 <#
 .SYNOPSIS
@@ -4115,4 +4367,35 @@ function Get-PodeImageContentType {
 
     # If none of the above formats match, return a generic binary type
     return 'application/octet-stream'
+}
+
+function Get-PodeUnixEpoch {
+    return [datetime]::new(1970, 1, 1, 0, 0, 0, [datetimekind]::Utc)
+}
+
+function ConvertTo-PodeUnixEpoch {
+    param(
+        [Parameter(Mandatory = $true)]
+        [datetime]
+        $DateTime,
+
+        [Parameter()]
+        [ValidateSet('Seconds', 'Milliseconds')]
+        [string]
+        $Format = 'Seconds'
+    )
+
+    $unixEpoch = Get-PodeUnixEpoch
+    $diff = $DateTime.ToUniversalTime() - $unixEpoch
+
+    switch ($Format.ToLowerInvariant()) {
+        'seconds' {
+            $amount = $diff.TotalSeconds
+        }
+        'milliseconds' {
+            $amount = $diff.TotalMilliseconds
+        }
+    }
+
+    return [math]::Round($amount)
 }

@@ -862,7 +862,7 @@ function Register-PodeSseEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [PodeClientConnectionEventType]
+        [Pode.Protocols.Http.Client.PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -942,7 +942,7 @@ function Unregister-PodeSseEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [PodeClientConnectionEventType]
+        [Pode.Protocols.Http.Client.PodeClientConnectionEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -994,7 +994,7 @@ function Test-PodeSseEvent {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [PodeClientConnectionEventType[]]
+        [Pode.Protocols.Http.Client.PodeClientConnectionEventType[]]
         $Type,
 
         [Parameter()]
@@ -1038,7 +1038,7 @@ function Get-PodeSseEvent {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [PodeClientConnectionEventType[]]
+        [Pode.Protocols.Http.Client.PodeClientConnectionEventType[]]
         $Type,
 
         [Parameter()]

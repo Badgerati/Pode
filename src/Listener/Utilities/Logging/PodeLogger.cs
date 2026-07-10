@@ -53,16 +53,6 @@ namespace Pode.Utilities.Logging
             LogTypes.TryRemove(name, out _);
         }
 
-        public void Add(string name, PodeLogLevel level, object item)
-        {
-            if (IsDisposed || !IsEnabled)
-            {
-                return;
-            }
-
-            Add(new PodeLogEvent(name, level, item));
-        }
-
         public void Add(IPodeLogEvent logEvent)
         {
             if (IsDisposed || !IsEnabled)
@@ -70,13 +60,13 @@ namespace Pode.Utilities.Logging
                 return;
             }
 
-            // does the log type exist?
+            // does the Log Type exist?
             if (!LogTypes.TryGetValue(logEvent.Name, out var logType))
             {
                 return;
             }
 
-            // is the log level enabled for the log type?
+            // is the log level enabled for the Log Type?
             if (!logType.IsLevelEnabled(logEvent.Level))
             {
                 return;
@@ -86,35 +76,35 @@ namespace Pode.Utilities.Logging
             Queue.Add(logEvent);
         }
 
-        public void AddException(Exception exception, string contextId, PodeLogLevel level, int threadId = 0)
+        public void AddException(Exception exception, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0)
         {
             if (exception == null)
             {
                 return;
             }
 
-            AddException(exception.Source, exception.Message, exception.StackTrace, contextId, level, threadId);
+            AddException(exception.Source, exception.Message, exception.StackTrace, contextId, level, metadata, threadId);
         }
 
-        public void AddException(string message, string contextId, PodeLogLevel level, int threadId = 0)
+        public void AddException(string message, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0)
         {
-            AddException(string.Empty, message, string.Empty, contextId, level, threadId);
+            AddException(string.Empty, message, string.Empty, contextId, level, metadata, threadId);
         }
 
-        public void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, int threadId = 0)
+        public void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0)
         {
             if (IsDisposed || !IsEnabled)
             {
                 return;
             }
 
-            // does the log type exist?
+            // does the Log Type exist?
             if (!LogTypes.TryGetValue(ERROR_LOG_TYPE_NAME, out var logType))
             {
                 return;
             }
 
-            // is the log level enabled for the log type?
+            // is the log level enabled for the Log Type?
             if (!logType.IsLevelEnabled(level))
             {
                 return;
@@ -134,6 +124,11 @@ namespace Pode.Utilities.Logging
                 }
             }
 
+            // default "<none>" values where not set
+            stackTrace = string.IsNullOrWhiteSpace(stackTrace) ? "<none>" : stackTrace;
+            message = string.IsNullOrWhiteSpace(message) ? "<none>" : message;
+            contextId = string.IsNullOrWhiteSpace(contextId) ? "<none>" : contextId;
+
             // convert the exception to a log item
             var item = new Hashtable(StringComparer.InvariantCultureIgnoreCase)
             {
@@ -148,7 +143,7 @@ namespace Pode.Utilities.Logging
             };
 
             // add the log event to the queue
-            Queue.Add(new PodeLogEvent(ERROR_LOG_TYPE_NAME, level, item));
+            Queue.Add(new PodeLogEvent(ERROR_LOG_TYPE_NAME, level, item, metadata));
         }
 
         public bool TryTake(out IPodeLogEvent logEvent, CancellationToken cancellationToken)
@@ -178,7 +173,7 @@ namespace Pode.Utilities.Logging
                 return;
             }
 
-            // clear log types
+            // clear Log Types
             LogTypes.Clear();
         }
 
@@ -194,7 +189,7 @@ namespace Pode.Utilities.Logging
             // dispose the queue
             Queue.Dispose();
 
-            // clear the log types
+            // clear the Log Types
             LogTypes.Clear();
 
             // suppress finalization

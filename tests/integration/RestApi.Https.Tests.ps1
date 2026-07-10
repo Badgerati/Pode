@@ -44,7 +44,7 @@ Describe 'REST API HTTPS Requests' {
             Start-PodeServer -RootPath $using:PSScriptRoot -Quiet -ScriptBlock {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Https -SelfSigned
 
-                New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+                New-PodeLogTerminalMethod | Enable-PodeLogErrorType
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
                 }

@@ -115,7 +115,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
     Add-PodeFavicon -Default
 
     # Enable error logging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # Configure CORS
     Set-PodeSecurityAccessControl -Origin '*' -Duration 7200 -WithOptions -AuthorizationHeader -autoMethods -AutoHeader -Credentials -CrossDomainXhrRequests

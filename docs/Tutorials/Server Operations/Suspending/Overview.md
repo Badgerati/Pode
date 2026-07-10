@@ -1,10 +1,10 @@
 # Overview
 
-In addition to restarting, Pode provides a way to temporarily **suspend** and **resume** the server, allowing you to pause all activities and connections without completely stopping the server. This can be especially useful for debugging, troubleshooting, or performing maintenance tasks where you don’t want to fully restart the server.
+In addition to restarting, Pode provides a way to temporarily **suspend** and **resume** the server, allowing you to pause all activities and connections without completely stopping the server. This can be especially useful for debugging, troubleshooting, or performing maintenance tasks where you don't want to fully restart the server.
 
 ## Suspending
 
-To suspend a running Pode server, use the `Suspend-PodeServer` function. This function will pause all active server runspaces, effectively putting the server into a suspended state. Here’s how to do it:
+To suspend a running Pode server, use the `Suspend-PodeServer` function. This function will pause all active server runspaces, effectively putting the server into a suspended state. Here's how to do it:
 
 1. **Run the Suspension Command**:
 
@@ -20,14 +20,14 @@ To suspend a running Pode server, use the `Suspend-PodeServer` function. This fu
       - When you run `Suspend-PodeServer`, Pode will:
          - Pause all runspaces associated with the server, putting them into a debug state.
          - Trigger a "Suspend" event to signify that the server is paused.
-         - Update the server’s status to reflect that it is now suspended.
+         - Update the server's status to reflect that it is now suspended.
 
 3. **Outcome**:
       - After suspension, all server operations are halted, and the server will not respond to incoming requests until it is resumed.
 
 ## Resuming
 
-Once you’ve completed any tasks or troubleshooting, you can resume the server using `Resume-PodeServer`. This will restore the Pode server to its normal operational state:
+Once you've completed any tasks or troubleshooting, you can resume the server using `Resume-PodeServer`. This will restore the Pode server to its normal operational state:
 
 1. **Run the Resume Command**:
       - Call `Resume-PodeServer` to bring the server back online.

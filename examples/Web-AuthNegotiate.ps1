@@ -43,7 +43,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8080 -Host 'pode.example.com' -Protocol Http
 
     # enable error logging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # setup negotiate auth
     New-PodeAuthScheme -Negotiate -KeytabPath '.\pode-user.keytab' | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {

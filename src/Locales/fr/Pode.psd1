@@ -349,4 +349,8 @@
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "Les valeurs par défaut des routes statiques ne peuvent pas être des chemins absolus. Valeur par défaut non valide : '{0}'"
     deprecatedFunctionWarningMessage                                  = "AVERTISSEMENT : La fonction '{0}' est obsolète et sera supprimée dans les futures versions. Veuillez utiliser la fonction '{1}' à la place."
     loggingMethodDoesNotExistExceptionMessage                         = "La méthode de journalisation '{0}' n'existe pas."
+    loggingApiMethodBodyNotStringExceptionMessage                     = "Le corps renvoyé par le scriptblock du corps de l'API de journalisation n'est pas une chaîne."
+    loggingApiMethodHeadersNotHashtableExceptionMessage               = "Les en-têtes renvoyés par le scriptblock des en-têtes de l'API de journalisation ne sont pas une table de hachage."
+    nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'Un ScriptBlock non vide est requis pour le format de sérialisation de journalisation personnalisé.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'Un ScriptBlock non vide est requis pour le format de journalisation personnalisé.'
 }

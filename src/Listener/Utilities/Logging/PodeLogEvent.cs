@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 
 namespace Pode.Utilities.Logging
 {
@@ -6,9 +7,11 @@ namespace Pode.Utilities.Logging
     {
         public string Name { get; private set; }
         public PodeLogLevel Level { get; private set; }
-        public object Item { get; private set; }
+        public DateTime Timestamp { get; private set; } = DateTime.Now;
+        public Hashtable Metadata { get; private set; }
+        public object Data { get; private set; }
 
-        public PodeLogEvent(string name, PodeLogLevel level, object item)
+        public PodeLogEvent(string name, PodeLogLevel level, object data, Hashtable metadata = null)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -17,7 +20,8 @@ namespace Pode.Utilities.Logging
 
             Name = name;
             Level = level;
-            Item = item;
+            Data = data;
+            Metadata = metadata ?? new Hashtable(StringComparer.InvariantCultureIgnoreCase);
         }
     }
 }

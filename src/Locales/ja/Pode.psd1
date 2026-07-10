@@ -349,4 +349,8 @@
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "静的ルートのデフォルトはルートパスにできません。無効なデフォルト: '{0}'"
     deprecatedFunctionWarningMessage                                  = "警告: 関数 '{0}' は非推奨であり、将来のリリースで削除されます。代わりに '{1}' 関数を使用してください。"
     loggingMethodDoesNotExistExceptionMessage                         = "ログ方法 '{0}' は存在しません。"
+    loggingApiMethodBodyNotStringExceptionMessage                     = 'ログAPIのボディスクリプトブロックから返されたボディは文字列ではありません。'
+    loggingApiMethodHeadersNotHashtableExceptionMessage               = 'ログAPIのヘッダースクリプトブロックから返されたヘッダーはハッシュテーブルではありません。'
+    nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'カスタムログシリアル化形式には、空でないScriptBlockが必要です。'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'カスタムログ形式には、空でないScriptBlockが必要です。'
 }

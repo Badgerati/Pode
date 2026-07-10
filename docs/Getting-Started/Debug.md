@@ -199,7 +199,7 @@ These default names are automatically assigned by Pode, making it easier to iden
 
 ### Customizing Runspace Names
 
-By default, Pode’s Tasks, Schedules, and Timers label their associated runspaces with their own names (as shown above). This simplifies the identification of runspaces when debugging or reviewing logs.
+By default, Pode's Tasks, Schedules, and Timers label their associated runspaces with their own names (as shown above). This simplifies the identification of runspaces when debugging or reviewing logs.
 
 However, if a different runspace name is needed, Pode allows you to customize it. Inside the script block of `Add-PodeTask`, `Add-PodeSchedule`, or `Add-PodeTimer`, you can use the `Set-PodeCurrentRunspaceName` cmdlet to assign any custom name you prefer.
 
@@ -211,7 +211,7 @@ This cmdlet sets a custom name for the runspace, making it easier to track durin
 
 #### Example
 
-Here’s an example that demonstrates how to set a custom runspace name in a Pode task:
+Here's an example that demonstrates how to set a custom runspace name in a Pode task:
 
 ```powershell
 Add-PodeTask -Name 'Test2' -ScriptBlock {
@@ -237,7 +237,7 @@ This cmdlet returns the name of the current runspace, allowing for easier tracki
 
 #### Example
 
-Here’s an example that uses `Get-PodeCurrentRunspaceName` to output the runspace name during the execution of a schedule:
+Here's an example that uses `Get-PodeCurrentRunspaceName` to output the runspace name during the execution of a schedule:
 
 ```powershell
 Add-PodeSchedule -Name 'TestSchedule' -Cron '@hourly' -ScriptBlock {

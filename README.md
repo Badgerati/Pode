@@ -31,7 +31,7 @@ Start-PodeServer -ScriptBlock {
     Add-PodeEndPoint -Address localhost -port 32005 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
-        Write-PodeJsonResponse -Value @{value = 'pong' }
+        Write-PodeJsonResponse -Value @{ value = 'pong' }
     }
 }
 

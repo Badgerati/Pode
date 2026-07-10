@@ -54,10 +54,10 @@ InModuleScope -ModuleName 'Pode' {
 
             $PodeContext.Server.Logging.Logger.Count | Should -Be 1
 
-            $logItem = $null
-            $PodeContext.Server.Logging.Logger.TryTake([ref]$logItem, [System.Threading.CancellationToken]::None) | Should -Be $true
-            $logItem.Name | Should -Be 'test'
-            $logItem.Item | Should -Be 'test'
+            $logEvent = $null
+            $PodeContext.Server.Logging.Logger.TryTake([ref]$logEvent, [System.Threading.CancellationToken]::None) | Should -Be $true
+            $logEvent.Name | Should -Be 'test'
+            $logEvent.Data | Should -Be 'test'
         }
     }
 
@@ -98,9 +98,9 @@ InModuleScope -ModuleName 'Pode' {
 
             $PodeContext.Server.Logging.Logger.Count | Should -Be 1
 
-            $logItem = $null
-            $PodeContext.Server.Logging.Logger.TryTake([ref]$logItem, [System.Threading.CancellationToken]::None) | Should -Be $true
-            $logItem.Item.Message | Should -Be 'some error'
+            $logEvent = $null
+            $PodeContext.Server.Logging.Logger.TryTake([ref]$logEvent, [System.Threading.CancellationToken]::None) | Should -Be $true
+            $logEvent.Data.Message | Should -Be 'some error'
         }
 
         It 'Adds an exception log item' {
@@ -110,9 +110,9 @@ InModuleScope -ModuleName 'Pode' {
             $exp = [exception]::new('some error')
             Write-PodeErrorLog -Exception $exp
 
-            $logItem = $null
-            $PodeContext.Server.Logging.Logger.TryTake([ref]$logItem, [System.Threading.CancellationToken]::None) | Should -Be $true
-            $logItem.Item.Message | Should -Be 'some error'
+            $logEvent = $null
+            $PodeContext.Server.Logging.Logger.TryTake([ref]$logEvent, [System.Threading.CancellationToken]::None) | Should -Be $true
+            $logEvent.Data.Message | Should -Be 'some error'
         }
 
         It 'Does not log as Verbose not allowed' {
@@ -187,6 +187,81 @@ InModuleScope -ModuleName 'Pode' {
             }
 
             Protect-PodeLogItem -Item $item | Should -Be 'Password=********Hunter2, Email'
+        }
+    }
+
+    Describe 'ConvertTo-PodeSyslog' {
+        BeforeAll {
+            $PodeContext = @{
+                Server = @{
+                    ComputerName = 'localhost'
+                    AppName      = 'Pode'
+                }
+            }
+        }
+
+        It 'Converts a log item to RFC5424 syslog format' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now
+            $msg | Should -Be "<131>1 $($strNow) localhost Pode $($processId) - - example"
+        }
+
+        It 'Converts a log item to RFC5424 syslog format, with custom AppName' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -AppName 'CustomApp'
+            $msg | Should -Be "<131>1 $($strNow) localhost CustomApp $($processId) - - example"
+        }
+
+        It 'Converts a log item to RFC5424 syslog format, with Facility' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Facility 19
+            $msg | Should -Be "<155>1 $($strNow) localhost Pode $($processId) - - example"
+        }
+
+        It 'Converts a log item to RFC5424 syslog format, with Tags' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+            $tags = @{ tag1 = 'value1' }
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Tags $tags
+            $msg | Should -Be "<131>1 $($strNow) localhost Pode $($processId) - [tag1=`"value1`"] example"
+        }
+
+        It 'Converts a log item to RFC3164 syslog format' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('MMM dd HH:mm:ss')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Format 'RFC3164'
+            $msg | Should -Be "<131>$($strNow) localhost Pode[$($processId)]: example"
+        }
+
+        It 'Converts a log item to RFC3164 syslog format, with custom AppName' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('MMM dd HH:mm:ss')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Format 'RFC3164' -AppName 'CustomApp'
+            $msg | Should -Be "<131>$($strNow) localhost CustomApp[$($processId)]: example"
+        }
+
+        It 'Converts a log item to RFC3164 syslog format, with Facility' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('MMM dd HH:mm:ss')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Format 'RFC3164' -Facility 19
+            $msg | Should -Be "<155>$($strNow) localhost Pode[$($processId)]: example"
         }
     }
 }

@@ -47,7 +47,7 @@ Start-PodeServer -Threads 2 {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     $mid1 = New-PodeMiddleware -ScriptBlock {
         'here1' | Out-Default
