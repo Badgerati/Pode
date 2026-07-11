@@ -36,6 +36,14 @@ More information on formatting can be [found here](../../Formatting).
 
 The Request Log Type will transform a supplied raw web request into a [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) string. This string is then supplied to the Log Method's scriptblock. If you're using a Custom Log Method and want the raw log item instead, you can supply `-Raw` to [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType).
 
+## Remote IP
+
+When logging requests, Pode will log the client's remote IP as the IP of network connection. Meaning if you're running Pode behind a proxy, you'll get the proxy's IP and not the originating client's IP.
+
+You can use the `-RemoteIPHeader` parameter to set one, or more, possible headers to check for the original client IP - typically `X-Forwarded-For` unless you're using a custom header. If the header is present on the request, that IP will be used; if no header is found then the default will be the raw network connection's IP.
+
+If multiple request header names are supplied, they will be checked in the order they are supplied.
+
 ## Examples
 
 ### Log to Terminal
@@ -44,6 +52,14 @@ The following example enables the Request Log Type, and will output all items to
 
 ```powershell
 New-PodeLogTerminalMethod | Enable-PodeLogRequestType
+```
+
+### Log Proxy IP
+
+The following example enables the Request Log Type, and will fetch the client IP from `X-Forwarded-For`:
+
+```powershell
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -RemoteIPHeader 'X-Forwarded-For'
 ```
 
 ### Log as JSON
