@@ -180,6 +180,9 @@
         'ConvertTo-PodeString',
         'Get-PodeServerName',
         'Get-PodeAppName',
+        'Get-PodeEnvironmentVariable',
+        'Set-PodeEnvironmentVariable',
+        'Test-PodeEnvironmentVariable',
 
         # routes
         'Add-PodeRoute',
@@ -358,6 +361,9 @@
         'Set-PodeLogDefaultFormat',
         'Set-PodeLogDefaultSerialiseFormat',
         'Set-PodeLogDefaultSyslogFormat',
+        'New-PodeLogW3CInfo',
+        'Add-PodeLogW3CField',
+        'Add-PodeLogW3CCustomField',
 
         # core
         'Start-PodeServer',

@@ -196,6 +196,13 @@ One or more Log Method IDs to use for outputting the log entry.
 .PARAMETER UsernameProperty
 An optional property path within the $WebEvent.Auth.User object for the user's Username. (Default: Username).
 
+.PARAMETER Format
+The format to use for the log output. (Default: Combined)
+
+.PARAMETER W3CInfo
+An optional hashtable of W3C log configuration information, built using New-PodeLogW3CInfo.
+If not supplied, but -Format=W3C, then default W3C fields will be used.
+
 .PARAMETER LogFormat
 The format to use for the log output. (Default: Server default, or 'None' if no default set).
 
@@ -260,6 +267,15 @@ function Enable-PodeLogRequestType {
         [Parameter()]
         [string]
         $UsernameProperty,
+
+        [Parameter()]
+        [ValidateSet('Common', 'Combined', 'W3C')]
+        [string]
+        $Format = 'Combined',
+
+        [Parameter()]
+        [hashtable]
+        $W3CInfo,
 
         [Parameter()]
         [Pode.Utilities.Logging.PodeLogFormat]
@@ -331,10 +347,32 @@ function Enable-PodeLogRequestType {
             $UsernameProperty = 'Username'
         }
 
-        # add metadata
+        # add base metadata
         $params['Metadata'] = @{
             Username       = $UsernameProperty
             RemoteIPHeader = $RemoteIPHeader
+            Format         = $Format.ToLowerInvariant()
+        }
+
+        # handle w3c fields
+        if ($Format -ieq 'W3C') {
+            # use default fields, if none supplied
+            if (Test-PodeIsEmpty $W3CInfo) {
+                $W3CInfo = Get-PodeRequestLogW3CDefaultInfo
+            }
+
+            # build log header directives
+            if (!$W3CInfo.NoLogHeader) {
+                $params['LogHeader'] = @(
+                    "#Software: Pode $($PodeContext.Server.Version)"
+                    "#Version: $($W3CInfo.Version)"
+                    "#Date: $([datetime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))"
+                    "#Fields: $($W3CInfo.Fields.FieldName -join ' ')"
+                )
+            }
+
+            # add the fields to the metadata
+            $params['Metadata']['W3CFields'] = $W3CInfo.Fields
         }
 
         # add LogFormat if supplied
@@ -360,11 +398,7 @@ function Enable-PodeLogRequestType {
 
         # add SerialiseScriptBlock if supplied, otherwise use local default
         if ($null -eq $SerialiseScriptBlock) {
-            $SerialiseScriptBlock = {
-                param($data)
-                $reqLine = "$($data.Method) $($data.Resource) $($data.Protocol)"
-                return "$($data.Host) $($data.Identifier) $($data.User) [$($data.Date)] `"$($reqLine)`" $($data.StatusCode) $($data.Size) `"$($data.Referrer)`" `"$($data.UserAgent)`""
-            }
+            $SerialiseScriptBlock = Get-PodeLoggingInbuiltSerialiseType -Type Requests
         }
         $params['SerialiseScriptBlock'] = $SerialiseScriptBlock
 
@@ -569,14 +603,7 @@ function Enable-PodeLogErrorType {
 
         # add SerialiseScriptBlock if supplied, otherwise use local default
         if ($null -eq $SerialiseScriptBlock) {
-            $SerialiseScriptBlock = {
-                param($data)
-                $msg = @(foreach ($key in $data.Keys) {
-                        "$($key): $($data[$key])"
-                    }) -join "`n"
-
-                return "$($msg)`n"
-            }
+            $SerialiseScriptBlock = Get-PodeLoggingInbuiltSerialiseType -Type Errors
         }
         $params['SerialiseScriptBlock'] = $SerialiseScriptBlock
 
@@ -676,6 +703,9 @@ An optional name to use for the root element of the log item when serialising to
 .PARAMETER Metadata
 A hashtable of metadata to associate with the Log Type. This data can be retrieved via Get-PodeLogType.
 
+.PARAMETER LogHeader
+An optional array of strings to use as the header(s) for the log, such as W3C log directives.
+
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string.
 
@@ -758,6 +788,10 @@ function Add-PodeLogType {
         [Parameter()]
         [hashtable]
         $Metadata,
+
+        [Parameter()]
+        [string[]]
+        $LogHeader,
 
         [Parameter(ParameterSetName = 'Raw')]
         [switch]
@@ -852,6 +886,7 @@ function Add-PodeLogType {
             Levels         = $Levels
             Raw            = $Raw.IsPresent
             Version        = $Version
+            SentFirstLog   = $false
             Metadata       = $Metadata
             Options        = @{
                 Formatting = @{
@@ -867,6 +902,7 @@ function Add-PodeLogType {
                         UsingVariables = $serialiseUsingVars
                         XmlRootName    = Protect-PodeValue -Value $XmlRootName -Default 'Log'
                     }
+                    Headers    = $LogHeader
                 }
             }
             Arguments      = $ArgumentList
@@ -2795,5 +2831,139 @@ function Convert-PodeLogItemToString {
                 return $Item.Data | ConvertTo-PodeString
             }
         }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new Pode Log W3C Info object.
+
+.DESCRIPTION
+Creates a new Pode Log W3C Info object with the specified fields, version, and log header settings.
+
+.PARAMETER Fields
+The fields to include in the W3C log, created using Add-PodeLogW3CField or Add-PodeLogW3CCustomField.
+
+.PARAMETER Version
+The version of the W3C log format. (Default: 1.0)
+
+.PARAMETER NoLogHeader
+If supplied, the W3C log will not include the log header.
+
+.EXAMPLE
+$fields = @(
+    Add-PodeLogW3CField -Name 'date'
+    Add-PodeLogW3CField -Name 'time'
+    Add-PodeLogW3CField -Name 'c-ip'
+    Add-PodeLogW3CField -Name 'cs-method'
+    Add-PodeLogW3CField -Name 'cs-uri-stem'
+    Add-PodeLogW3CCustomField -Name 'custom-field' -Type 'Request'
+)
+$info = New-PodeLogW3CInfo -Fields $fields
+#>
+function New-PodeLogW3CInfo {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Fields,
+
+        [Parameter()]
+        [version]
+        $Version = [version]'1.0',
+
+        [switch]
+        $NoLogHeader
+    )
+
+    return @{
+        Fields      = $Fields
+        Version     = $Version
+        NoLogHeader = $NoLogHeader.IsPresent
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new Pode Log W3C Field object.
+
+.DESCRIPTION
+Creates a new Pode Log W3C Field object with the specified name.
+
+.PARAMETER Name
+The name of the W3C field to create.
+
+.EXAMPLE
+$field = Add-PodeLogW3CField -Name 'date'
+#>
+function Add-PodeLogW3CField {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('date', 'time', 'c-ip', 'cs-username', 's-ip', 's-port', 's-computername', 'cs-method', 'cs-uri-stem', 'cs-uri-query', 'sc-status', 'time-taken', 'sc-bytes', 'cs-bytes', 'cs-version', 'cs-host')]
+        [string]
+        $Name
+    )
+
+    return @{
+        Type      = 'Standard'
+        FieldName = $Name.ToLowerInvariant()
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new Pode Log W3C Custom Field object.
+
+.DESCRIPTION
+Creates a new Pode Log W3C Custom Field object with the specified name and type.
+
+.PARAMETER Name
+The name of the custom field to create. Custom field names can only contain alphanumeric characters, hyphens, and underscores.
+
+.PARAMETER Type
+The type of the custom field, which can be 'Request', 'Response', or 'Environment'.
+
+Request: retrieved from the request headers, and wrapped with "cs(...)" in the W3C log.
+Response: retrieved from the response headers, and wrapped with "sc(...)" in the W3C log.
+Environment: retrieved from the process environment variables, and prefixed with "x-" in the W3C log.
+
+.EXAMPLE
+$field = Add-PodeLogW3CCustomField -Name 'custom-field' -Type 'Request'
+
+.EXAMPLE
+$field = Add-PodeLogW3CCustomField -Name 'custom-field' -Type 'Response'
+
+.EXAMPLE
+$field = Add-PodeLogW3CCustomField -Name 'custom-field' -Type 'Environment'
+#>
+function Add-PodeLogW3CCustomField {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-z0-9\-_]+$')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Request', 'Response', 'Environment')]
+        [string]
+        $Type
+    )
+
+    $fieldName = switch ($Type) {
+        'Request' { "cs($($Name))" }
+        'Response' { "sc($($Name))" }
+        'Environment' { "x-$($Name)" }
+    }
+
+    return @{
+        Type      = $Type
+        Name      = $Name
+        FieldName = $fieldName
     }
 }

@@ -34,7 +34,80 @@ Enable-PodeLogRequestType -ScriptBlock {
 
 More information on formatting can be [found here](../../Formatting).
 
-The Request Log Type will transform a supplied raw web request into a [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) string. This string is then supplied to the Log Method's scriptblock. If you're using a Custom Log Method and want the raw log item instead, you can supply `-Raw` to [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType).
+The Request Log Type also has its own additional formatting options supplied via `-Format`, and will transform a supplied raw web request into one of the following formats:
+
+* Combined (default)
+* Common
+* W3C
+
+This formatted string is then supplied to the Log Methods. If you're using a Custom Log Method and want the raw unformatted log item instead, you can supply `-Raw` to [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType).
+
+### W3C
+
+Unlike the Common and Combined log formats, with W3C you can customise the fields that are logged.
+
+To do this you will need to build and supply a W3C Info object to the `-W3CInfo` parameter. This info object will let you define which inbuilt fields to log, as well as which request/response headers, and any process environment variables. To build the info object, you'll need to use [`New-PodeLogW3CInfo`](../../../../Functions/Logging/New-PodeLogW3CInfo), and supply `-Fields` using [`Add-PodeLogW3CField`](../../../../Functions/Logging/Add-PodeLogW3CField) or [`Add-PodeLogW3CCustomField`](../../../../Functions/Logging/Add-PodeLogW3CCustomField).
+
+The inbuilt fields are:
+
+| Field          | Description                                                 |
+| -------------- | ----------------------------------------------------------- |
+| date           | The date that the request occurred, as `yyyy-MM-dd`         |
+| time           | The time that the request occurred, as `HH:mm:ss`           |
+| c-ip           | The IP address of the client making the request             |
+| cs-username    | The username of any authenticated user                      |
+| s-ip           | The IP address of the endpoint the request was received on  |
+| s-port         | The port of the endpoint the request was received on        |
+| s-computername | The computer name of the server the request was received on |
+| cs-method      | The HTTP method of the request                              |
+| cs-uri-stem    | The URI stem of the request                                 |
+| cs-uri-query   | The query string of the request                             |
+| sc-status      | The HTTP status code of the response                        |
+| time-taken     | The time taken to process the request, in milliseconds      |
+| sc-bytes       | The number of bytes sent by the server                      |
+| cs-bytes       | The number of bytes received from the client                |
+| cs-version     | The HTTP version of the request                             |
+| cs-host        | The host header of the request                              |
+
+Any custom fields will be named as follows:
+
+| Type        | Field Decorator |
+| ----------- | --------------- |
+| Request     | `cs(...)`       |
+| Response    | `sc(...)`       |
+| Environment | `x-...`         |
+
+If nothing is supplied to `-W3CInfo` then default fields will be used instead, in the ordered displayed here:
+
+* date
+* time
+* c-ip
+* cs-method
+* cs-uri-stem
+* cs-uri-query
+* cs-username
+* sc-status
+* time-taken
+* cs(USer-Agent)
+* cs(Referer)
+
+For example:
+
+```powershell
+$fields = New-PodeLogW3CInfo -Fields @(
+    Add-PodeLogW3CField -Name 'date'
+    Add-PodeLogW3CField -Name 'time'
+    Add-PodeLogW3CField -Name 'c-ip'
+    Add-PodeLogW3CField -Name 'cs-method'
+    Add-PodeLogW3CField -Name 'cs-uri-stem'
+    Add-PodeLogW3CField -Name 'cs-uri-query'
+    Add-PodeLogW3CField -Name 'cs-username'
+    Add-PodeLogW3CField -Name 'sc-status'
+    Add-PodeLogW3CField -Name 'time-taken'
+    Add-PodeLogW3CCustomField -Name 'User-Agent' -Type Request
+    Add-PodeLogW3CCustomField -Name 'Referer' -Type Request
+)
+```
 
 ## Remote IP
 

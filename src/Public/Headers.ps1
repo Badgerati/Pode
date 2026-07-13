@@ -107,16 +107,22 @@ function Add-PodeHeaderBulk {
 
 <#
 .SYNOPSIS
-Tests if a header is present on the Request.
+Tests if a header is present on the Request or Response.
 
 .DESCRIPTION
-Tests if a header is present on the Request.
+Tests if a header is present on the Request or Response.
 
 .PARAMETER Name
 The name of the header to test.
 
+.PARAMETER Response
+If supplied, the header will be tested against the Response instead of the Request.
+
 .EXAMPLE
 Test-PodeHeader -Name 'X-AuthToken'
+
+.EXAMPLE
+Test-PodeHeader -Name 'X-AuthToken' -Response
 #>
 function Test-PodeHeader {
     [CmdletBinding()]
@@ -124,18 +130,25 @@ function Test-PodeHeader {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $Response
     )
 
-    return $WebEvent.Request.Headers.ContainsKey($Name)
+    if ($Response) {
+        return $WebEvent.Response.Headers -and $WebEvent.Response.Headers.ContainsKey($Name)
+    }
+
+    return $WebEvent.Request.Headers -and $WebEvent.Request.Headers.ContainsKey($Name)
 }
 
 <#
 .SYNOPSIS
-Retrieves the value of a header from the Request.
+Retrieves the value of a header from the Request or Response.
 
 .DESCRIPTION
-Retrieves the value of a header from the Request.
+Retrieves the value of a header from the Request or Response.
 
 .PARAMETER Name
 The name of the header to retrieve.
@@ -146,8 +159,17 @@ The secret used to unsign the header's value.
 .PARAMETER Strict
 If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
 
+.PARAMETER Response
+If supplied, the header will be retrieved from the Response instead of the Request.
+
 .EXAMPLE
 Get-PodeHeader -Name 'X-AuthToken'
+
+.EXAMPLE
+Get-PodeHeader -Name 'X-AuthToken' -Secret 'hunter2' -Strict
+
+.EXAMPLE
+Get-PodeHeader -Name 'X-AuthToken' -Response
 #>
 function Get-PodeHeader {
     [CmdletBinding()]
@@ -162,14 +184,28 @@ function Get-PodeHeader {
         $Secret,
 
         [switch]
-        $Strict
+        $Strict,
+
+        [switch]
+        $Response
     )
 
-    # get the value for the header from the request
-    $header = $WebEvent.Request.Headers.$Name
+    # if the Response switch is supplied, get the value from the Response headers
+    if ($Response) {
+        if ($WebEvent.Response.Headers) {
+            $header = $WebEvent.Response.Headers[$Name]
+        }
+    }
+
+    # else, get the value for the header from the request
+    else {
+        if ($WebEvent.Request.Headers) {
+            $header = $WebEvent.Request.Headers.$Name
+        }
+    }
 
     # if a secret was supplied, attempt to unsign the header's value
-    if (![string]::IsNullOrWhiteSpace($Secret)) {
+    if (![string]::IsNullOrEmpty($Secret) -and ![string]::IsNullOrEmpty($header)) {
         $header = Invoke-PodeValueUnsign -Value $header -Secret $Secret -Strict:$Strict
     }
 
@@ -285,10 +321,10 @@ function Set-PodeHeaderBulk {
 
 <#
 .SYNOPSIS
-Tests if a header on the Request is validly signed.
+Tests if a header on the Request or Response is validly signed.
 
 .DESCRIPTION
-Tests if a header on the Request is validly signed, by attempting to unsign it using some secret.
+Tests if a header on the Request or Response is validly signed, by attempting to unsign it using some secret.
 
 .PARAMETER Name
 The name of the header to test.
@@ -299,8 +335,17 @@ A secret to use for attempting to unsign the header's value.
 .PARAMETER Strict
 If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
 
+.PARAMETER Response
+If supplied, the header will be tested against the Response instead of the Request.
+
 .EXAMPLE
 Test-PodeHeaderSigned -Name 'X-Header-Name' -Secret 'hunter2'
+
+.EXAMPLE
+Test-PodeHeaderSigned -Name 'X-Header-Name' -Secret 'hunter2' -Strict
+
+.EXAMPLE
+Test-PodeHeaderSigned -Name 'X-Header-Name' -Secret 'hunter2' -Response
 #>
 function Test-PodeHeaderSigned {
     [CmdletBinding()]
@@ -315,9 +360,18 @@ function Test-PodeHeaderSigned {
         $Secret,
 
         [switch]
-        $Strict
+        $Strict,
+
+        [switch]
+        $Response
     )
 
-    $header = Get-PodeHeader -Name $Name
+    if ($Response) {
+        $header = $WebEvent.Response.Headers[$Name]
+    }
+    else {
+        $header = $WebEvent.Request.Headers.$Name
+    }
+
     return Test-PodeValueSigned -Value $header -Secret $Secret -Strict:$Strict
 }

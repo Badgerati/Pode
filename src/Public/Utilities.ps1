@@ -1783,3 +1783,114 @@ function ConvertTo-PodeString {
         return ($InputObject | Out-String).TrimEnd("`r", "`n")
     }
 }
+
+<#
+.SYNOPSIS
+Gets an environment variable value.
+
+.DESCRIPTION
+Gets an environment variable value from the specified target (Process, User, or Machine).
+
+.PARAMETER Name
+The name of the environment variable to retrieve.
+
+.PARAMETER Target
+The target scope from which to retrieve the environment variable. Default is Process.
+
+.EXAMPLE
+$envValue = Get-PodeEnvironmentVariable -Name 'PATH'
+
+.EXAMPLE
+$envValue = Get-PodeEnvironmentVariable -Name 'MY_VAR' -Target 'User'
+#>
+function Get-PodeEnvironmentVariable {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [System.EnvironmentVariableTarget]
+        $Target = [System.EnvironmentVariableTarget]::Process
+    )
+
+    return [System.Environment]::GetEnvironmentVariable($Name, $Target)
+}
+
+<#
+.SYNOPSIS
+Sets an environment variable value.
+
+.DESCRIPTION
+Sets an environment variable value in the specified target (Process, User, or Machine).
+
+.PARAMETER Name
+The name of the environment variable to set.
+
+.PARAMETER Value
+The value to assign to the environment variable. Setting this to empty/null will remove the environment variable.
+
+.PARAMETER Target
+The target scope in which to set the environment variable. Default is Process.
+
+.EXAMPLE
+Set-PodeEnvironmentVariable -Name 'MY_VAR' -Value 'SomeValue'
+
+.EXAMPLE
+Set-PodeEnvironmentVariable -Name 'MY_VAR' -Value 'SomeValue' -Target 'User'
+#>
+function Set-PodeEnvironmentVariable {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Value,
+
+        [Parameter()]
+        [System.EnvironmentVariableTarget]
+        $Target = [System.EnvironmentVariableTarget]::Process
+    )
+
+    [System.Environment]::SetEnvironmentVariable($Name, $Value, $Target)
+}
+
+<#
+.SYNOPSIS
+Tests if an environment variable exists.
+
+.DESCRIPTION
+Tests if an environment variable exists in the specified target (Process, User, or Machine).
+
+.PARAMETER Name
+The name of the environment variable to check for existence.
+
+.PARAMETER Target
+The target scope in which to check for the environment variable. Default is Process.
+
+.EXAMPLE
+if (Test-PodeEnvironmentVariable -Name 'MY_VAR') { /* logic */ }
+
+.EXAMPLE
+if (Test-PodeEnvironmentVariable -Name 'MY_VAR' -Target 'User') { /* logic */ }
+#>
+function Test-PodeEnvironmentVariable {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [System.EnvironmentVariableTarget]
+        $Target = [System.EnvironmentVariableTarget]::Process
+    )
+
+    return ![string]::IsNullOrEmpty([System.Environment]::GetEnvironmentVariable($Name, $Target))
+}

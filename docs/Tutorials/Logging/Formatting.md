@@ -56,8 +56,11 @@ For example, the inbuilt Request Log Type's serialise scriptblock looks as follo
 ```powershell
 $scriptblock = {
     param($data)
-    $reqLine = "$($data.Method) $($data.Resource) $($data.Protocol)"
-    return "$($data.Host) $($data.Identifier) $($data.User) [$($data.Date)] `"$($reqLine)`" $($data.StatusCode) $($data.Size) `"$($data.Referrer)`" `"$($data.UserAgent)`""
+
+    $reqLine = "$($data.Request.Method) $($data.Request.Resource) $($data.Request.Protocol)"
+    $date = $data.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
+
+    return "$($data.Request.Host) $($data.Request.Identifier) $($data.Request.User) [$($date)] `"$($reqLine)`" $($data.Response.Status.Code) $($data.Response.Size) `"$($data.Request.Referrer)`" `"$($data.Request.UserAgent)`""
 }
 ```
 
@@ -98,7 +101,7 @@ When serialising custom Log Types into XML the default root element is `<root>`,
 
 ### Global
 
-You can configure a global serialisation format to use via [`Set-PodeLogDefaultSerialiseFormat`]. If you **don't** supply `-SerialiseFormat` then the global default will be used instead.
+You can configure a global serialisation format to use via [`Set-PodeLogDefaultSerialiseFormat`](../../../Functions/Logging/Set-PodeLogDefaultSerialiseFormat). If you **don't** supply `-SerialiseFormat` then the global default will be used instead.
 
 By default there is no global default; not supplying `-SerialiseFormat` will default to the Log Type's local default value - format inbuilt type this is Custom, and for custom types this is None.
 
@@ -166,8 +169,8 @@ New-PodeLogTerminalMethod | Enable-PodeLogRequestType -LogFormat Syslog -SyslogI
 
 ### Global
 
-You can configure a global log format to use via [`Set-PodeLogDefaultFormat`]. If you **don't** supply `-LogFormat` then the global default will be used instead.
+You can configure a global log format to use via [`Set-PodeLogDefaultFormat`](../../../Functions/Logging/Set-PodeLogDefaultFormat). If you **don't** supply `-LogFormat` then the global default will be used instead.
 
 By default there is no global default; not supplying `-LogFormat` will default to the Log Type's local default value - usually None.
 
-The same can also be done for syslog formatting using [`Set-PodeLogDefaultSyslogFormat`]. Similar to above this will apply when either no `-SyslogInfo` is supplied, or no `-Format` is supplied to [`New-PodeLogSyslogInfo`].
+The same can also be done for syslog formatting using [`Set-PodeLogDefaultSyslogFormat`](../../../Functions/Logging/Set-PodeLogDefaultSyslogFormat). Similar to above this will apply when either no `-SyslogInfo` is supplied, or no `-Format` is supplied to [`New-PodeLogSyslogInfo`](../../../Functions/Logging/New-PodeLogSyslogInfo).
