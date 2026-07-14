@@ -183,6 +183,7 @@
         'Get-PodeEnvironmentVariable',
         'Set-PodeEnvironmentVariable',
         'Test-PodeEnvironmentVariable',
+        'Get-PodeTimestamp',
 
         # routes
         'Add-PodeRoute',
