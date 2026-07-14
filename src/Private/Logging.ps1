@@ -806,6 +806,97 @@ function ConvertTo-PodeDatadogLevel {
     return 'INFO'
 }
 
+function Get-PodeLoggingInbuiltSerialiseType {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Errors', 'Requests')]
+        [string]
+        $Type
+    )
+
+    switch ($Type.ToLowerInvariant()) {
+        'requests' {
+            return {
+                param($data)
+                $logType = Get-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)
+
+                # are we dealing with common/combined?
+                if ($logType.Metadata.Format -iin @('common', 'combined')) {
+                    $method = Protect-PodeLogRequestItem -Value $data.Request.Method
+                    $resource = Protect-PodeLogRequestItem -Value $data.Request.Resource
+                    $protocol = Protect-PodeLogRequestItem -Value $data.Request.Protocol
+                    $reqLine = "$($method) $($resource) $($protocol)"
+
+                    $ip = Protect-PodeLogRequestItem -Value $data.Request.Host
+                    $identifier = Protect-PodeLogRequestItem -Value $data.Request.Identifier
+                    $user = Protect-PodeLogRequestItem -Value $data.Request.User
+                    $date = $data.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
+                    $statusCode = Protect-PodeLogRequestItem -Value $data.Response.Status.Code
+                    $size = Protect-PodeLogRequestItem -Value $data.Response.Size
+
+                    $baseMsg = "$($ip) $($identifier) $($user) [$($date)] `"$($reqLine)`" $($statusCode) $($size)"
+
+                    if ($logType.Metadata.Format -ieq 'combined') {
+                        $referrer = Protect-PodeLogRequestItem -Value $data.Request.Referrer
+                        $userAgent = Protect-PodeLogRequestItem -Value $data.Request.UserAgent
+                        $baseMsg = "$($baseMsg) `"$($referrer)`" `"$($userAgent)`""
+                    }
+
+                    return $baseMsg
+                }
+
+                # otherwise, we're dealing with W3C
+                $builder = [System.Text.StringBuilder]::new()
+
+                foreach ($field in $logType.Metadata.W3CFields) {
+                    $value = switch ($field.Type) {
+                        'Request' { $data.Request.Headers[$field.Name] }
+                        'Response' { $data.Response.Headers[$field.Name] }
+                        'Environment' { $data.Environment.Variables[$field.Name] }
+
+                        'Standard' {
+                            switch ($field.FieldName) {
+                                'date' { $data.Date.ToString('yyyy-MM-dd') }
+                                'time' { $data.Date.ToString('HH:mm:ss') }
+                                'c-ip' { $data.Request.Host }
+                                'cs-username' { $data.Request.User }
+                                's-ip' { $data.Server.IP }
+                                's-port' { $data.Server.Port }
+                                's-computername' { $PodeContext.Server.ComputerName }
+                                'cs-method' { $data.Request.Method }
+                                'cs-uri-stem' { $data.Request.Resource }
+                                'cs-uri-query' { $data.Request.Query }
+                                'sc-status' { $data.Response.Status.Code }
+                                'time-taken' { [long]$data.Duration.TotalMilliseconds }
+                                'sc-bytes' { $data.Response.Size }
+                                'cs-bytes' { $data.Request.Size }
+                                'cs-version' { $data.Request.Protocol }
+                                'cs-host' { $data.Request.Hostname }
+                            }
+                        }
+                    }
+
+                    $value = Protect-PodeLogRequestItem -Value $value -Encode
+                    $null = $builder.Append($value).Append(' ')
+                }
+
+                return $builder.ToString()
+            }
+        }
+
+        'errors' {
+            return {
+                param($data)
+                $msg = @(foreach ($key in $data.Keys) {
+                        "$($key): $($data[$key])"
+                    }) -join "`n"
+
+                return "$($msg)`n"
+            }
+        }
+    }
+}
+
 function Get-PodeLoggingInbuiltType {
     param(
         [Parameter(Mandatory = $true)]
@@ -816,30 +907,51 @@ function Get-PodeLoggingInbuiltType {
 
     switch ($Type.ToLowerInvariant()) {
         'requests' {
-            $script = {
+            return {
                 param(
                     [Pode.Utilities.Logging.IPodeLogEvent]
                     $logEvent
                 )
 
                 return [ordered]@{
-                    Host       = Protect-PodeLogRequestItem -Value $logEvent.Data.Host
-                    Identifier = Protect-PodeLogRequestItem -Value $logEvent.Data.RfcUserIdentity
-                    User       = Protect-PodeLogRequestItem -Value $logEvent.Data.User
-                    Date       = Protect-PodeLogRequestItem -Value $logEvent.Data.Date
-                    Method     = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Method
-                    Resource   = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Resource
-                    Protocol   = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Protocol
-                    StatusCode = Protect-PodeLogRequestItem -Value $logEvent.Data.Response.StatusCode
-                    Size       = Protect-PodeLogRequestItem -Value $logEvent.Data.Response.Size
-                    Referrer   = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Referrer
-                    UserAgent  = Protect-PodeLogRequestItem -Value $logEvent.Data.Request.Agent
+                    Date        = $logEvent.Data.Date
+                    Duration    = $logEvent.Data.Duration
+                    Server      = [ordered]@{
+                        IP   = $logEvent.Data.Server.IP
+                        Port = $logEvent.Data.Server.Port
+                    }
+                    Environment = [ordered]@{
+                        Variables = $logEvent.Data.Environment.Variables
+                    }
+                    Request     = [ordered]@{
+                        Host       = $logEvent.Data.Host
+                        Identifier = $logEvent.Data.RfcUserIdentity
+                        User       = $logEvent.Data.User
+                        Method     = $logEvent.Data.Request.Method
+                        Hostname   = $logEvent.Data.Request.Hostname
+                        Scheme     = $logEvent.Data.Request.Scheme
+                        Resource   = $logEvent.Data.Request.Resource
+                        Query      = $logEvent.Data.Request.Query
+                        Protocol   = $logEvent.Data.Request.Protocol
+                        Referrer   = $logEvent.Data.Request.Referrer
+                        UserAgent  = $logEvent.Data.Request.Agent
+                        Size       = $logEvent.Data.Request.Size
+                        Headers    = $logEvent.Data.Request.Headers
+                    }
+                    Response    = [ordered]@{
+                        Status  = [ordered]@{
+                            Code        = $logEvent.Data.Response.StatusCode
+                            Description = $logEvent.Data.Response.StatusDescription
+                        }
+                        Size    = $logEvent.Data.Response.Size
+                        Headers = $logEvent.Data.Response.Headers
+                    }
                 }
             }
         }
 
         'errors' {
-            $script = {
+            return {
                 param(
                     [Pode.Utilities.Logging.IPodeLogEvent]
                     $logEvent
@@ -858,19 +970,24 @@ function Get-PodeLoggingInbuiltType {
             }
         }
     }
-
-    return $script
 }
 
 function Protect-PodeLogRequestItem {
     param(
         [Parameter()]
         [object]
-        $Value
+        $Value,
+
+        [switch]
+        $Encode
     )
 
     if ([string]::IsNullOrWhiteSpace($Value)) {
-        return '-'
+        $Value = '-'
+    }
+
+    if ($Encode) {
+        $Value = [uri]::EscapeUriString($Value)
     }
 
     return $Value
@@ -909,19 +1026,27 @@ function Test-PodeLogMethod {
     return $PodeContext.Server.Logging.Methods.ContainsKey($Id)
 }
 
-function Write-PodeRequestLog {
-    param(
-        [Parameter(Mandatory = $true)]
-        $Request,
+function Get-PodeRequestLogW3CDefaultInfo {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
 
-        [Parameter(Mandatory = $true)]
-        $Response,
-
-        [Parameter()]
-        [string]
-        $Path
+    return New-PodeLogW3CInfo -Fields @(
+        Add-PodeLogW3CField -Name 'date'
+        Add-PodeLogW3CField -Name 'time'
+        Add-PodeLogW3CField -Name 'c-ip'
+        Add-PodeLogW3CField -Name 'cs-method'
+        Add-PodeLogW3CField -Name 'cs-uri-stem'
+        Add-PodeLogW3CField -Name 'cs-uri-query'
+        Add-PodeLogW3CField -Name 'cs-username'
+        Add-PodeLogW3CField -Name 'sc-status'
+        Add-PodeLogW3CField -Name 'time-taken'
+        Add-PodeLogW3CCustomField -Name 'User-Agent' -Type Request
+        Add-PodeLogW3CCustomField -Name 'Referer' -Type Request
     )
+}
 
+function Write-PodeRequestLog {
     # do nothing if request logging isn't setup
     if (!$PodeContext.Server.Logging.Logger.IsRequestLoggingEnabled) {
         return
@@ -930,33 +1055,62 @@ function Write-PodeRequestLog {
     # get the request log type
     $logType = Get-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)
 
+    # http method
+    $method = $null
+    if (![string]::IsNullOrEmpty($WebEvent.Request.HttpMethod)) {
+        $method = $WebEvent.Request.HttpMethod.ToUpperInvariant()
+    }
+
+    # hostname
+    $hostname = $null
+    if (![string]::IsNullOrEmpty($WebEvent.Request.Host)) {
+        $hostname = $WebEvent.Request.Host.ToLowerInvariant()
+    }
+
+    # scheme
+    $scheme = $null
+    if (![string]::IsNullOrEmpty($WebEvent.Request.Handler.Scheme)) {
+        $scheme = $WebEvent.Request.Handler.Scheme.ToLowerInvariant()
+    }
+
     # build a request object
     $item = @{
-        Host            = $Request.Handler.RemoteEndPoint.Address.IPAddressToString
+        Host            = $WebEvent.Request.Handler.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = $null
         User            = $null
-        Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
-        UtcDate         = [DateTime]::UtcNow
+        Date            = $WebEvent.Timestamp.ToLocalTime()
+        UtcDate         = $WebEvent.Timestamp
+        Duration        = [datetime]::UtcNow.Subtract($WebEvent.Timestamp)
+        Server          = @{
+            IP   = $WebEvent.Request.Handler.LocalEndPoint.Address.IPAddressToString
+            Port = $WebEvent.Request.Handler.LocalEndPoint.Port
+        }
+        Environment     = @{
+            Variables = @{}
+        }
         Request         = @{
-            Method   = $Request.HttpMethod.ToUpperInvariant()
-            Hostname = $Request.Host.ToLowerInvariant()
-            Scheme   = $Request.Handler.Scheme.ToLowerInvariant()
-            Resource = $Path
-            Query    = (Protect-PodeValue -Value $Request.Url.Query -Default ([string]::Empty)).TrimStart('?')
-            Protocol = "HTTP/$($Request.ProtocolVersion)"
-            Referrer = $Request.UrlReferrer
-            Agent    = $Request.UserAgent
+            Method   = $method
+            Hostname = $hostname
+            Scheme   = $scheme
+            Resource = $WebEvent.Path
+            Query    = (Protect-PodeValue -Value $WebEvent.Request.Url.Query -Default ([string]::Empty)).TrimStart('?')
+            Protocol = "HTTP/$($WebEvent.Request.ProtocolVersion)"
+            Referrer = $WebEvent.Request.UrlReferrer
+            Agent    = $WebEvent.Request.UserAgent
+            Size     = $WebEvent.Request.ContentLength
+            Headers  = @{}
         }
         Response        = @{
-            StatusCode        = $Response.StatusCode
-            StatusDescription = $Response.StatusDescription
+            StatusCode        = $WebEvent.Response.StatusCode
+            StatusDescription = $WebEvent.Response.StatusDescription
             Size              = $null
+            Headers           = @{}
         }
     }
 
-    # set size if >0
-    if ($Response.ContentLength64 -gt 0) {
-        $item.Response.Size = $Response.ContentLength64
+    # set size of data sent back to the client if >0
+    if ($WebEvent.Response.ContentLength64 -gt 0) {
+        $item.Response.Size = $WebEvent.Response.ContentLength64
     }
 
     # do we need to get the host address from req headers (if behind a reverse proxy)?
@@ -984,6 +1138,31 @@ function Write-PodeRequestLog {
         }
     }
 
+    # for w3c format, we need to fetch req/resp headers, and server env vars
+    if ($logType.Metadata.Format -ieq 'W3C') {
+        foreach ($field in $logType.Metadata.W3CFields) {
+            switch ($field.Type) {
+                'Request' {
+                    if (Test-PodeHeader -Name $field.Name) {
+                        $item.Request.Headers[$field.Name] = Get-PodeHeader -Name $field.Name
+                    }
+                }
+
+                'Response' {
+                    if (Test-PodeHeader -Name $field.Name -Response) {
+                        $item.Response.Headers[$field.Name] = Get-PodeHeader -Name $field.Name -Response
+                    }
+                }
+
+                'Environment' {
+                    if (Test-PodeEnvironmentVariable -Name $field.Name) {
+                        $item.Environment.Variables[$field.Name] = Get-PodeEnvironmentVariable -Name $field.Name
+                    }
+                }
+            }
+        }
+    }
+
     # add the item to be processed
     $logEvent = [PodeLogEvent]::new([PodeLogger]::REQUEST_LOG_TYPE_NAME, [PodeLogLevel]::Informational, $item)
     $PodeContext.Server.Logging.Logger.Add($logEvent)
@@ -1004,7 +1183,7 @@ function Add-PodeRequestLogEndware {
     # add the request logging endware
     $WebEvent.OnEnd += @{
         Logic = {
-            Write-PodeRequestLog -Request $WebEvent.Request -Response $WebEvent.Response -Path $WebEvent.Path
+            Write-PodeRequestLog
         }
     }
 }
@@ -1094,41 +1273,26 @@ function Start-PodeLoggingRunspace {
                         }
                     }
 
-                    # transform the result to syslog or other log formats (None just leaves "result" as it - no formatting
-                    switch ($logType.Options.Formatting.Log.Format) {
-                        'Syslog' {
-                            $params = @{
-                                Message   = $result
-                                Level     = $logEvent.Level
-                                Timestamp = $logEvent.Timestamp
-                                AppName   = $logType.Options.Formatting.SyslogInfo.AppName
-                                Tags      = $logType.Options.Formatting.SyslogInfo.Tags
-                                Format    = $logType.Options.Formatting.SyslogInfo.Format
-                                Facility  = $logType.Options.Formatting.SyslogInfo.Facility
+                    # is this the first log for the log type, if so do we have any log headers to send?
+                    if (!$logType.SentFirstLog) {
+                        foreach ($logHeader in $logType.Options.Formatting.Headers) {
+                            if ([string]::IsNullOrEmpty($logHeader)) {
+                                continue
                             }
-                            $result = ConvertTo-PodeSyslog @params
+
+                            # transform log header, and push to log methods
+                            $logHeader = ConvertTo-PodeLogFormat -LogEvent $logEvent -LogType $logType -Message $logHeader -IsLogHeader
+                            Push-PodeLogItem -LogEvent $logEvent -LogType $logType -Message $logHeader
                         }
 
-                        'Custom' {
-                            $_args = @($result) + @($logEvent) + @($logType.Arguments)
-                            $result = Invoke-PodeScriptBlock -ScriptBlock $logType.Options.Formatting.Log.ScriptBlock -Arguments $_args -UsingVariables $logType.Options.Formatting.Log.UsingVariables -Return -Splat
-                        }
+                        $logType.SentFirstLog = $true
                     }
 
-                    # loop through each Log Method available to the Log Type
-                    foreach ($logMethodId in $logType.Method) {
-                        $logMethod = Get-PodeLogMethod -Id $logMethodId
-                        $batch = $logMethod.Batch
+                    # transform the result to syslog or other log formats
+                    $result = ConvertTo-PodeLogFormat -LogEvent $logEvent -LogType $logType -Message $result
 
-                        # add current item to batch
-                        $batch.Items.Add([Pode.Utilities.Logging.PodeLogItem]::new($result, $logEvent))
-
-                        # if the batch is full, send to Log Method and reset
-                        if ($batch.Items.IsFull) {
-                            $logMethod.Queue.Add($batch.Items)
-                            $batch.Items = [Pode.Utilities.Logging.PodeLogItemCollection]::new($batch.Items.MaxCount, $batch.Items.Timeout)
-                        }
-                    }
+                    # push Log Item to each Log Method for the Log Type
+                    Push-PodeLogItem -LogEvent $logEvent -LogType $logType -Message $result
 
                     # small sleep to lower cpu usage when there are lots of logs to process
                     Start-Sleep -Milliseconds 100
@@ -1163,6 +1327,85 @@ function Start-PodeLoggingRunspace {
     Write-Verbose 'Starting the Log Dispatcher runspace...'
     Add-PodeRunspace -Type Logs -Name 'Dispatcher' -ScriptBlock $script
     $PodeContext.Server.Logging.Running = $true
+}
+
+function ConvertTo-PodeLogFormat {
+    param(
+        [Parameter(Mandatory = $true)]
+        [Pode.Utilities.Logging.IPodeLogEvent]
+        $LogEvent,
+
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $LogType,
+
+        [Parameter(Mandatory = $true)]
+        $Message,
+
+        [switch]
+        $IsLogHeader
+    )
+
+    switch ($LogType.Options.Formatting.Log.Format) {
+        'Syslog' {
+            $params = @{
+                Message   = $Message
+                Level     = $LogEvent.Level
+                Timestamp = $LogEvent.Timestamp
+                AppName   = $LogType.Options.Formatting.SyslogInfo.AppName
+                Tags      = $LogType.Options.Formatting.SyslogInfo.Tags
+                Format    = $LogType.Options.Formatting.SyslogInfo.Format
+                Facility  = $LogType.Options.Formatting.SyslogInfo.Facility
+            }
+
+            return ConvertTo-PodeSyslog @params
+        }
+
+        'Custom' {
+            $params = @{
+                ScriptBlock    = $LogType.Options.Formatting.Log.ScriptBlock
+                Arguments      = @($Message, $LogEvent, $IsLogHeader.IsPresent) + @($LogType.Arguments)
+                UsingVariables = $LogType.Options.Formatting.Log.UsingVariables
+                Return         = $true
+                Splat          = $true
+            }
+
+            return Invoke-PodeScriptBlock @params
+        }
+
+        default {
+            return $Message
+        }
+    }
+}
+
+function Push-PodeLogItem {
+    param(
+        [Parameter(Mandatory = $true)]
+        [Pode.Utilities.Logging.IPodeLogEvent]
+        $LogEvent,
+
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $LogType,
+
+        [Parameter(Mandatory = $true)]
+        $Message
+    )
+
+    foreach ($logMethodId in $LogType.Method) {
+        $logMethod = Get-PodeLogMethod -Id $logMethodId
+        $batch = $logMethod.Batch
+
+        # add current item to batch
+        $batch.Items.Add([Pode.Utilities.Logging.PodeLogItem]::new($Message, $LogEvent))
+
+        # if the batch is full, send to Log Method and reset
+        if ($batch.Items.IsFull) {
+            $logMethod.Queue.Add($batch.Items)
+            $batch.Items = [Pode.Utilities.Logging.PodeLogItemCollection]::new($batch.Items.MaxCount, $batch.Items.Timeout)
+        }
+    }
 }
 
 function Add-PodeLogMethod {
