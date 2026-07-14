@@ -1894,3 +1894,18 @@ function Test-PodeEnvironmentVariable {
 
     return ![string]::IsNullOrEmpty([System.Environment]::GetEnvironmentVariable($Name, $Target))
 }
+
+function Get-PodeTimestamp {
+    [CmdletBinding()]
+    [OutputType([datetime])]
+    param(
+        [switch]
+        $AsUtc
+    )
+
+    if ($AsUtc) {
+        return [DateTime]::UtcNow
+    }
+
+    return [DateTime]::Now
+}

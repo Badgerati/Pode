@@ -16,7 +16,7 @@ namespace Pode.Utilities.Logging
         void RegisterType(IPodeLogType logType);
         void UnregisterType(string name);
 
-        void Add(IPodeLogEvent logEvent);
+        void Add(string logTypeName, PodeLogLevel level, object data, Hashtable metadata = null);
         void AddException(Exception exception, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0);
         void AddException(string message, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0);
         void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0);

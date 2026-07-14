@@ -56,7 +56,7 @@ InModuleScope -ModuleName 'Pode' {
 
             $logEvent = $null
             $PodeContext.Server.Logging.Logger.TryTake([ref]$logEvent, [System.Threading.CancellationToken]::None) | Should -Be $true
-            $logEvent.Name | Should -Be 'test'
+            $logEvent.Type.Name | Should -Be 'test'
             $logEvent.Data | Should -Be 'test'
         }
     }

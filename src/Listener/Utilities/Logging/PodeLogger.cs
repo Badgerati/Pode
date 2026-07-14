@@ -53,7 +53,7 @@ namespace Pode.Utilities.Logging
             LogTypes.TryRemove(name, out _);
         }
 
-        public void Add(IPodeLogEvent logEvent)
+        public void Add(string logTypeName, PodeLogLevel level, object data, Hashtable metadata = null)
         {
             if (IsDisposed || !IsEnabled)
             {
@@ -61,19 +61,19 @@ namespace Pode.Utilities.Logging
             }
 
             // does the Log Type exist?
-            if (!LogTypes.TryGetValue(logEvent.Name, out var logType))
+            if (!LogTypes.TryGetValue(logTypeName, out var logType))
             {
                 return;
             }
 
             // is the log level enabled for the Log Type?
-            if (!logType.IsLevelEnabled(logEvent.Level))
+            if (!logType.IsLevelEnabled(level))
             {
                 return;
             }
 
             // add the log event to the queue
-            Queue.Add(logEvent);
+            Queue.Add(new PodeLogEvent(logType, level, data, metadata));
         }
 
         public void AddException(Exception exception, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0)
@@ -137,13 +137,13 @@ namespace Pode.Utilities.Logging
                 { "StackTrace", stackTrace },
                 { "Server", Dns.GetHostName() },
                 { "Level", level.ToString() },
-                { "Date", DateTime.Now },
+                { "Date", logType.GetTimestamp() },
                 { "ThreadId", threadId == 0 ? Environment.CurrentManagedThreadId : threadId },
                 { "ContextId", contextId }
             };
 
             // add the log event to the queue
-            Queue.Add(new PodeLogEvent(ERROR_LOG_TYPE_NAME, level, item, metadata));
+            Queue.Add(new PodeLogEvent(logType, level, item, metadata));
         }
 
         public bool TryTake(out IPodeLogEvent logEvent, CancellationToken cancellationToken)
@@ -156,7 +156,7 @@ namespace Pode.Utilities.Logging
 
             var found = Queue.TryTake(out var _event, cancellationToken);
 
-            if (!found || string.IsNullOrEmpty(_event?.Name) || !LogTypes.ContainsKey(_event?.Name))
+            if (!found || string.IsNullOrEmpty(_event?.Type?.Name) || !LogTypes.ContainsKey(_event?.Type?.Name))
             {
                 logEvent = null;
                 return false;
