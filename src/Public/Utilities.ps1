@@ -1894,3 +1894,34 @@ function Test-PodeEnvironmentVariable {
 
     return ![string]::IsNullOrEmpty([System.Environment]::GetEnvironmentVariable($Name, $Target))
 }
+
+<#
+.SYNOPSIS
+Gets the current timestamp.
+
+.DESCRIPTION
+Gets the current timestamp, as a DateTime object.
+
+.PARAMETER AsUtc
+If specified, returns the timestamp in UTC format.
+
+.EXAMPLE
+$timestamp = Get-PodeTimestamp
+
+.EXAMPLE
+$timestamp = Get-PodeTimestamp -AsUtc
+#>
+function Get-PodeTimestamp {
+    [CmdletBinding()]
+    [OutputType([datetime])]
+    param(
+        [switch]
+        $AsUtc
+    )
+
+    if ($AsUtc) {
+        return [DateTime]::UtcNow
+    }
+
+    return [DateTime]::Now
+}

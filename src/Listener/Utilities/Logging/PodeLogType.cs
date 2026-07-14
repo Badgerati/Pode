@@ -7,8 +7,9 @@ namespace Pode.Utilities.Logging
     {
         public string Name { get; private set; }
         public HashSet<PodeLogLevel> Levels { get; private set; }
+        public bool AsUtc { get; private set; }
 
-        public PodeLogType(string name, HashSet<PodeLogLevel> levels)
+        public PodeLogType(string name, HashSet<PodeLogLevel> levels, bool asUtc)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -17,11 +18,17 @@ namespace Pode.Utilities.Logging
 
             Name = name;
             Levels = levels;
+            AsUtc = asUtc;
         }
 
         public bool IsLevelEnabled(PodeLogLevel level)
         {
             return Levels.Contains(level);
+        }
+
+        public DateTime GetTimestamp()
+        {
+            return AsUtc ? DateTime.UtcNow : DateTime.Now;
         }
     }
 }

@@ -5,23 +5,19 @@ namespace Pode.Utilities.Logging
 {
     public class PodeLogEvent : IPodeLogEvent
     {
-        public string Name { get; private set; }
+        public IPodeLogType Type { get; private set; }
         public PodeLogLevel Level { get; private set; }
-        public DateTime Timestamp { get; private set; } = DateTime.Now;
+        public DateTime Timestamp { get; private set; }
         public Hashtable Metadata { get; private set; }
         public object Data { get; private set; }
 
-        public PodeLogEvent(string name, PodeLogLevel level, object data, Hashtable metadata = null)
+        public PodeLogEvent(IPodeLogType type, PodeLogLevel level, object data, Hashtable metadata = null)
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                throw new ArgumentException("Log item name cannot be null or empty.", nameof(name));
-            }
-
-            Name = name;
+            Type = type ?? throw new ArgumentNullException(nameof(type), "Log item type cannot be null.");
             Level = level;
             Data = data;
             Metadata = metadata ?? new Hashtable(StringComparer.InvariantCultureIgnoreCase);
+            Timestamp = type.GetTimestamp();
         }
     }
 }

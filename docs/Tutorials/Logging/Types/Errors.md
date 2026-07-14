@@ -92,6 +92,10 @@ When error logging is enabled, you'll also see internal logging from Pode. Pode 
 
 The internal error logging will show you unhandled exceptions from routes, middleware, etc.
 
+## Timestamps
+
+By default all timestamps will use the hosting server's local time, if you require the timestamps to be explicitly UTC then supply `-AsUtc` to `Enable-PodeLogErrorType`.
+
 ## Examples
 
 ### Log to Terminal

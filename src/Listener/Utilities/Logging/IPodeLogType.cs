@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Pode.Utilities.Logging
@@ -6,7 +7,9 @@ namespace Pode.Utilities.Logging
     {
         string Name { get; }
         HashSet<PodeLogLevel> Levels { get; }
+        bool AsUtc { get; }
 
         bool IsLevelEnabled(PodeLogLevel level);
+        DateTime GetTimestamp();
     }
 }

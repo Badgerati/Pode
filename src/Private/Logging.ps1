@@ -1053,7 +1053,8 @@ function Write-PodeRequestLog {
     }
 
     # get the request log type
-    $logType = Get-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)
+    $logTypeName = [PodeLogger]::REQUEST_LOG_TYPE_NAME
+    $logType = Get-PodeLogType -Name $logTypeName
 
     # http method
     $method = $null
@@ -1073,12 +1074,18 @@ function Write-PodeRequestLog {
         $scheme = $WebEvent.Request.Handler.Scheme.ToLowerInvariant()
     }
 
+    # date/timestamp
+    $timestamp = $WebEvent.Timestamp
+    if (!$logType.Options.Formatting.AsUtc) {
+        $timestamp = $timestamp.ToLocalTime()
+    }
+
     # build a request object
     $item = @{
         Host            = $WebEvent.Request.Handler.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = $null
         User            = $null
-        Date            = $WebEvent.Timestamp.ToLocalTime()
+        Date            = $timestamp
         UtcDate         = $WebEvent.Timestamp
         Duration        = [datetime]::UtcNow.Subtract($WebEvent.Timestamp)
         Server          = @{
@@ -1164,8 +1171,7 @@ function Write-PodeRequestLog {
     }
 
     # add the item to be processed
-    $logEvent = [PodeLogEvent]::new([PodeLogger]::REQUEST_LOG_TYPE_NAME, [PodeLogLevel]::Informational, $item)
-    $PodeContext.Server.Logging.Logger.Add($logEvent)
+    $PodeContext.Server.Logging.Logger.Add($logTypeName, [PodeLogLevel]::Informational, $item)
 }
 
 function Add-PodeRequestLogEndware {
@@ -1222,7 +1228,7 @@ function Start-PodeLoggingRunspace {
                     }
 
                     # run the log item through the appropriate method
-                    $logType = Get-PodeLogType -Name $logEvent.Name
+                    $logType = Get-PodeLogType -Name $logEvent.Type.Name
                     if ($null -eq $logType) {
                         continue
                     }

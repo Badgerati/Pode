@@ -227,11 +227,17 @@ A hashtable containing Syslog configuration information, built using New-PodeSys
 .PARAMETER RemoteIPHeader
 One or more optional headers to check for the client's remote IP address, if behind a reverse proxy.
 
+.PARAMETER AsUtc
+If supplied, the log entry's timestamp will be in UTC, otherwise it will be in local time.
+
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogRequestType
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -AsUtc
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogRequestType -RemoteIPHeader 'X-Forwarded-For'
@@ -309,6 +315,9 @@ function Enable-PodeLogRequestType {
         [string[]]
         $RemoteIPHeader,
 
+        [switch]
+        $AsUtc,
+
         [Parameter(ParameterSetName = 'Raw')]
         [switch]
         $Raw
@@ -340,6 +349,7 @@ function Enable-PodeLogRequestType {
             LogScriptBlock = $LogScriptBlock
             SyslogInfo     = $SyslogInfo
             XmlRootName    = 'Request'
+            AsUtc          = $AsUtc.IsPresent
         }
 
         # username property
@@ -480,11 +490,17 @@ An array of arguments to supply to the Custom Log Type's ScriptBlock and Seriali
 .PARAMETER SyslogInfo
 A hashtable containing Syslog configuration information, built using New-PodeSyslogInfo.
 
+.PARAMETER AsUtc
+If supplied, the log entry's timestamp will be in UTC, otherwise it will be in local time.
+
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogErrorType
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -AsUtc
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogErrorType -SerialiseFormat 'Json'
@@ -547,6 +563,9 @@ function Enable-PodeLogErrorType {
         [hashtable]
         $SyslogInfo,
 
+        [switch]
+        $AsUtc,
+
         [Parameter(ParameterSetName = 'Raw')]
         [switch]
         $Raw
@@ -578,6 +597,7 @@ function Enable-PodeLogErrorType {
             LogScriptBlock = $LogScriptBlock
             SyslogInfo     = $SyslogInfo
             XmlRootName    = 'Error'
+            AsUtc          = $AsUtc.IsPresent
         }
 
         # add LogFormat if supplied
@@ -706,6 +726,9 @@ A hashtable of metadata to associate with the Log Type. This data can be retriev
 .PARAMETER LogHeader
 An optional array of strings to use as the header(s) for the log, such as W3C log directives.
 
+.PARAMETER AsUtc
+If supplied, will be set in the Log Type's Formatting Options as to whether to use UTC timestamps or local timestamps.
+
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string.
 
@@ -792,6 +815,9 @@ function Add-PodeLogType {
         [Parameter()]
         [string[]]
         $LogHeader,
+
+        [switch]
+        $AsUtc,
 
         [Parameter(ParameterSetName = 'Raw')]
         [switch]
@@ -903,11 +929,12 @@ function Add-PodeLogType {
                         XmlRootName    = Protect-PodeValue -Value $XmlRootName -Default 'Log'
                     }
                     Headers    = $LogHeader
+                    AsUtc      = $AsUtc.IsPresent
                 }
             }
             Arguments      = $ArgumentList
         }
-        $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($Name, $Levels))
+        $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($Name, $Levels, $AsUtc.IsPresent))
 
         # then associate the supplied Log Method(s) with the custom Log Type
         foreach ($methodId in $Method) {
@@ -1214,8 +1241,7 @@ function Write-PodeLog {
 
     process {
         foreach ($n in $Name) {
-            $logEvent = [PodeLogEvent]::new($n, $Level, $InputObject, $Metadata)
-            $PodeContext.Server.Logging.Logger.Add($logEvent)
+            $PodeContext.Server.Logging.Logger.Add($n, $Level, $InputObject, $Metadata)
         }
     }
 }

@@ -130,6 +130,10 @@ You can use the `-RemoteIPHeader` parameter to set one, or more, possible header
 
 If multiple request header names are supplied, they will be checked in the order they are supplied.
 
+## Timestamps
+
+By default all timestamps will use the hosting server's local time, if you require the timestamps to be explicitly UTC then supply `-AsUtc` to `Enable-PodeLogRequestType`.
+
 ## Examples
 
 ### Log to Terminal
