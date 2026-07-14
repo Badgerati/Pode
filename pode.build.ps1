@@ -1402,7 +1402,7 @@ Add-BuildTask DocsNoBuild DocsDeps, {
 }
 
 # Synopsis: Build the function help documentation
-Add-BuildTask DocsHelpBuild { #IndexSamples, DocsDeps, Build, {
+Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
     # import the local module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
     Import-Module ./src/Pode.psm1 -Force | Out-Null

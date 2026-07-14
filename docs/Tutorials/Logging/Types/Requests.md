@@ -91,7 +91,7 @@ If nothing is supplied to `-W3CInfo` then default fields will be used instead, i
 * cs(USer-Agent)
 * cs(Referer)
 
-For example:
+For example, the following will log requests in W3C format to the terminal:
 
 ```powershell
 $fields = New-PodeLogW3CInfo -Fields @(
@@ -107,7 +107,20 @@ $fields = New-PodeLogW3CInfo -Fields @(
     Add-PodeLogW3CCustomField -Name 'User-Agent' -Type Request
     Add-PodeLogW3CCustomField -Name 'Referer' -Type Request
 )
+
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -Format W3C -W3CInfo $fields
 ```
+
+Additionally, with this being W3C format, the first log item being written after server Start or Restart will also produce the following directive log headers:
+
+```plain
+#Software: Pode 2.14.0
+#Version: 1.0
+#Date: 2026-07-14 18:55:00
+#Fields: date time c-ip cs-method cs-uri-stem cs-uri-query cs-username sc-status time-taken cs(USer-Agent) cs(Referer)
+```
+
+If you do not want these to appear, supply `-NoLogHeader` to `New-PodeLogW3CInfo`.
 
 ## Remote IP
 

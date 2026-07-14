@@ -125,9 +125,10 @@ When Custom is specified then a `-LogScriptBlock` is required to be supplied as 
 
 When log formatting occurs, after serialisation, this scriptblock will be invoked. Supplied to this scriptblock are the following parameters:
 
-1. The resultant data returned from the Log Type's main `-ScriptBlock`, and after any serialisation
+1. The resultant data returned from the Log Type's main `-ScriptBlock`, and after any serialisation - could also be a log header value
 2. The [Log Event](../Objects#log-event) object
-3. Items supplied to `-ArgumentList`, splatted as individual parameters
+3. A boolean value, if `$true` the data in the first parameter is a log header, if `$false` it's the log item data
+4. Items supplied to `-ArgumentList`, splatted as individual parameters
 
 For example, a simple pipe-delimited format of `<LEVEL>|<DATETIME>|<MESSAGE>:
 
