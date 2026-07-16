@@ -11,6 +11,7 @@ using System.Text;
 using System.IO.Compression;
 using Pode.Protocols.Common.Contexts;
 using Pode.Utilities.Logging;
+using Pode.Protocols.Common.Requests;
 
 namespace Pode.Utilities
 {
@@ -102,7 +103,7 @@ namespace Pode.Utilities
             }
         }
 
-        public static void WriteErrorMessage(string message, PodeLogLevel level = PodeLogLevel.Error, IPodeContext context = default)
+        public static void WriteErrorMessage(string message, PodeLogLevel level = PodeLogLevel.Error, IPodeContext context = default, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server)
         {
             // do nothing if no message, or no logger
             if (string.IsNullOrWhiteSpace(message) || Logger == default(IPodeLogger))
@@ -111,7 +112,7 @@ namespace Pode.Utilities
             }
 
             // add the error message to the logger
-            Logger.AddException(message, context?.ID, level);
+            Logger.AddException(message, context?.ID, level, kind);
         }
 
         public static string NewGuid(int length = 16)

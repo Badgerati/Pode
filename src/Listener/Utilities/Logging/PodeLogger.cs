@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Threading;
+using Pode.Protocols.Common.Requests;
 
 namespace Pode.Utilities.Logging
 {
@@ -83,15 +84,19 @@ namespace Pode.Utilities.Logging
                 return;
             }
 
-            AddException(exception.Source, exception.Message, exception.StackTrace, contextId, level, metadata, threadId);
+            var kind = exception is PodeRequestException podeRequestException
+                ? podeRequestException.Kind
+                : PodeRequestExceptionKind.Server;
+
+            AddException(exception.Source, exception.Message, exception.StackTrace, contextId, level, kind, metadata, threadId);
         }
 
-        public void AddException(string message, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0)
+        public void AddException(string message, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, int threadId = 0)
         {
-            AddException(string.Empty, message, string.Empty, contextId, level, metadata, threadId);
+            AddException(string.Empty, message, string.Empty, contextId, level, kind, metadata, threadId);
         }
 
-        public void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0)
+        public void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, int threadId = 0)
         {
             if (IsDisposed || !IsEnabled)
             {
@@ -106,6 +111,12 @@ namespace Pode.Utilities.Logging
 
             // is the log level enabled for the Log Type?
             if (!logType.IsLevelEnabled(level))
+            {
+                return;
+            }
+
+            // is error kind enabled?
+            if (logType is PodeLogErrorType errorLogType && !errorLogType.IsKindEnabled(kind))
             {
                 return;
             }
@@ -137,6 +148,7 @@ namespace Pode.Utilities.Logging
                 { "StackTrace", stackTrace },
                 { "Server", Dns.GetHostName() },
                 { "Level", level.ToString() },
+                { "Kind", kind.ToString() },
                 { "Date", logType.GetTimestamp() },
                 { "ThreadId", threadId == 0 ? Environment.CurrentManagedThreadId : threadId },
                 { "ContextId", contextId }

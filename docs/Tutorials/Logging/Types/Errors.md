@@ -37,14 +37,15 @@ When Pode logs an error, the information logged is as follows:
 
 | Property     | Description                                           |
 | ------------ | ----------------------------------------------------- |
-| `Date`       | The date/time the error occurred                      |
-| `Level`      | The level of the error, such as Error or verbose      |
-| `ThreadId`   | The thread ID of the current runspace/process         |
-| `ContextId`  | The Pode Context ID of the current request            |
-| `Server`     | The name of the machine from where the error occurred |
 | `Category`   | The category/type of error that was thrown            |
+| `ContextId`  | The Pode Context ID of the current request            |
+| `Date`       | The date/time the error occurred                      |
+| `Kind`       | The kind of the error, such as Server or Client       |
+| `Level`      | The level of the error, such as Error or Verbose      |
 | `Message`    | The error message                                     |
+| `Server`     | The name of the machine from where the error occurred |
 | `StackTrace` | The error StackTrace                                  |
+| `ThreadId`   | The thread ID of the current runspace/process         |
 
 ## Log Levels
 
@@ -64,6 +65,18 @@ You can alter the log level by supplying `-Levels` to [`Enable-PodeLogErrorType`
 
 !!! tip
     To enable all log levels more easily, simply supply `-Levels '*'`
+
+## Error Categories
+
+The Error Log Type uses the following error categories, the default is Server:
+
+| Type    | Description                                                                                                      |
+| ------- | ---------------------------------------------------------------------------------------------------------------- |
+| Server  | Errors thrown by the server itself; unhandled exceptions; or those requests which result in an HTTP 5XX response |
+| Client  | Request Errors which result in an HTTP 4XX response                                                              |
+| Timeout | Request Errors which result in an HTTP 408 response                                                              |
+
+You can alter the error categories which are logged by supplying `-Category` to [`Enable-PodeLogErrorType`](../../../../Functions/Logging/Enable-PodeLogErrorType) - you can supply one or more.
 
 ## Writing Errors
 

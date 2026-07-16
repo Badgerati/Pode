@@ -427,7 +427,12 @@ function Enable-PodeLogRequestType {
             $params['Version'] = 2
         }
 
-        Add-PodeLogType @params
+        # add the type internally
+        $typeInfo = Add-PodeLogTypeInternal @params
+
+        # register the type with the logger
+        $logType = [PodeLogRequestType]::new($typeInfo.Name, $typeInfo.Options.Formatting.AsUtc)
+        $PodeContext.Server.Logging.Logger.RegisterType($logType)
     }
 }
 
@@ -469,6 +474,9 @@ One or more Log Method IDs to use for outputting the log entry.
 .PARAMETER Levels
 The Levels of errors that should be logged (Default: Emergency, Alert, Critical, Error)
 
+.PARAMETER Kind
+The Kinds of errors that should be logged (Default: Server)
+
 .PARAMETER LogFormat
 The format to use for the log output. (Default: Server default, or 'None' if no default set).
 
@@ -498,6 +506,9 @@ If supplied, the log item returned will be the raw Error item as a hashtable and
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogErrorType
+
+.EXAMPLE
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -Kind Server, Client
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogErrorType -AsUtc
@@ -531,9 +542,15 @@ function Enable-PodeLogErrorType {
         $Method,
 
         [Parameter()]
+        [Alias('Level')]
         [ValidateSet('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug', '*')]
         [string[]]
         $Levels = @('Emergency', 'Alert', 'Critical', 'Error'),
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [Pode.Protocols.Common.Requests.PodeRequestExceptionKind[]]
+        $Kind = @([Pode.Protocols.Common.Requests.PodeRequestExceptionKind]::Server),
 
         [Parameter()]
         [Pode.Utilities.Logging.PodeLogFormat]
@@ -642,7 +659,17 @@ function Enable-PodeLogErrorType {
             $params['Version'] = 2
         }
 
-        Add-PodeLogType @params
+        # add types as additional options
+        $params['Options'] = @{
+            Kinds = $Kind
+        }
+
+        # add the type internally
+        $typeInfo = Add-PodeLogTypeInternal @params
+
+        # register the type with the logger
+        $logType = [PodeLogErrorType]::new($typeInfo.Name, $typeInfo.Levels, $Kind, $typeInfo.Options.Formatting.AsUtc)
+        $PodeContext.Server.Logging.Logger.RegisterType($logType)
     }
 }
 
@@ -771,6 +798,7 @@ function Add-PodeLogType {
         $ScriptBlock,
 
         [Parameter()]
+        [Alias('Level')]
         [ValidateSet('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug', '*')]
         [string[]]
         $Levels = @('Informational'),
@@ -825,12 +853,6 @@ function Add-PodeLogType {
     )
 
     begin {
-        # ensure the name doesn't already exist
-        if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
-            # Log Method already defined
-            throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
-        }
-
         # setup array for Log Methods being piped in
         $pipelineMethods = @()
     }
@@ -845,101 +867,12 @@ function Add-PodeLogType {
             $Method = $pipelineMethods
         }
 
-        # ensure the methods exists
-        foreach ($methodId in $Method) {
-            if (!(Test-PodeLogMethod -Id $methodId)) {
-                # The supplied Log Method for Custom Logging doesn't exist
-                throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $methodId)
-            }
-        }
+        # add the type internally
+        $typeInfo = Add-PodeLogTypeInternal @PSBoundParameters -Levels $Levels
 
-        # all errors?
-        if ($Levels -contains '*') {
-            $Levels = @('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug')
-        }
-
-        # default metadata
-        if ($null -eq $Metadata) {
-            $Metadata = @{}
-        }
-
-        # default log formatter
-        if (!$PSBoundParameters.ContainsKey('LogFormat')) {
-            $LogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultFormat) -Default $LogFormat -EnumType ([PodeLogFormat])
-        }
-
-        # do we need default syslog info?
-        if (($LogFormat -eq [PodeLogFormat]::Syslog) -and ($null -eq $SyslogInfo)) {
-            $SyslogInfo = New-PodeLogSyslogInfo
-        }
-
-        # are we using a custom log scriptblock?
-        if ($LogFormat -eq [PodeLogFormat]::Custom) {
-            if ($null -eq $LogScriptBlock) {
-                # A non-empty ScriptBlock is required for the Custom log format
-                throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomLogExceptionMessage)
-            }
-
-            $LogScriptBlock, $logUsingVars = Convert-PodeScopedVariables -ScriptBlock $LogScriptBlock -PSSession $PSCmdlet.SessionState
-        }
-
-        # default serialise formatter
-        if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
-            $SerialiseFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSerialiseFormat) -Default $SerialiseFormat -EnumType ([PodeSerialiseFormat])
-        }
-
-        # if custom serialisation, ensure we have a scriptblock, and check for scoped vars in scriptblock
-        if ($SerialiseFormat -eq [PodeSerialiseFormat]::Custom) {
-            if ($null -eq $SerialiseScriptBlock) {
-                # A non-empty ScriptBlock is required for the Custom logging serialisation format
-                throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage)
-            }
-
-            $SerialiseScriptBlock, $serialiseUsingVars = Convert-PodeScopedVariables -ScriptBlock $SerialiseScriptBlock -PSSession $PSCmdlet.SessionState
-        }
-
-        # check for scoped vars in scriptblock
-        if ($PSCmdlet.ParameterSetName -eq 'ScriptBlock') {
-            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        }
-
-        # add custom Log Method to server, associated with the supplied Log Method(s)
-        $PodeContext.Server.Logging.Types[$Name] = @{
-            Custom         = $true
-            Method         = $Method
-            ScriptBlock    = $ScriptBlock
-            UsingVariables = $usingVars
-            Levels         = $Levels
-            Raw            = $Raw.IsPresent
-            Version        = $Version
-            SentFirstLog   = $false
-            Metadata       = $Metadata
-            Options        = @{
-                Formatting = @{
-                    Log        = @{
-                        Format         = $LogFormat
-                        ScriptBlock    = $LogScriptBlock
-                        UsingVariables = $logUsingVars
-                    }
-                    SyslogInfo = $SyslogInfo
-                    Serialise  = @{
-                        Type           = $SerialiseFormat
-                        ScriptBlock    = $SerialiseScriptBlock
-                        UsingVariables = $serialiseUsingVars
-                        XmlRootName    = Protect-PodeValue -Value $XmlRootName -Default 'Log'
-                    }
-                    Headers    = $LogHeader
-                    AsUtc      = $AsUtc.IsPresent
-                }
-            }
-            Arguments      = $ArgumentList
-        }
-        $PodeContext.Server.Logging.Logger.RegisterType([PodeLogType]::new($Name, $Levels, $AsUtc.IsPresent))
-
-        # then associate the supplied Log Method(s) with the custom Log Type
-        foreach ($methodId in $Method) {
-            Register-PodeLogTypeToMethod -TypeName $Name -MethodId $methodId
-        }
+        # register the type with the logger
+        $logType = [PodeLogType]::new($typeInfo.Name, $typeInfo.Levels, $typeInfo.Options.Formatting.AsUtc)
+        $PodeContext.Server.Logging.Logger.RegisterType($logType)
     }
 }
 
@@ -1170,16 +1103,40 @@ function Write-PodeErrorLog {
         # log error object appropriately based on parameter set
         switch ($PSCmdlet.ParameterSetName) {
             'Exception' {
-                $PodeContext.Server.Logging.Logger.AddException($Exception, $contextId, $Level, $Metadata, [int]$ThreadId)
+                $PodeContext.Server.Logging.Logger.AddException(
+                    $Exception,
+                    $contextId,
+                    $Level,
+                    $Metadata,
+                    [int]$ThreadId
+                )
             }
 
             'Error' {
-                $PodeContext.Server.Logging.Logger.AddException($ErrorRecord.CategoryInfo.ToString(), $ErrorRecord.Exception.Message, $ErrorRecord.ScriptStackTrace, $contextId, $Level, $Metadata, [int]$ThreadId)
+                $PodeContext.Server.Logging.Logger.AddException(
+                    $ErrorRecord.CategoryInfo.ToString(),
+                    $ErrorRecord.Exception.Message,
+                    $ErrorRecord.ScriptStackTrace,
+                    $contextId,
+                    $Level,
+                    [Pode.Protocols.Common.Requests.PodeRequestExceptionKind]::Server,
+                    $Metadata,
+                    [int]$ThreadId
+                )
             }
 
             'Message' {
                 $category = (Get-PSCallStack)[1].Location
-                $PodeContext.Server.Logging.Logger.AddException($category, $Message, [string]::Empty, $contextId, $Level, $Metadata, [int]$ThreadId)
+                $PodeContext.Server.Logging.Logger.AddException(
+                    $category,
+                    $Message,
+                    [string]::Empty,
+                    $contextId,
+                    $Level,
+                    [Pode.Protocols.Common.Requests.PodeRequestExceptionKind]::Server,
+                    $Metadata,
+                    [int]$ThreadId
+                )
             }
         }
 
@@ -1409,7 +1366,7 @@ function New-PodeLogTerminalMethod {
     )
 
     # add method to server
-    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
         Type        = 'Terminal'
         ScriptBlock = Get-PodeLoggingTerminalMethod
         Arguments   = @{}
@@ -1487,7 +1444,7 @@ function New-PodeLogFileMethod {
     $null = New-Item -Path $Path -ItemType Directory -Force
 
     # add method to server
-    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
         Type        = 'File'
         ScriptBlock = Get-PodeLoggingFileMethod
         Arguments   = @{
@@ -1570,7 +1527,7 @@ function New-PodeLogEventViewerMethod {
     }
 
     # add method to server
-    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
         Type        = 'EventViewer'
         ScriptBlock = Get-PodeLoggingEventViewerMethod
         Arguments   = @{
@@ -1660,7 +1617,7 @@ function New-PodeLogCustomMethod {
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add method to server
-    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
         Type        = 'Custom'
         ScriptBlock = Get-PodeLoggingCustomMethod
         Custom      = @{
@@ -1810,7 +1767,7 @@ function New-PodeLogApiMethod {
     }
 
     # add method to server
-    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
         Type        = $Type
         ScriptBlock = Get-PodeLoggingApiMethod
         Arguments   = @{
@@ -2493,7 +2450,7 @@ function New-PodeLogNetworkMethod {
     )
 
     # add method to server
-    return Add-PodeLogMethod -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
         Type        = 'Network'
         ScriptBlock = Get-PodeLoggingNetworkMethod
         Arguments   = @{
