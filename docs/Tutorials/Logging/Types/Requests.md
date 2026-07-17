@@ -9,7 +9,7 @@ Pode has an inbuilt Request Log Type, which will parse and transform web request
 
 To enable the Request Log Type use [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType), and supply one or more Log Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
-You can call [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType) multiple times, supplying a different `-Name` for each, to enable multiple Request Log Types.
+You can call [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType) multiple times, supplying a different `-Name` for each, to enable multiple Request Log Types. When multiple are enabled, a Request will be sent to all enabled Request Log Types.
 
 !!! note
     For backwards compatibility support: if you call `Enable-PodeLogRequestType` with no `-Name`, then a default name will be used. Subsequent `Enable-PodeLogRequestType` calls **must** supply a `-Name`.

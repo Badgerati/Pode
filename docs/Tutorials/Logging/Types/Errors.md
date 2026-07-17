@@ -8,7 +8,7 @@ It also has support for error levels (such as Error, Warning, Verbose), with sup
 
 To enable the Error Log Type use [`Enable-PodeLogErrorType`](../../../../Functions/Logging/Enable-PodeLogErrorType), and supply one or more Log Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
-You can call [`Enable-PodeLogErrorType`](../../../../Functions/Logging/Enable-PodeLogErrorType) multiple times, supplying a different `-Name` for each, to enable multiple Error Log Types.
+You can call [`Enable-PodeLogErrorType`](../../../../Functions/Logging/Enable-PodeLogErrorType) multiple times, supplying a different `-Name` for each, to enable multiple Error Log Types. When multiple are enabled, an Error will be sent to all enabled Error Log Types.
 
 !!! note
     For backwards compatibility support: if you call `Enable-PodeLogErrorType` with no `-Name`, then a default name will be used. Subsequent `Enable-PodeLogErrorType` calls **must** supply a `-Name`.
