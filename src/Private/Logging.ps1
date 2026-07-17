@@ -963,6 +963,7 @@ function Get-PodeLoggingInbuiltType {
                     ThreadId   = $logEvent.Data.ThreadId
                     ContextId  = $logEvent.Data.ContextId
                     Server     = $logEvent.Data.Server
+                    Kind       = $logEvent.Data.Kind
                     Category   = $logEvent.Data.Category
                     Message    = $logEvent.Data.Message
                     StackTrace = $logEvent.Data.StackTrace
