@@ -9,6 +9,11 @@ Pode has an inbuilt Request Log Type, which will parse and transform web request
 
 To enable the Request Log Type use [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType), and supply one or more Log Methods - such as the [Terminal](../../Methods/Terminal) Method.
 
+You can call [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType) multiple times, supplying a different `-Name` for each, to enable multiple Request Log Types.
+
+!!! note
+    For backwards compatibility support: if you call `Enable-PodeLogRequestType` with no `-Name`, then a default name will be used. Subsequent `Enable-PodeLogRequestType` calls **must** supply a `-Name`.
+
 !!! important
     The `Enable-PodeRequestLogging` function is now deprecated, please use [`Enable-PodeLogRequestType`](../../../../Functions/Logging/Enable-PodeLogRequestType) instead. The former is aliased to the latter for now.
 
@@ -142,6 +147,15 @@ The following example enables the Request Log Type, and will output all items to
 
 ```powershell
 New-PodeLogTerminalMethod | Enable-PodeLogRequestType
+```
+
+### Log Multiple
+
+The following example enables 2 Request Log Types, one with the inbuilt default name and one with a custom name:
+
+```powershell
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -Name 'custom-req'
 ```
 
 ### Log Proxy IP

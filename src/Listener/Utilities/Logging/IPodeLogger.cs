@@ -10,6 +10,9 @@ namespace Pode.Utilities.Logging
         bool IsDisposed { get; }
         int Count { get; }
 
+        PodeConcurrentSet<string> ErrorLogTypeNames { get; }
+        PodeConcurrentSet<string> RequestLogTypeNames { get; }
+
         bool IsEnabled { get; set; }
         bool IsRequestLoggingEnabled { get; }
         bool IsErrorLoggingEnabled { get; }

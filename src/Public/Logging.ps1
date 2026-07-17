@@ -190,6 +190,9 @@ Enables Request Logging using a supplied output method.
 .DESCRIPTION
 Enables Request Logging using a supplied output method.
 
+.PARAMETER Name
+An optional Name to assign to the Request Log Type. If not supplied, a default name will be used.
+
 .PARAMETER Method
 One or more Log Method IDs to use for outputting the log entry.
 
@@ -243,7 +246,7 @@ New-PodeLogTerminalMethod | Enable-PodeLogRequestType -AsUtc
 New-PodeLogTerminalMethod | Enable-PodeLogRequestType -RemoteIPHeader 'X-Forwarded-For'
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeLogRequestType -SerialiseFormat 'Json'
+New-PodeLogTerminalMethod | Enable-PodeLogRequestType -Name 'custom-req' -SerialiseFormat 'Json'
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogRequestType -SerialiseFormat 'Custom' -SerialiseScriptBlock {
@@ -266,6 +269,10 @@ New-PodeLogTerminalMethod | Enable-PodeLogRequestType -LogFormat Syslog -SyslogI
 function Enable-PodeLogRequestType {
     [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
     param(
+        [Parameter()]
+        [string]
+        $Name,
+
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]
         $Method,
@@ -325,7 +332,7 @@ function Enable-PodeLogRequestType {
 
     begin {
         # error if it's already enabled
-        $name = [PodeLogger]::REQUEST_LOG_TYPE_NAME
+        $name = Protect-PodeValue -Value $Name -Default ([PodeLogger]::REQUEST_LOG_TYPE_NAME)
 
         # setup array for Log Methods being piped in
         $pipelineMethods = @()
@@ -447,14 +454,25 @@ Disables Request Log Type.
 .DESCRIPTION
 Disables Request Log Type.
 
+.PARAMETER Name
+An optional Name to assign to the Request Log Type. If not supplied, a default name will be used.
+
 .EXAMPLE
 Disable-PodeLogRequestType
+
+.EXAMPLE
+Disable-PodeLogRequestType -Name 'custom-req'
 #>
 function Disable-PodeLogRequestType {
     [CmdletBinding()]
-    param()
+    param(
+        [Parameter()]
+        [string]
+        $Name
+    )
 
-    Remove-PodeLogType -Name ([PodeLogger]::REQUEST_LOG_TYPE_NAME)
+    $Name = Protect-PodeValue -Value $Name -Default ([PodeLogger]::REQUEST_LOG_TYPE_NAME)
+    Remove-PodeLogType -Name $Name
 }
 
 if (!(Test-Path Alias:Disable-PodeRequestLogging)) {
@@ -467,6 +485,9 @@ Enables Error Log Type using a supplied Log Method.
 
 .DESCRIPTION
 Enables Error Log Type using a supplied Log Method.
+
+.PARAMETER Name
+An optional Name to assign to the Error Log Type. If not supplied, a default name will be used.
 
 .PARAMETER Method
 One or more Log Method IDs to use for outputting the log entry.
@@ -514,7 +535,7 @@ New-PodeLogTerminalMethod | Enable-PodeLogErrorType -Kind Server, Client
 New-PodeLogTerminalMethod | Enable-PodeLogErrorType -AsUtc
 
 .EXAMPLE
-New-PodeLogTerminalMethod | Enable-PodeLogErrorType -SerialiseFormat 'Json'
+New-PodeLogTerminalMethod | Enable-PodeLogErrorType -Name 'custom-error' -SerialiseFormat 'Json'
 
 .EXAMPLE
 New-PodeLogTerminalMethod | Enable-PodeLogErrorType -SerialiseFormat 'Custom' -SerialiseScriptBlock {
@@ -537,6 +558,10 @@ New-PodeLogTerminalMethod | Enable-PodeLogErrorType -LogFormat Syslog -SyslogInf
 function Enable-PodeLogErrorType {
     [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
     param(
+        [Parameter()]
+        [string]
+        $Name,
+
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]
         $Method,
@@ -590,7 +615,7 @@ function Enable-PodeLogErrorType {
 
     begin {
         # get error log type name
-        $name = [PodeLogger]::ERROR_LOG_TYPE_NAME
+        $name = Protect-PodeValue -Value $Name -Default ([PodeLogger]::ERROR_LOG_TYPE_NAME)
 
         # setup array for Log Methods being piped in
         $pipelineMethods = @()
@@ -684,14 +709,25 @@ Disables Error Log Type.
 .DESCRIPTION
 Disables Error Log Type.
 
+.PARAMETER Name
+An optional Name to assign to the Error Log Type. If not supplied, a default name will
+
 .EXAMPLE
 Disable-PodeLogErrorType
+
+.EXAMPLE
+Disable-PodeLogErrorType -Name 'custom-error'
 #>
 function Disable-PodeLogErrorType {
     [CmdletBinding()]
-    param()
+    param(
+        [Parameter()]
+        [string]
+        $Name
+    )
 
-    Remove-PodeLogType -Name ([PodeLogger]::ERROR_LOG_TYPE_NAME)
+    $Name = Protect-PodeValue -Value $Name -Default ([PodeLogger]::ERROR_LOG_TYPE_NAME)
+    Remove-PodeLogType -Name $Name
 }
 
 if (!(Test-Path Alias:Disable-PodeErrorLogging)) {
