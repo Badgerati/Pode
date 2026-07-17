@@ -21,5 +21,10 @@ namespace Pode.Protocols.Common.Requests
         {
             return 0;
         }
+
+        protected override PodeRequestExceptionKind GetKind(int statusCode)
+        {
+            return PodeRequestExceptionKind.Server;
+        }
     }
 }
