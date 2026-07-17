@@ -963,6 +963,7 @@ function Get-PodeLoggingInbuiltType {
                     ThreadId   = $logEvent.Data.ThreadId
                     ContextId  = $logEvent.Data.ContextId
                     Server     = $logEvent.Data.Server
+                    Kind       = $logEvent.Data.Kind
                     Category   = $logEvent.Data.Category
                     Message    = $logEvent.Data.Message
                     StackTrace = $logEvent.Data.StackTrace
@@ -1414,7 +1415,7 @@ function Push-PodeLogItem {
     }
 }
 
-function Add-PodeLogMethod {
+function Add-PodeLogMethodInternal {
     param(
         [Parameter()]
         [string]
@@ -1460,6 +1461,192 @@ function Add-PodeLogMethod {
 
     # return the method ID
     return $Id
+}
+
+function Add-PodeLogTypeInternal {
+    [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $Method,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptBlock')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [ValidateSet('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug', '*')]
+        [string[]]
+        $Levels,
+
+        [Parameter(ParameterSetName = 'ScriptBlock')]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter(ParameterSetName = 'ScriptBlock')]
+        [ValidateSet(1, 2)]
+        [int]
+        $Version,
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeLogFormat]
+        $LogFormat = [Pode.Utilities.Logging.PodeLogFormat]::None,
+
+        [Parameter()]
+        [scriptblock]
+        $LogScriptBlock,
+
+        [Parameter()]
+        [Pode.Utilities.Logging.PodeSerialiseFormat]
+        $SerialiseFormat = [Pode.Utilities.Logging.PodeSerialiseFormat]::None,
+
+        [Parameter()]
+        [scriptblock]
+        $SerialiseScriptBlock,
+
+        [Parameter()]
+        [hashtable]
+        $SyslogInfo,
+
+        [Parameter()]
+        [string]
+        $XmlRootName,
+
+        [Parameter()]
+        [hashtable]
+        $Metadata,
+
+        [Parameter()]
+        [string[]]
+        $LogHeader,
+
+        [Parameter()]
+        [hashtable]
+        $Options,
+
+        [switch]
+        $AsUtc,
+
+        [Parameter(ParameterSetName = 'Raw')]
+        [switch]
+        $Raw
+    )
+
+    # ensure the name doesn't already exist
+    if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
+        # Log Method already defined
+        throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
+    }
+
+    # ensure the log methods exists
+    foreach ($methodId in $Method) {
+        if (!(Test-PodeLogMethod -Id $methodId)) {
+            # The supplied Log Method for Custom Logging doesn't exist
+            throw ($PodeLocale.loggingMethodDoesNotExistExceptionMessage -f $methodId)
+        }
+    }
+
+    # all errors?
+    if ($Levels -contains '*') {
+        $Levels = @('Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug')
+    }
+
+    # default metadata
+    if ($null -eq $Metadata) {
+        $Metadata = @{}
+    }
+
+    # default log formatter
+    if (!$PSBoundParameters.ContainsKey('LogFormat')) {
+        $LogFormat = Protect-PodeValue -Value (Get-PodeLogDefaultFormat) -Default $LogFormat -EnumType ([PodeLogFormat])
+    }
+
+    # do we need default syslog info?
+    if (($LogFormat -eq [PodeLogFormat]::Syslog) -and ($null -eq $SyslogInfo)) {
+        $SyslogInfo = New-PodeLogSyslogInfo
+    }
+
+    # are we using a custom log scriptblock?
+    if ($LogFormat -eq [PodeLogFormat]::Custom) {
+        if ($null -eq $LogScriptBlock) {
+            # A non-empty ScriptBlock is required for the Custom log format
+            throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomLogExceptionMessage)
+        }
+
+        $LogScriptBlock, $logUsingVars = Convert-PodeScopedVariables -ScriptBlock $LogScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
+    # default serialise formatter
+    if (!$PSBoundParameters.ContainsKey('SerialiseFormat')) {
+        $SerialiseFormat = Protect-PodeValue -Value (Get-PodeLogDefaultSerialiseFormat) -Default $SerialiseFormat -EnumType ([PodeSerialiseFormat])
+    }
+
+    # if custom serialisation, ensure we have a scriptblock, and check for scoped vars in scriptblock
+    if ($SerialiseFormat -eq [PodeSerialiseFormat]::Custom) {
+        if ($null -eq $SerialiseScriptBlock) {
+            # A non-empty ScriptBlock is required for the Custom logging serialisation format
+            throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage)
+        }
+
+        $SerialiseScriptBlock, $serialiseUsingVars = Convert-PodeScopedVariables -ScriptBlock $SerialiseScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
+    # check for scoped vars in scriptblock
+    if ($PSCmdlet.ParameterSetName -eq 'ScriptBlock') {
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
+    # build log type options
+    if ($null -eq $Options) {
+        $Options = @{}
+    }
+
+    $_opts = @{
+        Formatting = @{
+            Log        = @{
+                Format         = $LogFormat
+                ScriptBlock    = $LogScriptBlock
+                UsingVariables = $logUsingVars
+            }
+            SyslogInfo = $SyslogInfo
+            Serialise  = @{
+                Type           = $SerialiseFormat
+                ScriptBlock    = $SerialiseScriptBlock
+                UsingVariables = $serialiseUsingVars
+                XmlRootName    = Protect-PodeValue -Value $XmlRootName -Default 'Log'
+            }
+            Headers    = $LogHeader
+            AsUtc      = $AsUtc.IsPresent
+        }
+    }
+    $_opts += $Options
+
+    # add custom Log Method to server, associated with the supplied Log Method(s)
+    $PodeContext.Server.Logging.Types[$Name] = @{
+        Name           = $Name
+        Method         = $Method
+        ScriptBlock    = $ScriptBlock
+        UsingVariables = $usingVars
+        Levels         = $Levels
+        Raw            = $Raw.IsPresent
+        Version        = $Version
+        SentFirstLog   = $false
+        Metadata       = $Metadata
+        Options        = $_opts
+        Arguments      = $ArgumentList
+    }
+
+    # then associate the supplied Log Method(s) with the custom Log Type
+    foreach ($methodId in $Method) {
+        Register-PodeLogTypeToMethod -TypeName $Name -MethodId $methodId
+    }
+
+    # return the type with all info just created
+    return $PodeContext.Server.Logging.Types[$Name]
 }
 
 function Register-PodeLogTypeToMethod {

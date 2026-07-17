@@ -140,7 +140,7 @@ namespace Pode.Protocols.Common.Contexts
             try
             {
                 PodeHelpers.WriteErrorMessage("TimeoutCallback triggered", PodeLogLevel.Debug, this);
-                PodeHelpers.WriteErrorMessage($"Request timeout reached: {Listener.RequestTimeout} seconds", PodeLogLevel.Warning, this);
+                PodeHelpers.WriteErrorMessage($"Request timeout reached: {Listener.RequestTimeout} seconds", PodeLogLevel.Warning, this, PodeRequestExceptionKind.Timeout);
 
                 State = PodeContextState.Timeout;
                 ContextTimeoutToken.Cancel();
@@ -149,7 +149,7 @@ namespace Pode.Protocols.Common.Contexts
                 Response.StatusCode = Request.Error.StatusCode;
 
                 Dispose();
-                PodeHelpers.WriteErrorMessage($"Request timeout reached: Dispose", PodeLogLevel.Debug, this);
+                PodeHelpers.WriteErrorMessage($"Request timeout reached: Dispose", PodeLogLevel.Debug, this, PodeRequestExceptionKind.Timeout);
             }
             catch (Exception ex)
             {
