@@ -8,17 +8,20 @@ namespace Pode.Protocols.Common.Requests
         // the status code of the exception
         public int StatusCode { get; private set; } = 0;
 
+        // the type of the exception
+        public PodeRequestExceptionKind Kind { get; private set; } = PodeRequestExceptionKind.Server;
+
         // is the exception a timeout status code
-        public virtual bool IsTimeout => false;
+        public bool IsTimeout => Kind == PodeRequestExceptionKind.Timeout;
 
         // is the exception a client error status code
-        public virtual bool IsClientError => false;
+        public bool IsClientError => Kind == PodeRequestExceptionKind.Client;
 
         // is the exception a server error status code
-        public virtual bool IsServerError => false;
+        public bool IsServerError => Kind == PodeRequestExceptionKind.Server;
 
         // the logging level of the exception
-        public PodeLogLevel LoggingLevel => IsClientError ? PodeLogLevel.Debug : PodeLogLevel.Error;
+        public PodeLogLevel LoggingLevel => Kind == PodeRequestExceptionKind.Client ? PodeLogLevel.Debug : PodeLogLevel.Error;
 
 
         // constructors
@@ -35,6 +38,8 @@ namespace Pode.Protocols.Common.Requests
             {
                 StatusCode = statusCode;
             }
+
+            Kind = GetKind(StatusCode);
         }
 
         protected PodeRequestException(string message, PodeRequestStatusType statusType)
@@ -47,9 +52,11 @@ namespace Pode.Protocols.Common.Requests
             : base(message, innerException)
         {
             StatusCode = GetStatusCode(statusType);
+            Kind = GetKind(StatusCode);
         }
 
 
         protected abstract int GetStatusCode(PodeRequestStatusType statusType);
+        protected abstract PodeRequestExceptionKind GetKind(int statusCode);
     }
 }

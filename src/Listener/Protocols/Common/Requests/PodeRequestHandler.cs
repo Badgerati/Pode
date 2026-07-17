@@ -316,6 +316,7 @@ namespace Pode.Protocols.Common.Requests
             catch (PodeRequestException ex)
             {
                 Error = ex;
+                return false;
             }
             catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException)
             {
