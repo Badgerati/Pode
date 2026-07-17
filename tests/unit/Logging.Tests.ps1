@@ -88,7 +88,7 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Adds an error log item' {
-            $logType = [Pode.Utilities.Logging.PodeLogType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'), $false)
+            $logType = [Pode.Utilities.Logging.PodeLogErrorType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'), @('Server'), $false)
             $PodeContext.Server.Logging.Logger.RegisterType($logType)
 
             try { throw 'some error' }
@@ -104,7 +104,7 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Adds an exception log item' {
-            $logType = [Pode.Utilities.Logging.PodeLogType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'), $false)
+            $logType = [Pode.Utilities.Logging.PodeLogErrorType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'), @('Server'), $false)
             $PodeContext.Server.Logging.Logger.RegisterType($logType)
 
             $exp = [exception]::new('some error')
@@ -116,7 +116,7 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Does not log as Verbose not allowed' {
-            $logType = [Pode.Utilities.Logging.PodeLogType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'), $false)
+            $logType = [Pode.Utilities.Logging.PodeLogErrorType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'), @('Server'), $false)
             $PodeContext.Server.Logging.Logger.RegisterType($logType)
 
             $exp = [exception]::new('some error')

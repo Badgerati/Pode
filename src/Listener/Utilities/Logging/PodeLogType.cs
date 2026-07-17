@@ -26,9 +26,10 @@ namespace Pode.Utilities.Logging
             return Levels.Contains(level);
         }
 
-        public DateTime GetTimestamp()
+        public DateTime GetTimestamp(DateTime? timestamp = null)
         {
-            return AsUtc ? DateTime.UtcNow : DateTime.Now;
+            var ts = timestamp ?? DateTime.Now;
+            return AsUtc ? ts.ToUniversalTime() : ts;
         }
     }
 }
