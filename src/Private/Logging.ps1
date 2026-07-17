@@ -1053,10 +1053,6 @@ function Write-PodeRequestLog {
         return
     }
 
-    # get the request log type
-    $logTypeName = [PodeLogger]::REQUEST_LOG_TYPE_NAME
-    $logType = Get-PodeLogType -Name $logTypeName
-
     # http method
     $method = $null
     if (![string]::IsNullOrEmpty($WebEvent.Request.HttpMethod)) {
@@ -1075,104 +1071,119 @@ function Write-PodeRequestLog {
         $scheme = $WebEvent.Request.Handler.Scheme.ToLowerInvariant()
     }
 
-    # date/timestamp
-    $timestamp = $WebEvent.Timestamp
-    if (!$logType.Options.Formatting.AsUtc) {
-        $timestamp = $timestamp.ToLocalTime()
-    }
+    # duration
+    $duration = [datetime]::UtcNow.Subtract($WebEvent.Timestamp)
 
-    # build a request object
-    $item = @{
-        Host            = $WebEvent.Request.Handler.RemoteEndPoint.Address.IPAddressToString
-        RfcUserIdentity = $null
-        User            = $null
-        Date            = $timestamp
-        UtcDate         = $WebEvent.Timestamp
-        Duration        = [datetime]::UtcNow.Subtract($WebEvent.Timestamp)
-        Server          = @{
-            IP   = $WebEvent.Request.Handler.LocalEndPoint.Address.IPAddressToString
-            Port = $WebEvent.Request.Handler.LocalEndPoint.Port
-        }
-        Environment     = @{
-            Variables = @{}
-        }
-        Request         = @{
-            Method   = $method
-            Hostname = $hostname
-            Scheme   = $scheme
-            Resource = $WebEvent.Path
-            Query    = (Protect-PodeValue -Value $WebEvent.Request.Url.Query -Default ([string]::Empty)).TrimStart('?')
-            Protocol = "HTTP/$($WebEvent.Request.ProtocolVersion)"
-            Referrer = $WebEvent.Request.UrlReferrer
-            Agent    = $WebEvent.Request.UserAgent
-            Size     = $WebEvent.Request.ContentLength
-            Headers  = @{}
-        }
-        Response        = @{
-            StatusCode        = $WebEvent.Response.StatusCode
-            StatusDescription = $WebEvent.Response.StatusDescription
-            Size              = $null
-            Headers           = @{}
-        }
-    }
+    # query
+    $query = (Protect-PodeValue -Value $WebEvent.Request.Url.Query -Default ([string]::Empty)).TrimStart('?')
 
-    # set size of data sent back to the client if >0
+    # protocol
+    $protocol = "HTTP/$($WebEvent.Request.ProtocolVersion)"
+
+    # response size
+    $respSize = $null
     if ($WebEvent.Response.ContentLength64 -gt 0) {
-        $item.Response.Size = $WebEvent.Response.ContentLength64
+        $respSize = $WebEvent.Response.ContentLength64
     }
 
-    # do we need to get the host address from req headers (if behind a reverse proxy)?
-    $remoteIpHeaders = $logType.Metadata.RemoteIPHeader
-    if (($null -ne $remoteIpHeaders) -and ($remoteIpHeaders.Count -gt 0)) {
-        foreach ($header in $remoteIpHeaders) {
-            if (Test-PodeHeader -Name $header) {
-                $item.Host = ((Get-PodeHeader -Name $header) -split ',')[0].Trim()
-                break
+    # loop through each request log type and add to the queue
+    foreach ($logTypeName in $PodeContext.Server.Logging.Logger.RequestLogTypeNames) {
+        $logType = Get-PodeLogType -Name $logTypeName
+
+        # date/timestamp
+        $timestamp = $WebEvent.Timestamp
+        if (!$logType.Options.Formatting.AsUtc) {
+            $timestamp = $timestamp.ToLocalTime()
+        }
+
+        # build a request object
+        $item = @{
+            Host            = $WebEvent.Request.Handler.RemoteEndPoint.Address.IPAddressToString
+            RfcUserIdentity = $null
+            User            = $null
+            Date            = $timestamp
+            UtcDate         = $WebEvent.Timestamp
+            Duration        = $duration
+            Server          = @{
+                IP   = $WebEvent.Request.Handler.LocalEndPoint.Address.IPAddressToString
+                Port = $WebEvent.Request.Handler.LocalEndPoint.Port
+            }
+            Environment     = @{
+                Variables = @{}
+            }
+            Request         = @{
+                Method   = $method
+                Hostname = $hostname
+                Scheme   = $scheme
+                Resource = $WebEvent.Path
+                Query    = $query
+                Protocol = $protocol
+                Referrer = $WebEvent.Request.UrlReferrer
+                Agent    = $WebEvent.Request.UserAgent
+                Size     = $WebEvent.Request.ContentLength
+                Headers  = @{}
+            }
+            Response        = @{
+                StatusCode        = $WebEvent.Response.StatusCode
+                StatusDescription = $WebEvent.Response.StatusDescription
+                Size              = $respSize
+                Headers           = @{}
             }
         }
-    }
 
-    # set username - dot spaces
-    if (Test-PodeAuthUser -IgnoreSession) {
-        $userProps = $logType.Metadata.Username.Split('.')
-
-        $user = $WebEvent.Auth.User
-        foreach ($atom in $userProps) {
-            $user = $user.($atom)
+        # do we need to get the host address from req headers (if behind a reverse proxy)?
+        $remoteIpHeaders = $logType.Metadata.RemoteIPHeader
+        if (($null -ne $remoteIpHeaders) -and ($remoteIpHeaders.Count -gt 0)) {
+            foreach ($header in $remoteIpHeaders) {
+                if (Test-PodeHeader -Name $header) {
+                    $item.Host = ((Get-PodeHeader -Name $header) -split ',')[0].Trim()
+                    break
+                }
+            }
         }
 
-        if (![string]::IsNullOrWhiteSpace($user)) {
-            $item.User = $user -ireplace '\s+', '.'
+        # set username - dot spaces
+        if (Test-PodeAuthUser -IgnoreSession) {
+            $userProps = $logType.Metadata.Username.Split('.')
+
+            $user = $WebEvent.Auth.User
+            foreach ($atom in $userProps) {
+                $user = $user.($atom)
+            }
+
+            if (![string]::IsNullOrWhiteSpace($user)) {
+                $item.User = $user -ireplace '\s+', '.'
+            }
         }
-    }
 
-    # for w3c format, we need to fetch req/resp headers, and server env vars
-    if ($logType.Metadata.Format -ieq 'W3C') {
-        foreach ($field in $logType.Metadata.W3CFields) {
-            switch ($field.Type) {
-                'Request' {
-                    if (Test-PodeHeader -Name $field.Name) {
-                        $item.Request.Headers[$field.Name] = Get-PodeHeader -Name $field.Name
+        # for w3c format, we need to fetch req/resp headers, and server env vars
+        if ($logType.Metadata.Format -ieq 'W3C') {
+            foreach ($field in $logType.Metadata.W3CFields) {
+                switch ($field.Type) {
+                    'Request' {
+                        if (Test-PodeHeader -Name $field.Name) {
+                            $item.Request.Headers[$field.Name] = Get-PodeHeader -Name $field.Name
+                        }
                     }
-                }
 
-                'Response' {
-                    if (Test-PodeHeader -Name $field.Name -Response) {
-                        $item.Response.Headers[$field.Name] = Get-PodeHeader -Name $field.Name -Response
+                    'Response' {
+                        if (Test-PodeHeader -Name $field.Name -Response) {
+                            $item.Response.Headers[$field.Name] = Get-PodeHeader -Name $field.Name -Response
+                        }
                     }
-                }
 
-                'Environment' {
-                    if (Test-PodeEnvironmentVariable -Name $field.Name) {
-                        $item.Environment.Variables[$field.Name] = Get-PodeEnvironmentVariable -Name $field.Name
+                    'Environment' {
+                        if (Test-PodeEnvironmentVariable -Name $field.Name) {
+                            $item.Environment.Variables[$field.Name] = Get-PodeEnvironmentVariable -Name $field.Name
+                        }
                     }
                 }
             }
         }
-    }
 
-    # add the item to be processed
-    $PodeContext.Server.Logging.Logger.Add($logTypeName, [PodeLogLevel]::Informational, $item)
+        # add the item to be processed
+        $PodeContext.Server.Logging.Logger.Add($logTypeName, [PodeLogLevel]::Informational, $item)
+    }
 }
 
 function Add-PodeRequestLogEndware {

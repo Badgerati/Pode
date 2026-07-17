@@ -10,6 +10,6 @@ namespace Pode.Utilities.Logging
         bool AsUtc { get; }
 
         bool IsLevelEnabled(PodeLogLevel level);
-        DateTime GetTimestamp();
+        DateTime GetTimestamp(DateTime? timestamp = null);
     }
 }
