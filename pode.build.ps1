@@ -1057,7 +1057,12 @@ Add-BuildTask StampVersion {
 
 # Synopsis: Generating a Checksum of the Zip
 Add-BuildTask PrintChecksum {
-    $Script:Checksum = (Get-FileHash "./deliverable/$($Version)-Binaries.zip" -Algorithm SHA256).Hash
+    $zipVer = $Version
+    if ($PreRelease) {
+        $zipVer = "$($Version)-$($PreRelease)"
+    }
+
+    $Script:Checksum = (Get-FileHash "./deliverable/$($zipVer)-Binaries.zip" -Algorithm SHA256).Hash
     Write-Host "Checksum: $($Checksum)"
 }
 
@@ -1319,20 +1324,37 @@ Add-BuildTask Compress PackageFolder, StampVersion, DeliverableFolder, {
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
 
+    $zipVer = $Version
+    if ($PreRelease) {
+        $zipVer = "$($Version)-$($PreRelease)"
+    }
+
     # create the pkg dir
     New-Item -Path $path -ItemType Directory -Force | Out-Null
-    Compress-Archive -Path './pkg/*' -DestinationPath "$($path)/$($Version)-Binaries.zip"
+    Compress-Archive -Path './pkg/*' -DestinationPath "$($path)/$($zipVer)-Binaries.zip"
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
 Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) ChocoDeps, PackageFolder, StampVersion, DeliverableFolder, {
     exec { choco pack ./packers/choco/pode.nuspec }
-    Move-Item -Path "pode.$($Version).nupkg" -Destination './deliverable'
+
+    $chocoVer = $Version
+    if ($PreRelease) {
+        $chocoVer = "$($Version)-$($PreRelease)"
+    }
+
+    Move-Item -Path "pode.$($chocoVer).nupkg" -Destination './deliverable'
 }
 
 Add-BuildTask ChocoDeploy -If (Test-PodeBuildIsWindows) {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    exec { choco push "./deliverable/pode.$($Version).nupkg" --source https://push.chocolatey.org/ --api-key $ApiKey }
+
+    $chocoVer = $Version
+    if ($PreRelease) {
+        $chocoVer = "$($Version)-$($PreRelease)"
+    }
+
+    exec { choco push "./deliverable/pode.$($chocoVer).nupkg" --source https://push.chocolatey.org/ --api-key $ApiKey }
 }
 
 # Synopsis: Package up the Module
