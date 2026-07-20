@@ -3354,66 +3354,68 @@ function Get-PodeModuleManifest {
 
 <#
 .SYNOPSIS
-    Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.
+Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.
 
 .DESCRIPTION
-    The `Test-PodeVersionPwshEOL` function checks the current PowerShell version against a list of versions that were either supported or EOL at the time of the Pode release. It uses the module manifest to determine which PowerShell versions are considered EOL and which are officially supported. If the current version is EOL or was not tested with the current release of Pode, the function generates a warning. This function aids in maintaining best practices for using supported PowerShell versions with Pode.
+Check the current PowerShell version against a list of versions that were either supported or EOL at the time of the Pode release.
+It uses the module manifest to determine which PowerShell versions are considered EOL and which are officially supported.
+If the current version is EOL or was not tested with the current release of Pode, the function generates a warning.
+This function aids in maintaining best practices for using supported PowerShell versions with Pode.
 
 .PARAMETER ReportUntested
-    If specified, the function will report if the current PowerShell version was not available and thus untested at the time of the Pode release. This is useful for identifying potential compatibility issues with newer versions of PowerShell.
+If specified, reports if the current PowerShell version was not available and thus untested at the time of the Pode release.
+This is useful for identifying potential compatibility issues with newer versions of PowerShell.
 
 .OUTPUTS
-    A hashtable containing two keys:
-    - `eol`: A boolean indicating if the current PowerShell version was EOL at the time of the Pode release.
-    - `supported`: A boolean indicating if the current PowerShell version was officially supported by Pode at the time of the release.
+A hashtable containing two keys:
+- `eol`: A boolean indicating if the current PowerShell version was EOL at the time of the Pode release.
+- `supported`: A boolean indicating if the current PowerShell version was officially supported by Pode at the time of the release.
 
 .EXAMPLE
-    Test-PodeVersionPwshEOL
-
-    Checks the current PowerShell version against Pode's supported and EOL versions list. Outputs a warning if the version is EOL or untested, and returns a hashtable indicating the compatibility status.
+Test-PodeVersionPwshEOL
 
 .EXAMPLE
-    Test-PodeVersionPwshEOL -ReportUntested
-
-    Similar to the basic usage, but also reports if the current PowerShell version was untested because it was not available at the time of the Pode release.
-
-.NOTES
-    This function is part of the Pode module's utilities to ensure compatibility and encourage the use of supported PowerShell versions.
-
+Test-PodeVersionPwshEOL -ReportUntested
 #>
 function Test-PodeVersionPwshEOL {
     param(
-        [switch] $ReportUntested
+        [switch]
+        $ReportUntested
     )
+
+    $supportedInfo = @{
+        eol       = $false
+        supported = $true
+    }
+
+    # for dev versions, we don't need to check
     $moduleManifest = Get-PodeModuleManifest
     if ($moduleManifest.ModuleVersion -eq '$version$') {
-        return @{
-            eol       = $false
-            supported = $true
-        }
+        return $supportedInfo
     }
 
+    # check if the current PowerShell version is EOL
     $psVersion = $PSVersionTable.PSVersion
     $eolVersions = $moduleManifest.PrivateData.PwshVersions.Untested -split ','
-    $isEol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
+    $supportedInfo.eol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
 
-    if ($isEol) {
+    if ($supportedInfo.eol) {
         # [WARNING] Pode version has not been tested on PowerShell version, as it is EOL
         Write-PodeHost ($PodeLocale.eolPowerShellWarningMessage -f $PodeVersion, $PSVersion) -ForegroundColor Yellow
+        $supportedInfo.supported = $false
+        return $supportedInfo
     }
 
+    # check if the current PowerShell version is supported
     $SupportedVersions = $moduleManifest.PrivateData.PwshVersions.Supported -split ','
-    $isSupported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
+    $supportedInfo.supported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
 
-    if ((! $isSupported) -and (! $isEol) -and $ReportUntested) {
+    if (!$supportedInfo.supported -and $ReportUntested) {
         # [WARNING] Pode version has not been tested on PowerShell version, as it was not available when Pode was released
         Write-PodeHost ($PodeLocale.untestedPowerShellVersionWarningMessage -f $PodeVersion, $PSVersion) -ForegroundColor Yellow
     }
 
-    return @{
-        eol       = $isEol
-        supported = $isSupported
-    }
+    return $supportedInfo
 }
 
 

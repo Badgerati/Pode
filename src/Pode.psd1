@@ -655,6 +655,8 @@
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData       = @{
         PSData       = @{
+            # $prerelease$
+
             # Tags applied to this module. These help with module discovery in online galleries.
             Tags         = @(
                 'powershell', 'web', 'server', 'http', 'https', 'listener', 'rest', 'api', 'tcp',
@@ -676,6 +678,7 @@
             # Release notes for this particular version of the module
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
         }
+
         PwshVersions = @{
             Untested  = '$versionsUntested$'
             Supported = '$versionsSupported$'
