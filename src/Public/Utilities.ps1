@@ -1479,39 +1479,33 @@ function New-PodeCron {
 Gets the version of the Pode module.
 
 .DESCRIPTION
-The Get-PodeVersion function checks the version of the Pode module specified in the module manifest. If the module version is not a placeholder value ('$version$'), it returns the actual version prefixed with 'v.'. If the module version is the placeholder value, indicating the development branch, it returns '[develop branch]'.
+Retrieves the version of the Pode module specified in the module manifest.
+If the module version is not a placeholder value, it returns the actual version prefixed with 'v', and any pre-release information if available.
+If the module version is the placeholder value, indicating the development branch, it returns '[dev]'.
 
-.PARAMETER None
-This function does not accept any parameters.
-
-.OUTPUTS
-System.String
-Returns a string indicating the version of the Pode module or '[dev]' if on a development version.
+.PARAMETER NoPreRelease
+If specified, the function will not include any pre-release information in the returned version string.
 
 .EXAMPLE
-PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
-PS> Get-PodeVersion
-
-Returns 'v1.2.3'.
-
-.EXAMPLE
-PS> $moduleManifest = @{ ModuleVersion = '$version$' }
-PS> Get-PodeVersion
-
-Returns '[dev]'.
-
-.NOTES
-This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
-
+$version = Get-PodeVersion
 #>
 function Get-PodeVersion {
+    param(
+        [switch]
+        $NoPreRelease
+    )
+
     $moduleManifest = Get-PodeModuleManifest
-    if ($moduleManifest.ModuleVersion -ne '$version$') {
-        return "v$($moduleManifest.ModuleVersion)"
-    }
-    else {
+    if ($moduleManifest.ModuleVersion -ieq '$version$') {
         return '[dev]'
     }
+
+    $version = "v$($moduleManifest.ModuleVersion)"
+    if (!$NoPreRelease -and $moduleManifest.PrivateData.PSData.Prerelease) {
+        $version += "-$($moduleManifest.PrivateData.PSData.Prerelease)"
+    }
+
+    return $version
 }
 
 <#
