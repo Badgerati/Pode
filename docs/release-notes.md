@@ -1,5 +1,45 @@
 # Release Notes
 
+# v2.14.0-rc1
+
+Date: 21st July 2026
+
+```plain
+### Enhancements
+* #1725: Backend .NET logs now utilise Pode's logging functionality
+* #1725: Custom Log Types now support -Raw item pass-thru
+* #1725: Log Events are now thread-safe
+* #1725: Log Methods are now their own functions
+* #1725: Log Methods now run in their own Runspaces
+* #1725: Log Types now support multiple Log Methods
+* #1734: Adds additional log levels: Emergency, Alert, Critical, and Notice
+* #1734: Adds custom Error/Request log data transforming and serialisation
+* #1734: Adds log serialisation into JSON, XML, YAML, or custom formats
+* #1734: Adds log shipping for Splunk, Datadog, Azure Log Analytics, AWS CloudWatch, UDP/TCP, and custom APIs
+* #1734: Adds Syslog formatting
+* #1737: Adds support for fetching remote IP from Request headers when logging
+* #1738: Adds Common and W3C Request Logging formats
+* #1738: Adds support for retrieving headers from the Response
+* #1739: Adds support for Error/Request log timestamps to be in UTC
+* #1743: Adds support for controlling which Error Kinds are logged
+* #1744: Adds support for creating multiple Error/Request Log Types
+
+### Bugs
+* #1736: Send back appropriate failure headers when Valid=One for Merged Authentication
+* #1738: Fixes the Date timestamp on the Request Logging object
+
+### Packaging
+* #1728: Bump actions/checkout from 6.0.0 to 7.0.0
+* #1740: Bump @stoplight/elements from 9.0.21 to 9.0.24
+* #1742: Bump actions/setup-dotnet from 5.0.0 to 6.0.0
+* #1745: Bump swagger-ui-dist from 5.32.6 to 5.32.9
+* #1746: Adds PreRelease Support
+* #1747: Bump openapi-explorer from 2.4.799 to 2.4.820
+
+### Testing
+* #1735: Fail on Pester block/container failures (not just failed tests) (thanks @nohwnd!)
+```
+
 ## v2.13.4
 
 Date: 3rd June 2026
