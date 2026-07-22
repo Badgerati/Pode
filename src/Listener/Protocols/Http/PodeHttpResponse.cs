@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Pode.Utilities;
 using Pode.Protocols.Common.Responses;
 using Pode.Utilities.Logging;
+using Pode.Protocols.Common.Requests;
 
 namespace Pode.Protocols.Http
 {
@@ -110,14 +111,14 @@ namespace Pode.Protocols.Http
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Sending response timed-out", PodeLogLevel.Verbose, Context);
+            PodeHelpers.WriteErrorMessage($"Sending response timed-out", PodeLogLevel.Verbose, Context, PodeRequestExceptionKind.Timeout);
             StatusCode = 408;
 
             try
             {
                 await SendHeaders(true).ConfigureAwait(false);
                 IsSent = true;
-                PodeHelpers.WriteErrorMessage($"Response timed-out sent", PodeLogLevel.Verbose, Context);
+                PodeHelpers.WriteErrorMessage($"Response timed-out sent", PodeLogLevel.Verbose, Context, PodeRequestExceptionKind.Timeout);
             }
             catch (OperationCanceledException) { }
             catch (IOException) { }

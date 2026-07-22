@@ -1,6 +1,6 @@
 # File
 
-You can log items to a file using Pode's inbuilt file logging Method, via [`New-PodeLogFileMethod`](../../../../Functions/Logging/New-PodeLogFileMethod). This allows you to define a maximum number of days to keep files, as well as a maximum file size.
+You can log items to a file using Pode's inbuilt file Log Method, via [`New-PodeLogFileMethod`](../../../../Functions/Logging/New-PodeLogFileMethod). This allows you to define a maximum number of days to keep files, as well as a maximum file size.
 
 !!! note
     This will convert the supplied transformed log items into a string, if it isn't one already.
@@ -14,10 +14,10 @@ By default, Pode will store all log files in a `./logs` directory at the root of
 
 ### Basic
 
-The following example will setup the file logging Method for logging Requests:
+The following example will setup the file Log Method for logging Requests:
 
 ```powershell
-New-PodeLogFileMethod -Name 'requests' | Enable-PodeRequestLogType
+New-PodeLogFileMethod -Name 'requests' | Enable-PodeLogRequestType
 ```
 
 ### Maximum Days
@@ -25,7 +25,7 @@ New-PodeLogFileMethod -Name 'requests' | Enable-PodeRequestLogType
 The following example will configure file logging to only keep a maximum number of days of logs. Ie, if you set `-MaxDays` to 4, then Pode will only store the last 4 days worth of logs.
 
 ```powershell
-New-PodeLogFileMethod -Name 'requests' -MaxDays 4 | Enable-PodeRequestLogType
+New-PodeLogFileMethod -Name 'requests' -MaxDays 4 | Enable-PodeLogRequestType
 ```
 
 ### Maximum Size
@@ -35,7 +35,7 @@ The following example will configure file logging to keep logging to a file unti
 In this example, the maximum size it limited to 10MB:
 
 ```powershell
-New-PodeLogFileMethod -Name 'requests' -MaxSize 10MB | Enable-PodeRequestLogType
+New-PodeLogFileMethod -Name 'requests' -MaxSize 10MB | Enable-PodeLogRequestType
 ```
 
 ### Custom Path
@@ -43,5 +43,5 @@ New-PodeLogFileMethod -Name 'requests' -MaxSize 10MB | Enable-PodeRequestLogType
 By default Pode puts all logs in the `./logs` directory. You can use a custom path by using `-Path`:
 
 ```powershell
-New-PodeLogFileMethod -Name 'requests' -Path 'E:/logs' | Enable-PodeRequestLogType
+New-PodeLogFileMethod -Name 'requests' -Path 'E:/logs' | Enable-PodeLogRequestType
 ```

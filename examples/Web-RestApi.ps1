@@ -46,7 +46,7 @@ Start-PodeServer {
 
     # request logging
     $batchInfo = New-PodeLogBatchInfo -Size 10 -Timeout 10
-    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeRequestLogType
+    New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeLogRequestType
 
     # can be hit by sending a GET request to "localhost:8086/api/test"
     Add-PodeRoute -Method Get -Path '/api/test' -ScriptBlock {

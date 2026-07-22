@@ -9,6 +9,15 @@
 .PARAMETER Version
     Specifies the project version for stamping, packaging, and documentation. Defaults to '0.0.0'.
 
+.PARAMETER PreRelease
+    Specifies the prerelease label to append to the module version. Such as "rc1" or "preview1".
+
+.PARAMETER ApiUsername
+    The username for API authentication, used for deployment tasks.
+
+.PARAMETER ApiPassword
+    The password for API authentication, used for deployment tasks.
+
 .PARAMETER PesterVerbosity
     Sets the verbosity level for Pester tests. Options: None, Normal, Detailed, Diagnostic.
 
@@ -48,7 +57,11 @@
     - DeliverableFolder: Creates a folder for deliverables.
     - Compress: Compresses the module into a ZIP format for distribution.
     - ChocoPack: Creates a Chocolatey package of the module (Windows only).
+    - ChocoDeploy: Deploys the Chocolatey package to a specified repository (Windows only).
     - DockerPack: Builds Docker images for the module.
+    - DockerDeploy: Deploys Docker images to a specified repository.
+    - PowershellPack: Creates a PowerShell module package for distribution.
+    - PowershellDeploy: Deploys the PowerShell module to a specified repository.
     - Pack: Packages the module, including ZIP, Chocolatey, and Docker.
     - PackageFolder: Creates the `pkg` folder for module packaging.
     - TestNoBuild: Runs tests without building, including Pester tests.
@@ -71,12 +84,19 @@
     Invoke-Build -Task Default
         # Displays a list of all available tasks.
 
+.EXAMPLE
     Invoke-Build -Task Build -Version '1.2.3'
         # Compiles the project for the specified version.
 
+.EXAMPLE
+    Invoke-Build -Task Build -Version '1.2.3' -PreRelease 'rc1'
+        # Compiles the project for the specified version.
+
+.EXAMPLE
     Invoke-Build -Task Test
         # Runs tests on the project, including Pester tests.
 
+.EXAMPLE
     Invoke-Build -Task Docs
         # Builds and serves the documentation locally.
 
@@ -94,6 +114,15 @@
 param(
     [string]
     $Version = '0.0.0',
+
+    [string]
+    $PreRelease,
+
+    [string]
+    $ApiUsername,
+
+    [string]
+    $ApiPassword,
 
     [string]
     [ValidateSet('None', 'Normal' , 'Detailed', 'Diagnostic')]
@@ -129,9 +158,10 @@ $Versions = @{
     Pester      = '6.0.0'
     MkDocs      = '1.6.1'
     DotNet      = $SdkVersion
-    MkDocsTheme = '9.7.6'
+    MkDocsTheme = '9.7.7'
     PlatyPS     = '0.14.2'
     Yarn        = '1.22.22'
+    Mike        = '2.2.0'
 }
 
 
@@ -458,27 +488,34 @@ function Invoke-PodeBuildDotnetBuild {
 
     # Determine if the target framework is compatible
     if ($dotnetVersion -ge $requiredSdkVersion) {
-        Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
+        Write-Output "SDK for target framework '$($target)' is compatible with the '$($AvailableSdkVersion)' framework."
     }
     else {
-        Write-Warning "SDK for target framework '$target' is not compatible with the '$AvailableSdkVersion' framework. Skipping build."
+        Write-Warning "SDK for target framework '$($target)' is not compatible with the '$($AvailableSdkVersion)' framework. Skipping build."
         return
     }
 
     # Optionally set assembly version
+    $AssemblyVersion = [string]::Empty
+    $AssemblyPreRelease = [string]::Empty
+
     if ($Version) {
-        Write-Output "Assembly Version: $Version"
-        $AssemblyVersion = "-p:Version=$Version"
-    }
-    else {
-        $AssemblyVersion = ''
+        if ($PreRelease) {
+            Write-Output "Assembly Version: $($Version)-$($PreRelease)"
+            $AssemblyVersion = "-p:VersionPrefix=$($Version)"
+            $AssemblyPreRelease = "-p:VersionSuffix=$($PreRelease)"
+        }
+        else {
+            Write-Output "Assembly Version: $($Version)"
+            $AssemblyVersion = "-p:Version=$($Version)"
+        }
     }
 
     # restore dependencies
     dotnet restore
 
     # Use dotnet publish for .NET Core and .NET 5+
-    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
+    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion $AssemblyPreRelease --output ../Libs/$target
 
     if (!$?) {
         throw "Build failed for target framework '$target'."
@@ -809,7 +846,7 @@ function Get-PodeBuildCurrentPwshVersion {
     Builds a Docker image and tags it for the Pode project.
 
 .DESCRIPTION
-    This function uses the Docker CLI to build an image for Pode, then tags it for GitHub Packages.
+    This function uses the Docker CLI to build an image for Pode.
     The function takes a tag and a Dockerfile path as parameters to build and tag the Docker image.
 
 .PARAMETER Tag
@@ -829,6 +866,7 @@ function Invoke-PodeBuildDockerBuild {
     param (
         [string]
         $Tag,
+
         [string]
         $File
     )
@@ -838,11 +876,33 @@ function Invoke-PodeBuildDockerBuild {
     if (!$?) {
         throw "docker build failed for $($Tag)"
     }
+}
 
-    # Tag the image for GitHub Packages
-    docker tag badgerati/pode:$Tag docker.pkg.github.com/badgerati/pode/pode:$Tag
+<#
+.SYNOPSIS
+    Deploys a Docker image for the Pode project.
+
+.DESCRIPTION
+    This function pushes a Docker image to the Docker registry using the specified tag.
+    It assumes that the image has already been built and tagged appropriately.
+
+.PARAMETER Tag
+    The Docker image tag to push (e.g., 'latest', '1.0.0').
+
+.EXAMPLE
+    Invoke-PodeBuildDockerDeploy -Tag '1.0.0'
+    # Pushes the Docker image 'badgerati/pode:1.0.0' to the Docker registry.
+#>
+function Invoke-PodeBuildDockerDeploy {
+    param (
+        [string]
+        $Tag
+    )
+
+    # Deploy the Docker image with the specified tag
+    docker push badgerati/pode:$Tag
     if (!$?) {
-        throw "docker tag failed for $($Tag)"
+        throw "docker push failed for $($Tag)"
     }
 }
 
@@ -899,7 +959,7 @@ function Invoke-PodeBuildPester {
     )
 
     $results = Invoke-Pester -Configuration $Configuration
-    if ($results.FailedCount -gt 0) {
+    if (($results.FailedCount + $results.FailedBlocksCount + $results.FailedContainersCount) -gt 0) {
         throw "$($results.FailedCount) tests failed."
     }
 }
@@ -957,16 +1017,52 @@ Add-BuildTask Default {
 
 # Synopsis: Stamps the version onto the Module
 Add-BuildTask StampVersion {
+    # update PSD1
     $pwshVersions = Get-PodeBuildPwshEOL
-    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) } | Set-Content ./pkg/Pode.psd1
-    (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
-    (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
-    (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
+
+    $lblPreRelease = [string]::Empty
+    if ($PreRelease) {
+        $lblPreRelease = "Prerelease = '$($PreRelease)'"
+    }
+
+    (Get-Content ./pkg/Pode.psd1) | ForEach-Object {
+        $_ -replace '\$version\$', $Version `
+            -replace '\$versionsUntested\$', $pwshVersions.eol `
+            -replace '\$versionsSupported\$', $pwshVersions.supported `
+            -replace '\$buildyear\$', ([datetime]::Now.Year) `
+            -replace '#\s*\$prerelease\$', $lblPreRelease
+    } | Set-Content ./pkg/Pode.psd1
+
+    # update internal PSD1
+    (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object {
+        $_ -replace '\$version\$', $Version `
+            -replace '#\s*\$prerelease\$', $lblPreRelease
+    } | Set-Content ./pkg/Pode.Internal.psd1
+
+    # update Choco Nuspec
+    $chocoVersion = $Version
+    if ($PreRelease) {
+        $chocoVersion = "$($Version)-$($PreRelease)"
+    }
+
+    (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object {
+        $_ -replace '\$version\$', $chocoVersion
+    } | Set-Content ./packers/choco/pode.nuspec
+
+    # update Choco Install
+    (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object {
+        $_ -replace '\$version\$', $Version
+    } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
 }
 
 # Synopsis: Generating a Checksum of the Zip
 Add-BuildTask PrintChecksum {
-    $Script:Checksum = (Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
+    $zipVer = $Version
+    if ($PreRelease) {
+        $zipVer = "$($Version)-$($PreRelease)"
+    }
+
+    $Script:Checksum = (Get-FileHash "./deliverable/$($zipVer)-Binaries.zip" -Algorithm SHA256).Hash
     Write-Host "Checksum: $($Checksum)"
 }
 
@@ -1037,9 +1133,17 @@ Add-BuildTask DocsDeps ChocoDeps, {
         Invoke-PodeBuildInstall 'mkdocs' $Versions.MkDocs
     }
 
+    # get list of install packages for python
     $_installed = (pip list --format json --disable-pip-version-check | ConvertFrom-Json)
+
+    # install mkdocs-material theme
     if (($_installed | Where-Object { $_.name -ieq 'mkdocs-material' -and $_.version -ieq $Versions.MkDocsTheme } | Measure-Object).Count -eq 0) {
         pip install "mkdocs-material==$($Versions.MkDocsTheme)" --force-reinstall --disable-pip-version-check --quiet
+    }
+
+    # install mike
+    if (($_installed | Where-Object { $_.name -ieq 'mike' -and $_.version -ieq $Versions.Mike } | Measure-Object).Count -eq 0) {
+        pip install "mike==$($Versions.Mike)" --force-reinstall --disable-pip-version-check
     }
 
     # install platyps
@@ -1219,15 +1323,50 @@ Add-BuildTask Compress PackageFolder, StampVersion, DeliverableFolder, {
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
+
+    $zipVer = $Version
+    if ($PreRelease) {
+        $zipVer = "$($Version)-$($PreRelease)"
+    }
+
     # create the pkg dir
     New-Item -Path $path -ItemType Directory -Force | Out-Null
-    Compress-Archive -Path './pkg/*' -DestinationPath "$path/$Version-Binaries.zip"
+    Compress-Archive -Path './pkg/*' -DestinationPath "$($path)/$($zipVer)-Binaries.zip"
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
 Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) ChocoDeps, PackageFolder, StampVersion, DeliverableFolder, {
     exec { choco pack ./packers/choco/pode.nuspec }
-    Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
+
+    $chocoVer = $Version
+    if ($PreRelease) {
+        $chocoVer = "$($Version)-$($PreRelease)"
+    }
+
+    Move-Item -Path "pode.$($chocoVer).nupkg" -Destination './deliverable'
+}
+
+Add-BuildTask ChocoDeploy -If (Test-PodeBuildIsWindows) {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    $chocoVer = $Version
+    if ($PreRelease) {
+        $chocoVer = "$($Version)-$($PreRelease)"
+    }
+
+    exec { choco push "./deliverable/pode.$($chocoVer).nupkg" --source https://push.chocolatey.org/ --api-key $ApiKey }
+}
+
+# Synopsis: Package up the Module
+Add-BuildTask PowershellPack {
+    $Name = 'Pode'
+    Copy-Item './pkg' "./$($Name)" -Recurse -Force
+}
+
+Add-BuildTask PowershellDeploy {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $Name = 'Pode'
+    Publish-Module -Path "./$($Name)" -Repository 'PSGallery' -NuGetApiKey $ApiKey
 }
 
 # Synopsis: Create docker tags
@@ -1248,22 +1387,60 @@ Add-BuildTask DockerPack PackageFolder, StampVersion, {
         return
     }
 
-    Invoke-PodeBuildDockerBuild -Tag $Version -File './Dockerfile'
-    Invoke-PodeBuildDockerBuild -Tag 'latest' -File './Dockerfile'
-    Invoke-PodeBuildDockerBuild -Tag "$Version-alpine" -File './alpine.dockerfile'
-    Invoke-PodeBuildDockerBuild -Tag 'latest-alpine' -File './alpine.dockerfile'
+    $strVersion = $Version
+    $strLatest = 'latest'
+
+    if ($PreRelease) {
+        $strVersion = "$($Version)-$($PreRelease)"
+        $strLatest = 'preview'
+    }
+
+    Invoke-PodeBuildDockerBuild -Tag $strVersion -File './Dockerfile'
+    Invoke-PodeBuildDockerBuild -Tag $strLatest -File './Dockerfile'
+    Invoke-PodeBuildDockerBuild -Tag "$($strVersion)-alpine" -File './alpine.dockerfile'
+    Invoke-PodeBuildDockerBuild -Tag "$($strLatest)-alpine" -File './alpine.dockerfile'
 
     if (!(Test-PodeBuildIsGitHub)) {
-        Invoke-PodeBuildDockerBuild -Tag "$Version-arm32" -File './arm32.dockerfile'
-        Invoke-PodeBuildDockerBuild -Tag 'latest-arm32' -File './arm32.dockerfile'
+        Invoke-PodeBuildDockerBuild -Tag "$($strVersion)-arm32" -File './arm32.dockerfile'
+        Invoke-PodeBuildDockerBuild -Tag "$($strLatest)-arm32" -File './arm32.dockerfile'
     }
     else {
         Write-Warning 'Docker images for ARM32 are not built on GitHub runners due to having the wrong OS architecture. Skipping.'
     }
 }
 
+# Synopsis: Deploy docker tags
+Add-BuildTask DockerDeploy {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    try {
+        # Try to login to docker
+        docker login -u $ApiUsername -p $ApiKey
+    }
+    catch {
+        # If Docker is not available, exit the task
+        Write-Warning 'Docker is not installed or not available in the PATH. Exiting task.'
+        return
+    }
+
+    $strVersion = $Version
+    $strLatest = 'latest'
+
+    if ($PreRelease) {
+        $strVersion = "$($Version)-$($PreRelease)"
+        $strLatest = 'preview'
+    }
+
+    Invoke-PodeBuildDockerDeploy -Tag $strVersion
+    Invoke-PodeBuildDockerDeploy -Tag $strLatest
+    Invoke-PodeBuildDockerDeploy -Tag "$($strVersion)-alpine"
+    Invoke-PodeBuildDockerDeploy -Tag "$($strLatest)-alpine"
+    Invoke-PodeBuildDockerDeploy -Tag "$($strVersion)-arm32"
+    Invoke-PodeBuildDockerDeploy -Tag "$($strLatest)-arm32"
+}
+
 # Synopsis: Package up the Module
-Add-BuildTask Pack Compress, ChocoPack, DockerPack
+Add-BuildTask Pack Compress, PowershellPack, ChocoPack, DockerPack
 
 # Synopsis: Package up the Module into a /pkg folder
 Add-BuildTask PackageFolder Build, {
@@ -1430,7 +1607,7 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
                 $line = $_
 
-                while ($line -imatch '(?<func>\[`(?<name>[a-z]+\-pode[a-z]+)`\])([^(])') {
+                while ($line -imatch '(?<func>\[`(?<name>[a-z]+\-pode[a-z0-9]+)`\])([^(])') {
                     $updated = $true
                     $func = $Matches['func']
                     $name = $Matches['name']
@@ -1447,6 +1624,17 @@ Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
 
     # remove the module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
+}
+
+# Synopsis: Deploy the documentation
+Add-BuildTask DocsDeploy DocsDeps, DocsHelpBuild, {
+    $alias = 'latest'
+    if ($PreRelease) {
+        $alias = 'dev'
+    }
+
+    git fetch origin gh-pages --depth=1
+    mike deploy --push --update-aliases $Version $alias
 }
 
 # Synopsis: Build the documentation
@@ -1730,7 +1918,7 @@ Add-BuildTask SetupPowerShell {
 #>
 
 # Synopsis: Build the Release Notes
-task ReleaseNotes {
+Add-BuildTask ReleaseNotes {
     if ([string]::IsNullOrWhiteSpace($ReleaseNoteVersion)) {
         Write-Host 'Please provide a ReleaseNoteVersion' -ForegroundColor Red
         return

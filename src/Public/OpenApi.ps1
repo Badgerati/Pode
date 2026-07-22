@@ -790,7 +790,7 @@ function Remove-PodeOAResponse {
 
 .PARAMETER AllowNonStandardBody
     Allows methods like DELETE and GET to include a request body, which is generally discouraged by RFC 7231.
-    This can be used to relax the default restriction and enable a body for HTTP methods that don’t typically support it.
+    This can be used to relax the default restriction and enable a body for HTTP methods that don't typically support it.
 
 .PARAMETER PassThru
     If specified, returns the original route object for additional chaining after setting the request properties.

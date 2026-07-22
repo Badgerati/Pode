@@ -2,7 +2,9 @@ namespace Pode.Utilities.Logging
 {
     public interface IPodeLogItem
     {
-        object Items { get; set; }
-        object RawItems { get; set; }
+        object Data { get; }
+        IPodeLogEvent Event { get; }
+
+        string ToString();
     }
 }

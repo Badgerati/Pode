@@ -28,7 +28,7 @@ namespace Pode.Protocols.Common.Responses
 
         public IList<object> Get(string name)
         {
-            return Headers.TryGetValue(name, out IList<object> value) ? value : default(IList<object>);
+            return Headers.TryGetValue(name, out IList<object> value) ? value : default;
         }
 
         public void Set(string name, object value)
@@ -63,6 +63,5 @@ namespace Pode.Protocols.Common.Responses
         {
             Headers.Clear();
         }
-
     }
 }

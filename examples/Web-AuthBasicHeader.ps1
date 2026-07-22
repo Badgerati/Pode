@@ -57,7 +57,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # enable error logging
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend -UseHeaders -Strict

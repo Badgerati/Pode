@@ -56,8 +56,8 @@ Start-PodeServer -Threads 2 {
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
-    New-PodeLogFileMethod -Name 'requests' | Enable-PodeRequestLogType
-    New-PodeLogTerminalMethod | Enable-PodeErrorLogType
+    New-PodeLogFileMethod -Name 'requests' | Enable-PodeLogRequestType
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # setup bearer auth
     New-PodeAuthScheme -ApiKey -Location $Location | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {

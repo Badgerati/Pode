@@ -1106,15 +1106,15 @@ function Get-PodeDefaultConsole {
         $KeyBindings = @{        # Define custom key bindings for controls.
             Browser   = [System.ConsoleKey]::B            # Open the default browser.
             Help      = [System.ConsoleKey]::F2           # Show/hide help instructions.
-            OpenAPI   = [System.ConsoleKey]::F3            # Show/hide OpenAPI information.
-            Endpoints = [System.ConsoleKey]::F4            # Show/hide endpoints.
+            OpenAPI   = [System.ConsoleKey]::F3           # Show/hide OpenAPI information.
+            Endpoints = [System.ConsoleKey]::F4           # Show/hide endpoints.
             Clear     = [System.ConsoleKey]::L            # Clear the console output.
-            Quiet     = [System.ConsoleKey]::F12           # Toggle quiet mode.
+            Quiet     = [System.ConsoleKey]::F12          # Toggle quiet mode.
             Terminate = [System.ConsoleKey]::C            # Terminate the server.
-            Restart   = [System.ConsoleKey]::F6            # Restart the server.
-            Disable   = [System.ConsoleKey]::F7            # Disable the server.
-            Suspend   = [System.ConsoleKey]::F9          # Suspend the server.
-            Metrics   = [System.ConsoleKey]::F10            # Show Metrics.
+            Restart   = [System.ConsoleKey]::F6           # Restart the server.
+            Disable   = [System.ConsoleKey]::F7           # Disable the server.
+            Suspend   = [System.ConsoleKey]::F9           # Suspend the server.
+            Metrics   = [System.ConsoleKey]::F10          # Show Metrics.
         }
     }
     else {
@@ -1148,9 +1148,9 @@ function Get-PodeDefaultConsole {
             Header            = [System.ConsoleColor]::White      # The server's header section, including the Pode version and timestamp.
             EndpointsHeader   = [System.ConsoleColor]::Yellow     # The header for the endpoints list.
             Endpoints         = [System.ConsoleColor]::Cyan       # The endpoints URLs.
-            EndpointsProtocol = [System.ConsoleColor]::White     # The endpoints protocol.
-            EndpointsFlag     = [System.ConsoleColor]::Gray     # The endpoints flags.
-            EndpointsName     = [System.ConsoleColor]::Magenta     # The endpoints Name.
+            EndpointsProtocol = [System.ConsoleColor]::White      # The endpoints protocol.
+            EndpointsFlag     = [System.ConsoleColor]::Gray       # The endpoints flags.
+            EndpointsName     = [System.ConsoleColor]::Magenta    # The endpoints Name.
             OpenApiUrls       = [System.ConsoleColor]::Cyan       # URLs listed under the OpenAPI information section.
             OpenApiHeaders    = [System.ConsoleColor]::Yellow     # Section headers for OpenAPI information.
             OpenApiTitles     = [System.ConsoleColor]::White      # The OpenAPI "default" title.

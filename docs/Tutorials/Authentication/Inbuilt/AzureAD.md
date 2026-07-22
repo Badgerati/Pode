@@ -61,7 +61,7 @@ When a user accesses your site unauthenticated, they will be to Azure to login, 
 
 ### Password
 
-To setup Azure AD authentcation, but using your own Form login, then you can use the `-InnerScheme` parameter on `New-PodeAuthAzureADScheme`:
+To setup Azure AD authentication, but using your own Form login, then you can use the `-InnerScheme` parameter on `New-PodeAuthAzureADScheme`:
 
 ```powershell
 Start-PodeServer {

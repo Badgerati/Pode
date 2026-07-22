@@ -177,6 +177,13 @@
         'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',
         'Start-PodeSleep',
+        'ConvertTo-PodeString',
+        'Get-PodeServerName',
+        'Get-PodeAppName',
+        'Get-PodeEnvironmentVariable',
+        'Set-PodeEnvironmentVariable',
+        'Test-PodeEnvironmentVariable',
+        'Get-PodeTimestamp',
 
         # routes
         'Add-PodeRoute',
@@ -322,10 +329,10 @@
 
         # logging
         'New-PodeLoggingMethod',
-        'Enable-PodeRequestLogType',
-        'Enable-PodeErrorLogType',
-        'Disable-PodeRequestLogType',
-        'Disable-PodeErrorLogType',
+        'Enable-PodeLogRequestType',
+        'Enable-PodeLogErrorType',
+        'Disable-PodeLogRequestType',
+        'Disable-PodeLogErrorType',
         'Add-PodeLogType',
         'Remove-PodeLogType',
         'Clear-PodeLogTypes',
@@ -340,6 +347,24 @@
         'New-PodeLogCustomMethod',
         'Clear-PodeLogMethods',
         'Remove-PodeLogMethod',
+        'Convert-PodeLogItemToString',
+        'New-PodeLogSyslogInfo',
+        'ConvertTo-PodeSyslog',
+        'Get-PodeLogDefaultFormat',
+        'Get-PodeLogDefaultSerialiseFormat',
+        'Get-PodeLogDefaultSyslogFormat',
+        'New-PodeLogApiMethod',
+        'New-PodeLogAwsMethod',
+        'New-PodeLogAzureMethod',
+        'New-PodeLogDatadogMethod',
+        'New-PodeLogNetworkMethod',
+        'New-PodeLogSplunkMethod',
+        'Set-PodeLogDefaultFormat',
+        'Set-PodeLogDefaultSerialiseFormat',
+        'Set-PodeLogDefaultSyslogFormat',
+        'New-PodeLogW3CInfo',
+        'Add-PodeLogW3CField',
+        'Add-PodeLogW3CCustomField',
 
         # core
         'Start-PodeServer',
@@ -630,6 +655,8 @@
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData       = @{
         PSData       = @{
+            # $prerelease$
+
             # Tags applied to this module. These help with module discovery in online galleries.
             Tags         = @(
                 'powershell', 'web', 'server', 'http', 'https', 'listener', 'rest', 'api', 'tcp',
@@ -651,6 +678,7 @@
             # Release notes for this particular version of the module
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
         }
+
         PwshVersions = @{
             Untested  = '$versionsUntested$'
             Supported = '$versionsSupported$'

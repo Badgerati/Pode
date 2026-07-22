@@ -1,15 +1,17 @@
 # Basics
- <sub><b>!!! Warning</b>
-You can initiate only one server per PowerShell instance. To run multiple servers, start additional PowerShell, or pwsh, sessions. Each session can run its own server. This is fundamental to how Pode operates, so consider it when designing your scripts and infrastructure.</sub>
 
+!!! important
+    You can only initiate one Pode server per PowerShell instance.
 
-While it’s not mandatory, we strongly recommend importing the Pode module with a specified maximum version. This practice helps to prevent potential issues arising from breaking changes introduced in new major versions:
+## Importing
+
+While it's not mandatory, we strongly recommend importing the Pode module with a specified maximum version. This practice helps to prevent potential issues arising from breaking changes introduced in new major versions:
 
 ```powershell
 Import-Module -Name Pode -MaximumVersion 2.99.99
 ```
 
-To further enhance the robustness of your code, consider wrapping the import statement within a try/catch block. This way, if the module fails to load, your script won’t proceed, preventing possible errors or unexpected behavior:
+To further enhance the robustness of your code, consider wrapping the import statement within a try/catch block. This way, if the module fails to load, your script won't proceed, preventing possible errors or unexpected behaviour:
 
 ```powershell
 try {
@@ -20,26 +22,32 @@ try {
 }
 ```
 
-The script for your server should be set in the [`Start-PodeServer`](../../Functions/Core/Start-PodeServer) function, via the `-ScriptBlock` parameter. The following example will listen over HTTP on port 8080, and expose a simple HTML page of running processes at `http://localhost:8080/processes`:
+## Running
+
+To start a new Pode server use [`Start-PodeServer`](../../Functions/Core/Start-PodeServer), and supply your server's logic via the `-ScriptBlock` parameter.
+
+The following example will listen over HTTP on port 8080, and expose a simple Route that returns the host's name at `http://localhost:8080/`:
 
 ```powershell
 Start-PodeServer {
     # attach to port 8080 for http
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 
-    # a simple page for displaying services
-    Add-PodePage -Name 'processes' -ScriptBlock { Get-Process }
+    # a simple route that returns the host's name
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        @{ Name = $env:COMPUTERNAME } | Write-PodeJsonResponse
+    }
 }
 ```
 
 To start the server you can either:
 
 * Directly run the `./server.ps1` script, or
-* If you've created a `package.json` file, ensure the `./server.ps1` script is set as your `main` or `scripts/start`, then just run `pode start` (more [here](../../Getting-Started/CLI))
+* If you created a `package.json` file, ensure the `./server.ps1` script is set as your `main` or `scripts/start`, then just run `pode start` (more [here](../../Getting-Started/CLI))
 
 ## Terminating
 
-Once your Pode server has started, you can terminate it at any time using `Ctrl+C`. If you want to disable your server from being terminated then use the `-DisableTermination` switch on the [`Start-PodeServer`](../../Functions/Core/Start-PodeServer) function.
+Once your Pode server has started, you can terminate it at any time using `Ctrl+C`. If you want to disable your server from being terminated then use the `-DisableTermination` switch on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer).
 
 ## Restarting
 
@@ -47,7 +55,7 @@ You can restart your Pode server by using `Ctrl+R`, or on Unix you can also use 
 
 ## Script from File
 
-You can also define your server's scriptblock in a separate file, and use it via the `-FilePath` parameter on the [`Start-PodeServer`](../../Functions/Core/Start-PodeServer) function.
+You can define your server's scriptblock in a separate file, and load it via the `-FilePath` parameter on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer).
 
 Using this approach there are 2 ways to start you server:
 
@@ -83,13 +91,17 @@ PS> Start-PodeServer -FilePath './File.ps1'
 !!! tip
     Normally when you restart your Pode server any changes to the main scriptblock don't reflect. However, if you reference a file instead, then restarting the server will reload the scriptblock from that file - so any changes will reflect.
 
-## Internationalization
+## App Name
 
-Pode has built-in support for internationalization (i18n). By default, Pode uses the `$PsUICulture` variable to determine the User Interface Culture (UICulture).
+Primarily used by logging, the default application name of your server will be "Pode". You can customise this name via the `-AppName` parameter on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer).
 
-You can enforce a specific localization when importing the Pode module by using the UICulture argument. This argument accepts a culture code, which specifies the language and regional settings to use.
+## Localisation
 
-Here’s an example of how to enforce Korean localization:
+Pode has built-in support for localisation. By default, Pode uses the `$PsUICulture` variable to determine the User Interface Culture (UICulture).
+
+You can enforce a specific localisation when importing the Pode module by using the UICulture argument. This argument accepts a culture code, which specifies the language and regional settings to use.
+
+Here's an example of how to enforce Korean localisation:
 
 ```powershell
 Import-Module -Name Pode -ArgumentList 'ko-KR'

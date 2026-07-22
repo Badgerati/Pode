@@ -26,7 +26,7 @@ function Register-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [PodeServerEventType]
+        [Pode.Utilities.PodeServerEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -81,7 +81,7 @@ function Unregister-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [PodeServerEventType]
+        [Pode.Utilities.PodeServerEventType]
         $Type,
 
         [Parameter(Mandatory = $true)]
@@ -216,7 +216,7 @@ function Clear-PodeEvent {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [PodeServerEventType]
+        [Pode.Utilities.PodeServerEventType]
         $Type
     )
 
