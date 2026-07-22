@@ -155,7 +155,7 @@ param(
 
 # Dependency Versions
 $Versions = @{
-    Pester      = '5.7.1'
+    Pester      = '6.0.0'
     MkDocs      = '1.6.1'
     DotNet      = $SdkVersion
     MkDocsTheme = '9.7.7'
@@ -386,7 +386,7 @@ function Install-PodeBuildModule($name) {
 
     Write-Host "Installing $($name) v$($Versions[$name])"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck -AllowClobber
+    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck -AllowClobber -AllowPrerelease
 }
 
 <#
@@ -1525,10 +1525,11 @@ Add-BuildTask TestNoBuild TestDeps, {
     }
 
     # ensure correct pester version is loaded
+    $pesterModuleVersion = [version]($Versions.Pester -replace '-.*$')
     $p = Get-Command Invoke-Pester
-    if (($null -eq $p) -or ($p.Version -ine $Versions.Pester)) {
+    if (($null -eq $p) -or ($p.Version -ne $pesterModuleVersion)) {
         Remove-Module Pester -Force -ErrorAction Ignore
-        Import-Module Pester -Force -RequiredVersion $Versions.Pester
+        Import-Module Pester -Force -RequiredVersion $pesterModuleVersion
     }
 
     # set UICulture if specified

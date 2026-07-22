@@ -16,26 +16,26 @@ InModuleScope -ModuleName 'Pode' {
         Context 'Valid parameters' {
             It 'Adds single IP address' {
                 Add-PodeLimitRule -Type 'IP' -Values '127.0.0.1' -Limit 1 -Seconds 1
-                Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
-                Assert-MockCalled Add-PodeLimitRateRule -Times 1 -Scope It
+                Should -Invoke New-PodeLimitIPComponent -Times 1 -Scope It
+                Should -Invoke Add-PodeLimitRateRule -Times 1 -Scope It
             }
 
             It 'Adds single subnet' {
                 Add-PodeLimitRule -Type 'IP' -Values '10.10.0.0/24' -Limit 1 -Seconds 1
-                Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
-                Assert-MockCalled Add-PodeLimitRateRule -Times 1 -Scope It
+                Should -Invoke New-PodeLimitIPComponent -Times 1 -Scope It
+                Should -Invoke Add-PodeLimitRateRule -Times 1 -Scope It
             }
 
             It 'Adds 3 IP addresses' {
                 Add-PodeLimitRule -Type 'IP' -Values @('127.0.0.1', '127.0.0.2', '127.0.0.3') -Limit 1 -Seconds 1
-                Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
-                Assert-MockCalled Add-PodeLimitRateRule -Times 1 -Scope It
+                Should -Invoke New-PodeLimitIPComponent -Times 1 -Scope It
+                Should -Invoke Add-PodeLimitRateRule -Times 1 -Scope It
             }
 
             It 'Adds 3 subnets' {
                 Add-PodeLimitRule -Type 'IP' -Value @('10.10.0.0/24', '10.10.1.0/24', '10.10.2.0/24') -Limit 1 -Seconds 1
-                Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
-                Assert-MockCalled Add-PodeLimitRateRule -Times 1 -Scope It
+                Should -Invoke New-PodeLimitIPComponent -Times 1 -Scope It
+                Should -Invoke Add-PodeLimitRateRule -Times 1 -Scope It
             }
         }
     }
@@ -48,26 +48,26 @@ InModuleScope -ModuleName 'Pode' {
         Context 'Valid parameters' {
             It 'Adds single IP address' {
                 Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values '127.0.0.1'
-                Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
-                Assert-MockCalled Add-PodeLimitAccessRule -Times 1 -Scope It
+                Should -Invoke New-PodeLimitIPComponent -Times 1 -Scope It
+                Should -Invoke Add-PodeLimitAccessRule -Times 1 -Scope It
             }
 
             It 'Adds single subnet' {
                 Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values '10.10.0.0/24'
-                Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
-                Assert-MockCalled Add-PodeLimitAccessRule -Times 1 -Scope It
+                Should -Invoke New-PodeLimitIPComponent -Times 1 -Scope It
+                Should -Invoke Add-PodeLimitAccessRule -Times 1 -Scope It
             }
 
             It 'Adds 3 IP addresses' {
                 Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values @('127.0.0.1', '127.0.0.2', '127.0.0.3')
-                Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
-                Assert-MockCalled Add-PodeLimitAccessRule -Times 1 -Scope It
+                Should -Invoke New-PodeLimitIPComponent -Times 1 -Scope It
+                Should -Invoke Add-PodeLimitAccessRule -Times 1 -Scope It
             }
 
             It 'Adds 3 subnets' {
                 Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values @('10.10.0.0/24', '10.10.1.0/24', '10.10.2.0/24')
-                Assert-MockCalled New-PodeLimitIPComponent -Times 1 -Scope It
-                Assert-MockCalled Add-PodeLimitAccessRule -Times 1 -Scope It
+                Should -Invoke New-PodeLimitIPComponent -Times 1 -Scope It
+                Should -Invoke Add-PodeLimitAccessRule -Times 1 -Scope It
             }
         }
     }
@@ -80,8 +80,8 @@ InModuleScope -ModuleName 'Pode' {
 
             Enable-PodeCsrfMiddleware
 
-            Assert-MockCalled New-PodeMiddleware -Times 1 -Scope It
-            Assert-MockCalled Add-PodeMiddleware -Times 1 -Scope It
+            Should -Invoke New-PodeMiddleware -Times 1 -Scope It
+            Should -Invoke Add-PodeMiddleware -Times 1 -Scope It
         }
     }
 
@@ -315,7 +315,7 @@ InModuleScope -ModuleName 'Pode' {
 
             Set-PodeCsrfSecret -Secret 'some-secret'
 
-            Assert-MockCalled Set-PodeCookie -Times 1 -Scope It
+            Should -Invoke Set-PodeCookie -Times 1 -Scope It
         }
     }
 
@@ -342,7 +342,7 @@ InModuleScope -ModuleName 'Pode' {
 
             Get-PodeCsrfSecret | Should -Be 'some-secret'
 
-            Assert-MockCalled Get-PodeCookie -Times 1 -Scope It
+            Should -Invoke Get-PodeCookie -Times 1 -Scope It
         }
     }
 }

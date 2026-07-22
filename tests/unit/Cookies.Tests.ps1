@@ -47,7 +47,7 @@ InModuleScope -ModuleName 'Pode' {
             }
 
             { Test-PodeCookieSigned -Name 'test' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeCookieSigned'
-            Assert-MockCalled Invoke-PodeValueUnsign -Times 0 -Scope It
+            Should -Invoke Invoke-PodeValueUnsign -Times 0 -Scope It
         }
 
         It 'Returns false for invalid signed cookie' {
@@ -59,7 +59,7 @@ InModuleScope -ModuleName 'Pode' {
             }
 
             Test-PodeCookieSigned -Name 'test' -Secret 'key' | Should -Be $false
-            Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
+            Should -Invoke Invoke-PodeValueUnsign -Times 1 -Scope It
         }
 
         It 'Returns true for valid signed cookie' {
@@ -71,7 +71,7 @@ InModuleScope -ModuleName 'Pode' {
             }
 
             Test-PodeCookieSigned -Name 'test' -Secret 'key' | Should -Be $true
-            Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
+            Should -Invoke Invoke-PodeValueUnsign -Times 1 -Scope It
         }
 
         It 'Returns true for valid signed cookie, using global secret' {
@@ -91,7 +91,7 @@ InModuleScope -ModuleName 'Pode' {
             }
 
             Test-PodeCookieSigned -Name 'test' -Secret (Get-PodeCookieSecret -Global) | Should -Be $true
-            Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
+            Should -Invoke Invoke-PodeValueUnsign -Times 1 -Scope It
         }
     }
 
@@ -137,7 +137,7 @@ InModuleScope -ModuleName 'Pode' {
             $c | Should -Not -Be $null
             $c.Value | Should -Be 'example'
 
-            Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
+            Should -Invoke Invoke-PodeValueUnsign -Times 1 -Scope It
         }
 
         It 'Returns a cookie, with secret but valid signed' {
@@ -152,7 +152,7 @@ InModuleScope -ModuleName 'Pode' {
             $c | Should -Not -Be $null
             $c.Value | Should -Be 'some-id'
 
-            Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
+            Should -Invoke Invoke-PodeValueUnsign -Times 1 -Scope It
         }
 
         It 'Returns a cookie, with secret but valid signed, using global secret' {
@@ -175,7 +175,7 @@ InModuleScope -ModuleName 'Pode' {
             $c | Should -Not -Be $null
             $c.Value | Should -Be 'some-id'
 
-            Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
+            Should -Invoke Invoke-PodeValueUnsign -Times 1 -Scope It
         }
     }
 
@@ -235,7 +235,7 @@ InModuleScope -ModuleName 'Pode' {
             $h = $WebEvent.Response.Headers['Set-Cookie']
             $h | Should -Not -Be $null
 
-            Assert-MockCalled Invoke-PodeValueSign -Times 1 -Scope It
+            Should -Invoke Invoke-PodeValueSign -Times 1 -Scope It
         }
 
         It 'Adds signed cookie to response' {
@@ -272,7 +272,7 @@ InModuleScope -ModuleName 'Pode' {
             $h = $WebEvent.Response.Headers['Set-Cookie']
             $h | Should -Not -Be $null
 
-            Assert-MockCalled Invoke-PodeValueSign -Times 1 -Scope It
+            Should -Invoke Invoke-PodeValueSign -Times 1 -Scope It
         }
 
         It 'Adds cookie to response with options' {

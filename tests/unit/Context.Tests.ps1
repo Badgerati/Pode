@@ -528,7 +528,7 @@ InModuleScope -ModuleName 'Pode' {
 
             It 'Returns null for no shared state in context' {
                 Import-PodeModule -Path 'file.txt'
-                Assert-MockCalled Import-Module -Times 1 -Scope It
+                Should -Invoke Import-Module -Times 1 -Scope It
             }
         }
     }
