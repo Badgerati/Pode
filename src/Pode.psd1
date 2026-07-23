@@ -365,6 +365,17 @@
         'New-PodeLogW3CInfo',
         'Add-PodeLogW3CField',
         'Add-PodeLogW3CCustomField',
+        'New-PodeLogTerminalOverride',
+        'New-PodeLogEventViewerOverride',
+        'New-PodeLogFileOverride',
+        'New-PodeLogApiOverride',
+        'New-PodeLogAwsOverride',
+        'New-PodeLogAzureOverride',
+        'New-PodeLogDatadogOverride',
+        'New-PodeLogNetworkOverride',
+        'New-PodeLogSplunkOverride',
+        'New-PodeLogCustomOverride',
+        'Get-PodeLogOverride',
 
         # core
         'Start-PodeServer',

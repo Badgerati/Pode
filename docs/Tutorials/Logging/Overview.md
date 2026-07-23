@@ -5,28 +5,28 @@ There are two aspects to logging in Pode: Types and Methods.
 * **Types** define how log items are transformed, serialised, and/or formatted, and what should be supplied to the Method, such as Error or Request.
 * **Methods** define how the transformed log items should be recorded, such as to a file, terminal, or event viewer.
 
-Think of it like the phases of an ETL data pipeline:
+Think of it like the phases of an ETL data pipeline, but more defined as "Event", "Transform", and "Log":
 
 ```mermaid
 graph LR
-    Extract("`**Log Item**
-    (Extract)`")
+    Event("`**Log Item**
+    (Event)`")
 
     Transform("`**Type**
     (Transform)`")
 
-    Load("`**Method**
-    (Load)`")
+    Log("`**Method**
+    (Log)`")
 
-    Extract --> Transform
-    Transform --> Load
+    Event --> Transform
+    Transform --> Log
 ```
 
 | Phase     | Description                                                                    |
 | --------- | ------------------------------------------------------------------------------ |
-| Extract   | The originating log item, for example from `Write-PodeErrorLog`                |
+| Event     | The originating log item, for example from `Write-PodeErrorLog`                |
 | Transform | The log item is transformed by the Log Type, for example serialisation         |
-| Load      | The resultant log message is outputted via a Log Method, for example to a file |
+| Log       | The resultant log message is outputted via a Log Method, for example to a file |
 
 For example when you supply an Exception to [`Write-PodeErrorLog`](../../../Functions/Logging/Write-PodeErrorLog), the Exception is passed to Pode's inbuilt Error Log Type which transforms it into a string; which is then passed to a Log Method - like a File or Terminal - to be outputted/recorded.
 
@@ -36,6 +36,12 @@ Pode has several built-in Log Methods for you to use:
 * [File](../Methods/File)
 * [Event Viewer](../Methods/EventViewer)
 * [Custom](../Methods/Custom)
+* [API](../Methods/API)
+* [Splunk](../Methods/Splunk)
+* [Datadog](../Methods/Datadog)
+* [Azure](../Methods/Azure)
+* [AWS](../Methods/AWS)
+* [Network](../Methods/Network)
 
 As well as some built-in Log Types:
 

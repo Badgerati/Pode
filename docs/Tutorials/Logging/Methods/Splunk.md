@@ -22,6 +22,27 @@ The default source for your logs sent by Pode is the [Server's App Name](../../.
 
 The default index supplied by Pode is empty, which usually equates to the main index in Splunk. However, if you wish to supply an explicit index you can do so via the `-Index` parameter.
 
+## Override
+
+You can use [`New-PodeLogSplunkOverride`](../../../../Functions/Logging/New-PodeLogSplunkOverride) to override certain properties of the Splunk Log Method, when calling either [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog) or [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
+
+You can override the `-Source`, `-SourceType`, and `-Index`, as well as specify `-Ignore`, which allows you to specify that certain log items will not be logged to Splunk.
+
+If you don't specify an `-Id` then the override will apply to all Splunk Log Methods configured for a Log Type.
+
+```powershell
+# override the Index when logging to Splunk
+$_ | Write-PodeErrorLog -Override @(
+    New-PodeLogSplunkOverride -Index 'custom_index'
+)
+
+# if you have an error log method configured with splunk and terminal logging,
+# the below will only log the error to the terminal and ignore logging to splunk
+$_ | Write-PodeErrorLog -Override @(
+    New-PodeLogSplunkOverride -Ignore
+)
+```
+
 ## Examples
 
 ### Send Request Logs

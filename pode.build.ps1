@@ -155,7 +155,7 @@ param(
 
 # Dependency Versions
 $Versions = @{
-    Pester      = '6.0.0'
+    Pester      = '6.0.1'
     MkDocs      = '1.6.1'
     DotNet      = $SdkVersion
     MkDocsTheme = '9.7.7'
@@ -1354,7 +1354,7 @@ Add-BuildTask ChocoDeploy -If (Test-PodeBuildIsWindows) {
         $chocoVer = "$($Version)-$($PreRelease)"
     }
 
-    exec { choco push "./deliverable/pode.$($chocoVer).nupkg" --source https://push.chocolatey.org/ --api-key $ApiKey }
+    exec { choco push "./deliverable/pode.$($chocoVer).nupkg" --source https://push.chocolatey.org/ --api-key $ApiPassword }
 }
 
 # Synopsis: Package up the Module
@@ -1366,7 +1366,7 @@ Add-BuildTask PowershellPack {
 Add-BuildTask PowershellDeploy {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $Name = 'Pode'
-    Publish-Module -Path "./$($Name)" -Repository 'PSGallery' -NuGetApiKey $ApiKey
+    Publish-Module -Path "./$($Name)" -Repository 'PSGallery' -NuGetApiKey $ApiPassword
 }
 
 # Synopsis: Create docker tags
@@ -1415,7 +1415,7 @@ Add-BuildTask DockerDeploy {
 
     try {
         # Try to login to docker
-        docker login -u $ApiUsername -p $ApiKey
+        docker login -u $ApiUsername -p $ApiPassword
     }
     catch {
         # If Docker is not available, exit the task

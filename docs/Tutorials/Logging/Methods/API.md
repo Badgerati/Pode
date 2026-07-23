@@ -22,8 +22,8 @@ New-PodeLogApiMethod -Url '<url>' -Headers $headers -Compress -BodyScriptBlock {
 
     $events = @(foreach $logItem in $logItems) {
         @{
-            message = $logItem.Data
-            level   = $logItem.Event.Level
+            message   = $logItem.Data
+            level     = $logItem.Event.Level
             timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
         }
     }
@@ -61,6 +61,68 @@ New-PodeLogApiMethod ... -HeadersScriptBlock {
     return @{
         Timestamp = [datetime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
     }
+}
+```
+
+## Override
+
+You can use [`New-PodeLogApiOverride`](../../../../Functions/Logging/New-PodeLogApiOverride) to override certain properties of an API Log Method, when calling either [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog) or [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
+
+You can specify a hashtable of custom properties via `-Data`, as well as specify `-Ignore`, which allows you to specify that certain log items will not be logged via the API.
+
+If you don't specify an `-Id` then the override will apply to all API Log Methods configured for a Log Type.
+
+```powershell
+# supply custom override properties for an API Log Method
+$_ | Write-PodeErrorLog -Override @(
+    New-PodeLogApiOverride -Data @{
+        Key1 = 'Value1'
+        Key2 = 'Value2'
+    }
+)
+
+# if you have an error log method configured with API and terminal logging,
+# the below will only log the error to the terminal and ignore logging via API
+$_ | Write-PodeErrorLog -Override @(
+    New-PodeLogApiOverride -Ignore
+)
+```
+
+Within your `-BodyScriptBlock` for your API Log Method, you can retrieve the override data for a Log Event using [`Get-PodeLogOverride`](../../../../Functions/Logging/Get-PodeLogOverride):
+
+```powershell
+# setup the method
+$headers = @{
+    Authorization = "Bearer $($your_token)"
+}
+
+New-PodeLogApiMethod -Url '<url>' -Headers $headers -Compress -BodyScriptBlock {
+    param($logItems)
+
+    $events = @(foreach $logItem in $logItems) {
+        # get override data
+        $override = Get-PodeLogOverride -LogEvent $logItem.Event
+
+        # define the event item, using a service override if available
+        @{
+            message   = $logItem.Data
+            level     = $logItem.Event.Level
+            timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+            service   = Protect-PodeValue -Value $override.Data.Service -Default 'Website'
+        }
+    }
+
+    return $events | ConvertTo-Json -Compress -Depth 10
+} | Enable-PodeLogErrorType
+
+# log to it
+try {
+    # ...
+}
+catch {
+    $_ | Write-PodeErrorLog -Override @(
+        New-PodeLogApiOverride -Data @{ Service = 'Portal' }
+    )
 }
 ```
 

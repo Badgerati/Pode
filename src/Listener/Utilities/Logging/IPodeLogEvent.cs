@@ -9,6 +9,9 @@ namespace Pode.Utilities.Logging
         PodeLogLevel Level { get; }
         DateTime Timestamp { get; }
         Hashtable Metadata { get; }
+        Hashtable Overrides { get; }
         object Data { get; }
+
+        Hashtable GetOverride(string id, string type);
     }
 }

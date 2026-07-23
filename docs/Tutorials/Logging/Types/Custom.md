@@ -46,6 +46,40 @@ You can alter the log level by supplying `-Levels` to [`Add-PodeLogType`](../../
 
 You can control the log level of custom log items being written, by supplying `-Level` to [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog) - Informational being the default.
 
+## Override Methods
+
+[`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog) has an `-Override` parameter, which allows you to override certain properties of certain Log Methods - or to ignore certain Log Methods from logging items if required (if you have multiple Log Methods configured for Custom logging).
+
+For more information, refer to the "Override" sections of the specific Log Methods.
+
+An example would be Event Viewer; normally when you configure the Event Viewer Log Method you supply an Event ID, and every log item sent to Event Viewer using that Log Method uses the same Event ID. But there could be times you require different Event IDs, in which case you would use [`New-PodeLogEventViewerOverride`](../../../../Functions/Logging/New-PodeLogEventViewerOverride) and supply the result the [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
+
+```powershell
+# setup main Event Viewer method for Custom logging
+# all logs will be given an Event ID of 1000
+New-PodeLogEventViewerMethod -EventID 1000 | Add-PodeLogType -Name 'Main' -Version 2 -SerialiseFormat Json -ScriptBlock {
+    param($logEvent)
+    return [ordered]@{
+        Level     = $logEvent.Level
+        Key1      = $logEvent.Data.Key1
+        MergedKey = "$($logEvent.Data.Key2) & $($logEvent.Data.Key3)"
+    }
+}
+
+# ...
+
+# log an item with a custom Event ID of 1337 instead
+$item = @{
+    Key1 = 'Value1'
+    Key2 = 'Value2'
+    Key3 = 'Value3'
+}
+
+Write-PodeLog -Name 'Main' -InputObject $item -Override @(
+    New-PodeLogEventViewerOverride -EventId 1337
+)
+```
+
 ## Examples
 
 ### Log to File
