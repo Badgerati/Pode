@@ -6,13 +6,15 @@ This page describes the various .NET objects that will be supplied to Log Type a
 
 This is typically supplied to custom Log Type scriptblocks. It will be an `IPodeLogEvent` object with the following properties.
 
-| Name      | Type           | Description                                         |
-| --------- | -------------- | --------------------------------------------------- |
-| Data      | `object`       | The raw log data from, for example, `Write-PodeLog` |
-| Name      | `string`       | The name of the Log Type this event is for          |
-| Level     | `PodeLogLevel` | The log level of this event                         |
-| Metadata  | `hashtable`    | Any optionally supplied metadata                    |
-| Timestamp | `datetime`     | The timestamp of this event                         |
+| Name          | Type           | Description                                           |
+| ------------- | -------------- | ----------------------------------------------------- |
+| Data          | `object`       | The raw log data from, for example, `Write-PodeLog`   |
+| Level         | `PodeLogLevel` | The log level of this event                           |
+| Metadata      | `hashtable`    | Any optionally supplied metadata                      |
+| Name          | `string`       | The name of the Log Type this event is for            |
+| Overrides     | `hashtable`    | Any optionally supplied Log Method property overrides |
+| Timestamp     | `datetime`     | The timestamp of this event                           |
+| GetOverride() | `method`       | A utility method for returning Log Method overrides   |
 
 ## Log Item
 

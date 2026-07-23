@@ -104,6 +104,32 @@ Or, a raw string message:
 'Some error message' | Write-PodeErrorLog -Level Warning
 ```
 
+## Override Methods
+
+[`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog) has an `-Override` parameter, which allows you to override certain properties of certain Log Methods - or to ignore certain Log Methods from logging errors if required (if you have multiple Log Methods configured for Error logging).
+
+For more information, refer to the "Override" sections of the specific Log Methods.
+
+An example would be Event Viewer; normally when you configure the Event Viewer Log Method you supply an Event ID, and every error log sent to Event Viewer using that Log Method uses the same Event ID. But there could be times you require different Event IDs, in which case you would use [`New-PodeLogEventViewerOverride`](../../../../Functions/Logging/New-PodeLogEventViewerOverride) and supply the result the [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog).
+
+```powershell
+# setup main Event Viewer method for Error logging
+# all errors will be given an Event ID of 1000
+New-PodeLogEventViewerMethod -EventID 1000 | Enable-PodeLogErrorType
+
+# ...
+
+# log an error with a custom Event ID of 1337 instead
+try {
+    # ...
+}
+catch {
+    $_ | Write-PodeErrorLog -Override @(
+        New-PodeLogEventViewerOverride -EventId 1337
+    )
+}
+```
+
 ## Internal Logging
 
 When error logging is enabled, you'll also see internal logging from Pode. Pode at present has internal Error logging, as well as Debug and Verbose logging from its various Adapters.

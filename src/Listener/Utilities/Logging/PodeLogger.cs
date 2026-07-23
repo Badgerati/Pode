@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using Pode.Protocols.Common.Requests;
@@ -73,7 +74,7 @@ namespace Pode.Utilities.Logging
             RequestLogTypeNames.TryRemove(name, out _);
         }
 
-        public void Add(string logTypeName, PodeLogLevel level, object data, Hashtable metadata = null)
+        public void Add(string logTypeName, PodeLogLevel level, object data, Hashtable metadata = null, List<Hashtable> overrides = null)
         {
             if (IsDisposed || !IsEnabled)
             {
@@ -93,10 +94,10 @@ namespace Pode.Utilities.Logging
             }
 
             // add the log event to the queue
-            Queue.Add(new PodeLogEvent(logType, level, data, metadata));
+            Queue.Add(new PodeLogEvent(logType, level, data, metadata, overrides));
         }
 
-        public void AddException(Exception exception, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0)
+        public void AddException(Exception exception, string contextId, PodeLogLevel level, Hashtable metadata = null, List<Hashtable> overrides = null, int threadId = 0)
         {
             if (exception == null)
             {
@@ -107,15 +108,15 @@ namespace Pode.Utilities.Logging
                 ? podeRequestException.Kind
                 : PodeRequestExceptionKind.Server;
 
-            AddException(exception.Source, exception.Message, exception.StackTrace, contextId, level, kind, metadata, threadId);
+            AddException(exception.Source, exception.Message, exception.StackTrace, contextId, level, kind, metadata, overrides, threadId);
         }
 
-        public void AddException(string message, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, int threadId = 0)
+        public void AddException(string message, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, List<Hashtable> overrides = null, int threadId = 0)
         {
-            AddException(string.Empty, message, string.Empty, contextId, level, kind, metadata, threadId);
+            AddException(string.Empty, message, string.Empty, contextId, level, kind, metadata, overrides, threadId);
         }
 
-        public void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, int threadId = 0)
+        public void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, List<Hashtable> overrides = null, int threadId = 0)
         {
             if (IsDisposed || !IsEnabled || !IsErrorLoggingEnabled)
             {
@@ -183,7 +184,7 @@ namespace Pode.Utilities.Logging
                 };
 
                 // add the log event to the queue
-                Queue.Add(new PodeLogEvent(logType, level, item, metadata));
+                Queue.Add(new PodeLogEvent(logType, level, item, metadata, overrides));
             }
         }
 

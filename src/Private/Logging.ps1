@@ -6,7 +6,11 @@ function Get-PodeLoggingTerminalMethod {
         param(
             [Parameter(Mandatory = $true)]
             [string]
-            $MethodId
+            $MethodId,
+
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodType
         )
 
         if ($PodeContext.Server.Quiet) {
@@ -62,7 +66,11 @@ function Get-PodeLoggingFileMethod {
         param(
             [Parameter(Mandatory = $true)]
             [string]
-            $MethodId
+            $MethodId,
+
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodType
         )
 
         # wait for the server to fully start
@@ -155,7 +163,11 @@ function Get-PodeLoggingEventViewerMethod {
         param(
             [Parameter(Mandatory = $true)]
             [string]
-            $MethodId
+            $MethodId,
+
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodType
         )
 
         # wait for the server to fully start
@@ -178,11 +190,19 @@ function Get-PodeLoggingEventViewerMethod {
                     }
 
                     foreach ($item in $logCol.Items) {
+                        # get any overrides for this method
+                        $override = Get-PodeLogOverride -LogEvent $item.Event
+
                         # convert log level - info if no level present
                         $entryType = ConvertTo-PodeEventViewerLevel -Level $item.Event.Level
 
                         # create log instance
-                        $entryInstance = [System.Diagnostics.EventInstance]::new($method.Arguments.ID, 0, $entryType)
+                        $eventId = [int]$override.EventId
+                        if ($eventId -eq 0) {
+                            $eventId = $method.Arguments.ID
+                        }
+
+                        $entryInstance = [System.Diagnostics.EventInstance]::new($eventId, 0, $entryType)
 
                         # create event log
                         $entryLog = [System.Diagnostics.EventLog]::new()
@@ -226,7 +246,11 @@ function Get-PodeLoggingCustomMethod {
         param(
             [Parameter(Mandatory = $true)]
             [string]
-            $MethodId
+            $MethodId,
+
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodType
         )
 
         # wait for the server to fully start
@@ -293,7 +317,11 @@ function Get-PodeLoggingApiMethod {
         param(
             [Parameter(Mandatory = $true)]
             [string]
-            $MethodId
+            $MethodId,
+
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodType
         )
 
         # wait for the server to fully start
@@ -397,7 +425,11 @@ function Get-PodeLoggingNetworkMethod {
         param(
             [Parameter(Mandatory = $true)]
             [string]
-            $MethodId
+            $MethodId,
+
+            [Parameter(Mandatory = $true)]
+            [string]
+            $MethodType
         )
 
         # wait for the server to fully start
@@ -506,8 +538,11 @@ function New-PodeLogAzureWorkspaceMethod {
                     Timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
                 }
 
+                # get any overrides for this method
+                $override = Get-PodeLogOverride -LogEvent $item.Event
+
                 # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
+                $source = Protect-PodeValue -Value $override.Source -Default $options.Source
                 if (![string]::IsNullOrEmpty($source)) {
                     $evt.Source = $source
                 }
@@ -541,7 +576,7 @@ function New-PodeLogAzureWorkspaceMethod {
         $hmacsha256.Key = $keyBytes
         $signatureBytes = $hmacsha256.ComputeHash($bytesToSign)
         $signature = [System.Convert]::ToBase64String($signatureBytes)
-        $authorizationHeader = "SharedKey $($workspaceId):$($signature)"
+        $authorizationHeader = "SharedKey $($options.WorkspaceId):$($signature)"
 
         return @{
             'Authorization' = $authorizationHeader
@@ -561,7 +596,8 @@ function New-PodeLogAzureWorkspaceMethod {
     }
 
     $headerArgs = @{
-        SharedKey = $SharedKey
+        SharedKey   = $SharedKey
+        WorkspaceId = $WorkspaceId
     }
 
     return New-PodeLogApiMethod `
@@ -634,8 +670,11 @@ function New-PodeLogAzureDataCollectionMethod {
                     TimeGenerated = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
                 }
 
+                # get any overrides for this method
+                $override = Get-PodeLogOverride -LogEvent $item.Event
+
                 # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
+                $source = Protect-PodeValue -Value $override.Source -Default $options.Source
                 if (![string]::IsNullOrEmpty($source)) {
                     $evt.Source = $source
                 }
@@ -1338,7 +1377,19 @@ function Start-PodeLoggingRunspace {
 
     foreach ($methodId in $PodeContext.Server.Logging.Methods.Keys) {
         $method = Get-PodeLogMethod -Id $methodId
-        $method.Runspace = Add-PodeRunspace -Type Logs -Name "Method_$($method.Type)" -ScriptBlock $method.ScriptBlock -Parameters @{ MethodId = $methodId } -PassThru
+
+        $params = @{
+            Type        = 'Logs'
+            Name        = "Method_$($method.Type)"
+            ScriptBlock = $method.ScriptBlock
+            Parameters  = @{
+                MethodId   = $methodId
+                MethodType = $method.Type
+            }
+            PassThru    = $true
+        }
+
+        $method.Runspace = Add-PodeRunspace @params
     }
 
     # start the log dispatcher runspace
@@ -1412,10 +1463,17 @@ function Push-PodeLogItem {
     )
 
     foreach ($logMethodId in $LogType.Method) {
+        # get the log method we need to log to
         $logMethod = Get-PodeLogMethod -Id $logMethodId
-        $batch = $logMethod.Batch
+
+        # check if this event doesn't have an override that ignores this log method
+        $override = Get-PodeLogOverride -LogEvent $LogEvent -Id $logMethodId -Type $logMethod.Type
+        if (($null -ne $override) -and $override.Ignore) {
+            continue
+        }
 
         # add current item to batch
+        $batch = $logMethod.Batch
         $batch.Items.Add([Pode.Utilities.Logging.PodeLogItem]::new($Message, $LogEvent))
 
         # if the batch is full, send to Log Method and reset
@@ -1438,7 +1496,7 @@ function Add-PodeLogMethodInternal {
 
         [Parameter(Mandatory = $true)]
         [hashtable]
-        $Metadata
+        $Config
     )
 
     # generate an ID if not supplied
@@ -1453,21 +1511,33 @@ function Add-PodeLogMethodInternal {
     }
 
     # empty list of Log Types for later associations
-    $Metadata.Types = @()
+    $Config.Types = @()
 
     # add batching info to metadata
-    $Metadata.Batch = $BatchInfo | New-PodeLogBatchConfig
+    $Config.Batch = $BatchInfo | New-PodeLogBatchConfig
 
     # create queue for the method's log items
-    $Metadata.Queue = [Pode.Utilities.Logging.PodeLogQueue[Pode.Utilities.Logging.IPodeLogItemCollection]]::new()
+    $Config.Queue = [Pode.Utilities.Logging.PodeLogQueue[Pode.Utilities.Logging.IPodeLogItemCollection]]::new()
 
     # add method to server
-    $PodeContext.Server.Logging.Methods[$Id] = $Metadata
+    $PodeContext.Server.Logging.Methods[$Id] = $Config
 
     # extend runspace pool, and create runspace for the method - if logging is already running
     if ($PodeContext.Server.Logging.Running) {
         $null = $PodeContext.RunspacePools.Logs.Pool.SetMaxRunspaces($PodeContext.Server.Logging.Methods.Count + 1)
-        $Metadata.Runspace = Add-PodeRunspace -Type Logs -Name "Method_$($Metadata.Type)" -ScriptBlock $Metadata.ScriptBlock -Parameters @{ MethodId = $Id } -PassThru
+
+        $params = @{
+            Type        = 'Logs'
+            Name        = "Method_$($Config.Type)"
+            ScriptBlock = $Config.ScriptBlock
+            Parameters  = @{
+                MethodId   = $Id
+                MethodType = $Config.Type
+            }
+            PassThru    = $true
+        }
+
+        $Config.Runspace = Add-PodeRunspace @params
     }
 
     # return the method ID

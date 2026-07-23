@@ -1086,6 +1086,10 @@ The Level of the error being logged. (Default: Error)
 .PARAMETER Metadata
 An optional hashtable of Metadata to include with the log item.
 
+.PARAMETER Override
+An optional array of override options, to override certain properties of log methods.
+Created using the New-PodeLogEventViewerOverride, etc. functions.
+
 .PARAMETER CheckInnerException
 If supplied, any exceptions are check for inner exceptions. If one is present, this is also logged.
 
@@ -1097,6 +1101,9 @@ try { /* logic */ } catch { $_ | Write-PodeErrorLog }
 
 .EXAMPLE
 Write-PodeErrorLog -Message 'error message' -Level 'Warning'
+
+.EXAMPLE
+Write-PodeErrorLog -Message 'error message' -Override @(New-PodeLogEventViewerOverride -EventId 1337)
 #>
 function Write-PodeErrorLog {
     [CmdletBinding()]
@@ -1122,6 +1129,10 @@ function Write-PodeErrorLog {
         [hashtable]
         $Metadata,
 
+        [Parameter()]
+        [hashtable[]]
+        $Override,
+
         [Parameter(ParameterSetName = 'Exception')]
         [switch]
         $CheckInnerException
@@ -1144,6 +1155,7 @@ function Write-PodeErrorLog {
                     $contextId,
                     $Level,
                     $Metadata,
+                    $Override,
                     [int]$ThreadId
                 )
             }
@@ -1157,6 +1169,7 @@ function Write-PodeErrorLog {
                     $Level,
                     [Pode.Protocols.Common.Requests.PodeRequestExceptionKind]::Server,
                     $Metadata,
+                    $Override,
                     [int]$ThreadId
                 )
             }
@@ -1171,6 +1184,7 @@ function Write-PodeErrorLog {
                     $Level,
                     [Pode.Protocols.Common.Requests.PodeRequestExceptionKind]::Server,
                     $Metadata,
+                    $Override,
                     [int]$ThreadId
                 )
             }
@@ -1178,7 +1192,7 @@ function Write-PodeErrorLog {
 
         # for exceptions, check the inner exception
         if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
-            $Exception.InnerException | Write-PodeErrorLog
+            $Exception.InnerException | Write-PodeErrorLog -Level $Level -Metadata $Metadata -Override $Override
         }
     }
 }
@@ -1202,6 +1216,10 @@ The Object to write.
 .PARAMETER Metadata
 An optional hashtable of Metadata to include with the log item.
 
+.PARAMETER Override
+An optional array of override options, to override certain properties of log methods.
+Created using the New-PodeLogEventViewerOverride, etc. functions.
+
 .EXAMPLE
 $object | Write-PodeLog -Name 'LogTypeName'
 
@@ -1210,6 +1228,9 @@ $object | Write-PodeLog -Name 'LogTypeName1', 'LogTypeName2'
 
 .EXAMPLE
 $object | Write-PodeLog -Name 'LogTypeName' -Level 'Debug' -Metadata @{ Key = 'Value' }
+
+.EXAMPLE
+$object | Write-PodeLog -Name 'LogTypeName' -Override @(New-PodeLogEventViewerOverride -EventId 1337)
 #>
 function Write-PodeLog {
     [CmdletBinding()]
@@ -1229,12 +1250,16 @@ function Write-PodeLog {
 
         [Parameter()]
         [hashtable]
-        $Metadata
+        $Metadata,
+
+        [Parameter()]
+        [hashtable[]]
+        $Override
     )
 
     process {
         foreach ($n in $Name) {
-            $PodeContext.Server.Logging.Logger.Add($n, $Level, $InputObject, $Metadata)
+            $PodeContext.Server.Logging.Logger.Add($n, $Level, $InputObject, $Metadata, $Override)
         }
     }
 }
@@ -1402,10 +1427,49 @@ function New-PodeLogTerminalMethod {
     )
 
     # add method to server
-    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Config @{
         Type        = 'Terminal'
         ScriptBlock = Get-PodeLoggingTerminalMethod
         Arguments   = @{}
+    }
+}
+
+<#
+.SYNOPSIS
+Create new Override options for the Terminal Log Method.
+
+.DESCRIPTION
+Creates new set of override options for the Terminal Log Method.
+
+.PARAMETER Id
+The ID of the Terminal Log Method to override. (Default: 'Terminal')
+
+.PARAMETER Ignore
+Whether to ignore the Terminal Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogTerminalOverride -Ignore
+
+.EXAMPLE
+$override = New-PodeLogTerminalOverride -Id 'TerminalMethod' -Ignore
+#>
+function New-PodeLogTerminalOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [switch]
+        $Ignore
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default 'Terminal'
+
+    return @{
+        Id     = $Id
+        Ignore = $Ignore.IsPresent
     }
 }
 
@@ -1480,7 +1544,7 @@ function New-PodeLogFileMethod {
     $null = New-Item -Path $Path -ItemType Directory -Force
 
     # add method to server
-    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Config @{
         Type        = 'File'
         ScriptBlock = Get-PodeLoggingFileMethod
         Arguments   = @{
@@ -1492,6 +1556,45 @@ function New-PodeLogFileMethod {
             Date          = $null
             NextClearDown = [datetime]::Now.Date
         }
+    }
+}
+
+<#
+.SYNOPSIS
+Create new Override options for the File Log Method.
+
+.DESCRIPTION
+Creates a new set of override options for the File Log Method.
+
+.PARAMETER Id
+The ID of the File Log Method to override. (Default: 'File')
+
+.PARAMETER Ignore
+Whether to ignore the File Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogFileOverride -Ignore
+
+.EXAMPLE
+$override = New-PodeLogFileOverride -Id 'FileMethod' -Ignore
+#>
+function New-PodeLogFileOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [switch]
+        $Ignore
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default 'File'
+
+    return @{
+        Id     = $Id
+        Ignore = $Ignore.IsPresent
     }
 }
 
@@ -1563,7 +1666,7 @@ function New-PodeLogEventViewerMethod {
     }
 
     # add method to server
-    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Config @{
         Type        = 'EventViewer'
         ScriptBlock = Get-PodeLoggingEventViewerMethod
         Arguments   = @{
@@ -1571,6 +1674,56 @@ function New-PodeLogEventViewerMethod {
             Source  = $Source
             ID      = $EventID
         }
+    }
+}
+
+<#
+.SYNOPSIS
+Create new Override options for the Event Viewer Log Method.
+
+.DESCRIPTION
+Creates a new set of override options for the Event Viewer Log Method.
+
+.PARAMETER Id
+The ID of the Event Viewer Log Method to override. (Default: 'EventViewer')
+
+.PARAMETER EventID
+An optional EventID to override the EventID of the Event Viewer Log Method.
+
+.PARAMETER Ignore
+Whether to ignore the Event Viewer Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogEventViewerOverride -Ignore
+
+.EXAMPLE
+$override = New-PodeLogEventViewerOverride -EventID 1337
+
+.EXAMPLE
+$override = New-PodeLogEventViewerOverride -Id 'EventViewerMethod' -EventID 1337
+#>
+function New-PodeLogEventViewerOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [int]
+        $EventID,
+
+        [switch]
+        $Ignore
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default 'EventViewer'
+
+    return @{
+        Id      = $Id
+        EventID = $EventID
+        Ignore  = $Ignore.IsPresent
     }
 }
 
@@ -1653,7 +1806,7 @@ function New-PodeLogCustomMethod {
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add method to server
-    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Config @{
         Type        = 'Custom'
         ScriptBlock = Get-PodeLoggingCustomMethod
         Custom      = @{
@@ -1662,6 +1815,57 @@ function New-PodeLogCustomMethod {
         }
         Arguments   = $ArgumentList
         Version     = $Version
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new set of override options for the Custom Log Method.
+
+.DESCRIPTION
+Creates a new set of override options for the Custom Log Method.
+This allows you to specify custom data for Custom Log Methods, and can be retrieved via Get-PodeLogOverride per Log Event.
+
+.PARAMETER Id
+An optional ID to assign to the Log Method to override. (Default: 'Custom')
+
+.PARAMETER Data
+A hashtable of custom data to associate with the Custom Log Method override.
+
+.PARAMETER Ignore
+Whether to ignore the Custom Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogCustomOverride -Data @{ Key = 'Value' }
+
+.EXAMPLE
+$override = New-PodeLogCustomOverride -Id 'CustomMethod' -Data @{ Key = 'Value' }
+
+.EXAMPLE
+$override = New-PodeLogCustomOverride -Ignore
+#>
+function New-PodeLogCustomOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [hashtable]
+        $Data,
+
+        [switch]
+        $Ignore
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default 'Custom'
+
+    return @{
+        Id     = $Id
+        Data   = $Data
+        Ignore = $Ignore.IsPresent
     }
 }
 
@@ -1779,9 +1983,7 @@ function New-PodeLogApiMethod {
     )
 
     # default type
-    if ([string]::IsNullOrWhiteSpace($Type)) {
-        $Type = 'API'
-    }
+    $Type = Protect-PodeValue -Value $Type -Default 'API'
 
     # default headers
     if ($null -eq $Headers) {
@@ -1803,7 +2005,7 @@ function New-PodeLogApiMethod {
     }
 
     # add method to server
-    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Config @{
         Type        = $Type
         ScriptBlock = Get-PodeLoggingApiMethod
         Arguments   = @{
@@ -1824,6 +2026,68 @@ function New-PodeLogApiMethod {
             }
             SkipCertificateCheck = $SkipCertificateCheck.IsPresent
         }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new set of override options for the API Log Method.
+
+.DESCRIPTION
+Creates a new set of override options for the API Log Method.
+This allows you to specify custom data for API Log Methods, and can be retrieved via Get-PodeLogOverride per Log Event.
+
+.PARAMETER Id
+An optional ID to assign to the Log Method to override. (Default: 'API')
+
+.PARAMETER Type
+An optional Type to assign to the Log Method to override. (Default: API)
+
+.PARAMETER Data
+A hashtable of custom data to associate with the API Log Method override.
+
+.PARAMETER Ignore
+Whether to ignore the API Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogApiOverride -Data @{ Key = 'Value' }
+
+.EXAMPLE
+$override = New-PodeLogApiOverride -Id 'ApiMethod' -Data @{ Key = 'Value' }
+
+.EXAMPLE
+$override = New-PodeLogApiOverride -Ignore
+
+.EXAMPLE
+$override = New-PodeLogApiOverride -Type 'NewRelic' -Data @{ Key = 'Value' }
+#>
+function New-PodeLogApiOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [hashtable]
+        $Data,
+
+        [switch]
+        $Ignore
+    )
+
+    $Type = Protect-PodeValue -Value $Type -Default 'API'
+    $Id = Protect-PodeValue -Value $Id -Default $Type
+
+    return @{
+        Id     = $Id
+        Data   = $Data
+        Ignore = $Ignore.IsPresent
     }
 }
 
@@ -1924,20 +2188,23 @@ function New-PodeLogSplunkMethod {
                     }
                 }
 
+                # get any overrides for this method
+                $override = Get-PodeLogOverride -LogEvent $item.Event
+
                 # add source type
-                $sourceType = Protect-PodeValue -Value $item.Event.Metadata['SourceType'] -Default $options.SourceType
+                $sourceType = Protect-PodeValue -Value $override.SourceType -Default $options.SourceType
                 if (![string]::IsNullOrEmpty($sourceType)) {
                     $evt.sourcetype = $sourceType
                 }
 
                 # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
+                $source = Protect-PodeValue -Value $override.Source -Default $options.Source
                 if (![string]::IsNullOrEmpty($source)) {
                     $evt.source = $source
                 }
 
                 # add index
-                $index = Protect-PodeValue -Value $item.Event.Metadata['Index'] -Default $options.Index
+                $index = Protect-PodeValue -Value $override.Index -Default $options.Index
                 if (![string]::IsNullOrEmpty($index)) {
                     $evt.index = $index
                 }
@@ -1971,6 +2238,69 @@ function New-PodeLogSplunkMethod {
         -BodyArguments $bodyArgs `
         -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
         -Compress
+}
+
+<#
+.SYNOPSIS
+Creates a new set of override options for the Splunk Log Method.
+
+.DESCRIPTION
+Creates a new set of override options for the Splunk Log Method.
+
+.PARAMETER Id
+The ID of the Splunk Log Method to override. (Default: 'Splunk')
+
+.PARAMETER Source
+An optional source to override the source of the Splunk Log Method.
+
+.PARAMETER SourceType
+An optional source type to override the source type of the Splunk Log Method.
+
+.PARAMETER Index
+An optional index to override the index of the Splunk Log Method.
+
+.PARAMETER Ignore
+Whether to ignore the Splunk Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogSplunkOverride -Source 'my_source' -SourceType 'syslog' -Index 'main'
+
+.EXAMPLE
+$override = New-PodeLogSplunkOverride -Id 'SplunkMethod' -Ignore
+#>
+function New-PodeLogSplunkOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter()]
+        [string]
+        $SourceType,
+
+        [Parameter()]
+        [string]
+        $Index,
+
+        [switch]
+        $Ignore
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default 'Splunk'
+
+    return @{
+        Id         = $Id
+        Source     = $Source
+        SourceType = $SourceType
+        Index      = $Index
+        Ignore     = $Ignore.IsPresent
+    }
 }
 
 <#
@@ -2068,21 +2398,40 @@ function New-PodeLogDatadogMethod {
                     timestamp = $item.Event.Timestamp.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
                 }
 
+                # get any overrides for this method
+                $override = Get-PodeLogOverride -LogEvent $item.Event
+
                 # add service
-                $service = Protect-PodeValue -Value $item.Event.Metadata['Service'] -Default $options.Service
+                $service = Protect-PodeValue -Value $override.Service -Default $options.Service
                 if (![string]::IsNullOrEmpty($service)) {
                     $evt.service = $service
                 }
 
                 # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
+                $source = Protect-PodeValue -Value $override.Source -Default $options.Source
                 if (![string]::IsNullOrEmpty($source)) {
                     $evt.ddsource = $source
                 }
 
                 # add tags
+                $_tags = @{}
                 if ($options.Tags.Count -gt 0) {
-                    $evt.ddtags = @(foreach ($key in $options.Tags.Keys) { "$($key):$($options.Tags[$key])" }) -join ','
+                    $_tags = $options.Tags
+                }
+
+                if (($null -ne $override.Tags) -and ($override.Tags.Count -gt 0)) {
+                    switch ($override.TagsAction) {
+                        'replace' { $_tags = $override.Tags }
+                        'merge' {
+                            foreach ($key in $override.Tags.Keys) {
+                                $_tags[$key] = $override.Tags[$key]
+                            }
+                        }
+                    }
+                }
+
+                if ($_tags.Count -gt 0) {
+                    $evt.ddtags = @(foreach ($key in $_tags.Keys) { "$($key):$($_tags[$key])" }) -join ','
                 }
 
                 $evt
@@ -2119,6 +2468,78 @@ function New-PodeLogDatadogMethod {
         -BodyArguments $bodyArgs `
         -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
         -Compress
+}
+
+<#
+.SYNOPSIS
+Creates a new set of override options for the Datadog Log Method.
+
+.DESCRIPTION
+Creates a new set of override options for the Datadog Log Method.
+
+.PARAMETER Id
+An optional ID to assign to the Log Method to override. (Default: 'Datadog')
+
+.PARAMETER Service
+An optional service name to override the service of the Datadog Log Method.
+
+.PARAMETER Source
+An optional source name to override the source of the Datadog Log Method.
+
+.PARAMETER Tags
+An optional hashtable of tags to override the tags of the Datadog Log Method.
+
+.PARAMETER TagsAction
+An optional action to determine how to handle the tags of the Datadog Log Method. (Default: 'Merge')
+
+.PARAMETER Ignore
+Whether to ignore the Datadog Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogDatadogOverride -Service 'my_service' -Source 'my_source' -Tags @{ env = 'prod' } -TagsAction 'Append'
+
+.EXAMPLE
+$override = New-PodeLogDatadogOverride -Id 'DatadogMethod' -Ignore
+#>
+function New-PodeLogDatadogOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $Service,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter()]
+        [hashtable]
+        $Tags,
+
+        [Parameter()]
+        [ValidateSet('Merge', 'Replace')]
+        [string]
+        $TagsAction = 'Merge',
+
+        [switch]
+        $Ignore
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default 'Datadog'
+
+    return @{
+        Id         = $Id
+        Service    = $Service
+        Source     = $Source
+        Tags       = $Tags
+        TagsAction = $TagsAction.ToLowerInvariant()
+        Ignore     = $Ignore.IsPresent
+    }
 }
 
 <#
@@ -2266,6 +2687,53 @@ function New-PodeLogAzureMethod {
 
 <#
 .SYNOPSIS
+Creates a new set of override options for the Azure Log Method.
+
+.DESCRIPTION
+Creates a new set of override options for the Azure Log Method.
+
+.PARAMETER Id
+An optional ID to assign to the Log Method to override. (Default: 'Azure')
+
+.PARAMETER Source
+An optional source to override the source of the Azure Log Method.
+
+.PARAMETER Ignore
+Whether to ignore the Azure Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogAzureOverride -Source 'my_source'
+
+.EXAMPLE
+$override = New-PodeLogAzureOverride -Id 'AzureMethod' -Ignore
+#>
+function New-PodeLogAzureOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [switch]
+        $Ignore
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default 'Azure'
+
+    return @{
+        Id     = $Id
+        Source = $Source
+        Ignore = $Ignore.IsPresent
+    }
+}
+
+<#
+.SYNOPSIS
 Creates a new AWS CloudWatch Log Method.
 
 .DESCRIPTION
@@ -2370,20 +2838,23 @@ function New-PodeLogAwsMethod {
                     severity = ConvertTo-PodeSplunkLevel -Level $item.Event.Level
                 }
 
+                # get any overrides for this method
+                $override = Get-PodeLogOverride -LogEvent $item.Event
+
                 # add source type
-                $sourceType = Protect-PodeValue -Value $item.Event.Metadata['SourceType'] -Default $options.SourceType
+                $sourceType = Protect-PodeValue -Value $override.SourceType -Default $options.SourceType
                 if (![string]::IsNullOrEmpty($sourceType)) {
                     $evt.sourcetype = $sourceType
                 }
 
                 # add source
-                $source = Protect-PodeValue -Value $item.Event.Metadata['Source'] -Default $options.Source
+                $source = Protect-PodeValue -Value $override.Source -Default $options.Source
                 if (![string]::IsNullOrEmpty($source)) {
                     $evt.source = $source
                 }
 
                 # add index
-                $index = Protect-PodeValue -Value $item.Event.Metadata['Index'] -Default $options.Index
+                $index = Protect-PodeValue -Value $override.Index -Default $options.Index
                 if (![string]::IsNullOrEmpty($index)) {
                     $evt.index = $index
                 }
@@ -2417,6 +2888,69 @@ function New-PodeLogAwsMethod {
         -BodyArguments $bodyArgs `
         -SkipCertificateCheck:$SkipCertificateCheck.IsPresent `
         -Compress
+}
+
+<#
+.SYNOPSIS
+Creates a new set of override options for the AWS Log Method.
+
+.DESCRIPTION
+Creates a new set of override options for the AWS Log Method.
+
+.PARAMETER Id
+An optional ID to assign to the Log Method to override. (Default: 'AWS')
+
+.PARAMETER Source
+An optional source to override the source of the AWS Log Method.
+
+.PARAMETER SourceType
+An optional source type to override the source type of the AWS Log Method.
+
+.PARAMETER Index
+An optional index to override the index of the AWS Log Method.
+
+.PARAMETER Ignore
+Whether to ignore the AWS Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogAwsOverride -Source 'my_source' -SourceType 'syslog' -Index 'main'
+
+.EXAMPLE
+$override = New-PodeLogAwsOverride -Id 'AwsMethod' -Ignore
+#>
+function New-PodeLogAwsOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter()]
+        [string]
+        $SourceType,
+
+        [Parameter()]
+        [string]
+        $Index,
+
+        [switch]
+        $Ignore
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default 'AWS'
+
+    return @{
+        Id         = $Id
+        Source     = $Source
+        SourceType = $SourceType
+        Index      = $Index
+        Ignore     = $Ignore.IsPresent
+    }
 }
 
 <#
@@ -2486,7 +3020,7 @@ function New-PodeLogNetworkMethod {
     )
 
     # add method to server
-    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Metadata @{
+    return Add-PodeLogMethodInternal -Id $Id -Batch $BatchInfo -Config @{
         Type        = 'Network'
         ScriptBlock = Get-PodeLoggingNetworkMethod
         Arguments   = @{
@@ -2495,6 +3029,45 @@ function New-PodeLogNetworkMethod {
             Port                 = $Port
             SkipCertificateCheck = $SkipCertificateCheck.IsPresent
         }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new set of override options for the Network Log Method.
+
+.DESCRIPTION
+Creates a new set of override options for the Network Log Method.
+
+.PARAMETER Id
+An optional ID to assign to the Log Method to override. (Default: 'Network')
+
+.PARAMETER Ignore
+Whether to ignore the Network Log Method when writing log items.
+
+.EXAMPLE
+$override = New-PodeLogNetworkOverride -Ignore
+
+.EXAMPLE
+$override = New-PodeLogNetworkOverride -Id 'NetworkMethod' -Ignore
+#>
+function New-PodeLogNetworkOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [string]
+        $Id,
+
+        [switch]
+        $Ignore
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default 'Network'
+
+    return @{
+        Id     = $Id
+        Ignore = $Ignore.IsPresent
     }
 }
 
@@ -2985,4 +3558,50 @@ function Add-PodeLogW3CCustomField {
         Name      = $Name
         FieldName = $fieldName
     }
+}
+
+<#
+.SYNOPSIS
+Gets the override options for a Pode Log event, for a Log Method.
+
+.DESCRIPTION
+Gets the override options for a Pode Log event, for a specific Log Method.
+
+.PARAMETER LogEvent
+The Pode Log Event object to retrieve the override options for.
+
+.PARAMETER Id
+The ID of the Log Method to retrieve the override options for. (Default: $MethodId)
+The Default value is the ID of the Log Method that is currently being processed.
+
+.PARAMETER Type
+The type of the Log Method to retrieve the override options for. (Default: $MethodType)
+The Default value is the type of the Log Method that is currently being processed.
+
+.EXAMPLE
+$override = Get-PodeLogOverride -LogEvent $logEvent
+
+.EXAMPLE
+$override = Get-PodeLogOverride -LogEvent $logEvent -Id 'DatadogMethod' -Type 'Datadog'
+#>
+function Get-PodeLogOverride {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Pode.Utilities.Logging.IPodeLogEvent]
+        $LogEvent,
+
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $Type
+    )
+
+    $Id = Protect-PodeValue -Value $Id -Default $MethodId
+    $Type = Protect-PodeValue -Value $Type -Default $MethodType
+    return $LogEvent.GetOverride($Id, $Type)
 }

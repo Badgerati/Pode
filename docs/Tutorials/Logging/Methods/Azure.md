@@ -42,6 +42,27 @@ When sending logs via Data Collection, you can expect the top-level format of th
 
 The default source for your logs sent by Pode is the [Server's App Name](../../../../Basic#app-name). If you wish to supply an explicit source different from the server's, then you can do so via the `-Source` parameter.
 
+## Override
+
+You can use [`New-PodeLogAzureOverride`](../../../../Functions/Logging/New-PodeLogAzureOverride) to override certain properties of the Azure Log Method, when calling either [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog) or [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
+
+You can override the `-Source`, as well as specify `-Ignore`, which allows you to specify that certain log items will not be logged to Azure.
+
+If you don't specify an `-Id` then the override will apply to all Azure Log Methods configured for a Log Type.
+
+```powershell
+# override the Source when logging to Azure
+$_ | Write-PodeErrorLog -Override @(
+    New-PodeLogAzureOverride -Source 'custom_source'
+)
+
+# if you have an error log method configured with azure and terminal logging,
+# the below will only log the error to the terminal and ignore logging to azure
+$_ | Write-PodeErrorLog -Override @(
+    New-PodeLogAzureOverride -Ignore
+)
+```
+
 ## Examples
 
 ### Workspace

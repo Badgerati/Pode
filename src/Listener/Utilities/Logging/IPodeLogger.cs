@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using Pode.Protocols.Common.Requests;
 
@@ -20,10 +21,10 @@ namespace Pode.Utilities.Logging
         void RegisterType(IPodeLogType logType);
         void UnregisterType(string name);
 
-        void Add(string logTypeName, PodeLogLevel level, object data, Hashtable metadata = null);
-        void AddException(Exception exception, string contextId, PodeLogLevel level, Hashtable metadata = null, int threadId = 0);
-        void AddException(string message, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, int threadId = 0);
-        void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, int threadId = 0);
+        void Add(string logTypeName, PodeLogLevel level, object data, Hashtable metadata = null, List<Hashtable> overrides = null);
+        void AddException(Exception exception, string contextId, PodeLogLevel level, Hashtable metadata = null, List<Hashtable> overrides = null, int threadId = 0);
+        void AddException(string message, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, List<Hashtable> overrides = null, int threadId = 0);
+        void AddException(string category, string message, string stackTrace, string contextId, PodeLogLevel level, PodeRequestExceptionKind kind = PodeRequestExceptionKind.Server, Hashtable metadata = null, List<Hashtable> overrides = null, int threadId = 0);
         bool TryTake(out IPodeLogEvent logEvent, CancellationToken cancellationToken);
         void Reset();
     }

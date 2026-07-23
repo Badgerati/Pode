@@ -10,6 +10,22 @@ The default transport is UDP, and the default port is 514 (ie, syslog).
 
 If you wish to ignore any certificate checks, in the case of TLS, you may supply `-SkipCertificateCheck`.
 
+## Override
+
+You can use [`New-PodeLogNetworkOverride`](../../../../Functions/Logging/New-PodeLogNetworkOverride) to override certain properties of the Network Log Method, when calling either [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog) or [`Write-PodeLog`](../../../../Functions/Logging/Write-PodeLog).
+
+The only option available for Network is `-Ignore`, which allows you to specify that certain log items will not be logged over a Network connection.
+
+If you don't specify an `-Id` then the override will apply to all Network Log Methods configured for a Log Type.
+
+```powershell
+# if you have an error log method configured with network and terminal logging,
+# the below will only log the error to the terminal and ignore logging to a network connection
+$_ | Write-PodeErrorLog -Override @(
+    New-PodeLogNetworkOverride -Ignore
+)
+```
+
 ## Examples
 
 ### Send via UDP
