@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Pode.Utilities
+namespace Pode.Utilities.Structures
 {
     public class PodeItemQueue<T> : IDisposable
     {

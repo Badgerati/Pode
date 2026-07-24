@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Pode.Utilities
+namespace Pode.Utilities.Structures
 {
     public class PodeConcurrentSet<T> : IEnumerable<T>
     {
@@ -74,6 +74,30 @@ namespace Pode.Utilities
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public override int GetHashCode()
+        {
+            lock (Lock)
+            {
+                return Items.GetHashCode();
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            lock (Lock)
+            {
+                return obj is PodeConcurrentSet<T> other && Items.SetEquals(other.Items);
+            }
+        }
+
+        public override string ToString()
+        {
+            lock (Lock)
+            {
+                return Items.ToString();
+            }
         }
     }
 }

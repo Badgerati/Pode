@@ -1724,7 +1724,7 @@ function Remove-PodeRoute {
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
+        $null = $PodeContext.Server.Routes[$Method].TryRemove($Path, [ref]$null)
     }
 }
 
@@ -1773,7 +1773,7 @@ function Remove-PodeStaticRoute {
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
+        $null = $PodeContext.Server.Routes[$Method].TryRemove($Path, [ref]$null)
     }
 }
 
@@ -1822,7 +1822,7 @@ function Remove-PodeSignalRoute {
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
+        $null = $PodeContext.Server.Routes[$Method].TryRemove($Path, [ref]$null)
     }
 }
 
@@ -1854,11 +1854,11 @@ function Clear-PodeRoutes {
 
     if (![string]::IsNullOrWhiteSpace($Method)) {
         $PodeContext.Server.Routes[$Method].Clear()
+        return
     }
-    else {
-        $PodeContext.Server.Routes.Keys.Clone() | ForEach-Object {
-            $PodeContext.Server.Routes[$_].Clear()
-        }
+
+    $PodeContext.Server.Routes.Keys | ForEach-Object {
+        $PodeContext.Server.Routes[$_].Clear()
     }
 }
 

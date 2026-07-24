@@ -107,28 +107,35 @@ InModuleScope -ModuleName 'Pode' {
 
     Describe 'Remove-PodeRoute' {
         BeforeEach {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'EndpointsMap' = @{}
-                'OpenAPI' = @{
+            $PodeContext.Server = @{
+                Routes        = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
+                FindEndpoints = @{}
+                Endpoints     = @{}
+                EndpointsMap  = @{}
+                OpenAPI       = @{
                     SelectedDefinitionTag = 'default'
                     Definitions           = @{
                         default = Get-PodeOABaseObject
                     }
                 }
             }
+
+            $PodeContext.Server.Routes['get'] = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
         }
+
         It 'Adds route with simple url, and then removes it' {
             Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
 
             $routes = $PodeContext.Server.Routes['get']
             $routes | Should -Not -Be $null
-            $routes.ContainsKey('/users') | Should -Be $true
+            $routes.Contains('/users') | Should -Be $true
             $routes['/users'].Length | Should -Be 1
 
             Remove-PodeRoute -Method Get -Path '/users'
 
             $routes = $PodeContext.Server.Routes['get']
-            $routes | Should -Not -Be $null
-            $routes.ContainsKey('/users') | Should -Be $false
+            $routes.Count | Should -Be 0
+            $routes.Contains('/users') | Should -Be $false
         }
 
         It 'Adds two routes with simple url, and then removes one' {
@@ -140,14 +147,14 @@ InModuleScope -ModuleName 'Pode' {
 
             $routes = $PodeContext.Server.Routes['get']
             $routes | Should -Not -Be $null
-            $routes.ContainsKey('/users') | Should -Be $true
+            $routes.Contains('/users') | Should -Be $true
             $routes['/users'].Length | Should -Be 2
 
             Remove-PodeRoute -Method Get -Path '/users'
 
             $routes = $PodeContext.Server.Routes['get']
-            $routes | Should -Not -Be $null
-            $routes.ContainsKey('/users') | Should -Be $true
+            $routes.Count | Should -Be 1
+            $routes.Contains('/users') | Should -Be $true
             $routes['/users'].Length | Should -Be 1
         }
 
@@ -156,14 +163,14 @@ InModuleScope -ModuleName 'Pode' {
 
             $routes = $PodeContext.Server.Routes['GET']
             $routes | Should -Not -Be $null
-            $routes.ContainsKey('/users') | Should -Be $true
+            $routes.Contains('/users') | Should -Be $true
             $routes['/users'].Length | Should -Be 1
 
             Remove-PodeRoute -Method Get -Path '/users'
 
             $routes = $PodeContext.Server.Routes['GET']
-            $routes | Should -Not -Be $null
-            $routes.ContainsKey('/users') | Should -Be $false
+            $routes.Count | Should -Be 0
+            $routes.Contains('/users') | Should -Be $false
             $PodeContext.Server.OpenAPI.Definitions.default.hiddenComponents.operationId | Should -Not -Contain 'getUsers'
         }
 
@@ -175,14 +182,14 @@ InModuleScope -ModuleName 'Pode' {
 
             $routes = $PodeContext.Server.Routes['GET']
             $routes | Should -Not -Be $null
-            $routes.ContainsKey('/users') | Should -Be $true
+            $routes.Contains('/users') | Should -Be $true
             $routes['/users'].Length | Should -Be 2
 
             Remove-PodeRoute -Method Get -Path '/users' -EndpointName 'user'
 
             $routes = $PodeContext.Server.Routes['GET']
             $routes | Should -Not -Be $null
-            $routes.ContainsKey('/users') | Should -Be $true
+            $routes.Contains('/users') | Should -Be $true
             $routes['/users'].Length | Should -Be 1
             $PodeContext.Server.OpenAPI.Definitions.default.hiddenComponents.operationId | Should -Not -Contain 'getUsers2'
         }
@@ -193,33 +200,44 @@ InModuleScope -ModuleName 'Pode' {
             Mock Test-PodePath { return $true }
             Mock New-PodePSDrive { return './assets' }
 
-            $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
+            $PodeContext.Server = @{
+                Routes = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
+                Root   = $pwd
+            }
+            $PodeContext.Server.Routes['static'] = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
+
             Add-PodeStaticRoute -Path '/assets' -Source './assets'
 
             $routes = $PodeContext.Server.Routes['static']
             $routes | Should -Not -Be $null
-            $routes.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should -Be $true
+            $routes.Contains('/assets[/]{0,1}(?<file>.*)') | Should -Be $true
             $routes['/assets[/]{0,1}(?<file>.*)'].Source | Should -Be './assets'
 
             Remove-PodeStaticRoute -Path '/assets'
 
             $routes = $PodeContext.Server.Routes['static']
-            $routes | Should -Not -Be $null
-            $routes.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should -Be $false
+            $routes.Count | Should -Be 0
+            $routes.Contains('/assets[/]{0,1}(?<file>.*)') | Should -Be $false
         }
     }
 
     Describe 'Clear-PodeRoutes' {
         BeforeEach {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{} }
-                'FindEndpoints'               = @{}
-                'OpenAPI'                     = @{
+            $PodeContext.Server = @{
+                Routes          = @{
+                    'GET'  = @{}
+                    'POST' = @{}
+                }
+                'FindEndpoints' = @{}
+                'OpenAPI'       = @{
                     SelectedDefinitionTag = 'default'
                     Definitions           = @{
                         default = Get-PodeOABaseObject
                     }
                 }
-            } }
+            }
+        }
+
         It 'Adds routes for methods, and clears everything' {
             Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello1' }
             Add-PodeRoute -Method POST -Path '/messages' -ScriptBlock { Write-Host 'hello2' }

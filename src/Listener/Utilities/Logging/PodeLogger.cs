@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using Pode.Protocols.Common.Requests;
+using Pode.Utilities.Structures;
 
 namespace Pode.Utilities.Logging
 {
