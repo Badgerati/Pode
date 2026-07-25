@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Pode.Utilities;
 using Pode.Protocols.WebSockets;
 using Pode.Utilities.Logging;
+using Pode.Utilities.Structures;
 
 namespace Pode.Adapters.Consumers
 {

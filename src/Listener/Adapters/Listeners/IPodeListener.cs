@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Pode.Transport.Sockets;
-using Pode.Utilities;
+using Pode.Utilities.Structures;
 using Pode.Protocols.Common.Contexts;
 
 namespace Pode.Adapters.Listeners

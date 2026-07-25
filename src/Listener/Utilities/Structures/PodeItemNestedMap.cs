@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Collections.Concurrent;
 
-namespace Pode.Utilities
+namespace Pode.Utilities.Structures
 {
     public class PodeItemNestedMap<T>
     {

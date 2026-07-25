@@ -1,5 +1,6 @@
 using namespace Pode.Utilities
 using namespace Pode.Utilities.Logging
+using namespace Pode.Utilities.Structures
 
 function New-PodeContext {
     [CmdletBinding()]
@@ -381,22 +382,11 @@ function New-PodeContext {
     }
 
     # routes for pages and api
-    $ctx.Server.Routes = [ordered]@{
-        # common methods
-        'get'     = [ordered]@{}
-        'post'    = [ordered]@{}
-        'put'     = [ordered]@{}
-        'patch'   = [ordered]@{}
-        'delete'  = [ordered]@{}
-        # other methods
-        'connect' = [ordered]@{}
-        'head'    = [ordered]@{}
-        'merge'   = [ordered]@{}
-        'options' = [ordered]@{}
-        'trace'   = [ordered]@{}
-        'static'  = [ordered]@{}
-        'signal'  = [ordered]@{}
-        '*'       = [ordered]@{}
+    $ctx.Server.Routes = [PodeConcurrentOrderedDictionary[string, [PodeConcurrentOrderedDictionary[string, object]]]]::new()
+
+    $methods = @('get', 'post', 'put', 'patch', 'delete', 'connect', 'head', 'merge', 'options', 'trace', 'static', 'signal', '*')
+    foreach ($method in $methods) {
+        $null = $ctx.Server.Routes.TryAdd($method, [PodeConcurrentOrderedDictionary[string, object]]::new())
     }
 
     # verbs for tcp

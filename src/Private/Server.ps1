@@ -247,7 +247,10 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Modules.Clear()
 
         # clear up timers, schedules and loggers
-        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Routes
+        $PodeContext.Server.Routes.Keys | ForEach-Object {
+            $PodeContext.Server.Routes[$_].Clear()
+        }
+
         Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Handlers
         Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Events
 

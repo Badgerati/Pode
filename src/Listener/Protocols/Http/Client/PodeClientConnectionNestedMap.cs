@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Pode.Utilities;
 using Pode.Utilities.Logging;
+using Pode.Utilities.Structures;
 
 namespace Pode.Protocols.Http.Client
 {

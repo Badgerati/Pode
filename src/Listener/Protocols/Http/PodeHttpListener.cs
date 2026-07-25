@@ -7,6 +7,7 @@ using Pode.Protocols.Http.Client.Sse;
 using Pode.Protocols.Http.Client.Signals;
 using Pode.Adapters;
 using Pode.Utilities.Logging;
+using Pode.Utilities.Structures;
 
 namespace Pode.Protocols.Http
 {
