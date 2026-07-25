@@ -889,19 +889,29 @@ InModuleScope -ModuleName 'Pode' {
     Describe 'Get-PodeRoute' {
         BeforeAll {
             Mock Test-PodeIPAddress { return $true }
-            Mock Test-PodeIsAdminUser { return $true } }
+            Mock Test-PodeIsAdminUser { return $true }
+        }
+
         BeforeEach {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'EndpointsMap' = @{}; 'Type' = $null
-                'OpenAPI' = @{
+            $PodeContext.Server = @{
+                Routes        = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
+                FindEndpoints = @{}
+                Endpoints     = @{}
+                EndpointsMap  = @{}
+                Type          = $null
+                OpenAPI       = @{
                     SelectedDefinitionTag = 'default'
                     Definitions           = @{
                         default = Get-PodeOABaseObject
                     }
                 }
             }
+
+            $PodeContext.Server.Routes['GET'] = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
+            $PodeContext.Server.Routes['POST'] = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
         }
 
-        It 'Returns both routes whe nothing supplied' {
+        It 'Returns all routes when nothing supplied' {
             Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
             Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
             Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
@@ -937,6 +947,15 @@ InModuleScope -ModuleName 'Pode' {
             $routes.Length | Should -Be 2
         }
 
+        It 'Returns route for placeholder path' {
+            Add-PodeRoute -Method Get -Path '/users/:userId' -ScriptBlock { Write-Host 'hello' }
+            Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
+            Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
+
+            $routes = Get-PodeRoute -Path '/users/:userId'
+            $routes.Length | Should -Be 1
+        }
+
         It 'Returns one route for users path and GET method' {
             Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
             Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
@@ -947,7 +966,6 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Returns one route for users path and endpoint name user' {
-
             Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
             Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
 
@@ -961,7 +979,6 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Returns both routes for users path and endpoint names' {
-
             Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
             Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
 
@@ -973,7 +990,6 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Returns both routes for user endpoint name' {
-
             Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
             Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
 

@@ -2409,36 +2409,37 @@ function Get-PodeRoute {
         $EndpointName
     )
 
-    # start off with every route
-    $routes = @()
-    foreach ($route in $PodeContext.Server.Routes.Values.Values) {
-        $routes += $route
-    }
-
-    # if we have a method, filter
-    if (![string]::IsNullOrWhiteSpace($Method)) {
-        $routes = @(foreach ($route in $routes) {
-                if ($route.Method -ine $Method) {
-                    continue
-                }
-
-                $route
-            })
-    }
-
-    # if we have a path, filter
-    if (![string]::IsNullOrWhiteSpace($Path)) {
+    # if we have a path, ensure it's parsed and escaped
+    if (![string]::IsNullOrEmpty($Path)) {
         $Path = Split-PodeRouteQuery -Path $Path
         $Path = Update-PodeRouteSlash -Path $Path
         $Path = Resolve-PodePlaceholder -Path $Path
+    }
 
-        $routes = @(foreach ($route in $routes) {
-                if ($route.Path -ine $Path) {
-                    continue
-                }
+    # select the routes based on the method and path
+    $routes = $null
 
-                $route
-            })
+    if (![string]::IsNullOrEmpty($Method) -and ![string]::IsNullOrEmpty($Path)) {
+        $routes = $PodeContext.Server.Routes[$Method][$Path]
+    }
+    elseif (![string]::IsNullOrEmpty($Method)) {
+        foreach ($route in $PodeContext.Server.Routes[$Method].Values) {
+            $routes += $route
+        }
+    }
+    elseif (![string]::IsNullOrEmpty($Path)) {
+        foreach ($method in $PodeContext.Server.Routes.Keys) {
+            if ($PodeContext.Server.Routes[$method].Contains($Path)) {
+                $routes += $PodeContext.Server.Routes[$method][$Path]
+            }
+        }
+    }
+    else {
+        foreach ($method in $PodeContext.Server.Routes.Keys) {
+            foreach ($route in $PodeContext.Server.Routes[$method].Values) {
+                $routes += $route
+            }
+        }
     }
 
     # further filter by endpoint names
@@ -2717,9 +2718,9 @@ function Test-PodeRoute {
     $endpoint = @(Find-PodeEndpoint -EndpointName $EndpointName)[0]
 
     # check for routes
-    $found = (Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address)
+    $found = Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address
     if (!$found -and $CheckWildcard) {
-        $found = (Test-PodeRouteInternal -Method '*' -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address)
+        $found = Test-PodeRouteInternal -Method '*' -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address
     }
 
     return $found
