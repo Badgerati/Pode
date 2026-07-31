@@ -350,7 +350,7 @@ function New-PodeContext {
     $ctx.Server.InbuiltDrives = @{}
 
     # shared state between runspaces
-    $ctx.Server.State = @{}
+    $ctx.Server.State = New-PodeStateDictionary
 
     # setup caching
     $ctx.Server.Cache = @{
