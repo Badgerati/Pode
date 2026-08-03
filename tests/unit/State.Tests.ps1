@@ -128,7 +128,7 @@ InModuleScope -ModuleName 'Pode' {
         It 'Restores the state from file' {
             Mock Get-PodeRelativePath { return $Path }
             Mock Test-Path { return $true }
-            Mock Get-Content { return @{ Name = @{ Value = 'Morty' } } | ConvertTo-Json -Compress }
+            Mock Get-Content { return @{ Name = 'Morty' } | ConvertTo-Json -Compress }
 
             $PodeContext.Server = @{
                 State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)

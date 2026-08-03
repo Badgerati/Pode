@@ -439,7 +439,10 @@ function Restore-PodeState {
     # check for no scopes, and add for backwards compat
     foreach ($_key in $state.Keys) {
         if ($null -eq $state[$_key].Scope) {
-            $state[$_key].Scope = @()
+            $state[$_key] = @{
+                Value = $state[$_key]
+                Scope = @()
+            }
         }
     }
 
