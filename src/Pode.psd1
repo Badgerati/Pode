@@ -66,6 +66,11 @@
         'Restore-PodeState',
         'Test-PodeState',
         'Get-PodeStateNames',
+        'New-PodeStateDictionary',
+        'New-PodeStateOrderedDictionary',
+        'New-PodeStateBag',
+        'New-PodeStateSet',
+        'New-PodeStateList',
 
         # response helpers
         'Set-PodeResponseAttachment',
