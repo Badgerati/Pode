@@ -72,9 +72,10 @@ function Set-PodeState {
         }
 
         # create state object
-        $PodeContext.Server.State[$Name] = New-PodeStateDictionary
-        $PodeContext.Server.State[$Name].Value = $Value
-        $PodeContext.Server.State[$Name].Scope = $Scope
+        $PodeContext.Server.State[$Name] = New-PodeStateDictionary -Data @{
+            Value = $Value
+            Scope = $Scope
+        }
 
         # return the value that was set
         if (!$NoPassThru) {
