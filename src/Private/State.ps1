@@ -265,6 +265,16 @@ function ConvertFrom-PodeStateData {
             return [int16]$InputObject.Value
         }
 
+        'SyncHashtable' {
+            $result = [hashtable]::Synchronized(@{})
+
+            foreach ($item in $InputObject.Items) {
+                $result[$item.Key] = ConvertFrom-PodeStateData -InputObject $item.Value
+            }
+
+            return $result
+        }
+
         'Hashtable' {
             $result = @{}
 
