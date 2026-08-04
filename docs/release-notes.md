@@ -1,5 +1,28 @@
 # Release Notes
 
+# v2.14.0-rc2
+
+Date: 5th August 2026
+
+```plain
+### Enhancements
+* #1751: Adds support for overriding Log Method properties during a Write call
+* #1756: Enhances State management to be thread-safe
+* #1756: Enhances State management to Save and Restore true object types
+* #1758: Enhances the following to be more thread-safe: Sessions, Tasks, Schedules, and Cache
+
+### Bugs
+* #1752: Fixes the Routes collection to be thread-safe
+
+### Packaging
+* #1750: Bump swagger-ui-dist from 5.32.6 to 5.32.11
+* #1755: Bump Kerberos.NET from 4.6.146 to 4.6.168
+* #1757: Bump github/codeql-action from 4.0.0 to 4.37.4
+
+### Testing
+* #1732: Update Pester to 6.0.0 (thanks @nohwnd!)
+```
+
 # v2.14.0-rc1
 
 Date: 21st July 2026
