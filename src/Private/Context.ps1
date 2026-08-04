@@ -125,14 +125,14 @@ function New-PodeContext {
 
     $ctx.Schedules = @{
         Enabled   = ($EnablePool -icontains 'schedules')
-        Items     = @{}
-        Processes = @{}
+        Items     = [hashtable]::Synchronized(@{})
+        Processes = [hashtable]::Synchronized(@{})
     }
 
     $ctx.Tasks = @{
         Enabled   = ($EnablePool -icontains 'tasks')
-        Items     = @{}
-        Processes = @{}
+        Items     = [hashtable]::Synchronized(@{})
+        Processes = [hashtable]::Synchronized(@{})
     }
 
     $ctx.Fim = @{
@@ -354,7 +354,7 @@ function New-PodeContext {
 
     # setup caching
     $ctx.Server.Cache = @{
-        Items          = @{}
+        Items          = [hashtable]::Synchronized(@{})
         Storage        = @{}
         DefaultStorage = $null
         DefaultTtl     = 3600 # 1hr
@@ -506,11 +506,11 @@ function New-PodeContext {
     $ctx.Threading.Lockables = @{
         Global = [hashtable]::Synchronized(@{})
         Cache  = [hashtable]::Synchronized(@{})
-        Custom = @{}
+        Custom = [hashtable]::Synchronized(@{})
     }
 
-    $ctx.Threading.Mutexes = @{}
-    $ctx.Threading.Semaphores = @{}
+    $ctx.Threading.Mutexes = [hashtable]::Synchronized(@{})
+    $ctx.Threading.Semaphores = [hashtable]::Synchronized(@{})
 
     # setup runspaces
     $ctx.Runspaces = @()

@@ -21,7 +21,7 @@ function Add-PodeLimitRateTimer {
                     continue
                 }
 
-                foreach ($key in $rule.Active.Keys.Clone()) {
+                foreach ($key in $rule.Active.Keys) {
                     try {
                         $item = $rule.Active[$key]
 

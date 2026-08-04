@@ -18,10 +18,15 @@ function Start-PodeTaskHousekeeper {
             $now = [datetime]::UtcNow
 
             # loop through each process
-            foreach ($key in $PodeContext.Tasks.Processes.Keys.Clone()) {
+            foreach ($key in $PodeContext.Tasks.Processes.Keys) {
                 try {
-                    # get the process and the task
+                    # get the process
                     $process = $PodeContext.Tasks.Processes[$key]
+                    if ($null -eq $process) {
+                        continue
+                    }
+
+                    # get the task
                     $task = $PodeContext.Tasks.Items[$process.Task]
 
                     # if completed, and no completed time set, then set one and continue
