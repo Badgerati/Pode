@@ -44,11 +44,11 @@ function Set-PodeCacheInternal {
     )
 
     # crete (or update) value value
-    $PodeContext.Server.Cache.Items[$Key] = @{
-        Value  = $InputObject
-        Ttl    = $Ttl
-        Expiry = [datetime]::UtcNow.AddSeconds($Ttl)
-    }
+    $PodeContext.Server.Cache.Items[$Key] = [hashtable]::Synchronized(@{
+            Value  = $InputObject
+            Ttl    = $Ttl
+            Expiry = [datetime]::UtcNow.AddSeconds($Ttl)
+        })
 }
 
 function Test-PodeCacheInternal {
@@ -83,15 +83,11 @@ function Remove-PodeCacheInternal {
         $Key
     )
 
-    Lock-PodeObject -Object $PodeContext.Threading.Lockables.Cache -ScriptBlock {
-        $null = $PodeContext.Server.Cache.Items.Remove($Key)
-    }
+    $null = $PodeContext.Server.Cache.Items.Remove($Key)
 }
 
 function Clear-PodeCacheInternal {
-    Lock-PodeObject -Object $PodeContext.Threading.Lockables.Cache -ScriptBlock {
-        $null = $PodeContext.Server.Cache.Items.Clear()
-    }
+    $null = $PodeContext.Server.Cache.Items.Clear()
 }
 
 function Start-PodeCacheHousekeeper {
@@ -101,14 +97,7 @@ function Start-PodeCacheHousekeeper {
     }
 
     Add-PodeTimer -Name '__pode_cache_housekeeper__' -Interval 10 -ScriptBlock {
-        $keys = Lock-PodeObject -Object $PodeContext.Threading.Lockables.Cache -Return -ScriptBlock {
-            if ($PodeContext.Server.Cache.Items.Count -eq 0) {
-                return
-            }
-
-            return $PodeContext.Server.Cache.Items.Keys.Clone()
-        }
-
+        $keys = $PodeContext.Server.Cache.Items.Keys
         if (Test-PodeIsEmpty $keys) {
             return
         }
