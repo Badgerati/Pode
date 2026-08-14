@@ -38,7 +38,7 @@ catch { throw }
 # runs the logic once, then exits
 Start-PodeServer {
 
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
     Write-PodeHost 'hello, world!'
 
 }

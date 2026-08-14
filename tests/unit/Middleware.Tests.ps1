@@ -177,7 +177,7 @@ InModuleScope -ModuleName 'Pode' {
 
             Invoke-PodeMiddleware -Middleware @($midware) | Should -Be $true
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
         }
 
         It 'Runs the logic for a single middleware mapped to a route' {
@@ -191,7 +191,7 @@ InModuleScope -ModuleName 'Pode' {
 
             Invoke-PodeMiddleware -Middleware @($midware) -Route '/' | Should -Be $true
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
         }
 
         It 'Runs the logic for two middlewares and returns true' {
@@ -210,7 +210,7 @@ InModuleScope -ModuleName 'Pode' {
 
             Invoke-PodeMiddleware -Middleware @($midware1, $midware2) | Should -Be $true
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 2 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 2 -Scope It
         }
 
         It 'Runs the logic for a single middleware and returns false' {
@@ -223,7 +223,7 @@ InModuleScope -ModuleName 'Pode' {
 
             Invoke-PodeMiddleware -Middleware @($midware) | Should -Be $false
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
         }
 
         It 'Runs the logic for a single middleware and returns false after erroring' {
@@ -239,8 +239,8 @@ InModuleScope -ModuleName 'Pode' {
 
             Invoke-PodeMiddleware -Middleware @($midware) | Should -Be $false
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-            Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 1 -Scope It
         }
     }
 
@@ -678,7 +678,7 @@ InModuleScope -ModuleName 'Pode' {
 
             (. $r.Logic) | Should -Be $false
 
-            Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+            Should -Invoke Write-PodeFileResponse -Times 1 -Scope It
         }
 
         It 'Returns a ScriptBlock, invokes false for static path, with no caching' {
@@ -705,7 +705,7 @@ InModuleScope -ModuleName 'Pode' {
 
             (. $r.Logic) | Should -Be $false
 
-            Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+            Should -Invoke Write-PodeFileResponse -Times 1 -Scope It
         }
 
         It 'Returns a ScriptBlock, invokes false for static path, with no caching from exclude' {
@@ -733,7 +733,7 @@ InModuleScope -ModuleName 'Pode' {
 
             (. $r.Logic) | Should -Be $false
 
-            Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+            Should -Invoke Write-PodeFileResponse -Times 1 -Scope It
         }
 
         It 'Returns a ScriptBlock, invokes false for static path, with no caching from include' {
@@ -761,7 +761,7 @@ InModuleScope -ModuleName 'Pode' {
 
             (. $r.Logic) | Should -Be $false
 
-            Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+            Should -Invoke Write-PodeFileResponse -Times 1 -Scope It
         }
 
         It 'Returns a ScriptBlock, invokes false for static path, with caching' {
@@ -788,7 +788,7 @@ InModuleScope -ModuleName 'Pode' {
 
             (. $r.Logic) | Should -Be $false
 
-            Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+            Should -Invoke Write-PodeFileResponse -Times 1 -Scope It
         }
     }
 

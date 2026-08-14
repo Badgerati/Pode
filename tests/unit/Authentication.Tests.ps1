@@ -24,26 +24,26 @@ InModuleScope -ModuleName 'Pode' {
 
         It 'Redirects to a failure URL' {
             Set-PodeAuthStatus -StatusCode 500 -Name ExampleAuth | Should -Be $false
-            Assert-MockCalled Move-PodeResponseUrl -Times 1 -Scope It
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Move-PodeResponseUrl -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
         }
 
         It 'Sets status to failure' {
             Set-PodeAuthStatus -StatusCode 500 -Name ExampleAuth | Should -Be $false
-            Assert-MockCalled Move-PodeResponseUrl -Times 1 -Scope It
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Move-PodeResponseUrl -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
         }
 
         It 'Redirects to a success URL' {
             Set-PodeAuthStatus -Name ExampleAuth -LoginRoute | Should -Be $false
-            Assert-MockCalled Move-PodeResponseUrl -Times 1 -Scope It
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Move-PodeResponseUrl -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
         }
 
         It 'Returns true for next middleware' {
             Set-PodeAuthStatus -Name ExampleAuth -NoSuccessRedirect | Should -Be $true
-            Assert-MockCalled Move-PodeResponseUrl -Times 0 -Scope It
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Move-PodeResponseUrl -Times 0 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
         }
     }
 
@@ -98,7 +98,7 @@ InModuleScope -ModuleName 'Pode' {
             $WebEvent.Auth.User | Should -Be $null
             $WebEvent.Session.Data.Auth | Should -Be $null
 
-            Assert-MockCalled Revoke-PodeSession -Times 1 -Scope It
+            Should -Invoke Revoke-PodeSession -Times 1 -Scope It
         }
 
         It 'Removes the user, and kills the session, redirecting to root' {
@@ -122,7 +122,7 @@ InModuleScope -ModuleName 'Pode' {
             $WebEvent.Auth.User | Should -Be $null
             $WebEvent.Session.Data.Auth | Should -Be $null
 
-            Assert-MockCalled Revoke-PodeSession -Times 1 -Scope It
+            Should -Invoke Revoke-PodeSession -Times 1 -Scope It
         }
     }
 

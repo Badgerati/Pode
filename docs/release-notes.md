@@ -1,5 +1,116 @@
 # Release Notes
 
+# v2.14.0
+
+Date: 13th August 2026
+
+```plain
+### Enhancements
+* #1725: Backend .NET logs now utilise Pode's logging functionality
+* #1725: Custom Log Types now support -Raw item pass-thru
+* #1725: Log Events are now thread-safe
+* #1725: Log Methods are now their own functions
+* #1725: Log Methods now run in their own Runspaces
+* #1725: Log Types now support multiple Log Methods
+* #1734: Adds additional log levels: Emergency, Alert, Critical, and Notice
+* #1734: Adds custom Error/Request log data transforming and serialisation
+* #1734: Adds log serialisation into JSON, XML, YAML, or custom formats
+* #1734: Adds log shipping for Splunk, Datadog, Azure Log Analytics, AWS CloudWatch, UDP/TCP, and custom APIs
+* #1734: Adds Syslog formatting
+* #1737: Add support for fetching remote IP from Request headers when logging
+* #1738: Adds Common and W3C Request Logging formats
+* #1738: Adds support for retrieving headers from the Response
+* #1739: Adds support for Error/Request log timestamps to be in UTC
+* #1743: Adds support for controlling which Error Kinds are logged
+* #1744: Adds support for creating multiple Error/Request Log Types
+* #1751: Adds support for overriding Log Method properties during a Write call
+* #1756: Enhances State management to be thread-safe
+* #1756: Enhances State management to Save and Restore true object types
+* #1758: Enhances the following to be more thread-safe: Sessions, Tasks, Schedules, and Cache
+
+### Bugs
+* #1736: Send back appropriate failure headers when Valid=One for Merged Authentication
+* #1738: Fixes the Date timestamp on the Request Logging object
+* #1752: Fixes the Routes collection to be thread-safe
+
+### Packaging
+* #1728: Bump actions/checkout from 6.0.0 to 7.0.0
+* #1740: Bump @stoplight/elements from 9.0.21 to 9.0.24
+* #1742: Bump actions/setup-dotnet from 5.0.0 to 6.0.0
+* #1746: Adds PreRelease Support
+* #1747: Bump openapi-explorer from 2.4.799 to 2.4.820
+* #1755: Bump Kerberos.NET from 4.6.146 to 4.6.168
+* #1760: Bump swagger-ui-dist from 5.32.6 to 5.32.12
+* #1763: Bump github/codeql-action from 4.0.0 to 4.37.6
+
+### Testing
+* #1732: Update Pester to 6.0.0 (thanks @nohwnd!)
+* #1735: Also fail on Pester block/container failures (not just failed tests) (thanks @nohwnd!)
+```
+
+# v2.14.0-rc2
+
+Date: 5th August 2026
+
+```plain
+### Enhancements
+* #1751: Adds support for overriding Log Method properties during a Write call
+* #1756: Enhances State management to be thread-safe
+* #1756: Enhances State management to Save and Restore true object types
+* #1758: Enhances the following to be more thread-safe: Sessions, Tasks, Schedules, and Cache
+
+### Bugs
+* #1752: Fixes the Routes collection to be thread-safe
+
+### Packaging
+* #1750: Bump swagger-ui-dist from 5.32.6 to 5.32.11
+* #1755: Bump Kerberos.NET from 4.6.146 to 4.6.168
+* #1757: Bump github/codeql-action from 4.0.0 to 4.37.4
+
+### Testing
+* #1732: Update Pester to 6.0.0 (thanks @nohwnd!)
+```
+
+# v2.14.0-rc1
+
+Date: 21st July 2026
+
+```plain
+### Enhancements
+* #1725: Backend .NET logs now utilise Pode's logging functionality
+* #1725: Custom Log Types now support -Raw item pass-thru
+* #1725: Log Events are now thread-safe
+* #1725: Log Methods are now their own functions
+* #1725: Log Methods now run in their own Runspaces
+* #1725: Log Types now support multiple Log Methods
+* #1734: Adds additional log levels: Emergency, Alert, Critical, and Notice
+* #1734: Adds custom Error/Request log data transforming and serialisation
+* #1734: Adds log serialisation into JSON, XML, YAML, or custom formats
+* #1734: Adds log shipping for Splunk, Datadog, Azure Log Analytics, AWS CloudWatch, UDP/TCP, and custom APIs
+* #1734: Adds Syslog formatting
+* #1737: Adds support for fetching remote IP from Request headers when logging
+* #1738: Adds Common and W3C Request Logging formats
+* #1738: Adds support for retrieving headers from the Response
+* #1739: Adds support for Error/Request log timestamps to be in UTC
+* #1743: Adds support for controlling which Error Kinds are logged
+* #1744: Adds support for creating multiple Error/Request Log Types
+
+### Bugs
+* #1736: Send back appropriate failure headers when Valid=One for Merged Authentication
+* #1738: Fixes the Date timestamp on the Request Logging object
+
+### Packaging
+* #1728: Bump actions/checkout from 6.0.0 to 7.0.0
+* #1740: Bump @stoplight/elements from 9.0.21 to 9.0.24
+* #1742: Bump actions/setup-dotnet from 5.0.0 to 6.0.0
+* #1745: Bump swagger-ui-dist from 5.32.6 to 5.32.9
+* #1746: Adds PreRelease Support
+* #1747: Bump openapi-explorer from 2.4.799 to 2.4.820
+
+### Testing
+* #1735: Fail on Pester block/container failures (not just failed tests) (thanks @nohwnd!)
+```
+
 ## v2.13.4
 
 Date: 3rd June 2026

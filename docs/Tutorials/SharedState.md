@@ -1,16 +1,13 @@
 # Shared State
 
-Most things in Pode run in isolated runspaces: routes, middleware, schedules - to name a few. This means you can't create a variable in a timer, and then access that variable in a route. To overcome this limitation you can use the Shared State feature within Pode, which allows you to set/get variables on a state shared between all runspaces. This lets you can create a variable in a timer and store it within the shared state; then you can retrieve the variable from the state in a route.
+Most things in Pode run in isolated runspaces: Routes, Middleware, Schedules - to name a few. This means you can't create a variable in a Timer, and then access that variable in a Route. To overcome this limitation you can use the Shared State feature within Pode, which allows you to set/get variables on a state shared between all runspaces. This lets you can create a variable in a Timer and store it within the shared state; then you can retrieve the variable from the state in a Route.
 
 You also have the option of saving the current state to a file, and then restoring the state back on server start. This way you won't lose state between server restarts.
 
 You can also use the State in combination with [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject) to ensure thread safety - if needed.
 
 !!! tip
-    It's wise to use the State in conjunction with [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject), to ensure thread safety between runspaces.
-
-!!! warning
-    If you omit the use of [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject), you might run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
+    From Pode v2.14.0 the State is now a thread-safe Concurrent Dictionary, which means in the vast majority of cases you won't need to use [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject) when setting and retrieving State values.
 
 ## Usage
 
@@ -25,21 +22,17 @@ An example of setting a hashtable variable in the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        Lock-PodeObject -ScriptBlock {
-            Set-PodeState -Name 'data' -Value @{ 'Name' = 'Rick Sanchez' } | Out-Null
-        }
+        $value = Set-PodeState -Name 'data' -Value (New-PodeStateDictionary -Data @{ Name = 'Rick Sanchez' })
     }
 }
 ```
 
-Alternatively you could use the `$state:` variable scope to set a variable in state. This variable will be scopeless, so if you need scope then use [`Set-PodeState`](../../Functions/State/Set-PodeState). `$state:` can be used anywhere, but keep in mind that like `$session:` Pode can only remap the this in scriptblocks it's aware of; so using it in a function of a custom module won't work. Similar to the example above:
+Alternatively you could use the `$state:` variable scope to set a variable in state. This variable will be scope-less, so if you need scope then use [`Set-PodeState`](../../Functions/State/Set-PodeState). `$state:` can be used anywhere, but keep in mind that like `$session:` Pode can only remap the this in scriptblocks it's aware of; so using it in a function of a custom module won't work. Similar to the example above:
 
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        Lock-PodeObject -ScriptBlock {
-            $state:data = @{ 'Name' = 'Rick Sanchez' }
-        }
+        $state:data = New-PodeStateDictionary -Data @{ Name = 'Rick Sanchez' }
     }
 }
 ```
@@ -53,13 +46,7 @@ An example of retrieving a value from the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        $value = $null
-
-        Lock-PodeObject -ScriptBlock {
-            $value = (Get-PodeState -Name 'data')
-        }
-
-        # do something with $value
+        $value = Get-PodeState -Name 'data'
     }
 }
 ```
@@ -69,13 +56,7 @@ Alternatively you could use the `$state:` variable scope to get a variable in st
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        $value = $null
-
-        Lock-PodeObject -ScriptBlock {
-            $value = $state:data
-        }
-
-        # do something with $value
+        $value = $state:data
     }
 }
 ```
@@ -89,9 +70,7 @@ An example of removing a variable from the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        Lock-PodeObject -ScriptBlock {
-            Remove-PodeState -Name 'data' | Out-Null
-        }
+        Remove-PodeState -Name 'data' -NoPassThru
     }
 }
 ```
@@ -131,6 +110,25 @@ Start-PodeServer {
 ```
 
 By default, restoring from a state file will overwrite the current state. You can change this so the restored state is merged instead by using the `-Merge` switch. (Note: if you restore a key that already exists in state, this will still overwrite that key).
+
+## Thread Safety
+
+From Pode v2.14.0 State will be a Concurrent Dictionary for improved thread-safety, reducing the need to use [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject). Before this version you will need to use [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject) when setting/retrieving State values.
+
+Additionally, there are also 5 helper functions for creating thread-safe collections for use with State:
+
+| Function                           | Type                                              |
+| ---------------------------------- | ------------------------------------------------- |
+| [`New-PodeStateDictionary`](../../Functions/State/New-PodeStateDictionary)        | `ConcurrentDictionary[string, object]`            |
+| [`New-PodeStateOrderedDictionary`](../../Functions/State/New-PodeStateOrderedDictionary) | `PodeOrderedConcurrentDictionary[string, object]` |
+| [`New-PodeStateBag`](../../Functions/State/New-PodeStateBag)               | `ConcurrentBag[object]`                           |
+| [`New-PodeStateSet`](../../Functions/State/New-PodeStateSet)               | `PodeConcurrentSet[object]`                       |
+| [`New-PodeStateList`](../../Functions/State/New-PodeStateList)              | `PodeConcurrentList[object]`                      |
+
+Each of the above classes has the following methods:
+
+* `TryAdd(<item>)` - returns a boolean of whether the item was added
+* `TryRemove(<item>, [ref])` - returns a boolean of whether the item was removed, and a [ref] of the removed item
 
 ## Full Example
 

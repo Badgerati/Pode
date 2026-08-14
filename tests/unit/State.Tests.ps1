@@ -13,7 +13,10 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Sets and returns an object' {
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             $result = Set-PodeState -Name 'test' -Value 7
 
             $result | Should -Be 7
@@ -22,7 +25,10 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Sets by pipe and returns an object array' {
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             $result = @(7, 3, 4) | Set-PodeState -Name 'test'
 
             $result | Should -Be @(7, 3, 4)
@@ -38,7 +44,10 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Gets an object from the state' {
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             Set-PodeState -Name 'test' -Value 8
             Get-PodeState -Name 'test' | Should -Be 8
         }
@@ -51,7 +60,10 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Removes an object from the state' {
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             Set-PodeState -Name 'test' -Value 8
             Remove-PodeState -Name 'test' | Should -Be 8
             $PodeContext.Server.State['test'] | Should -Be $null
@@ -68,33 +80,42 @@ InModuleScope -ModuleName 'Pode' {
             Mock Get-PodeRelativePath { return $Path }
             Mock Out-File {}
 
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             Set-PodeState -Name 'test' -Value 8
             Save-PodeState -Path './state.json'
 
-            Assert-MockCalled Out-File -Times 1 -Scope It
+            Should -Invoke Out-File -Times 1 -Scope It
         }
 
         It 'Saves the state to file with Include' {
             Mock Get-PodeRelativePath { return $Path }
             Mock Out-File {}
 
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             Set-PodeState -Name 'test' -Value 8
             Save-PodeState -Path './state.json' -Include 'test'
 
-            Assert-MockCalled Out-File -Times 1 -Scope It
+            Should -Invoke Out-File -Times 1 -Scope It
         }
 
         It 'Saves the state to file with Exclude' {
             Mock Get-PodeRelativePath { return $Path }
             Mock Out-File {}
 
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             Set-PodeState -Name 'test' -Value 8
             Save-PodeState -Path './state.json' -Exclude 'test'
 
-            Assert-MockCalled Out-File -Times 1 -Scope It
+            Should -Invoke Out-File -Times 1 -Scope It
         }
     }
 
@@ -107,9 +128,12 @@ InModuleScope -ModuleName 'Pode' {
         It 'Restores the state from file' {
             Mock Get-PodeRelativePath { return $Path }
             Mock Test-Path { return $true }
-            Mock Get-Content { return '{ "Name": "Morty" }' }
+            Mock Get-Content { return @{ Name = 'Morty' } | ConvertTo-Json -Compress }
 
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             Restore-PodeState -Path './state.json'
             Get-PodeState -Name 'Name' | Should -Be 'Morty'
         }
@@ -122,13 +146,19 @@ InModuleScope -ModuleName 'Pode' {
         }
 
         It 'Returns true for an object being in the state' {
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             Set-PodeState -Name 'test' -Value 8
             Test-PodeState -Name 'test' | Should -Be $true
         }
 
         It 'Returns false for an object not being in the state' {
-            $PodeContext.Server = @{ 'State' = @{} }
+            $PodeContext.Server = @{
+                State = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::InvariantCultureIgnoreCase)
+            }
+
             Set-PodeState -Name 'test' -Value 8
             Test-PodeState -Name 'tests' | Should -Be $false
         }

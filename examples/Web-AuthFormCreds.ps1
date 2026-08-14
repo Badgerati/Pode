@@ -58,7 +58,7 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type Pode
 
     # enable error logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend

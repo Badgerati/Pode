@@ -87,7 +87,7 @@ function Lock-PodeObject {
         }
         catch {
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
         finally {
             if ([string]::IsNullOrEmpty($Name)) {
@@ -384,7 +384,7 @@ function Clear-PodeLockables {
         return
     }
 
-    foreach ($name in $PodeContext.Threading.Lockables.Custom.Keys.Clone()) {
+    foreach ($name in $PodeContext.Threading.Lockables.Custom.Keys) {
         Remove-PodeLockable -Name $name
     }
 }
@@ -578,7 +578,7 @@ function Use-PodeMutex {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
     finally {
         if ($acquired) {
@@ -676,7 +676,7 @@ function Clear-PodeMutexes {
         return
     }
 
-    foreach ($name in $PodeContext.Threading.Mutexes.Keys.Clone()) {
+    foreach ($name in $PodeContext.Threading.Mutexes.Keys) {
         Remove-PodeMutex -Name $name
     }
 }
@@ -881,7 +881,7 @@ function Use-PodeSemaphore {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
     finally {
         if ($acquired) {
@@ -990,7 +990,7 @@ function Clear-PodeSemaphores {
         return
     }
 
-    foreach ($name in $PodeContext.Threading.Semaphores.Keys.Clone()) {
+    foreach ($name in $PodeContext.Threading.Semaphores.Keys) {
         Remove-PodeSemaphore -Name $name
     }
 }

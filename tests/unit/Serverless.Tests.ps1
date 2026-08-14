@@ -45,8 +45,8 @@ InModuleScope -ModuleName 'Pode' {
             $result.Name | Should -Be 'Response'
             $result.Value | Should -Not -Be $null
 
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
-            Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Invoke-PodeMiddleware -Times 1 -Scope It
         }
 
         It 'Runs the server, using static content path from query' {
@@ -67,8 +67,8 @@ InModuleScope -ModuleName 'Pode' {
             $result.Name | Should -Be 'Response'
             $result.Value | Should -Not -Be $null
 
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
-            Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Invoke-PodeMiddleware -Times 1 -Scope It
         }
 
         It 'Runs the server, succeeds middleware with route' {
@@ -89,9 +89,9 @@ InModuleScope -ModuleName 'Pode' {
             $result.Name | Should -Be 'Response'
             $result.Value | Should -Not -Be $null
 
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
-            Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Invoke-PodeMiddleware -Times 2 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
         }
 
         It 'Runs the server, errors in middleware' {
@@ -112,8 +112,8 @@ InModuleScope -ModuleName 'Pode' {
             $result.Name | Should -Be 'Response'
             $result.Value | Should -Not -Be $null
 
-            Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
-            Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 1 -Scope It
+            Should -Invoke Invoke-PodeMiddleware -Times 1 -Scope It
         }
 
         It 'Runs the server, errors in endware' {
@@ -134,8 +134,8 @@ InModuleScope -ModuleName 'Pode' {
 
             { Start-PodeAzFuncServer -Data $d } | Should -Throw -ExpectedMessage 'some error'
 
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
-            Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Invoke-PodeMiddleware -Times 1 -Scope It
         }
     }
 
@@ -170,8 +170,8 @@ InModuleScope -ModuleName 'Pode' {
 
             $result | Should -Not -Be $null
 
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
-            Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Invoke-PodeMiddleware -Times 1 -Scope It
         }
 
         It 'Runs the server, succeeds middleware with route' {
@@ -186,9 +186,9 @@ InModuleScope -ModuleName 'Pode' {
 
             $result | Should -Not -Be $null
 
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
-            Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Invoke-PodeMiddleware -Times 2 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
         }
 
         It 'Runs the server, errors in middleware' {
@@ -203,8 +203,8 @@ InModuleScope -ModuleName 'Pode' {
 
             $result | Should -Not -Be $null
 
-            Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
-            Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 1 -Scope It
+            Should -Invoke Invoke-PodeMiddleware -Times 1 -Scope It
         }
 
         It 'Runs the server, errors in endware' {
@@ -220,8 +220,8 @@ InModuleScope -ModuleName 'Pode' {
 
             { Start-PodeAwsLambdaServer -Data $d } | Should -Throw -ExpectedMessage 'some error'
 
-            Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
-            Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
+            Should -Invoke Set-PodeResponseStatus -Times 0 -Scope It
+            Should -Invoke Invoke-PodeMiddleware -Times 1 -Scope It
         }
     }
 }

@@ -25,7 +25,7 @@ Pode simplifies handling CORS by providing the `Set-PodeSecurityAccessControl` f
 
 ### Setting CORS Headers instead
 
-The `Set-PodeSecurityAccessControl` function allows you to set these headers easily. Here’s how you can address common CORS challenges using this function:
+The `Set-PodeSecurityAccessControl` function allows you to set these headers easily. Here's how you can address common CORS challenges using this function:
 
 1. **Allowing All Origins**
    ```powershell

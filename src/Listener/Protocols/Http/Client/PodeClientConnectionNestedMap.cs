@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using Pode.Utilities;
+using Pode.Utilities.Logging;
+using Pode.Utilities.Structures;
 
 namespace Pode.Protocols.Http.Client
 {
@@ -60,7 +62,7 @@ namespace Pode.Protocols.Http.Client
                 return false;
             }
 
-            PodeHelpers.WriteErrorMessage($"Removed {conn.ConnectionType} client connection, ClientId: {conn.ClientId}, Name: {conn.Name}, Group: {conn.Group}", Listener, PodeLoggingLevel.Debug, conn.Context);
+            PodeHelpers.WriteErrorMessage($"Removed {conn.ConnectionType} client connection, ClientId: {conn.ClientId}, Name: {conn.Name}, Group: {conn.Group}", PodeLogLevel.Debug, conn.Context);
             Listener.AddClientConnectionEvent(conn, PodeClientConnectionEventType.Disconnect);
             return true;
         }
@@ -103,11 +105,11 @@ namespace Pode.Protocols.Http.Client
                 }
                 catch (Exception ex) when (ex is OperationCanceledException || ex is IOException || ex is ObjectDisposedException)
                 {
-                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+                    PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
                 }
                 catch (Exception ex)
                 {
-                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Error);
+                    PodeHelpers.WriteException(ex);
                 }
                 finally
                 {
@@ -151,11 +153,11 @@ namespace Pode.Protocols.Http.Client
                 }
                 catch (Exception ex) when (ex is OperationCanceledException || ex is IOException || ex is ObjectDisposedException)
                 {
-                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+                    PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
                 }
                 catch (Exception ex)
                 {
-                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Error);
+                    PodeHelpers.WriteException(ex);
                 }
             }, Listener.CancellationToken);
         }

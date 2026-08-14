@@ -43,14 +43,14 @@ InModuleScope -ModuleName 'Pode' {
             $PodeContext.Tokens = Initialize-PodeCancellationToken
             Start-PodeInternalServer | Out-Null
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-            Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
-            Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-            Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
-            Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
-            Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
-            Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
-            Assert-MockCalled Start-PodeWebServer -Times 0 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke New-PodeRunspacePool -Times 1 -Scope It
+            Should -Invoke New-PodeRunspaceState -Times 1 -Scope It
+            Should -Invoke Start-PodeTimerRunspace -Times 1 -Scope It
+            Should -Invoke Start-PodeScheduleRunspace -Times 1 -Scope It
+            Should -Invoke Start-PodeSmtpServer -Times 0 -Scope It
+            Should -Invoke Start-PodeTcpServer -Times 0 -Scope It
+            Should -Invoke Start-PodeWebServer -Times 0 -Scope It
         }
 
         It 'Calls smtp server logic' {
@@ -58,14 +58,14 @@ InModuleScope -ModuleName 'Pode' {
             $PodeContext.Tokens = Initialize-PodeCancellationToken
             Start-PodeInternalServer | Out-Null
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-            Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
-            Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-            Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
-            Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
-            Assert-MockCalled Start-PodeSmtpServer -Times 1 -Scope It
-            Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
-            Assert-MockCalled Start-PodeWebServer -Times 0 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke New-PodeRunspacePool -Times 1 -Scope It
+            Should -Invoke New-PodeRunspaceState -Times 1 -Scope It
+            Should -Invoke Start-PodeTimerRunspace -Times 1 -Scope It
+            Should -Invoke Start-PodeScheduleRunspace -Times 1 -Scope It
+            Should -Invoke Start-PodeSmtpServer -Times 1 -Scope It
+            Should -Invoke Start-PodeTcpServer -Times 0 -Scope It
+            Should -Invoke Start-PodeWebServer -Times 0 -Scope It
         }
 
         It 'Calls tcp server logic' {
@@ -73,14 +73,14 @@ InModuleScope -ModuleName 'Pode' {
             $PodeContext.Tokens = Initialize-PodeCancellationToken
             Start-PodeInternalServer | Out-Null
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-            Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
-            Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-            Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
-            Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
-            Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
-            Assert-MockCalled Start-PodeTcpServer -Times 1 -Scope It
-            Assert-MockCalled Start-PodeWebServer -Times 0 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke New-PodeRunspacePool -Times 1 -Scope It
+            Should -Invoke New-PodeRunspaceState -Times 1 -Scope It
+            Should -Invoke Start-PodeTimerRunspace -Times 1 -Scope It
+            Should -Invoke Start-PodeScheduleRunspace -Times 1 -Scope It
+            Should -Invoke Start-PodeSmtpServer -Times 0 -Scope It
+            Should -Invoke Start-PodeTcpServer -Times 1 -Scope It
+            Should -Invoke Start-PodeWebServer -Times 0 -Scope It
         }
 
         It 'Calls http web server logic' {
@@ -88,14 +88,14 @@ InModuleScope -ModuleName 'Pode' {
             $PodeContext.Tokens = Initialize-PodeCancellationToken
             Start-PodeInternalServer | Out-Null
 
-            Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-            Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
-            Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-            Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
-            Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
-            Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
-            Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
-            Assert-MockCalled Start-PodeWebServer -Times 1 -Scope It
+            Should -Invoke Invoke-PodeScriptBlock -Times 1 -Scope It
+            Should -Invoke New-PodeRunspacePool -Times 1 -Scope It
+            Should -Invoke New-PodeRunspaceState -Times 1 -Scope It
+            Should -Invoke Start-PodeTimerRunspace -Times 1 -Scope It
+            Should -Invoke Start-PodeScheduleRunspace -Times 1 -Scope It
+            Should -Invoke Start-PodeSmtpServer -Times 0 -Scope It
+            Should -Invoke Start-PodeTcpServer -Times 0 -Scope It
+            Should -Invoke Start-PodeWebServer -Times 1 -Scope It
         }
     }
 
@@ -111,7 +111,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Invoke-PodeEvent {}
         }
 
-        It 'Resetting the server values' {
+        BeforeEach {
             $PodeContext = @{
                 Tokens    = Initialize-PodeCancellationToken
                 Server    = @{
@@ -126,7 +126,9 @@ InModuleScope -ModuleName 'Pode' {
                         key = @{}
                     }
                     Logging         = @{
-                        Types = @{ 'key' = 'value' }
+                        Logger  = [Pode.Utilities.Logging.PodeLogger]::new()
+                        Methods = @{ 'key' = 'value' }
+                        Types   = @{ 'key' = 'value' }
                     }
                     Mcp             = @{
                         Tools  = @{}
@@ -279,10 +281,18 @@ InModuleScope -ModuleName 'Pode' {
                     Semaphores = @{}
                 }
             }
+        }
+
+        AfterEach {
+            $PodeContext.Server.Logging.Logger.Dispose()
+        }
+
+        It 'Resetting the server values' {
             Restart-PodeServer
             Restart-PodeInternalServer | Out-Null
 
             $PodeContext.Server.Routes['GET'].Count | Should -Be 0
+            $PodeContext.Server.Logging.Methods.Count | Should -Be 0
             $PodeContext.Server.Logging.Types.Count | Should -Be 0
             $PodeContext.Server.Middleware.Count | Should -Be 0
             $PodeContext.Server.Endware.Count | Should -Be 0

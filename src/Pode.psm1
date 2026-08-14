@@ -29,7 +29,7 @@
         throw
     }
     The import statement is within a try/catch block.
-    This way, if the module fails to load, your script won’t proceed, preventing possible errors or unexpected behaviour.
+    This way, if the module fails to load, your script won't proceed, preventing possible errors or unexpected behaviour.
 
     .NOTES
     This is the entry point for the Pode module.

@@ -14,6 +14,7 @@ deliverable/
 .vs/
 yarn.lock
 .vscode/mcp.json
+Pode/
 
 # Code Runner
 tempCodeRunnerFile.ps1

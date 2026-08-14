@@ -3,6 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Threading.Tasks;
 using Pode.Utilities;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.Http.Client.Sse
 {
@@ -148,7 +149,7 @@ namespace Pode.Protocols.Http.Client.Sse
             {
                 // mark as closed, log, dispose
                 IsClosed = true;
-                PodeHelpers.WriteException(ex, Context?.Listener, PodeLoggingLevel.Debug);
+                PodeHelpers.WriteException(ex, PodeLogLevel.Debug);
                 Dispose();
             }
             catch (Exception)

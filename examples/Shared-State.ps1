@@ -42,8 +42,8 @@ catch { throw }
 Start-PodeServer {
 
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
-    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLogTerminalMethod | Enable-PodeLogRequestType
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # re-initialise the state
     Restore-PodeState -Path './state.json'
@@ -95,7 +95,7 @@ Start-PodeServer {
     # route to remove the hashtable from global state
     Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
         Lock-PodeObject -ScriptBlock {
-            $hash = (Set-PodeState -Name 'hash1' -Value @{})
+            $hash = Set-PodeState -Name 'hash1' -Value @{} -Scope Scope0, Scope1
             $hash.values = @()
         }
     }

@@ -18,7 +18,7 @@ InModuleScope -ModuleName 'Pode' {
                 $WebEvent.Response.StatusCode | Should -Be 418
                 $WebEvent.Response.StatusDescription | Should -Be "I'm a Teapot"
                 Should -Invoke Show-PodeErrorPage -Times 1 -Scope It
-                #   Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 1
+                #   Should -Invoke 'Show-PodeErrorPage' -Scope It -Times 1
             }
 
             It 'Sets StatusCode and StatusDescription' {
@@ -28,7 +28,7 @@ InModuleScope -ModuleName 'Pode' {
                 $WebEvent.Response.StatusCode | Should -Be 418
                 $WebEvent.Response.StatusDescription | Should -Be 'I am a Teapot'
                 Should -Invoke Show-PodeErrorPage -Times 1 -Scope It
-                #Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 1
+                #Should -Invoke 'Show-PodeErrorPage' -Scope It -Times 1
             }
 
             It 'Sets 200 StatusCode' {
@@ -38,7 +38,7 @@ InModuleScope -ModuleName 'Pode' {
                 $WebEvent.Response.StatusCode | Should -Be 200
                 $WebEvent.Response.StatusDescription | Should -Be 'OK'
                 Should -Invoke Show-PodeErrorPage -Times 0 -Scope It
-                # Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 0
+                # Should -Invoke 'Show-PodeErrorPage' -Scope It -Times 0
             }
         }
     }
@@ -201,7 +201,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Test-PodePath { return $false }
             Write-PodeJsonResponse -Path 'fake-file' | Out-Null
             Should -Invoke Test-PodePath -Times 1 -Scope It
-            #  Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
+            #  Should -Invoke -CommandName 'Test-PodePath' -Times 1 -Scope It
         }
 
         It 'Load the file contents and returns it' {
@@ -276,7 +276,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Test-PodePath { return $false }
             Write-PodeCsvResponse -Path 'fake-file' | Out-Null
             Should -Invoke Test-PodePath -Times 1 -Scope It
-            # Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
+            # Should -Invoke -CommandName 'Test-PodePath' -Times 1 -Scope It
         }
 
         It 'Load the file contents and returns it' {
@@ -352,7 +352,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Test-PodePath { return $false }
             Write-PodeXmlResponse -Path 'fake-file' | Out-Null
             Should -Invoke Test-PodePath -Times 1 -Scope It
-            #  Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
+            #  Should -Invoke -CommandName 'Test-PodePath' -Times 1 -Scope It
         }
 
         It 'Load the file contents and returns it' {
@@ -392,7 +392,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Test-PodePath { return $false }
             Write-PodeHtmlResponse -Path 'fake-file' | Out-Null
             Should -Invoke Test-PodePath -Times 1 -Scope It
-            #  Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
+            #  Should -Invoke -CommandName 'Test-PodePath' -Times 1 -Scope It
         }
 
         It 'Load the file contents and returns it' {
@@ -423,7 +423,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Get-Item { return $null }
             Write-PodeFileResponse -Path './path' | Out-Null
             Should -Invoke Set-PodeResponseStatus -Times 1 -Scope It
-            # Assert-MockCalled Test-PodePath -Times 1 -Scope It
+            # Should -Invoke Test-PodePath -Times 1 -Scope It
         }
 
 
@@ -436,7 +436,7 @@ InModuleScope -ModuleName 'Pode' {
 
             Write-PodeFileResponse -Path './path/file.pode' | Should -Be 'file contents'
             Should -Invoke Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
-            #Assert-MockCalled Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
+            #Should -Invoke Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
         }
 
         It 'Loads the contents of a static file' {
@@ -448,7 +448,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Get-Item { return @{ PSIsContainer = $false } }
             Write-PodeFileResponse -Path './path/file.pode' | Should -Be 'file contents'
             Should -Invoke Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
-            #   Assert-MockCalled Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
+            #   Should -Invoke Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
         }
     }
 
@@ -495,7 +495,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Find-PodeErrorPage { return $null }
             Show-PodeErrorPage -Code 404 | Out-Null
             Should -Invoke Write-PodeFileResponse -Times 0 -Scope It
-            #  Assert-MockCalled Write-PodeFileResponse -Times 0 -Scope It
+            #  Should -Invoke Write-PodeFileResponse -Times 0 -Scope It
         }
 
 
@@ -504,7 +504,7 @@ InModuleScope -ModuleName 'Pode' {
             Mock Get-PodeUrl { return 'url' }
             $d = Show-PodeErrorPage -Code 404
             Should -Invoke Write-PodeFileResponse -Times 1 -Scope It
-            #Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+            #Should -Invoke Write-PodeFileResponse -Times 1 -Scope It
             $d.Url | Should -Be 'url'
             $d.Exception | Should -Be $null
             $d.ContentType | Should -Be 'json'
@@ -529,7 +529,7 @@ InModuleScope -ModuleName 'Pode' {
 
             $d = Show-PodeErrorPage -Code 404 -Exception $e
             Should -Invoke Write-PodeFileResponse -Times 1 -Scope It
-            #Assert-MockCalled Write-PodeFileResponse -Times 1 -Scope It
+            #Should -Invoke Write-PodeFileResponse -Times 1 -Scope It
             $d.Url | Should -Be 'url'
             $d.Exception | Should -Not -Be $null
             $d.Exception.Message | Should -Match 'cannot call a method'

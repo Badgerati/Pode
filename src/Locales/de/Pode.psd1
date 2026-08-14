@@ -347,4 +347,10 @@
     mcpToolAlreadyExistsExceptionMessage                              = "Das MCP-Tool '{0}' existiert bereits."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "Die MCP-Toolgruppe '{0}' existiert bereits."
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "Die Standardwerte für statische Routen können keine gerooteten Pfade sein. Ungültiger Standardwert: '{0}'"
+    deprecatedFunctionWarningMessage                                  = "WARNUNG: Die Funktion '{0}' ist veraltet und wird in zukünftigen Versionen entfernt. Bitte verwenden Sie stattdessen die Funktion '{1}'."
+    loggingMethodDoesNotExistExceptionMessage                         = "Die Protokollierungsmethode '{0}' existiert nicht."
+    loggingApiMethodBodyNotStringExceptionMessage                     = 'Der von dem Logging-API-Body-Scriptblock zurückgegebene Body ist kein String.'
+    loggingApiMethodHeadersNotHashtableExceptionMessage               = 'Die von dem Logging-API-Headers-Scriptblock zurückgegebenen Header sind keine Hashtable.'
+    nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'Ein nicht-leerer ScriptBlock ist für das benutzerdefinierte Logging-Serialisierungsformat erforderlich.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'Ein nicht-leerer ScriptBlock ist für das benutzerdefinierte Logging-Format erforderlich.'
 }

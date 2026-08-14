@@ -26,9 +26,12 @@ function Start-PodeScheduleRunspace {
 
             $now = [datetime]::UtcNow
 
-            foreach ($key in $PodeContext.Schedules.Processes.Keys.Clone()) {
+            foreach ($key in $PodeContext.Schedules.Processes.Keys) {
                 try {
                     $process = $PodeContext.Schedules.Processes[$key]
+                    if ($null -eq $process) {
+                        continue
+                    }
 
                     # if it's completed or expired, dispose and remove
                     if ($process.Runspace.Handler.IsCompleted -or ($process.ExpireTime -lt $now)) {
@@ -112,7 +115,7 @@ function Start-PodeScheduleRunspace {
         }
         catch {
             $_ | Write-PodeErrorLog
-            throw $_.Exception
+            throw
         }
     }
 

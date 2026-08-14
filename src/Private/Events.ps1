@@ -3,7 +3,7 @@ using namespace Pode.Utilities
 function Invoke-PodeEvent {
     param(
         [Parameter(Mandatory = $true)]
-        [PodeServerEventType]
+        [Pode.Utilities.PodeServerEventType]
         $Type,
 
         [Parameter()]

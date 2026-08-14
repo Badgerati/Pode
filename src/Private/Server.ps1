@@ -3,7 +3,10 @@
     Starts the internal Pode server, initializing configurations, middleware, routes, and runspaces.
 
 .DESCRIPTION
-    This function sets up and starts the internal Pode server. It initializes the server's configurations, routes, middleware, runspace pools, logging, and schedules. It also handles different server modes, such as normal, service, or serverless (Azure Functions, AWS Lambda). The function ensures all necessary components are ready and operational before triggering the server's start.
+    This function sets up and starts the internal Pode server.
+    It initializes the server's configurations, routes, middleware, runspace pools, logging, and schedules.
+    It also handles different server modes, such as normal, service, or serverless (Azure Functions, AWS Lambda).
+    The function ensures all necessary components are ready and operational before triggering the server's start.
 
 .PARAMETER Request
     Provides request data for serverless execution scenarios.
@@ -244,7 +247,10 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Modules.Clear()
 
         # clear up timers, schedules and loggers
-        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Routes
+        $PodeContext.Server.Routes.Keys | ForEach-Object {
+            $PodeContext.Server.Routes[$_].Clear()
+        }
+
         Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Handlers
         Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Events
 
@@ -254,7 +260,12 @@ function Restart-PodeInternalServer {
 
         $PodeContext.Server.Views.Clear()
         $PodeContext.Timers.Items.Clear()
+
+        # clear up logging
+        $PodeContext.Server.Logging.Running = $false
+        $PodeContext.Server.Logging.Methods.Clear()
         $PodeContext.Server.Logging.Types.Clear()
+        $PodeContext.Server.Logging.Logger.Reset()
 
         # clear client connections
         $PodeContext.Server.Signals.BroadcastLevel.Clear()
@@ -371,7 +382,7 @@ function Restart-PodeInternalServer {
     }
     catch {
         $_ | Write-PodeErrorLog
-        throw $_.Exception
+        throw
     }
 }
 

@@ -16,7 +16,7 @@ function New-PodeSession {
         FullId    = (Get-PodeSessionFullId -SessionId $sessionId -TabId $tabId)
         Extend    = $PodeContext.Server.Sessions.Info.Extend
         TimeStamp = [datetime]::UtcNow
-        Data      = @{}
+        Data      = [hashtable]::Synchronized(@{})
     }
 }
 
@@ -117,7 +117,7 @@ function Get-PodeSession {
         FullId    = (Get-PodeSessionFullId -SessionId $sessionId -TabId $tabId)
         Extend    = $PodeContext.Server.Sessions.Info.Extend
         TimeStamp = $null
-        Data      = @{}
+        Data      = [hashtable]::Synchronized(@{})
     }
 }
 
@@ -143,10 +143,10 @@ function Set-PodeSessionDataHash {
     }
 
     if (($null -eq $WebEvent.Session.Data) -or ($WebEvent.Session.Data.Count -eq 0)) {
-        $WebEvent.Session.Data = @{}
+        $WebEvent.Session.Data = [hashtable]::Synchronized(@{})
     }
 
-    $WebEvent.Session.DataHash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $WebEvent.Session.Data.Clone() -Depth 10 -Compress))
+    $WebEvent.Session.DataHash = Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $WebEvent.Session.Data -Depth 10 -Compress)
 }
 
 function Test-PodeSessionDataHash {
@@ -159,11 +159,11 @@ function Test-PodeSessionDataHash {
     }
 
     if (($null -eq $WebEvent.Session.Data) -or ($WebEvent.Session.Data.Count -eq 0)) {
-        $WebEvent.Session.Data = @{}
+        $WebEvent.Session.Data = [hashtable]::Synchronized(@{})
     }
 
-    $hash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $WebEvent.Session.Data -Depth 10 -Compress))
-    return ($WebEvent.Session.DataHash -eq $hash)
+    $hash = Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $WebEvent.Session.Data -Depth 10 -Compress)
+    return $WebEvent.Session.DataHash -eq $hash
 }
 
 function Save-PodeSessionInternal {
@@ -186,26 +186,26 @@ function Save-PodeSessionInternal {
     $expiry = Get-PodeSessionExpiry
 
     # the data to save - which will be the data, and some extra metadata like timestamp
-    $data = @{
-        Version  = 3
-        Metadata = @{
-            TimeStamp = $WebEvent.Session.TimeStamp
-        }
-        Data     = $WebEvent.Session.Data
-    }
-
-    # save base session data to store
-    if (!$PodeContext.Server.Sessions.Info.Scope.IsBrowser -and $WebEvent.Session.TabId) {
-        $authData = @{
+    $data = [hashtable]::Synchronized(@{
             Version  = 3
             Metadata = @{
                 TimeStamp = $WebEvent.Session.TimeStamp
-                Tabbed    = $true
             }
-            Data     = @{
-                Auth = $WebEvent.Session.Data.Auth
-            }
-        }
+            Data     = $WebEvent.Session.Data
+        })
+
+    # save base session data to store
+    if (!$PodeContext.Server.Sessions.Info.Scope.IsBrowser -and $WebEvent.Session.TabId) {
+        $authData = [hashtable]::Synchronized(@{
+                Version  = 3
+                Metadata = @{
+                    TimeStamp = $WebEvent.Session.TimeStamp
+                    Tabbed    = $true
+                }
+                Data     = @{
+                    Auth = $WebEvent.Session.Data.Auth
+                }
+            })
 
         $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($WebEvent.Session.Id, $authData, $expiry) -Splat
         $data.Metadata['Parent'] = $WebEvent.Session.Id
@@ -235,7 +235,7 @@ function Get-PodeSessionInMemStore {
     $store = [psobject]::new()
 
     # add in-mem storage
-    $store | Add-Member -MemberType NoteProperty -Name Memory -Value @{}
+    $store | Add-Member -MemberType NoteProperty -Name Memory -Value ([hashtable]::Synchronized(@{}))
 
     # delete a sessionId and data
     $store | Add-Member -MemberType NoteProperty -Name Delete -Value {
@@ -265,10 +265,10 @@ function Get-PodeSessionInMemStore {
     $store | Add-Member -MemberType NoteProperty -Name Set -Value {
         param($sessionId, $data, $expiry)
 
-        $PodeContext.Server.Sessions.Store.Memory[$sessionId] = @{
-            Data   = $data
-            Expiry = $expiry
-        }
+        $PodeContext.Server.Sessions.Store.Memory[$sessionId] = [hashtable]::Synchronized(@{
+                Data   = $data
+                Expiry = $expiry
+            })
     }
 
     return $store
@@ -290,7 +290,7 @@ function Set-PodeSessionInMemClearDown {
 
         # remove sessions that have expired, or where the parent is gone
         $now = [DateTime]::UtcNow
-        foreach ($key in $store.Memory.Keys.Clone()) {
+        foreach ($key in $store.Memory.Keys) {
             # expired
             if ($store.Memory[$key].Expiry -lt $now) {
                 $null = $store.Memory.Remove($key)

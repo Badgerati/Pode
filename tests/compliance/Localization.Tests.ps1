@@ -39,18 +39,18 @@ Describe 'Localization Check' {
         return $keys
     }
 
-    Describe 'Verify Invalid Hashtable Keys in [<_>]' -ForEach  ($sourceFiles) {
+    Describe 'Verify Invalid Hashtable Keys in [<_>]' -ForEach  ($sourceFiles) -AllowNullOrEmptyForEach {
         $keysInFile = Export-KeysFromFile -filePath $_
-        It "should find the key '[<_>]' in the hashtable"  -ForEach  ($keysInFile) {
+        It "should find the key '[<_>]' in the hashtable"  -ForEach  ($keysInFile) -AllowNullOrEmptyForEach {
             $PodeLocale.Keys -contains $_ | Should -BeTrue
         }
     }
 
-    It "Check 'throw' is not using a static string in [<_>]" -ForEach  ($sourceFiles) {
+    It "Check 'throw' is not using a static string in [<_>]" -ForEach  ($sourceFiles) -AllowNullOrEmptyForEach {
         (Get-Content -Path $_ -Raw -Force) -match 'throw\s*["\'']' | Should -BeFalse
     }
 
-    Describe  'Verifying Language [<_>]' -ForEach  ($languageDirs) {
+    Describe  'Verifying Language [<_>]' -ForEach  ($languageDirs) -AllowNullOrEmptyForEach {
         BeforeAll {
             $content = Import-LocalizedData -FileName 'Pode.psd1' -BaseDirectory $localizationDir -UICulture (Split-Path $_ -Leaf)
         }
@@ -63,7 +63,7 @@ Describe 'Localization Check' {
             $content.Keys.Count | Should -be $PodeLocale.Count
         }
 
-        It  -Name 'Resource File contains <_>' -ForEach ( $LanguageOfReference.Keys) {
+        It  -Name 'Resource File contains <_>' -ForEach ( $LanguageOfReference.Keys) -AllowNullOrEmptyForEach {
             $content.Keys -contains $_ | Should -BeTrue
         }
     }

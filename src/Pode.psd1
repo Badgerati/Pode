@@ -66,6 +66,11 @@
         'Restore-PodeState',
         'Test-PodeState',
         'Get-PodeStateNames',
+        'New-PodeStateDictionary',
+        'New-PodeStateOrderedDictionary',
+        'New-PodeStateBag',
+        'New-PodeStateSet',
+        'New-PodeStateList',
 
         # response helpers
         'Set-PodeResponseAttachment',
@@ -177,6 +182,13 @@
         'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',
         'Start-PodeSleep',
+        'ConvertTo-PodeString',
+        'Get-PodeServerName',
+        'Get-PodeAppName',
+        'Get-PodeEnvironmentVariable',
+        'Set-PodeEnvironmentVariable',
+        'Test-PodeEnvironmentVariable',
+        'Get-PodeTimestamp',
 
         # routes
         'Add-PodeRoute',
@@ -322,17 +334,53 @@
 
         # logging
         'New-PodeLoggingMethod',
-        'Enable-PodeRequestLogging',
-        'Enable-PodeErrorLogging',
-        'Disable-PodeRequestLogging',
-        'Disable-PodeErrorLogging',
-        'Add-PodeLogger',
-        'Remove-PodeLogger',
-        'Clear-PodeLoggers',
+        'Enable-PodeLogRequestType',
+        'Enable-PodeLogErrorType',
+        'Disable-PodeLogRequestType',
+        'Disable-PodeLogErrorType',
+        'Add-PodeLogType',
+        'Remove-PodeLogType',
+        'Clear-PodeLogTypes',
         'Write-PodeErrorLog',
         'Write-PodeLog',
         'Protect-PodeLogItem',
         'Use-PodeLogging',
+        'New-PodeLogBatchInfo',
+        'New-PodeLogTerminalMethod',
+        'New-PodeLogFileMethod',
+        'New-PodeLogEventViewerMethod',
+        'New-PodeLogCustomMethod',
+        'Clear-PodeLogMethods',
+        'Remove-PodeLogMethod',
+        'Convert-PodeLogItemToString',
+        'New-PodeLogSyslogInfo',
+        'ConvertTo-PodeSyslog',
+        'Get-PodeLogDefaultFormat',
+        'Get-PodeLogDefaultSerialiseFormat',
+        'Get-PodeLogDefaultSyslogFormat',
+        'New-PodeLogApiMethod',
+        'New-PodeLogAwsMethod',
+        'New-PodeLogAzureMethod',
+        'New-PodeLogDatadogMethod',
+        'New-PodeLogNetworkMethod',
+        'New-PodeLogSplunkMethod',
+        'Set-PodeLogDefaultFormat',
+        'Set-PodeLogDefaultSerialiseFormat',
+        'Set-PodeLogDefaultSyslogFormat',
+        'New-PodeLogW3CInfo',
+        'Add-PodeLogW3CField',
+        'Add-PodeLogW3CCustomField',
+        'New-PodeLogTerminalOverride',
+        'New-PodeLogEventViewerOverride',
+        'New-PodeLogFileOverride',
+        'New-PodeLogApiOverride',
+        'New-PodeLogAwsOverride',
+        'New-PodeLogAzureOverride',
+        'New-PodeLogDatadogOverride',
+        'New-PodeLogNetworkOverride',
+        'New-PodeLogSplunkOverride',
+        'New-PodeLogCustomOverride',
+        'Get-PodeLogOverride',
 
         # core
         'Start-PodeServer',
@@ -610,12 +658,21 @@
         'Enable-PodeOpenApiViewer',
         'Enable-PodeOA',
         'Get-PodeOpenApiDefinition',
-        'New-PodeOASchemaProperty'
+        'New-PodeOASchemaProperty',
+        'Add-PodeLogger',
+        'Remove-PodeLogger',
+        'Clear-PodeLoggers',
+        'Enable-PodeRequestLogging',
+        'Disable-PodeRequestLogging',
+        'Enable-PodeErrorLogging',
+        'Disable-PodeErrorLogging'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData       = @{
         PSData       = @{
+            # $prerelease$
+
             # Tags applied to this module. These help with module discovery in online galleries.
             Tags         = @(
                 'powershell', 'web', 'server', 'http', 'https', 'listener', 'rest', 'api', 'tcp',
@@ -637,6 +694,7 @@
             # Release notes for this particular version of the module
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
         }
+
         PwshVersions = @{
             Untested  = '$versionsUntested$'
             Supported = '$versionsSupported$'

@@ -347,4 +347,10 @@
     mcpToolAlreadyExistsExceptionMessage                              = "أداة MCP '{0}' موجودة بالفعل."
     mcpToolGroupAlreadyExistsExceptionMessage                         = "مجموعة أدوات MCP '{0}' موجودة بالفعل."
     staticRouteDefaultCannotBeRootedExceptionMessage                  = "لا يمكن أن تكون القيم الافتراضية للمسار الثابت مسارات جذرية. القيمة الافتراضية غير صالحة: '{0}'"
+    deprecatedFunctionWarningMessage                                  = "تحذير: الدالة '{0}' لم تعد مدعومة وسيتم إزالتها في الإصدارات المستقبلية. يرجى استخدام الدالة '{1}' بدلاً منها."
+    loggingMethodDoesNotExistExceptionMessage                         = "طريقة التسجيل '{0}' غير موجودة."
+    loggingApiMethodBodyNotStringExceptionMessage                     = 'النص الذي تم إرجاعه من كتلة نص API للتسجيل ليس سلسلة.'
+    loggingApiMethodHeadersNotHashtableExceptionMessage               = 'الرؤوس التي تم إرجاعها من كتلة رؤوس API للتسجيل ليست جدول تجزئة.'
+    nonEmptyScriptBlockRequiredForCustomSerialisationExceptionMessage = 'مطلوب ScriptBlock غير فارغ لتنسيق التسلسل المخصص للتسجيل.'
+    nonEmptyScriptBlockRequiredForCustomLogExceptionMessage           = 'مطلوب ScriptBlock غير فارغ لتنسيق السجل المخصص.'
 }

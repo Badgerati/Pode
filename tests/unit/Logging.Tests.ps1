@@ -2,22 +2,22 @@
 param()
 
 InModuleScope -ModuleName 'Pode' {
-    Describe 'Get-PodeLogger' {
+    Describe 'Get-PodeLogType' {
         It 'Returns null as the logger does not exist' {
             $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{}; } }; }
-            Get-PodeLogger -Name 'test' | Should -Be $null
+            Get-PodeLogType -Name 'test' | Should -Be $null
         }
 
         It 'Returns terminal logger for name' {
             $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = $null }; } }; }
-            $result = (Get-PodeLogger -Name 'test')
+            $result = (Get-PodeLogType -Name 'test')
 
             $result | Should -Be $null
         }
 
         It 'Returns custom logger for name' {
             $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = { Write-Host 'hello' } }; } }; }
-            $result = (Get-PodeLogger -Name 'test')
+            $result = (Get-PodeLogType -Name 'test')
 
             $result | Should -Not -Be $null
             $result.ToString() | Should -Be ({ Write-Host 'hello' }).ToString()
@@ -25,96 +25,104 @@ InModuleScope -ModuleName 'Pode' {
     }
 
     Describe 'Write-PodeLog' {
-        It 'Does nothing when logging disabled' {
-            Mock Test-PodeLoggerEnabled { return $false }
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+        BeforeEach {
+            $PodeContext = @{
+                Server = @{
+                    Logging = @{
+                        Logger = [Pode.Utilities.Logging.PodeLogger]::new()
+                    }
+                }
+            }
+        }
 
+        AfterEach {
+            $PodeContext.Server.Logging.Logger.Dispose()
+        }
+
+        It 'Does nothing when logging disabled' {
+            $PodeContext.Server.Logging.Logger.IsEnabled = $false
             Write-PodeLog -Name 'test' -InputObject 'test'
 
-            $PodeContext.LogsToProcess.Count | Should -Be 0
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 0
         }
 
         It 'Adds a log item' {
-            Mock Test-PodeLoggerEnabled { return $true }
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+            $logType = [Pode.Utilities.Logging.PodeLogType]::new('test', @('Informational'), $false)
+            $PodeContext.Server.Logging.Logger.RegisterType($logType)
 
             Write-PodeLog -Name 'test' -InputObject 'test'
 
-            $PodeContext.LogsToProcess.Count | Should -Be 1
-            $PodeContext.LogsToProcess[0].Name | Should -Be 'test'
-            $PodeContext.LogsToProcess[0].Item | Should -Be 'test'
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 1
+
+            $logEvent = $null
+            $PodeContext.Server.Logging.Logger.TryTake([ref]$logEvent, [System.Threading.CancellationToken]::None) | Should -Be $true
+            $logEvent.Type.Name | Should -Be 'test'
+            $logEvent.Data | Should -Be 'test'
         }
     }
 
     Describe 'Write-PodeErrorLog' {
-        It 'Does nothing when logging disabled' {
-            Mock Test-PodeLoggerEnabled { return $false }
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
-
-            Write-PodeLog -Name 'test' -InputObject 'test'
-
-            $PodeContext.LogsToProcess.Count | Should -Be 0
+        BeforeEach {
+            $PodeContext = @{
+                Server = @{
+                    Logging = @{
+                        Logger = [Pode.Utilities.Logging.PodeLogger]::new()
+                    }
+                }
+            }
         }
 
-        It 'Adds an error log item' {
-            Mock Test-PodeLoggerEnabled { return $true }
-            Mock Get-PodeLogger { return @{ Arguments = @{
-                        Levels = @('Error')
-                    }
-                } }
+        AfterEach {
+            $PodeContext.Server.Logging.Logger.Dispose()
+        }
 
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+        It 'Does nothing when logging disabled' {
+            $PodeContext.Server.Logging.Logger.IsEnabled = $false
 
             try { throw 'some error' }
             catch {
                 Write-PodeErrorLog -ErrorRecord $_
             }
 
-            $PodeContext.LogsToProcess.Count | Should -Be 1
-            $PodeContext.LogsToProcess[0].Item.Message | Should -Be 'some error'
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 0
+        }
+
+        It 'Adds an error log item' {
+            $logType = [Pode.Utilities.Logging.PodeLogErrorType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'), @('Server'), $false)
+            $PodeContext.Server.Logging.Logger.RegisterType($logType)
+
+            try { throw 'some error' }
+            catch {
+                Write-PodeErrorLog -ErrorRecord $_
+            }
+
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 1
+
+            $logEvent = $null
+            $PodeContext.Server.Logging.Logger.TryTake([ref]$logEvent, [System.Threading.CancellationToken]::None) | Should -Be $true
+            $logEvent.Data.Message | Should -Be 'some error'
         }
 
         It 'Adds an exception log item' {
-            Mock Test-PodeLoggerEnabled { return $true }
-            Mock Get-PodeLogger { return @{ Arguments = @{
-                        Levels = @('Error')
-                    }
-                } }
-
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+            $logType = [Pode.Utilities.Logging.PodeLogErrorType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'), @('Server'), $false)
+            $PodeContext.Server.Logging.Logger.RegisterType($logType)
 
             $exp = [exception]::new('some error')
             Write-PodeErrorLog -Exception $exp
 
-            $PodeContext.LogsToProcess.Count | Should -Be 1
-            $PodeContext.LogsToProcess[0].Item.Message | Should -Be 'some error'
+            $logEvent = $null
+            $PodeContext.Server.Logging.Logger.TryTake([ref]$logEvent, [System.Threading.CancellationToken]::None) | Should -Be $true
+            $logEvent.Data.Message | Should -Be 'some error'
         }
 
         It 'Does not log as Verbose not allowed' {
-            Mock Test-PodeLoggerEnabled { return $true }
-            Mock Get-PodeLogger { return @{ Arguments = @{
-                        Levels = @('Error')
-                    }
-                } }
-
-            $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
+            $logType = [Pode.Utilities.Logging.PodeLogErrorType]::new([Pode.Utilities.Logging.PodeLogger]::ERROR_LOG_TYPE_NAME, @('Error'), @('Server'), $false)
+            $PodeContext.Server.Logging.Logger.RegisterType($logType)
 
             $exp = [exception]::new('some error')
             Write-PodeErrorLog -Exception $exp -Level Verbose
 
-            $PodeContext.LogsToProcess.Count | Should -Be 0
-        }
-    }
-
-    Describe 'Get-PodeRequestLoggingName' {
-        It 'Returns logger name' {
-            Get-PodeRequestLoggingName | Should -Be '__pode_log_requests__'
-        }
-    }
-
-    Describe 'Get-PodeErrorLoggingName' {
-        It 'Returns logger name' {
-            Get-PodeErrorLoggingName | Should -Be '__pode_log_errors__'
+            $PodeContext.Server.Logging.Logger.Count | Should -Be 0
         }
     }
 
@@ -179,6 +187,81 @@ InModuleScope -ModuleName 'Pode' {
             }
 
             Protect-PodeLogItem -Item $item | Should -Be 'Password=********Hunter2, Email'
+        }
+    }
+
+    Describe 'ConvertTo-PodeSyslog' {
+        BeforeAll {
+            $PodeContext = @{
+                Server = @{
+                    ComputerName = 'localhost'
+                    AppName      = 'Pode'
+                }
+            }
+        }
+
+        It 'Converts a log item to RFC5424 syslog format' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now
+            $msg | Should -Be "<131>1 $($strNow) localhost Pode $($processId) - - example"
+        }
+
+        It 'Converts a log item to RFC5424 syslog format, with custom AppName' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -AppName 'CustomApp'
+            $msg | Should -Be "<131>1 $($strNow) localhost CustomApp $($processId) - - example"
+        }
+
+        It 'Converts a log item to RFC5424 syslog format, with Facility' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Facility 19
+            $msg | Should -Be "<155>1 $($strNow) localhost Pode $($processId) - - example"
+        }
+
+        It 'Converts a log item to RFC5424 syslog format, with Tags' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('yyyy-MM-ddTHH:mm:ss.fffK')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+            $tags = @{ tag1 = 'value1' }
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Tags $tags
+            $msg | Should -Be "<131>1 $($strNow) localhost Pode $($processId) - [tag1=`"value1`"] example"
+        }
+
+        It 'Converts a log item to RFC3164 syslog format' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('MMM dd HH:mm:ss')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Format 'RFC3164'
+            $msg | Should -Be "<131>$($strNow) localhost Pode[$($processId)]: example"
+        }
+
+        It 'Converts a log item to RFC3164 syslog format, with custom AppName' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('MMM dd HH:mm:ss')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Format 'RFC3164' -AppName 'CustomApp'
+            $msg | Should -Be "<131>$($strNow) localhost CustomApp[$($processId)]: example"
+        }
+
+        It 'Converts a log item to RFC3164 syslog format, with Facility' {
+            $now = [datetime]::UtcNow
+            $strNow = $now.ToString('MMM dd HH:mm:ss')
+            $processId = [System.Diagnostics.Process]::GetCurrentProcess().Id
+
+            $msg = ConvertTo-PodeSyslog -Message 'example' -Level 'Error' -Timestamp $now -Format 'RFC3164' -Facility 19
+            $msg | Should -Be "<155>$($strNow) localhost Pode[$($processId)]: example"
         }
     }
 }

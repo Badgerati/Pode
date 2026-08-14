@@ -8,6 +8,7 @@ using System.Threading;
 using System.Linq; // needed for netstandard2.0
 using Pode.Adapters.Consumers;
 using Pode.Utilities;
+using Pode.Utilities.Logging;
 
 namespace Pode.Protocols.WebSockets
 {
@@ -107,7 +108,7 @@ namespace Pode.Protocols.WebSockets
             catch (IOException) { }
             catch (WebSocketException ex)
             {
-                PodeHelpers.WriteException(ex, Consumer, PodeLoggingLevel.Debug);
+                PodeHelpers.WriteException(ex, PodeLogLevel.Debug);
                 Dispose();
             }
             finally
@@ -141,7 +142,7 @@ namespace Pode.Protocols.WebSockets
 
             if (IsConnected)
             {
-                PodeHelpers.WriteErrorMessage($"Closing client web socket: {Name}", Consumer, PodeLoggingLevel.Verbose);
+                PodeHelpers.WriteErrorMessage($"Closing client web socket: {Name}", PodeLogLevel.Verbose);
 
                 // only close output in client closing
                 if (closeFrom == PodeWebSocketCloseFrom.Client)
@@ -155,12 +156,12 @@ namespace Pode.Protocols.WebSockets
                     await WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).ConfigureAwait(false);
                 }
 
-                PodeHelpers.WriteErrorMessage($"Closed client web socket: {Name}", Consumer, PodeLoggingLevel.Verbose);
+                PodeHelpers.WriteErrorMessage($"Closed client web socket: {Name}", PodeLogLevel.Verbose);
             }
 
             WebSocket.Dispose();
             WebSocket = default;
-            PodeHelpers.WriteErrorMessage($"Disconnected client web socket: {Name}", Consumer, PodeLoggingLevel.Verbose);
+            PodeHelpers.WriteErrorMessage($"Disconnected client web socket: {Name}", PodeLogLevel.Verbose);
         }
 
         public void Dispose()
