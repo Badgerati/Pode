@@ -27,6 +27,12 @@ Describe 'REST API Requests' {
                     Write-PodeJsonResponse -Value @{ Result = 'Pong' }
                 }
 
+                Add-PodeRoute -Method Get -Path '/headers' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{
+                        AcceptEncoding = Get-PodeHeader -Name 'Accept-Encoding'
+                    }
+                }
+
                 function Write-InnerImportedResponse {
                     Write-PodeJsonResponse -Value @{ Message = 'Inner Hello' }
                 }
@@ -122,6 +128,38 @@ Describe 'REST API Requests' {
     It 'responds back with pong' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Get
         $result.Result | Should -Be 'Pong'
+    }
+
+    It 'combines duplicate request header values' {
+        $client = [System.Net.Sockets.TcpClient]::new('127.0.0.1', $Port)
+        try {
+            $stream = $client.GetStream()
+            $request = @(
+                'GET /headers HTTP/1.1'
+                "Host: localhost:$($Port)"
+                'Accept-Encoding: gzip, deflate'
+                'Accept-Encoding: UTF-8'
+                'Connection: close'
+                ''
+                ''
+            ) -join "`r`n"
+
+            $requestBytes = [System.Text.Encoding]::ASCII.GetBytes($request)
+            $stream.Write($requestBytes, 0, $requestBytes.Length)
+            $stream.Flush()
+
+            $reader = [System.IO.StreamReader]::new($stream)
+            $response = $reader.ReadToEnd()
+        }
+        finally {
+            $client.Dispose()
+        }
+
+        $responseParts = $response -split "`r`n`r`n", 2
+        $responseParts[0] | Should -Match '^HTTP/1.1 200'
+
+        $body = $responseParts[1] | ConvertFrom-Json
+        $body.AcceptEncoding | Should -Be 'gzip, deflate, UTF-8'
     }
 
     It 'responds back with 404 for invalid route' {
