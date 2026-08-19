@@ -309,7 +309,14 @@ namespace Pode.Protocols.Http
                 {
                     h_name = h_line.Substring(0, h_index).Trim();
                     h_value = h_line.Substring(h_index + 1).Trim();
-                    Headers.Add(h_name, h_value);
+                    if (Headers.ContainsKey(h_name))
+                    {
+                        Headers[h_name] = $"{Headers[h_name]}, {h_value}";
+                    }
+                    else
+                    {
+                        Headers.Add(h_name, h_value);
+                    }
                 }
             }
 
