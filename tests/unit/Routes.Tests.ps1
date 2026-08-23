@@ -890,6 +890,8 @@ InModuleScope -ModuleName 'Pode' {
         BeforeAll {
             Mock Test-PodeIPAddress { return $true }
             Mock Test-PodeIsAdminUser { return $true }
+            Mock Test-PodePath { return $true }
+            Mock New-PodePSDrive { return './assets' }
         }
 
         BeforeEach {
@@ -909,15 +911,17 @@ InModuleScope -ModuleName 'Pode' {
 
             $PodeContext.Server.Routes['GET'] = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
             $PodeContext.Server.Routes['POST'] = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
+            $PodeContext.Server.Routes['STATIC'] = [Pode.Utilities.Structures.PodeConcurrentOrderedDictionary[string, object]]::new()
         }
 
         It 'Returns all routes when nothing supplied' {
             Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
             Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
             Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
+            Add-PodeStaticRoute -Path '/assets' -Source './assets'
 
             $routes = Get-PodeRoute
-            $routes.Length | Should -Be 3
+            $routes.Length | Should -Be 4
         }
 
         It 'Returns both routes for GET method' {
