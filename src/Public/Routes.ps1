@@ -2428,15 +2428,15 @@ function Get-PodeRoute {
         }
     }
     elseif (![string]::IsNullOrEmpty($Path)) {
-        foreach ($method in $PodeContext.Server.Routes.Keys) {
-            if ($PodeContext.Server.Routes[$method].Contains($Path)) {
-                $routes += $PodeContext.Server.Routes[$method][$Path]
+        foreach ($_method in $PodeContext.Server.Routes.Keys) {
+            if ($PodeContext.Server.Routes[$_method].Contains($Path)) {
+                $routes += $PodeContext.Server.Routes[$_method][$Path]
             }
         }
     }
     else {
-        foreach ($method in $PodeContext.Server.Routes.Keys) {
-            foreach ($route in $PodeContext.Server.Routes[$method].Values) {
+        foreach ($_method in $PodeContext.Server.Routes.Keys) {
+            foreach ($route in $PodeContext.Server.Routes[$_method].Values) {
                 $routes += $route
             }
         }
