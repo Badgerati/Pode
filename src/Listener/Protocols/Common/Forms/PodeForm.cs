@@ -115,7 +115,6 @@ namespace Pode.Protocols.Common.Forms
                     throw new Exception("No Content-Disposition found in multipart/form-data");
                 }
 
-                // foreach (var line in disposition.Split(';'))
                 foreach (var line in contentDispHeader.Split(';'))
                 {
                     var atoms = line.Split('=');
@@ -126,7 +125,7 @@ namespace Pode.Protocols.Common.Forms
                 }
 
                 // is this just a regular data field?
-                if (!fields.TryGetValue("filename", out string filenameField))
+                if (!fields.TryGetValue("filename", out string filenameField) || string.IsNullOrWhiteSpace(filenameField))
                 {
                     // add the data item as name=value
                     form.Data.Add(new PodeFormData(fields["name"], GetLineString(lines[currentLineIndex], contentEncoding)));
@@ -135,6 +134,9 @@ namespace Pode.Protocols.Common.Forms
                 // otherwise it's a file field
                 else
                 {
+                    // sanitise the filename field, and remove any path information
+                    filenameField = Path.GetFileName(filenameField);
+
                     // add a data item for mapping name=filename
                     var currentData = form.Data.FirstOrDefault(x => x.Key == fields["name"]);
                     if (currentData == default(PodeFormData))
@@ -144,12 +146,6 @@ namespace Pode.Protocols.Common.Forms
                     else
                     {
                         currentData.AddValue(filenameField);
-                    }
-
-                    // do we actually have a filename?
-                    if (string.IsNullOrWhiteSpace(filenameField))
-                    {
-                        continue;
                     }
 
                     // parse the file contents, and create a stream for the payload
