@@ -2,9 +2,9 @@
 
 A Task in Pode is a script that you can later invoke either asynchronously, or synchronously. They can be invoked many times, and they also support returning values from them for later use.
 
-Similar to [Schedules](../Schedules), Tasks also run in their own separate runspaces; meaning you can have long or short running tasks. By default up to a maximum of 2 tasks can run concurrently, but this can be changed by using [`Set-PodeTaskConcurrency`](../../Functions/Tasks/Set-PodeTaskConcurrency). When more tasks are invoked than can be run concurrently, tasks will be added to the task queue and will run once there is available resource in the thread pool.
+Tasks run in their own separate runspaces, meaning you can have long or short running tasks. By default up to a maximum of 2 tasks can run concurrently, but this can be changed by using [`Set-PodeTaskConcurrency`](../../Functions/Tasks/Set-PodeTaskConcurrency). When more tasks are invoked than can be run concurrently, tasks will be added to the task queue and will run once there is available resource in the thread pool.
 
-Behind the scenes there is a a Timer created that will automatically clean-up any completed tasks. Any task that has been completed for 1+ minutes will be disposed of to free up resources - there are functions which will let you clean-up tasks more quickly.
+Behind the scenes there is a Timer created that will automatically clean-up any completed, failed, or expired tasks. Any task that has been completed/failed for 1+ minutes will be disposed of to free up resources - there are functions which will let you clean-up tasks more quickly.
 
 ## Create a Task
 
@@ -101,6 +101,15 @@ Add-PodeRoute -Method Get -Path '/run-task' -ScriptBlock {
     Write-PodeJsonResponse -Value @{ User = $user }
 }
 ```
+
+#### Retention
+
+When running Tasks asynchronously, once the process has completed/failed they will be automatically clean-up after the default of 1 minute. You can customise this by using `-CompletedRetentionPeriod` and `FailedRetentionPeriod` on [`Add-PodeTask`](../../Functions/Tasks/Add-PodeTask), and supply a value in minutes.
+
+This is useful if you want to check/poll for Task process statuses using [`Get-PodeTaskProcess`](../../Functions/Tasks/Get-PodeTaskProcess).
+
+!!! note
+    Supplying a value of 0 implies immediate clean-up, no retention.
 
 ### Synchronously
 

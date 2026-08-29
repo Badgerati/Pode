@@ -37,7 +37,7 @@ function Start-PodeTaskHousekeeper {
                     }
 
                     # if the process is completed, then close and remove
-                    if (($process.State -ieq 'Completed') -and ($process.CompletedTime.AddMinutes(1) -lt $now)) {
+                    if (($process.State -ieq 'Completed') -and ($process.CompletedTime.AddMinutes($task.Retention.Completed) -lt $now)) {
                         Close-PodeTaskInternal -Process $process
                         continue
                     }
@@ -46,7 +46,10 @@ function Start-PodeTaskHousekeeper {
                     if ($process.State -ieq 'Failed') {
                         # if we have hit the max retries, then close and remove
                         if ($process.Retry.Count -ge $task.Retry.Max) {
-                            Close-PodeTaskInternal -Process $process
+                            if ($process.CompletedTime.AddMinutes($task.Retention.Failed) -lt $now) {
+                                Close-PodeTaskInternal -Process $process
+                            }
+
                             continue
                         }
 

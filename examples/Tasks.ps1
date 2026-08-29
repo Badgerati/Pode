@@ -44,6 +44,13 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
+    Add-PodeTimer -Name 'GetTaskProcesses' -Interval 5 -ScriptBlock {
+        '----' | Out-Default
+        Get-PodeTaskProcess | ForEach-Object {
+            "Task: $($_.Task) | State: $($_.State) | Completed: $($_.CompletedTime)" | Out-Default
+        }
+    }
+
     Add-PodeTask -Name 'Test1' -ScriptBlock {
         'a string'
         4
@@ -62,6 +69,10 @@ Start-PodeServer {
         }
 
         'task completed' | Out-Default
+    }
+
+    Add-PodeTask -Name 'Fail' -FailedRetentionPeriod 2 -ScriptBlock {
+        throw 'this task has failed'
     }
 
     # create a new task via a route
@@ -83,5 +94,9 @@ Start-PodeServer {
 
     Add-PodeRoute -Method Get -Path '/api/task/intermittent' -ScriptBlock {
         Invoke-PodeTask -Name 'Intermittent'
+    }
+
+    Add-PodeRoute -Method Get -Path '/api/task/fail' -ScriptBlock {
+        Invoke-PodeTask -Name 'Fail'
     }
 }
