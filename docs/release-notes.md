@@ -1,5 +1,28 @@
 # Release Notes
 
+# v2.14.1
+
+Date: 29th August 2026
+
+```plain
+### Enhancements
+* #1783: Enables failed Task processes to be retained for a period, plus custom retention periods
+
+### Bugs
+* #1765: Fix to accept repeated HTTP request header fields (thanks @SsSonic3!)
+* #1775: Fixes Get-PodeRoute when called with no Method
+* #1781: Sanitize the file name during multipart/form-data requests
+* #1782: Fixes collection modified errors when cleaning up Tasks and Schedules
+
+### Documentation
+* #1779: Update deprecated CefSharp dependency reference to new package
+
+### Packaging
+* #1771: Bump @highlightjs/cdn-assets from 11.11.1 to 11.12.0
+* #1774: Bump swagger-ui-dist from 5.32.12 to 5.32.14
+* #1777: Bump github/codeql-action from 4.37.6 to 4.37.8
+```
+
 # v2.14.0
 
 Date: 13th August 2026
