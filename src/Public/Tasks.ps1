@@ -29,6 +29,12 @@ The maximum number of retries to attempt if the Task fails. (Default: 0)
 .PARAMETER RetryDelay
 The delay, in minutes, between automatically retrying failed task processes. (Default: 0)
 
+.PARAMETER CompletedRetentionPeriod
+The number of minutes to retain completed task processes before automatically closing and removing them. (Default: 1)
+
+.PARAMETER FailedRetentionPeriod
+The number of minutes to retain failed task processes before automatically closing and removing them. (Default: 1)
+
 .PARAMETER AutoRetry
 If supplied, the Task will automatically retry processes if they fail.
 
@@ -79,6 +85,16 @@ function Add-PodeTask {
         [int]
         $RetryDelay = 0,
 
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $CompletedRetentionPeriod = 1,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $FailedRetentionPeriod = 1,
+
         [switch]
         $AutoRetry
     )
@@ -115,6 +131,10 @@ function Add-PodeTask {
             Max       = $MaxRetries
             Delay     = $RetryDelay
             AutoRetry = $AutoRetry.IsPresent
+        }
+        Retention      = @{
+            Completed = $CompletedRetentionPeriod
+            Failed    = $FailedRetentionPeriod
         }
     }
 }
@@ -186,7 +206,7 @@ A Timeout, in seconds, to abort running the Task process. (Default: -1 [never ti
 Where to start the Timeout from, either 'Default', 'Create', or 'Start'. (Default: 'Default' - will use the value from Add-PodeTask)
 
 .PARAMETER Wait
-If supplied, Pode will wait until the Task process has finished executing, and then return any values.
+If supplied, Pode will wait until the Task process has finished executing, clean-up, and then return any values.
 
 .OUTPUTS
 The triggered Task process.
@@ -504,10 +524,10 @@ function Test-PodeTaskFailed {
 
 <#
 .SYNOPSIS
-Waits for a Task process to finish, and returns a result if there is one.
+Waits for a Task process to finish, cleans up, and returns a result if there is one.
 
 .DESCRIPTION
-Waits for a Task process to finish, and returns a result if there is one.
+Waits for a Task process to finish, cleans up, and returns a result if there is one.
 
 .PARAMETER Process
 The Task process to wait on. The process returned by either Invoke-PodeTask or Get-PodeTaskProcess.
