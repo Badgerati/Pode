@@ -44,6 +44,9 @@ Start-PodeServer {
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
+    # log errors to the terminal
+    New-PodeLogTerminalMethod | Enable-PodeLogErrorType
+
     # schedule minutely using predefined cron
     $message = 'Hello, world!'
     Add-PodeSchedule -Name 'predefined' -Cron '@minutely' -Limit 2 -ScriptBlock {
