@@ -64,7 +64,7 @@ Start-PodeServer {
         'task completed' | Out-Default
     }
 
-    # create a new timer via a route
+    # create a new task via a route
     Add-PodeRoute -Method Get -Path '/api/task/sync' -ScriptBlock {
         $result = Invoke-PodeTask -Name 'Test1' -Wait
         Write-PodeJsonResponse -Value @{ Result = $result }

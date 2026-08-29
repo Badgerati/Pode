@@ -26,7 +26,7 @@ function Start-PodeScheduleRunspace {
 
             $now = [datetime]::UtcNow
 
-            foreach ($key in $PodeContext.Schedules.Processes.Keys) {
+            foreach ($key in $PodeContext.Schedules.Processes.Keys.Clone()) {
                 try {
                     $process = $PodeContext.Schedules.Processes[$key]
                     if ($null -eq $process) {

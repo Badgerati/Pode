@@ -18,7 +18,7 @@ function Start-PodeTaskHousekeeper {
             $now = [datetime]::UtcNow
 
             # loop through each process
-            foreach ($key in $PodeContext.Tasks.Processes.Keys) {
+            foreach ($key in $PodeContext.Tasks.Processes.Keys.Clone()) {
                 try {
                     # get the process
                     $process = $PodeContext.Tasks.Processes[$key]
