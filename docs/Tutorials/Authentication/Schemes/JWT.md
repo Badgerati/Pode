@@ -6,16 +6,16 @@ For more information on JWTs, see the [official website](https://jwt.io).
 
 ## Setup
 
-To start using JWT authentication, you can supply the `-AsJWT` switch with either the `-Bearer` or `-ApiKey` switch on [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme). You can also supply an optional `-Secret` that the JWT signature uses so Pode can validate the JWT:
+To start using JWT authentication, you can supply the `-AsJWT` switch on either [`New-PodeAuthBearerScheme`](../../../../Functions/Authentication/New-PodeAuthBearerScheme) or [`New-PodeAuthApiKeyScheme`](../../../../Functions/Authentication/New-PodeAuthApiKeyScheme). You can also supply an optional `-Secret` that the JWT signature uses so Pode can validate the JWT:
 
 ```powershell
 # jwt with no signature:
-New-PodeAuthScheme -Bearer -AsJWT | Add-PodeAuth -Name 'Example' -Sessionless -ScriptBlock {
+New-PodeAuthBearerScheme -AsJWT | Add-PodeAuth -Name 'Example' -Sessionless -ScriptBlock {
     param($payload)
 }
 
 # jwt with signature, signed with secret "abc":
-New-PodeAuthScheme -ApiKey -AsJWT -Secret 'abc' | Add-PodeAuth -Name 'Example' -Sessionless -ScriptBlock {
+New-PodeAuthApiKeyScheme -AsJWT -Secret 'abc' | Add-PodeAuth -Name 'Example' -Sessionless -ScriptBlock {
     param($payload)
 }
 ```

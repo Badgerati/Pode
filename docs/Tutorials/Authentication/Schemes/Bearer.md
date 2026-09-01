@@ -6,13 +6,16 @@ Bearer authentication lets you authenticate a user based on a token, with option
 Authorization: Bearer <token>
 ```
 
+!!! important
+    The `New-PodeAuthScheme` function is now deprecated, please use [`New-PodeAuthBearerScheme`](../../../../Functions/Authentication/New-PodeAuthBearerScheme) instead.
+
 ## Setup
 
-To start using Bearer authentication in Pode you can use `New-PodeAuthScheme -Bearer`, and then pipe the returned object into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token` from the Authorization token:
+To start using Bearer authentication in Pode you can use [`New-PodeAuthBearerScheme`](../../../../Functions/Authentication/New-PodeAuthBearerScheme), and then pipe the returned object into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token` from the Authorization token:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Bearer | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user
@@ -22,13 +25,13 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the request's header contains an `Authorization` key, and whether the value of that key starts with `Bearer` tag. The `New-PodeAuthScheme -Bearer` function can be supplied parameters to customise the tag using `-HeaderTag`.
+By default, Pode will check if the request's header contains an `Authorization` key, and whether the value of that key starts with `Bearer` tag. The [`New-PodeAuthBearerScheme`](../../../../Functions/Authentication/New-PodeAuthBearerScheme) function can be supplied parameters to customise the tag using `-HeaderTag`.
 
-You can also optionally return a `Scope` property alongside the `User`. If you specify any scopes with [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.
+You can also optionally return a `Scope` property alongside the `User`. If you specify any scopes with [`New-PodeAuthBearerScheme`](../../../../Functions/Authentication/New-PodeAuthBearerScheme) then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Bearer -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user
@@ -73,7 +76,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # setup bearer authentication to validate a user
-    New-PodeAuthScheme -Bearer | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # here you'd check a real storage, this is just for example

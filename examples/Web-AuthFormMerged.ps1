@@ -58,7 +58,7 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
     # setup form auth (<form> in HTML)
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login1' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+    New-PodeAuthFormScheme | Add-PodeAuth -Name 'Login1' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -75,7 +75,7 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login2' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+    New-PodeAuthFormScheme | Add-PodeAuth -Name 'Login2' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

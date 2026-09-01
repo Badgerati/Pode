@@ -44,7 +44,7 @@ Start-PodeServer {
     Set-PodeViewEngine -Type Pode
 
     # setup client cert auth
-    New-PodeAuthScheme -ClientCertificate | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthClientCertificateScheme | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($cert, $errors)
 
         # validate the thumbprint - here you would check a real cert store, or database

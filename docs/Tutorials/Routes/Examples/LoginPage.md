@@ -1,6 +1,6 @@
 # Creating a Login Page
 
-This is an example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using [Form authentication](../../../Authentication/Methods/Form) with [Sessions](../../../Middleware/Types/Sessions).
+This is an example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using [Form authentication](../../../Authentication/Schemes/Form) with [Sessions](../../../Middleware/Types/Sessions).
 
 !!! info
     The full example can be seen on GitHub in [`examples/web-auth-form.ps1`](https://github.com/Badgerati/Pode/blob/develop/examples/web-auth-form.ps1).
@@ -44,7 +44,7 @@ Enable-PodeSessionMiddleware -Duration 120 -Extend
 Once we have the Session Middleware initialised, we need to setup Form authentication - the username/password here are hard-coded, but normally you would validate against some database. We also specify a `-FailureUrl`, which is the URL to redirect a user to if they try to access a page un-authenticated. The `-SuccessUrl` is the URL to redirect to on successful authentication.
 
 ```powershell
-New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+New-PodeAuthFormScheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
     param($username, $password)
 
     # here you'd check a real user storage, this is just for example
@@ -113,7 +113,7 @@ Start-PodeServer -Thread 2 {
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
     # setup form authentication
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+    New-PodeAuthFormScheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

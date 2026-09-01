@@ -67,7 +67,7 @@ To setup Azure AD authentication, but using your own Form login, then you can us
 Start-PodeServer {
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
-    $form  = New-PodeAuthScheme -Form
+    $form  = New-PodeAuthFormScheme
 
     $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $form
 
@@ -98,10 +98,10 @@ Invoke-RestMethod -Url 'http://localhost:8080' -WebSession $session -Body $res.F
 The Pode side needs to be configured to allow basic authentication as well. This can be done side by side with Form based authentication using this example
 
 ```powershell
-$form  = New-PodeAuthScheme -Form
+$form  = New-PodeAuthFormScheme
 $schemeForm = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $form
 
-$basic = New-PodeAuthScheme -Basic
+$basic = New-PodeAuthBasicScheme
 $schemeBasic = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $basic
 
 $authLogin = {

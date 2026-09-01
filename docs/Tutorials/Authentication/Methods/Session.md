@@ -20,7 +20,7 @@ Start-PodeServer {
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
     # setup form auth for login
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'FormAuth' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+    New-PodeAuthFormScheme | Add-PodeAuth -Name 'FormAuth' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

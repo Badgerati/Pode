@@ -23,7 +23,7 @@ Describe 'Session Requests' {
 
                 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 5 -Extend -UseHeaders
 
-                New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Auth' -ScriptBlock {
+                New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Auth' -ScriptBlock {
                     param($username, $password)
 
                     if (($username -eq 'morty') -and ($password -eq 'pickle')) {

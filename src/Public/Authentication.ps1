@@ -7,6 +7,18 @@ Create a new type of Authentication scheme.
 .DESCRIPTION
 Create a new type of Authentication scheme, which is used to parse the Request for user credentials for validating.
 
+This function has been deprecated and will be removed in future versions.
+Please use the appropriate new functions for each Authentication scheme:
+- New-PodeAuthBasicScheme
+- New-PodeAuthFormScheme
+- New-PodeAuthDigestScheme
+- New-PodeAuthBearerScheme
+- New-PodeAuthClientCertificateScheme
+- New-PodeAuthOAuth2Scheme
+- New-PodeAuthApiKeyScheme
+- New-PodeAuthNegotiateScheme
+- New-PodeAuthCustomScheme
+
 .PARAMETER Basic
 If supplied, will use the inbuilt Basic Authentication credentials retriever.
 
@@ -310,6 +322,7 @@ function New-PodeAuthScheme {
         [string]
         $KeytabPath
     )
+
     begin {
         $pipelineItemCount = 0
     }
@@ -322,6 +335,7 @@ function New-PodeAuthScheme {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         # default realm
         $_realm = 'User'
 
@@ -331,249 +345,123 @@ function New-PodeAuthScheme {
         # configure the auth scheme
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'basic' {
-                return @{
-                    Name          = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthBasicType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = $null
-                    Middleware    = $Middleware
-                    InnerScheme   = $InnerScheme
-                    Scheme        = 'http'
-                    Arguments     = @{
-                        Description  = $Description
-                        HeaderTag    = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
-                        Encoding     = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
-                        AsCredential = $AsCredential
-                    }
-                }
+                Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeAuthScheme', 'New-PodeAuthBasicScheme') -ForegroundColor Yellow
+
+                return New-PodeAuthBasicScheme `
+                    -Realm (Protect-PodeValue -Value $Realm -Default $_realm) `
+                    -HeaderTag (Protect-PodeValue -Value $HeaderTag -Default 'Basic') `
+                    -Encoding (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1') `
+                    -Description $Description `
+                    -AsCredential:$AsCredential `
+                    -Middleware $Middleware `
+                    -InnerScheme $InnerScheme
             }
 
             'clientcertificate' {
-                return @{
-                    Name          = 'Mutual'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthClientCertificateType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = $null
-                    Middleware    = $Middleware
-                    InnerScheme   = $InnerScheme
-                    Scheme        = 'http'
-                    Arguments     = @{}
-                }
+                Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeAuthScheme', 'New-PodeAuthClientCertificateScheme') -ForegroundColor Yellow
+
+                return New-PodeAuthClientCertificateScheme `
+                    -Realm (Protect-PodeValue -Value $Realm -Default $_realm) `
+                    -Description $Description `
+                    -Middleware $Middleware `
+                    -InnerScheme $InnerScheme
             }
 
             'digest' {
-                return @{
-                    Name          = 'Digest'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthDigestType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = @{
-                        Script         = (Get-PodeAuthDigestPostValidator)
-                        UsingVariables = $null
-                    }
-                    Middleware    = $Middleware
-                    InnerScheme   = $InnerScheme
-                    Scheme        = 'http'
-                    Arguments     = @{
-                        HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
-                    }
-                }
+                Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeAuthScheme', 'New-PodeAuthDigestScheme') -ForegroundColor Yellow
+
+                return New-PodeAuthDigestScheme `
+                    -Realm (Protect-PodeValue -Value $Realm -Default $_realm) `
+                    -HeaderTag (Protect-PodeValue -Value $HeaderTag -Default 'Digest') `
+                    -Description $Description `
+                    -Middleware $Middleware `
+                    -InnerScheme $InnerScheme
             }
 
             'bearer' {
-                $secretBytes = $null
-                if (![string]::IsNullOrWhiteSpace($Secret)) {
-                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
-                }
+                Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeAuthScheme', 'New-PodeAuthBearerScheme') -ForegroundColor Yellow
 
-                return @{
-                    Name          = 'Bearer'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthBearerType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = @{
-                        Script         = (Get-PodeAuthBearerPostValidator)
-                        UsingVariables = $null
-                    }
-                    Middleware    = $Middleware
-                    Scheme        = 'http'
-                    InnerScheme   = $InnerScheme
-                    Arguments     = @{
-                        Description = $Description
-                        HeaderTag   = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
-                        Scopes      = $Scope
-                        AsJWT       = $AsJWT
-                        Secret      = $secretBytes
-                    }
-                }
+                return New-PodeAuthBearerScheme `
+                    -Realm (Protect-PodeValue -Value $Realm -Default $_realm) `
+                    -HeaderTag (Protect-PodeValue -Value $HeaderTag -Default 'Bearer') `
+                    -Scope $Scope `
+                    -Description $Description `
+                    -AsJWT:$AsJWT `
+                    -Secret $Secret `
+                    -Middleware $Middleware `
+                    -InnerScheme $InnerScheme
             }
 
             'form' {
-                return @{
-                    Name          = 'Form'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthFormType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = $null
-                    Middleware    = $Middleware
-                    InnerScheme   = $InnerScheme
-                    Scheme        = 'http'
-                    Arguments     = @{
-                        Description  = $Description
-                        Fields       = @{
-                            Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
-                            Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
-                        }
-                        AsCredential = $AsCredential
-                    }
-                }
+                Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeAuthScheme', 'New-PodeAuthFormScheme') -ForegroundColor Yellow
+
+                return New-PodeAuthFormScheme `
+                    -Realm (Protect-PodeValue -Value $Realm -Default $_realm) `
+                    -UsernameField (Protect-PodeValue -Value $UsernameField -Default 'username') `
+                    -PasswordField (Protect-PodeValue -Value $PasswordField -Default 'password') `
+                    -Description $Description `
+                    -AsCredential:$AsCredential `
+                    -Middleware $Middleware `
+                    -InnerScheme $InnerScheme
             }
 
             'oauth2' {
-                if (($null -ne $InnerScheme) -and ($InnerScheme.Name -inotin @('basic', 'form'))) {
-                    # OAuth2 InnerScheme can only be one of either Basic or Form authentication, but got: {0}
-                    throw ($PodeLocale.oauth2InnerSchemeInvalidExceptionMessage -f $InnerScheme.Name)
-                }
+                Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeAuthScheme', 'New-PodeAuthOAuth2Scheme') -ForegroundColor Yellow
 
-                if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
-                    # OAuth2 requires an Authorise URL to be supplied
-                    throw ($PodeLocale.oauth2RequiresAuthorizeUrlExceptionMessage)
-                }
-
-                if ($UsePKCE -and !(Test-PodeSessionsEnabled)) {
-                    # Sessions are required to use OAuth2 with PKCE
-                    throw ($PodeLocale.sessionsRequiredForOAuth2WithPKCEExceptionMessage)
-                }
-
-                if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
-                    # OAuth2 requires a Client Secret when not using PKCE
-                    throw ($PodeLocale.oauth2ClientSecretRequiredExceptionMessage)
-                }
-                return @{
-                    Name          = 'OAuth2'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthOAuth2Type)
-                        UsingVariables = $null
-                    }
-                    PostValidator = $null
-                    Middleware    = $Middleware
-                    Scheme        = 'oauth2'
-                    InnerScheme   = $InnerScheme
-                    Arguments     = @{
-                        Description = $Description
-                        Scopes      = $Scope
-                        PKCE        = @{
-                            Enabled       = $UsePKCE
-                            CodeChallenge = @{
-                                Method = $CodeChallengeMethod
-                            }
-                        }
-                        Client      = @{
-                            ID     = $ClientId
-                            Secret = $ClientSecret
-                        }
-                        Urls        = @{
-                            Redirect  = $RedirectUrl
-                            Authorise = $AuthoriseUrl
-                            Token     = $TokenUrl
-                            User      = @{
-                                Url    = $UserUrl
-                                Method = (Protect-PodeValue -Value $UserUrlMethod -Default 'Post')
-                            }
-                        }
-                    }
-                }
+                return New-PodeAuthOAuth2Scheme `
+                    -Realm (Protect-PodeValue -Value $Realm -Default $_realm) `
+                    -ClientId $ClientId `
+                    -ClientSecret $ClientSecret `
+                    -AuthoriseUrl $AuthoriseUrl `
+                    -TokenUrl $TokenUrl `
+                    -UserUrl $UserUrl `
+                    -RedirectUrl $RedirectUrl `
+                    -UserUrlMethod $UserUrlMethod `
+                    -CodeChallengeMethod $CodeChallengeMethod `
+                    -InnerScheme $InnerScheme `
+                    -Middleware $Middleware `
+                    -UsePKCE:$UsePKCE `
+                    -Description $Description `
+                    -Scope $Scope
             }
 
             'apikey' {
-                # set default location name
-                if ([string]::IsNullOrWhiteSpace($LocationName)) {
-                    $LocationName = (@{
-                            Header = 'X-API-KEY'
-                            Query  = 'api_key'
-                            Cookie = 'X-API-KEY'
-                        })[$Location]
-                }
+                Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeAuthScheme', 'New-PodeAuthApiKeyScheme') -ForegroundColor Yellow
 
-                $secretBytes = $null
-                if (![string]::IsNullOrWhiteSpace($Secret)) {
-                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
-                }
-
-                return @{
-                    Name          = 'ApiKey'
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthApiKeyType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = $null
-                    Middleware    = $Middleware
-                    InnerScheme   = $InnerScheme
-                    Scheme        = 'apiKey'
-                    Arguments     = @{
-                        Description  = $Description
-                        Location     = $Location
-                        LocationName = $LocationName
-                        AsJWT        = $AsJWT
-                        Secret       = $secretBytes
-                    }
-                }
+                return New-PodeAuthApiKeyScheme `
+                    -Realm (Protect-PodeValue -Value $Realm -Default $_realm) `
+                    -Location $Location `
+                    -LocationName $LocationName `
+                    -Description $Description `
+                    -AsJWT:$AsJWT `
+                    -Secret $Secret `
+                    -Middleware $Middleware `
+                    -InnerScheme $InnerScheme
             }
 
             'negotiate' {
-                return @{
-                    Name          = 'Negotiate'
-                    ScriptBlock   = @{
-                        Script         = (Get-PodeAuthNegotiateType)
-                        UsingVariables = $null
-                    }
-                    PostValidator = $null
-                    Middleware    = $Middleware
-                    InnerScheme   = $InnerScheme
-                    Scheme        = 'http'
-                    Arguments     = @{
-                        Authenticator = [PodeKerberosAuth]::new($KeytabPath)
-                    }
-                }
+                Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeAuthScheme', 'New-PodeAuthNegotiateScheme') -ForegroundColor Yellow
+
+                return New-PodeAuthNegotiateScheme `
+                    -KeytabPath $KeytabPath `
+                    -Description $Description `
+                    -Middleware $Middleware `
+                    -InnerScheme $InnerScheme
             }
 
             'custom' {
-                $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+                Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeAuthScheme', 'New-PodeAuthCustomScheme') -ForegroundColor Yellow
 
-                if ($null -ne $PostValidator) {
-                    $PostValidator, $usingPostVars = Convert-PodeScopedVariables -ScriptBlock $PostValidator -PSSession $PSCmdlet.SessionState
-                }
-
-                return @{
-                    Name          = $Name
-                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                    InnerScheme   = $InnerScheme
-                    Scheme        = $Type.ToLowerInvariant()
-                    ScriptBlock   = @{
-                        Script         = $ScriptBlock
-                        UsingVariables = $usingScriptVars
-                    }
-                    PostValidator = @{
-                        Script         = $PostValidator
-                        UsingVariables = $usingPostVars
-                    }
-                    Middleware    = $Middleware
-                    Arguments     = $ArgumentList
-                }
+                return New-PodeAuthCustomScheme `
+                    -Name $Name `
+                    -Realm (Protect-PodeValue -Value $Realm -Default $_realm) `
+                    -Type $Type `
+                    -ScriptBlock $ScriptBlock `
+                    -PostValidator $PostValidator `
+                    -Middleware $Middleware `
+                    -ArgumentList $ArgumentList `
+                    -Description $Description `
+                    -InnerScheme $InnerScheme
             }
         }
     }
@@ -584,7 +472,7 @@ function New-PodeAuthScheme {
 Create an OAuth2 auth scheme for Azure AD.
 
 .DESCRIPTION
-A wrapper for New-PodeAuthScheme and OAuth2, which builds an OAuth2 scheme for Azure AD.
+A wrapper for New-PodeAuthOAuth2Scheme, which builds an OAuth2 scheme for Azure AD.
 
 .PARAMETER Tenant
 The Directory/Tenant ID from registering a new app (default: common).
@@ -599,7 +487,7 @@ The Client Secret from registering a new app (this is optional when using PKCE).
 An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
 
 .PARAMETER InnerScheme
-An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
+An optional authentication Scheme (from New-PodeAuthOAuth2Scheme) that will be called prior to this Scheme.
 
 .PARAMETER Middleware
 An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
@@ -645,12 +533,12 @@ function New-PodeAuthAzureADScheme {
         [switch]
         $UsePKCE
     )
+
     begin {
         $pipelineItemCount = 0
     }
 
     process {
-
         $pipelineItemCount++
     }
 
@@ -658,8 +546,8 @@ function New-PodeAuthAzureADScheme {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
-        return New-PodeAuthScheme `
-            -OAuth2 `
+
+        return New-PodeAuthOAuth2Scheme `
             -ClientId $ClientId `
             -ClientSecret $ClientSecret `
             -AuthoriseUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/authorize" `
@@ -677,7 +565,7 @@ function New-PodeAuthAzureADScheme {
 Create an OAuth2 auth scheme for Twitter.
 
 .DESCRIPTION
-A wrapper for New-PodeAuthScheme and OAuth2, which builds an OAuth2 scheme for Twitter apps.
+A wrapper for New-PodeAuthOAuth2Scheme, which builds an OAuth2 scheme for Twitter apps.
 
 .PARAMETER ClientId
 The Client ID from registering a new app.
@@ -724,13 +612,12 @@ function New-PodeAuthTwitterScheme {
         $UsePKCE
     )
 
-    return New-PodeAuthScheme `
-        -OAuth2 `
+    return New-PodeAuthOAuth2Scheme `
         -ClientId $ClientId `
         -ClientSecret $ClientSecret `
-        -AuthoriseUrl 'https://twitter.com/i/oauth2/authorize' `
-        -TokenUrl 'https://api.twitter.com/2/oauth2/token' `
-        -UserUrl 'https://api.twitter.com/2/users/me' `
+        -AuthoriseUrl 'https://x.com/i/oauth2/authorize' `
+        -TokenUrl 'https://api.x.com/2/oauth2/token' `
+        -UserUrl 'https://api.x.com/2/users/me' `
         -UserUrlMethod 'Get' `
         -RedirectUrl $RedirectUrl `
         -Middleware $Middleware `
@@ -749,10 +636,10 @@ Adds a custom Authentication method for verifying users.
 A unique Name for the Authentication method.
 
 .PARAMETER Scheme
-The authentication Scheme to use for retrieving credentials (From New-PodeAuthScheme).
+The authentication Scheme to use for retrieving credentials (such as New-PodeAuthBasicScheme).
 
 .PARAMETER ScriptBlock
-The ScriptBlock defining logic that retrieves and verifys a user.
+The ScriptBlock defining logic that retrieves and verifies a user.
 
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Authentication's ScriptBlock.
@@ -773,7 +660,7 @@ If supplied, authenticated users will not be stored in sessions, and sessions wi
 If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
 
 .EXAMPLE
-New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
+New-PodeAuthFormScheme | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
 #>
 function Add-PodeAuth {
     [CmdletBinding()]
@@ -787,14 +674,6 @@ function Add-PodeAuth {
         $Scheme,
 
         [Parameter(Mandatory = $true)]
-        [ValidateScript({
-                if (Test-PodeIsEmpty $_) {
-                    # A non-empty ScriptBlock is required for the authentication method
-                    throw ($PodeLocale.nonEmptyScriptBlockRequiredForAuthMethodExceptionMessage)
-                }
-
-                return $true
-            })]
         [scriptblock]
         $ScriptBlock,
 
@@ -820,6 +699,7 @@ function Add-PodeAuth {
         [switch]
         $SuccessUseOrigin
     )
+
     begin {
         $pipelineItemCount = 0
     }
@@ -833,6 +713,7 @@ function Add-PodeAuth {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         # ensure the name doesn't already exist
         if (Test-PodeAuthExists -Name $Name) {
             # Authentication method already defined: {0}
@@ -849,6 +730,12 @@ function Add-PodeAuth {
         if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
             # Sessions are required to use session persistent authentication
             throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
+        }
+
+        # ensure we have a scriptblock
+        if (Test-PodeIsEmpty $ScriptBlock) {
+            # A non-empty ScriptBlock is required for the authentication method
+            throw ($PodeLocale.nonEmptyScriptBlockRequiredForAuthMethodExceptionMessage)
         }
 
         # check for scoped vars
@@ -898,13 +785,13 @@ merge other merged Authentication methods for more advanced scenarios.
 A unique Name for the Authentication method.
 
 .PARAMETER Authentication
-Multiple Autentication method Names to be merged.
+Multiple Authentication method Names to be merged.
 
 .PARAMETER Valid
 How many of the Authentication methods are required to be valid, One or All. (Default: One)
 
 .PARAMETER ScriptBlock
-This is mandatory, and only used, when $Valid=All. A scriptblock to merge the mutliple users/headers returned by valid authentications into 1 user/header objects.
+This is mandatory, and only used, when $Valid=All. A scriptblock to merge the multiple users/headers returned by valid authentications into 1 user/header objects.
 This scriptblock will receive a hashtable of all result objects returned from Authentication methods. The key for the hashtable will be the authentication names that passed.
 
 .PARAMETER Default
@@ -1228,7 +1115,7 @@ Adds the inbuilt Windows AD Authentication method for verifying users.
 A unique Name for the Authentication method.
 
 .PARAMETER Scheme
-The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
+The Scheme to use for retrieving credentials (Such as New-PodeAuthFormScheme).
 
 .PARAMETER Fqdn
 A custom FQDN for the DNS of the AD you wish to authenticate against. (Alias: Server)
@@ -1279,16 +1166,16 @@ If supplied, successful authentication from a login page will redirect back to t
 If suplied pode will save the AD credential as a PSCredential object in $WebEvent.Auth.User.Credential
 
 .EXAMPLE
-New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'WinAuth'
+New-PodeAuthFormScheme | Add-PodeAuthWindowsAd -Name 'WinAuth'
 
 .EXAMPLE
-New-PodeAuthScheme -Basic | Add-PodeAuthWindowsAd -Name 'WinAuth' -Groups @('Developers')
+New-PodeAuthBasicScheme | Add-PodeAuthWindowsAd -Name 'WinAuth' -Groups @('Developers')
 
 .EXAMPLE
-New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'WinAuth' -NoGroups
+New-PodeAuthFormScheme | Add-PodeAuthWindowsAd -Name 'WinAuth' -NoGroups
 
 .EXAMPLE
-New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'UnixAuth' -Server 'testdomain.company.com' -Domain 'testdomain'
+New-PodeAuthFormScheme | Add-PodeAuthWindowsAd -Name 'UnixAuth' -Server 'testdomain.company.com' -Domain 'testdomain'
 #>
 function Add-PodeAuthWindowsAd {
     [CmdletBinding(DefaultParameterSetName = 'Groups')]
@@ -1361,6 +1248,7 @@ function Add-PodeAuthWindowsAd {
         [switch]
         $KeepCredential
     )
+
     begin {
         $pipelineItemCount = 0
     }
@@ -1374,6 +1262,7 @@ function Add-PodeAuthWindowsAd {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         # ensure the name doesn't already exist
         if (Test-PodeAuthExists -Name $Name) {
             # Authentication method already defined: {0}
@@ -1534,7 +1423,7 @@ function Add-PodeAuthSession {
     }
 
     # create the auth scheme for getting the session
-    $scheme = New-PodeAuthScheme -Custom -Middleware $Middleware -ScriptBlock {
+    $scheme = New-PodeAuthCustomScheme -Middleware $Middleware -ScriptBlock {
         param($options)
 
         # 401 if sessions not used
@@ -1573,6 +1462,13 @@ function Add-PodeAuthSession {
         return $result
     }
 
+    $schemeArgs = @{
+        ScriptBlock = @{
+            Script         = $ScriptBlock
+            UsingVariables = $usingVars
+        }
+    }
+
     $scheme | Add-PodeAuth `
         -Name $Name `
         -ScriptBlock $method `
@@ -1580,12 +1476,7 @@ function Add-PodeAuthSession {
         -FailureMessage $FailureMessage `
         -SuccessUrl $SuccessUrl `
         -SuccessUseOrigin:$SuccessUseOrigin `
-        -ArgumentList @{
-        ScriptBlock = @{
-            Script         = $ScriptBlock
-            UsingVariables = $usingVars
-        }
-    }
+        -ArgumentList $schemeArgs
 }
 
 <#
@@ -1608,6 +1499,7 @@ function Remove-PodeAuth {
         [string]
         $Name
     )
+
     process {
         $null = $PodeContext.Server.Authentications.Methods.Remove($Name)
     }
@@ -1827,7 +1719,7 @@ function Add-PodeAuthIIS {
     }
 
     # create the auth scheme for getting the token header
-    $scheme = New-PodeAuthScheme -Custom -Middleware $Middleware -ScriptBlock {
+    $scheme = New-PodeAuthCustomScheme -Middleware $Middleware -ScriptBlock {
         param($options)
 
         $header = 'MS-ASPNETCORE-WINAUTHTOKEN'
@@ -1848,6 +1740,19 @@ function Add-PodeAuthIIS {
     # add a custom auth method to validate the user
     $method = Get-PodeAuthWindowsADIISMethod
 
+    $schemeArgs = @{
+        Users        = $Users
+        Groups       = $Groups
+        NoGroups     = $NoGroups
+        DirectGroups = $DirectGroups
+        Provider     = Get-PodeAuthADProvider -ADModule:$ADModule
+        NoLocalCheck = $NoLocalCheck
+        ScriptBlock  = @{
+            Script         = $ScriptBlock
+            UsingVariables = $usingVars
+        }
+    }
+
     $scheme | Add-PodeAuth `
         -Name $Name `
         -ScriptBlock $method `
@@ -1856,18 +1761,7 @@ function Add-PodeAuthIIS {
         -SuccessUrl $SuccessUrl `
         -Sessionless:$Sessionless `
         -SuccessUseOrigin:$SuccessUseOrigin `
-        -ArgumentList @{
-        Users        = $Users
-        Groups       = $Groups
-        NoGroups     = $NoGroups
-        DirectGroups = $DirectGroups
-        Provider     = (Get-PodeAuthADProvider -ADModule:$ADModule)
-        NoLocalCheck = $NoLocalCheck
-        ScriptBlock  = @{
-            Script         = $ScriptBlock
-            UsingVariables = $usingVars
-        }
-    }
+        -ArgumentList $schemeArgs
 }
 
 <#
@@ -1881,7 +1775,7 @@ Adds the inbuilt User File Authentication method for verifying users.
 A unique Name for the Authentication method.
 
 .PARAMETER Scheme
-The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
+The Scheme to use for retrieving credentials (Such as New-PodeAuthFormScheme).
 
 .PARAMETER FilePath
 A path to a users JSON file (Default: ./users.json)
@@ -1914,10 +1808,10 @@ If supplied, authenticated users will not be stored in sessions, and sessions wi
 If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
 
 .EXAMPLE
-New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login'
+New-PodeAuthFormScheme | Add-PodeAuthUserFile -Name 'Login'
 
 .EXAMPLE
-New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './custom/path/users.json'
+New-PodeAuthFormScheme | Add-PodeAuthUserFile -Name 'Login' -FilePath './custom/path/users.json'
 #>
 function Add-PodeAuthUserFile {
     [CmdletBinding()]
@@ -1968,12 +1862,12 @@ function Add-PodeAuthUserFile {
         [switch]
         $SuccessUseOrigin
     )
+
     begin {
         $pipelineItemCount = 0
     }
 
     process {
-
         $pipelineItemCount++
     }
 
@@ -1981,6 +1875,7 @@ function Add-PodeAuthUserFile {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         # ensure the name doesn't already exist
         if (Test-PodeAuthExists -Name $Name) {
             # Authentication method already defined: {0}
@@ -2061,7 +1956,7 @@ Adds the inbuilt Windows Local User Authentication method for verifying users.
 A unique Name for the Authentication method.
 
 .PARAMETER Scheme
-The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
+The Scheme to use for retrieving credentials (Such as New-PodeAuthFormScheme).
 
 .PARAMETER Groups
 An array of Group names to only allow access.
@@ -2091,13 +1986,13 @@ If supplied, groups will not be retrieved for the user.
 If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
 
 .EXAMPLE
-New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'WinAuth'
+New-PodeAuthFormScheme | Add-PodeAuthWindowsLocal -Name 'WinAuth'
 
 .EXAMPLE
-New-PodeAuthScheme -Basic | Add-PodeAuthWindowsLocal -Name 'WinAuth' -Groups @('Developers')
+New-PodeAuthBasicScheme | Add-PodeAuthWindowsLocal -Name 'WinAuth' -Groups @('Developers')
 
 .EXAMPLE
-New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'WinAuth' -NoGroups
+New-PodeAuthFormScheme | Add-PodeAuthWindowsLocal -Name 'WinAuth' -NoGroups
 #>
 function Add-PodeAuthWindowsLocal {
     [CmdletBinding(DefaultParameterSetName = 'Groups')]
@@ -2144,12 +2039,12 @@ function Add-PodeAuthWindowsLocal {
         [switch]
         $SuccessUseOrigin
     )
+
     begin {
         $pipelineItemCount = 0
     }
 
     process {
-
         $pipelineItemCount++
     }
 
@@ -2157,6 +2052,7 @@ function Add-PodeAuthWindowsLocal {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         # ensure we're on Windows!
         if (!(Test-PodeIsWindows)) {
             # Windows Local Authentication support is for Windows only
@@ -2479,7 +2375,7 @@ The Client Secret from registering a new app (this is optional when using PKCE).
 An optional OAuth2 Redirect URL (Default: <host>/oauth2/callback)
 
 .PARAMETER InnerScheme
-An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
+An optional authentication Scheme (such as New-PodeAuthFormScheme) that will be called prior to this Scheme.
 
 .PARAMETER Middleware
 An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
@@ -2527,12 +2423,12 @@ function ConvertFrom-PodeOIDCDiscovery {
         [switch]
         $UsePKCE
     )
+
     begin {
         $pipelineItemCount = 0
     }
 
     process {
-
         $pipelineItemCount++
     }
 
@@ -2540,6 +2436,7 @@ function ConvertFrom-PodeOIDCDiscovery {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+
         # get the discovery doc
         if (!$Url.EndsWith('/.well-known/openid-configuration')) {
             $Url += '/.well-known/openid-configuration'
@@ -2576,8 +2473,7 @@ function ConvertFrom-PodeOIDCDiscovery {
             $codeMethod = 'plain'
         }
 
-        return New-PodeAuthScheme `
-            -OAuth2 `
+        return New-PodeAuthOAuth2Scheme `
             -ClientId $ClientId `
             -ClientSecret $ClientSecret `
             -AuthoriseUrl $config.authorization_endpoint `
@@ -3002,4 +2898,1028 @@ function Get-PodeAuthEvent {
 
     # return events
     return $evts
+}
+
+<#
+.SYNOPSIS
+Creates a new Basic Authentication Scheme.
+
+.DESCRIPTION
+Creates a new Basic Authentication Scheme.
+
+.PARAMETER Realm
+An optional Realm to use. (Default: User)
+
+.PARAMETER Encoding
+The encoding to use for the Basic Authentication header. (Default: ISO-8859-1)
+
+.PARAMETER HeaderTag
+The "Tag" name to use in the Authorization header during parsing. (Default: Basic)
+
+.PARAMETER Description
+An optional short description for Authentication Scheme. CommonMark syntax MAY be used for rich text representation.
+
+.PARAMETER Middleware
+An optional array of Middleware ScriptBlocks to run before the Scheme's scriptblock.
+
+.PARAMETER InnerScheme
+An optional Authentication Scheme (such as New-PodeAuthFormScheme) that will be called prior to this Scheme.
+
+.PARAMETER AsCredential
+Indicates whether the credentials should be passed as a PSCredential object.
+
+.EXAMPLE
+$scheme = New-PodeAuthBasicScheme
+
+.EXAMPLE
+$scheme = New-PodeAuthBasicScheme -HeaderTag 'Custom' -AsCredential
+
+.EXAMPLE
+$scheme = New-PodeAuthBasicScheme -Encoding 'ASCII'
+#>
+function New-PodeAuthBasicScheme {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Realm = 'User',
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Encoding = 'ISO-8859-1',
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $HeaderTag = 'Basic',
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $InnerScheme,
+
+        [switch]
+        $AsCredential
+    )
+
+    begin {
+        $pipelineItemCount = 0
+    }
+
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        return @{
+            Name          = $HeaderTag
+            Realm         = $Realm
+            ScriptBlock   = @{
+                Script         = Get-PodeAuthBasicType
+                UsingVariables = $null
+            }
+            PostValidator = $null
+            Middleware    = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+            InnerScheme   = $InnerScheme
+            Scheme        = 'http'
+            Arguments     = @{
+                Description  = $Description
+                HeaderTag    = $HeaderTag
+                Encoding     = $Encoding
+                AsCredential = $AsCredential.IsPresent
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new Client Certificate Authentication Scheme.
+
+.DESCRIPTION
+Creates a new Client Certificate Authentication Scheme.
+
+.PARAMETER Realm
+An optional Realm to use. (Default: User)
+
+.PARAMETER Description
+An optional short description for Authentication Scheme. CommonMark syntax MAY be used for rich text representation.
+
+.PARAMETER Middleware
+An optional array of Middleware ScriptBlocks to run before the Scheme's scriptblock.
+
+.PARAMETER InnerScheme
+An optional Authentication Scheme (such as New-PodeAuthFormScheme) that will be called prior to this Scheme.
+
+.EXAMPLE
+$scheme = New-PodeAuthClientCertificateScheme
+#>
+function New-PodeAuthClientCertificateScheme {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Realm = 'User',
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $InnerScheme
+    )
+
+    begin {
+        $pipelineItemCount = 0
+    }
+
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        return @{
+            Name          = 'Mutual'
+            Realm         = $Realm
+            ScriptBlock   = @{
+                Script         = Get-PodeAuthClientCertificateType
+                UsingVariables = $null
+            }
+            PostValidator = $null
+            Middleware    = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+            InnerScheme   = $InnerScheme
+            Scheme        = 'http'
+            Arguments     = @{
+                Description = $Description
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new Digest Authentication Scheme.
+
+.DESCRIPTION
+Creates a new Digest Authentication Scheme.
+
+.PARAMETER Realm
+An optional Realm to use. (Default: User)
+
+.PARAMETER HeaderTag
+The "Tag" name to use in the Authorization header during parsing. (Default: Digest)
+
+.PARAMETER Description
+An optional short description for Authentication Scheme. CommonMark syntax MAY be used for rich text representation.
+
+.PARAMETER Middleware
+An optional array of Middleware ScriptBlocks to run before the Scheme's scriptblock.
+
+.PARAMETER InnerScheme
+An optional Authentication Scheme (such as New-PodeAuthFormScheme) that will be called prior to this Scheme.
+
+.EXAMPLE
+$scheme = New-PodeAuthDigestScheme
+#>
+function New-PodeAuthDigestScheme {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Realm = 'User',
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $HeaderTag = 'Digest',
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $InnerScheme
+    )
+
+    begin {
+        $pipelineItemCount = 0
+    }
+
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        return @{
+            Name          = 'Digest'
+            Realm         = $Realm
+            ScriptBlock   = @{
+                Script         = Get-PodeAuthDigestType
+                UsingVariables = $null
+            }
+            PostValidator = @{
+                Script         = Get-PodeAuthDigestPostValidator
+                UsingVariables = $null
+            }
+            Middleware    = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+            InnerScheme   = $InnerScheme
+            Scheme        = 'http'
+            Arguments     = @{
+                Description = $Description
+                HeaderTag   = $HeaderTag
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new Bearer Authentication Scheme.
+
+.DESCRIPTION
+Creates a new Bearer Authentication Scheme.
+
+.PARAMETER Realm
+An optional Realm to use. (Default: User)
+
+.PARAMETER HeaderTag
+The "Tag" name to use in the Authorization header during parsing. (Default: Bearer)
+
+.PARAMETER Scope
+An optional array of scopes to request.
+
+.PARAMETER Secret
+An optional secret key used for signing the token, enabling verification of the token's integrity.
+
+.PARAMETER Description
+An optional short description for Authentication Scheme. CommonMark syntax MAY be used for rich text representation.
+
+.PARAMETER Middleware
+An optional array of Middleware ScriptBlocks to run before the Scheme's scriptblock.
+
+.PARAMETER InnerScheme
+An optional Authentication Scheme (such as New-PodeAuthFormScheme) that will be called prior to this Scheme.
+
+.PARAMETER AsJWT
+If specified, the token will be issued as a JWT, and the payload supplied instead.
+
+.EXAMPLE
+$scheme = New-PodeAuthBearerScheme
+
+.EXAMPLE
+$scheme = New-PodeAuthBearerScheme -Scope 'read', 'write'
+
+.EXAMPLE
+$scheme = New-PodeAuthBearerScheme -AsJWT
+
+.EXAMPLE
+$scheme = New-PodeAuthBearerScheme -AsJWT -Secret 'my_secret_key'
+#>
+function New-PodeAuthBearerScheme {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Realm = 'User',
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $HeaderTag = 'Bearer',
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string]
+        $Secret,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $InnerScheme,
+
+        [switch]
+        $AsJWT
+    )
+
+    begin {
+        $pipelineItemCount = 0
+    }
+
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        $secretBytes = $null
+        if (![string]::IsNullOrWhiteSpace($Secret)) {
+            $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+        }
+
+        return @{
+            Name          = 'Bearer'
+            Realm         = $Realm
+            ScriptBlock   = @{
+                Script         = Get-PodeAuthBearerType
+                UsingVariables = $null
+            }
+            PostValidator = @{
+                Script         = Get-PodeAuthBearerPostValidator
+                UsingVariables = $null
+            }
+            Middleware    = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+            Scheme        = 'http'
+            InnerScheme   = $InnerScheme
+            Arguments     = @{
+                Description = $Description
+                HeaderTag   = $HeaderTag
+                Scopes      = $Scope
+                AsJWT       = $AsJWT.IsPresent
+                Secret      = $secretBytes
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new Form Authentication Scheme.
+
+.DESCRIPTION
+Creates a new Form Authentication Scheme.
+
+.PARAMETER Realm
+An optional Realm to use. (Default: User)
+
+.PARAMETER UsernameField
+The name of the form field used for the username. (Default: username)
+
+.PARAMETER PasswordField
+The name of the form field used for the password. (Default: password)
+
+.PARAMETER Description
+An optional short description for Authentication Scheme. CommonMark syntax MAY be used for rich text representation.
+
+.PARAMETER Middleware
+An optional array of Middleware ScriptBlocks to run before the Scheme's scriptblock.
+
+.PARAMETER InnerScheme
+An optional Authentication Scheme (such as New-PodeAuthBasicScheme) that will be called prior to this Scheme.
+
+.PARAMETER AsCredential
+Indicates whether the credentials should be passed as a PSCredential object.
+
+.EXAMPLE
+$scheme = New-PodeAuthFormScheme
+
+.EXAMPLE
+$scheme = New-PodeAuthFormScheme -UsernameField 'user' -PasswordField 'pass' -AsCredential
+#>
+function New-PodeAuthFormScheme {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Realm = 'User',
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $UsernameField = 'username',
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $PasswordField = 'password',
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $InnerScheme,
+
+        [switch]
+        $AsCredential
+    )
+
+    begin {
+        $pipelineItemCount = 0
+    }
+
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        return @{
+            Name          = 'Form'
+            Realm         = $Realm
+            ScriptBlock   = @{
+                Script         = Get-PodeAuthFormType
+                UsingVariables = $null
+            }
+            PostValidator = $null
+            Middleware    = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+            InnerScheme   = $InnerScheme
+            Scheme        = 'http'
+            Arguments     = @{
+                Description  = $Description
+                Fields       = @{
+                    Username = $UsernameField
+                    Password = $PasswordField
+                }
+                AsCredential = $AsCredential.IsPresent
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new OAuth2 Authentication Scheme.
+
+.DESCRIPTION
+Creates a new OAuth2 Authentication Scheme.
+
+.PARAMETER Realm
+An optional Realm to use. (Default: User)
+
+.PARAMETER ClientId
+The Client/Application ID for the OAuth2 application, usually supplied during the app registration process.
+
+.PARAMETER ClientSecret
+The Client/Application secret for the OAuth2 application, usually supplied during the app registration process.
+This is optional when using PKCE.
+
+.PARAMETER RedirectUrl
+An optional Redirect URL (Default: <host>/oauth2/callback)
+
+.PARAMETER AuthoriseUrl
+The Authorise URL to authenticate a user and obtain an Authorisation Code.
+This is optional if you're using an InnerScheme, such as Basic/Form authentication, which will use the Password Grant Type instead.
+
+.PARAMETER TokenUrl
+The Token URL to exchange an Authorisation Code for an Access Token, or to obtain an Access Token using the Password Grant Type.
+
+.PARAMETER UserUrl
+An optional User URL to obtain user information from the Access Token.
+
+.PARAMETER UserUrlMethod
+An optional HTTP method to use when calling the User URL. (Default: Post)
+
+.PARAMETER CodeChallengeMethod
+An optional Code Challenge Method to use, when calling the Authorise URL, when using PKCE. (Default: S256)
+
+.PARAMETER Scope
+An optional array of scopes to request during the OAuth2 authentication process.
+
+.PARAMETER Description
+An optional short description for Authentication Scheme. CommonMark syntax MAY be used for rich text representation.
+
+.PARAMETER Middleware
+An optional array of Middleware ScriptBlocks to run before the Scheme's scriptblock.
+
+.PARAMETER InnerScheme
+An optional Authentication Scheme (such as New-PodeAuthBasicScheme) that will be called prior to this Scheme.
+
+.PARAMETER UsePKCE
+Indicates whether to use PKCE (Proof Key for Code Exchange) during the OAuth2 authentication process.
+
+.EXAMPLE
+$scheme = New-PodeAuthOAuth2Scheme -ClientId 'my_client_id' -ClientSecret 'my_client_secret' -AuthoriseUrl 'https://example.com/oauth2/authorize' -TokenUrl 'https://example.com/oauth2/token' -UserUrl 'https://example.com/oauth2/userinfo'
+
+.EXAMPLE
+$scheme = New-PodeAuthOAuth2Scheme -ClientId 'my_client_id' -AuthoriseUrl 'https://example.com/oauth2/authorize' -TokenUrl 'https://example.com/oauth2/token' -UserUrl 'https://example.com/oauth2/userinfo' -UsePKCE
+#>
+function New-PodeAuthOAuth2Scheme {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Realm = 'User',
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ClientId,
+
+        [Parameter()]
+        [string]
+        $ClientSecret,
+
+        [Parameter()]
+        [string]
+        $RedirectUrl,
+
+        [Parameter()]
+        [string]
+        $AuthoriseUrl,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $TokenUrl,
+
+        [Parameter()]
+        [string]
+        $UserUrl,
+
+        [Parameter()]
+        [ValidateSet('Get', 'Post')]
+        [string]
+        $UserUrlMethod = 'Post',
+
+        [Parameter()]
+        [ValidateSet('plain', 'S256')]
+        [string]
+        $CodeChallengeMethod = 'S256',
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $InnerScheme,
+
+        [switch]
+        $UsePKCE
+    )
+
+    begin {
+        $pipelineItemCount = 0
+    }
+
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        if (($null -ne $InnerScheme) -and ($InnerScheme.Name -inotin @('basic', 'form'))) {
+            # OAuth2 InnerScheme can only be one of either Basic or Form authentication, but got: {0}
+            throw ($PodeLocale.oauth2InnerSchemeInvalidExceptionMessage -f $InnerScheme.Name)
+        }
+
+        if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
+            # OAuth2 requires an Authorise URL to be supplied
+            throw ($PodeLocale.oauth2RequiresAuthorizeUrlExceptionMessage)
+        }
+
+        if ($UsePKCE -and !(Test-PodeSessionsEnabled)) {
+            # Sessions are required to use OAuth2 with PKCE
+            throw ($PodeLocale.sessionsRequiredForOAuth2WithPKCEExceptionMessage)
+        }
+
+        if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
+            # OAuth2 requires a Client Secret when not using PKCE
+            throw ($PodeLocale.oauth2ClientSecretRequiredExceptionMessage)
+        }
+
+        return @{
+            Name          = 'OAuth2'
+            Realm         = $Realm
+            ScriptBlock   = @{
+                Script         = Get-PodeAuthOAuth2Type
+                UsingVariables = $null
+            }
+            PostValidator = $null
+            Middleware    = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+            Scheme        = 'oauth2'
+            InnerScheme   = $InnerScheme
+            Arguments     = @{
+                Description = $Description
+                Scopes      = $Scope
+                PKCE        = @{
+                    Enabled       = $UsePKCE.IsPresent
+                    CodeChallenge = @{
+                        Method = $CodeChallengeMethod
+                    }
+                }
+                Client      = @{
+                    ID     = $ClientId
+                    Secret = $ClientSecret
+                }
+                Urls        = @{
+                    Redirect  = $RedirectUrl
+                    Authorise = $AuthoriseUrl
+                    Token     = $TokenUrl
+                    User      = @{
+                        Url    = $UserUrl
+                        Method = $UserUrlMethod
+                    }
+                }
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new API Key Authentication Scheme.
+
+.DESCRIPTION
+Creates a new API Key Authentication Scheme.
+
+.PARAMETER Realm
+An optional Realm to use. (Default: User)
+
+.PARAMETER Location
+The location to look for the API Key, either Header, Query or Cookie. (Default: Header)
+
+.PARAMETER LocationName
+The name of the Header, Query or Cookie to look for the API Key. (Default: for Header/Cookie: X-API-KEY, for Query: api_key)
+
+.PARAMETER Secret
+An optional secret key used for signing the token, enabling verification of the token's integrity.
+
+.PARAMETER Description
+An optional short description for Authentication Scheme. CommonMark syntax MAY be used for rich text representation.
+
+.PARAMETER Middleware
+An optional array of Middleware ScriptBlocks to run before the Scheme's scriptblock.
+
+.PARAMETER InnerScheme
+An optional Authentication Scheme (such as New-PodeAuthBasicScheme) that will be called prior to this Scheme.
+
+.PARAMETER AsJWT
+Indicates whether the token should be issued as a JWT, and the payload supplied instead.
+
+.EXAMPLE
+$scheme = New-PodeAuthApiKeyScheme
+
+.EXAMPLE
+$scheme = New-PodeAuthApiKeyScheme -Location 'Query' -LocationName 'my_api_key'
+
+.EXAMPLE
+$scheme = New-PodeAuthApiKeyScheme -AsJWT
+
+.EXAMPLE
+$scheme = New-PodeAuthApiKeyScheme -AsJWT -Secret 'my_secret_key
+#>
+function New-PodeAuthApiKeyScheme {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Realm = 'User',
+
+        [Parameter()]
+        [ValidateSet('Header', 'Query', 'Cookie')]
+        [string]
+        $Location = 'Header',
+
+        [Parameter()]
+        [string]
+        $LocationName,
+
+        [Parameter()]
+        [string]
+        $Secret,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $InnerScheme,
+
+        [switch]
+        $AsJWT
+    )
+
+    begin {
+        $pipelineItemCount = 0
+    }
+
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        # set default location name
+        if ([string]::IsNullOrWhiteSpace($LocationName)) {
+            $LocationName = (@{
+                    Header = 'X-API-KEY'
+                    Query  = 'api_key'
+                    Cookie = 'X-API-KEY'
+                })[$Location]
+        }
+
+        $secretBytes = $null
+        if (![string]::IsNullOrWhiteSpace($Secret)) {
+            $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+        }
+
+        return @{
+            Name          = 'ApiKey'
+            Realm         = $Realm
+            ScriptBlock   = @{
+                Script         = Get-PodeAuthApiKeyType
+                UsingVariables = $null
+            }
+            PostValidator = $null
+            Middleware    = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+            InnerScheme   = $InnerScheme
+            Scheme        = 'apiKey'
+            Arguments     = @{
+                Description  = $Description
+                Location     = $Location
+                LocationName = $LocationName
+                AsJWT        = $AsJWT.IsPresent
+                Secret       = $secretBytes
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new Negotiate Authentication Scheme.
+
+.DESCRIPTION
+Creates a new Negotiate Authentication Scheme.
+
+.PARAMETER KeytabPath
+The path to the Keytab file to use for Kerberos authentication.
+
+.PARAMETER Description
+An optional short description for the Authentication Scheme. CommonMark syntax MAY be used for rich text representation.
+
+.PARAMETER Middleware
+An optional array of Middleware ScriptBlocks to run before the Scheme's scriptblock.
+
+.PARAMETER InnerScheme
+An optional Authentication Scheme (such as New-PodeAuthBasicScheme) that will be called prior to this Scheme.
+
+.EXAMPLE
+$scheme = New-PodeAuthNegotiateScheme -KeytabPath 'C:\path\to\keytab.keytab'
+#>
+function New-PodeAuthNegotiateScheme {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $KeytabPath,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $InnerScheme
+    )
+
+    begin {
+        $pipelineItemCount = 0
+    }
+
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        return @{
+            Name          = 'Negotiate'
+            ScriptBlock   = @{
+                Script         = Get-PodeAuthNegotiateType
+                UsingVariables = $null
+            }
+            PostValidator = $null
+            Middleware    = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+            InnerScheme   = $InnerScheme
+            Scheme        = 'http'
+            Arguments     = @{
+                Description   = $Description
+                Authenticator = [PodeKerberosAuth]::new($KeytabPath)
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Creates a new Custom Authentication Scheme.
+
+.DESCRIPTION
+Creates a new Custom Authentication Scheme.
+
+.PARAMETER Realm
+An optional Realm to use. (Default: User)
+
+.PARAMETER ScriptBlock
+The ScriptBlock that contains the custom authentication logic, to parse the request and return a user credentials and other information.
+
+.PARAMETER ArgumentList
+An optional hashtable of arguments to pass to the ScriptBlock.
+
+.PARAMETER Name
+An optional Name for the Authentication Scheme.
+
+.PARAMETER Type
+The type of the Authentication Scheme. Valid values are 'ApiKey', 'Http', 'OAuth2', and 'OpenIdConnect'. (Default: 'Http')
+
+.PARAMETER PostValidator
+An optional ScriptBlock to validate the authentication result after the main ScriptBlock has run.
+
+.PARAMETER Description
+An optional short description for the Authentication Scheme. CommonMark syntax MAY be used for rich text representation.
+
+.PARAMETER Middleware
+An optional array of Middleware ScriptBlocks to run before the Scheme's scriptblock.
+
+.PARAMETER InnerScheme
+An optional Authentication Scheme (such as New-PodeAuthBasicScheme) that will be called prior to this Scheme.
+
+.EXAMPLE
+$scheme = New-PodeAuthCustomScheme -ScriptBlock { ... }
+
+.EXAMPLE
+$scheme = New-PodeAuthCustomScheme -ScriptBlock { param($_args) ... } -ArgumentList @{ FieldName = 'username' }
+#>
+function New-PodeAuthCustomScheme {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Realm = 'User',
+
+        [Parameter(Mandatory = $true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [hashtable]
+        $ArgumentList,
+
+        [Parameter()]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [ValidateSet('ApiKey', 'Http', 'OAuth2', 'OpenIdConnect')]
+        [string]
+        $Type = 'Http',
+
+        [Parameter()]
+        [scriptblock]
+        $PostValidator = $null,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
+        $InnerScheme
+    )
+
+    begin {
+        $pipelineItemCount = 0
+    }
+
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        # ensure we have a scriptblock
+        if (Test-PodeIsEmpty $ScriptBlock) {
+            # A non-empty ScriptBlock is required for the Custom authentication scheme
+            throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage)
+        }
+
+        # check for scoped vars in scriptblock
+        $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # check for scoped vars in post validator
+        if (!(Test-PodeIsEmpty $PostValidator)) {
+            $PostValidator, $usingPostVars = Convert-PodeScopedVariables -ScriptBlock $PostValidator -PSSession $PSCmdlet.SessionState
+        }
+
+        return @{
+            Name          = $Name
+            Realm         = $Realm
+            InnerScheme   = $InnerScheme
+            Scheme        = $Type.ToLowerInvariant()
+            ScriptBlock   = @{
+                Script         = $ScriptBlock
+                UsingVariables = $usingScriptVars
+            }
+            PostValidator = @{
+                Script         = $PostValidator
+                UsingVariables = $usingPostVars
+            }
+            Middleware    = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+            Arguments     = $ArgumentList
+        }
+    }
 }

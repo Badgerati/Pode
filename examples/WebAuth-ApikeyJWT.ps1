@@ -19,7 +19,7 @@
     Signed
     Req: Invoke-RestMethod -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJoczI1NiJ9.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.WIOvdwk4mNrNC9EtTcQccmLHJc02gAuonXClHMFOjKM' }
 
-    (add -Secret 'secret' to New-PodeAuthScheme below)
+    (add -Secret 'secret' to New-PodeAuthApiKeyScheme below)
 
     -------------
 
@@ -70,7 +70,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # setup bearer auth
-    New-PodeAuthScheme -ApiKey -Location $Location -AsJWT | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthApiKeyScheme -Location $Location -AsJWT | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($jwt)
 
         # here you'd check a real user storage, this is just for example

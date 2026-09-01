@@ -58,7 +58,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLogTerminalMethod -Batch $batchInfo | Enable-PodeLogRequestType
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

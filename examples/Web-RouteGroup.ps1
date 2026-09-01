@@ -76,7 +76,7 @@ Start-PodeServer -Threads 2 {
 
 
     # Invoke-RestMethod -Uri http://localhost:8081/auth/route1 -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
