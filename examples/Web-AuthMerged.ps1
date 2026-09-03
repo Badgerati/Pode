@@ -60,7 +60,7 @@ Start-PodeServer -Threads 2 {
     Merge-PodeAccess -Name 'MergedAccess' -Access 'Rbac', 'Gbac' -Valid All
 
     # setup apikey auth
-    New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
+    New-PodeAuthApiKeyScheme -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
         param($key)
 
         # here you'd check a real user storage, this is just for example
@@ -80,7 +80,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

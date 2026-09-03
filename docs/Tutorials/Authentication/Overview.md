@@ -1,33 +1,42 @@
 # Overview
 
+To set up and use authentication in Pode you need to use one of the various Authentication Scheme functions available, and [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) to build your Authentication Method.
+
 Authentication can either be sessionless (requiring validation on every request), or session-persistent (only requiring validation once, and then checks against a session-signed cookie/header).
 
 !!! info
     To use session-persistent authentication you will also need to use [Session Middleware](../../Middleware/Types/Sessions).
 
-To set up and use authentication in Pode you need to use the [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) and [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) functions.
-
-You can also set up [Authorisation](../../Authorisation/Overview) for use with Authentication as well.
+!!! note
+    You can also set up [Authorisation](../../Authorisation/Overview) for use with Authentication as well.
 
 ## Schemes
 
-The [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function allows you to create and configure authentication schemes, or you can create your own Custom authentication schemes. These schemes can then be piped into [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). The role of a scheme is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
+The various Authentication Scheme functions allow you to create and configure authentication schemes, or you can create your own Custom authentication schemes. These schemes can then be piped into [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). The role of a scheme is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
 
-The following schemes are supported:
+The following Authentication Schemes are supported:
 
-* [API Key](../Methods/ApiKey)
-* [Azure AD](../Inbuilt/AzureAD)
-* [Basic](../Methods/Basic)
-* [Bearer](../Methods/Bearer)
-* [Client Certificate](../Methods/ClientCertificate)
-* [Digest](../Methods/Digest)
-* [Form](../Methods/Form)
-* [JWT](../Methods/JWT) (Done using [Bearer](../Methods/Bearer) or [API Key](../Methods/ApiKey))
-* [OAuth2](../Methods/OAuth2)
+* [API Key](../Schemes/ApiKey)
+* [Azure AD](../Schemes/AzureAD)
+* [Basic](../Schemes/Basic)
+* [Bearer](../Schemes/Bearer)
+* [Client Certificate](../Schemes/ClientCertificate)
+* [Custom](../Schemes/Custom)
+* [Digest](../Schemes/Digest)
+* [Form](../Schemes/Form)
+* [JWT](../Schemes/JWT) (Done using [Bearer](../Schemes/Bearer) or [API Key](../Schemes/ApiKey))
+* [Negotiate](../Schemes/Negotiate)
+* [OAuth2](../Schemes/OAuth2)
+* [Twitter](../Schemes/Twitter)
 
-Or you can define a custom scheme:
+## Methods
 
-* [Custom](../Methods/Custom)
+Pode also has the following Authentication Methods inbuilt:
+
+* [Sessions](../Methods/Session)
+* [User File](../Methods/UserFile)
+* [Windows AD](../Methods/WindowsAD)
+* [Windows Local Users](../Methods/WindowsLocal)
 
 ## Validators
 
@@ -37,7 +46,7 @@ An example of using [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeA
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($username, $pass)
         # logic to check user
         return @{ 'user' = $user }
@@ -45,7 +54,7 @@ Start-PodeServer {
 }
 ```
 
-The `-Name` of the authentication method must be unique. The `-Scheme` comes from the object returned via the [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function, and can also be piped in.
+The `-Name` of the authentication method must be unique. The `-Scheme` comes from the object returned via the various Authentication Scheme functions - such as [`New-PodeAuthFormScheme`](../../../Functions/Authentication/New-PodeAuthFormScheme) - and can also be piped in.
 
 The `-ScriptBlock` is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a `User` object needs to be returned from the script as `@{ User = $user }`. If `$null`, or a null user, is returned then the script is assumed to have failed - meaning the user will have failed authentication, and a 401 response is returned.
 
@@ -56,7 +65,7 @@ When authenticating a user in Pode, any failures will return a 401 response with
 You can return a custom status code as follows:
 
 ```powershell
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
     return @{ Code = 403 }
 }
 ```
@@ -64,7 +73,7 @@ New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock
 or a custom message (the status description) as follows, which can be used with a custom status code or on its own:
 
 ```powershell
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
     return @{ Message = 'Custom authentication failed message' }
 }
 ```
@@ -72,7 +81,7 @@ New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock
 You can also set custom headers on the response; these will be set regardless if authentication fails or succeeds:
 
 ```powershell
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
     return @{
         Headers = @{
             HeaderName = 'HeaderValue'
@@ -97,12 +106,12 @@ return @{
 
 When authentication fails, and a 401 response is returned, then Pode will also attempt to respond to the client with a `WWW-Authenticate` header (if you've manually set this header using the custom headers from above, then the custom header will be used instead). For the inbuilt types, such as Basic, this Header will always be returned on a 401 response.
 
-You can set the `-Name` and `-Realm` of the header using the [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function. If no Name is supplied, then the header will not be returned - also if there is no Realm, then this will not be added to the header.
+You can set the `-Name` and `-Realm` of the header on, for example, [`New-PodeAuthBasicScheme`](../../../Functions/Authentication/New-PodeAuthBasicScheme). If no Name is supplied, then the header will not be returned - also if there is no Realm, then this will not be added to the header.
 
 For example, if you setup Basic authenticate with a custom Realm as follows:
 
 ```powershell
-New-PodeAuthScheme -Basic -Realm 'Enter creds to access site'
+New-PodeAuthBasicScheme -Realm 'Enter creds to access site'
 ```
 
 Then on a 401 response, the `WWW-Authenticate`` header will look as follows:
@@ -116,7 +125,7 @@ WWW-Authenticate: Basic realm="Enter creds to access site"
 
 ### Redirecting
 
-When building custom authenticators, it might be required that you redirect mid-auth and stop processing the current request. To achieve this you can return the following from the scriptblock of `New-PodeAuthScheme` or `Add-PodeAuth`:
+When building custom authenticators, it might be required that you redirect mid-auth and stop processing the current request. To achieve this you can return the following from the scriptblock of `New-PodeAuthCustomScheme` or `Add-PodeAuth`:
 
 ```powershell
 return @{ IsRedirected = $true }
@@ -188,7 +197,7 @@ For example, you might require both an API Key and Basic authentication for a us
 
 ```powershell
 # setup apikey auth
-New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
+New-PodeAuthApiKeyScheme -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
     param($key)
 
     # here you'd check a real user storage, this is just for example
@@ -203,7 +212,7 @@ New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessi
 }
 
 # setup basic auth
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
+New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
     param($username, $password)
 
     # here you'd check a real user storage, this is just for example
@@ -235,7 +244,7 @@ Using a similar example to the example above, the following will use a `-ScriptB
 
 ```powershell
 # setup apikey auth
-New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
+New-PodeAuthApiKeyScheme -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
     param($key)
 
     # here you'd check a real user storage, this is just for example
@@ -250,7 +259,7 @@ New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessi
 }
 
 # setup basic auth
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
+New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
     param($username, $password)
 
     # here you'd check a real user storage, this is just for example
@@ -294,14 +303,14 @@ Or, you might want to check for a JWT Bearer token, but if one isn't present def
 
 ```powershell
 # setup jwt bearer auth
-New-PodeAuthScheme -Bearer -AsJWT | Add-PodeAuth -Name 'Bearer' -Sessionless -ScriptBlock {
+New-PodeAuthBearerScheme -AsJWT | Add-PodeAuth -Name 'Bearer' -Sessionless -ScriptBlock {
     param($payload)
     # check payload
     return @{ User = @{ Name = 'Morty' } }
 }
 
 # setup basic azure-ad auth
-$basic = New-PodeAuthScheme -Basic
+$basic = New-PodeAuthBasicScheme
 $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $basic
 $scheme | Add-PodeAuth -Name 'AzureAD' -Sessionless -ScriptBlock {
     param($user, $accessToken, $refreshToken, $response)
@@ -326,7 +335,7 @@ You can also merge other merged authentication methods. This lets you build scen
 
 ```powershell
 # setup apikey auth
-New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
+New-PodeAuthApiKeyScheme -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
     param($key)
 
     # here you'd check a real user storage, this is just for example
@@ -338,14 +347,14 @@ New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessi
 }
 
 # setup jwt bearer auth
-New-PodeAuthScheme -Bearer -AsJWT | Add-PodeAuth -Name 'Bearer' -Sessionless -ScriptBlock {
+New-PodeAuthBearerScheme -AsJWT | Add-PodeAuth -Name 'Bearer' -Sessionless -ScriptBlock {
     param($payload)
     # check payload
     return @{ User = @{ Name = 'Morty' } }
 }
 
 # setup basic azure-ad auth
-$basic = New-PodeAuthScheme -Basic
+$basic = New-PodeAuthBasicScheme
 $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $basic
 $scheme | Add-PodeAuth -Name 'AzureAD' -Sessionless -ScriptBlock {
     param($user, $accessToken, $refreshToken, $response)
@@ -377,18 +386,6 @@ The same still applies for merged authentication methods; if you're using `Merge
 
 Similar to [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) the [`Merge-PodeAuth`](../../../Functions/Authentication/Merge-PodeAuth) function also supports the `-FailureUrl`, `-SuccessUrl`, etc. parameters. When set on the merged authentication method, they will be used as a fallback if the initial authentication methods don't have them set. This means you can set up 2 authentication methods without Failure URLs, and then merge them with a default Failure URL of `/login` on the merged authentication.
 
-## Inbuilt Authenticators
-
-Over time Pode will start to support inbuilt authentication methods - such as [Windows Active Directory](../Inbuilt/WindowsAD). More information can be found in the Inbuilt section.
-
-For example, the below would use the inbuilt Windows AD authentication method:
-
-```powershell
-Start-PodeServer {
-    New-PodeAuthScheme -Basic | Add-PodeAuthWindowsAd -Name 'Login'
-}
-```
-
 ## Events
 
 Similar to [Server Events](../../Events) there are also events which you can register scriptblocks to for Authentication. Currently the following events are supported:
@@ -406,7 +403,7 @@ For example, to register for the Login event of a basic Authentication Method, t
 
 ```powershell
 # create the basic authentication method
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Example' -Sessionless -ScriptBlock { }
+New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Example' -Sessionless -ScriptBlock { }
 
 # register for the Login event
 Register-PodeAuthEvent -Name 'Example' -Type Login -EventName 'OnLogin' -ScriptBlock {

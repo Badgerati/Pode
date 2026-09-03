@@ -46,7 +46,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # setup negotiate auth
-    New-PodeAuthScheme -Negotiate -KeytabPath '.\pode-user.keytab' | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthNegotiateScheme -KeytabPath '.\pode-user.keytab' | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($claim)
         $claim | Out-Default
         $claim.Identity.Name | Out-Default

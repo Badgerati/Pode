@@ -713,7 +713,8 @@ function ConvertTo-PodeMiddleware {
 
         # check middleware is a type valid
         if (($mid -isnot [scriptblock]) -and ($mid -isnot [hashtable])) {
-            throw ($PodeLocale.invalidMiddlewareTypeExceptionMessage -f $mid.GetType().Name)#"One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: $($mid.GetType().Name)"
+            # "One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: $($mid.GetType().Name)"
+            throw ($PodeLocale.invalidMiddlewareTypeExceptionMessage -f $mid.GetType().Name)
         }
 
         # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
@@ -731,7 +732,7 @@ function ConvertTo-PodeMiddleware {
     }
 
     # if we have middleware, convert scriptblocks to hashtables
-    $converted = @(for ($i = 0; $i -lt $Middleware.Length; $i++) {
+    return @(for ($i = 0; $i -lt $Middleware.Length; $i++) {
             if ($null -eq $Middleware[$i]) {
                 continue
             }
@@ -747,8 +748,6 @@ function ConvertTo-PodeMiddleware {
 
             $Middleware[$i]
         })
-
-    return $converted
 }
 
 function Get-PodeRouteIfExistsPreference {

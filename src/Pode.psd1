@@ -302,7 +302,7 @@
         'Add-PodeAuthUserFile',
         'ConvertTo-PodeJwt',
         'ConvertFrom-PodeJwt',
-        'Test-PodeJwt'
+        'Test-PodeJwt',
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
         'Test-PodeAuthUser',
@@ -316,6 +316,15 @@
         'Register-PodeAuthEvent',
         'Test-PodeAuthEvent',
         'Unregister-PodeAuthEvent',
+        'New-PodeAuthBasicScheme',
+        'New-PodeAuthFormScheme',
+        'New-PodeAuthDigestScheme',
+        'New-PodeAuthBearerScheme',
+        'New-PodeAuthClientCertificateScheme',
+        'New-PodeAuthOAuth2Scheme',
+        'New-PodeAuthApiKeyScheme',
+        'New-PodeAuthNegotiateScheme',
+        'New-PodeAuthCustomScheme',
 
         # access
         'New-PodeAccessScheme',

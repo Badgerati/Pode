@@ -63,7 +63,7 @@ $pode = New-PodeServer
 
 $pode | Add-PodeEndpoint -Address 127.0.0.1 -Port 8080 -Protocol Http
 
-$basic = New-PodeAuthScheme -Basic
+$basic = New-PodeAuthBasicScheme
 $pode | Add-PodeAuth -Name 'SomeAuth' -Scheme $basic -ScriptBlock {
     return @{ User = @{} }
 }

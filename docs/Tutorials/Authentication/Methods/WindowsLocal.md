@@ -10,7 +10,7 @@ To enable Windows local user authentication you can use the [`Add-PodeAuthWindow
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'Login'
+    New-PodeAuthFormScheme | Add-PodeAuthWindowsLocal -Name 'Login'
 }
 ```
 
@@ -18,15 +18,15 @@ Start-PodeServer {
 
 The User object returned, and accessible on Routes, and other functions via `$WebEvent.Auth.User`, will contain the following information:
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| UserType | string | Value is fixed to Local |
-| AuthenticationType | string | Value is fixed to WinNT |
-| Username | string | The user's username |
-| Name | string | The user's fullname |
-| FQDN | string | The Computer Name |
-| Domain | string | Value is fixed to localhost |
-| Groups | string[] | All groups of which the the user is a member |
+| Name               | Type     | Description                                  |
+| ------------------ | -------- | -------------------------------------------- |
+| UserType           | string   | Value is fixed to Local                      |
+| AuthenticationType | string   | Value is fixed to WinNT                      |
+| Username           | string   | The user's username                          |
+| Name               | string   | The user's fullname                          |
+| FQDN               | string   | The Computer Name                            |
+| Domain             | string   | Value is fixed to localhost                  |
+| Groups             | string[] | All groups of which the the user is a member |
 
 Such as:
 
@@ -42,7 +42,7 @@ You can supply a list of group names to validate that users are a member of them
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'Login' -Groups @('admins', 'devops')
+    New-PodeAuthFormScheme | Add-PodeAuthWindowsLocal -Name 'Login' -Groups @('admins', 'devops')
 }
 ```
 
@@ -54,7 +54,7 @@ You can supply a list of authorised usernames to validate a user's access, after
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'Login' -Users @('jsnow', 'rsanchez')
+    New-PodeAuthFormScheme | Add-PodeAuthWindowsLocal -Name 'Login' -Users @('jsnow', 'rsanchez')
 }
 ```
 
@@ -69,7 +69,7 @@ The ScriptBlock has the same return rules as [`Add-PodeAuth`](../../../../Functi
 For example, to return the user back:
 
 ```powershell
-New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'Login' -ScriptBlock {
+New-PodeAuthFormScheme | Add-PodeAuthWindowsLocal -Name 'Login' -ScriptBlock {
     param($user)
 
     # check or load extra data
@@ -81,7 +81,7 @@ New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'Login' -ScriptBlock {
 Or to fail authentication with an error message:
 
 ```powershell
-New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'Login' -ScriptBlock {
+New-PodeAuthFormScheme | Add-PodeAuthWindowsLocal -Name 'Login' -ScriptBlock {
     param($user)
     return @{ Message = 'Authorisation failed' }
 }

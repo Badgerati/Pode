@@ -318,7 +318,7 @@ Add-PodeAuthIIS -Name 'IISAuth' -NoGroups
 
 You can enable Pode to get client certificates from IIS by passing `-AllowClientCertificate` to your [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint). Pode will check for either the `MS-ASPNETCORE-CLIENTCERT` or `X-ARR-ClientCert` headers, and if either is present they'll be used to set the certificate against `$WebEvent.Request.Handler.ClientCertificate`.
 
-This also allows for using [Client Certificate](../../Tutorials/Authentication/Methods/ClientCertificate) authentication in Pode, even when behind IIS.
+This also allows for using [Client Certificate](../../Tutorials/Authentication/Schemes/ClientCertificate) authentication in Pode, even when behind IIS.
 
 ### Additional Validation
 

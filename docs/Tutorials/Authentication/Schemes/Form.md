@@ -2,13 +2,16 @@
 
 Form authentication is for when you're using a `<form>` on your webpage, and it gets submitted. This authentication method expects a `username` and `password` to be passed from the form's input fields, via POST request.
 
+!!! important
+    The `New-PodeAuthScheme` function is now deprecated, please use [`New-PodeAuthFormScheme`](../../../../Functions/Authentication/New-PodeAuthFormScheme) instead.
+
 ## Setup
 
-To start using Form authentication in Pode you can use `New-PodeAuthScheme -Form`, and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the request's payload:
+To start using Form authentication in Pode you can use [`New-PodeAuthFormScheme`](../../../../Functions/Authentication/New-PodeAuthFormScheme), and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the request's payload:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    New-PodeAuthFormScheme | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($username, $password)
 
         # check if the user is valid
@@ -18,21 +21,21 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the request's payload contains a `username` and `password` fields. The `New-PodeAuthScheme -Form` function can be supplied parameters to allow for custom names of these fields.
+By default, Pode will check if the request's payload contains a `username` and `password` fields. The [`New-PodeAuthFormScheme`](../../../../Functions/Authentication/New-PodeAuthFormScheme) function can be supplied parameters to allow for custom names of these fields.
 
 For example, to look for the field `email` rather than the default `username` you could do:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form -UsernameField 'email' | Add-PodeAuth -Name 'Login' -ScriptBlock {}
+    New-PodeAuthFormScheme -UsernameField 'email' | Add-PodeAuth -Name 'Login' -ScriptBlock {}
 }
 ```
 
-The credentials supplied to [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)'s scriptblock are, by default, the username and password. This can be changed to a pscredential object instead by supplying `-AsCredential` on [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme):
+The credentials supplied to [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)'s scriptblock are, by default, the username and password. This can be changed to a pscredential object instead by supplying `-AsCredential` on [`New-PodeAuthFormScheme`](../../../../Functions/Authentication/New-PodeAuthFormScheme):
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form -AsCredential | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    New-PodeAuthFormScheme -AsCredential | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($creds)
 
         # check if the user is valid
@@ -73,7 +76,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # setup form authentication to validate a user
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthFormScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

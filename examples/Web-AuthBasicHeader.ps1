@@ -63,7 +63,7 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Duration 120 -Extend -UseHeaders -Strict
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
