@@ -38,7 +38,7 @@ Start-PodeServer -ScriptBlock {
 # then call "http://127.0.0.1:32005/ping"
 ```
 
-See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app! Don't know HTML, CSS, or JavaScript? No problem! [Pode.Web](https://github.com/Badgerati/Pode.Web) is currently a work in progress, and lets you build web pages using purely PowerShell!
+See [here](https://badgerati.github.io/Pode/latest/Getting-Started/FirstApp/) for building your first app! Don't know HTML, CSS, or JavaScript? No problem! [Pode.Web](https://github.com/Badgerati/Pode.Web) is currently a work in progress, and lets you build web pages using purely PowerShell!
 
 ## 📘 Documentation
 
