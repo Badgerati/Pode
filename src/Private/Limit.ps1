@@ -57,14 +57,12 @@ function Invoke-PodeLimitAccessRuleRequest {
 
     # generate the rule order, if rules have been altered
     if ($PodeContext.Server.Limits.Access.RulesAltered) {
-        $PodeContext.Server.Limits.Access.RulesOrder = $PodeContext.Server.Limits.Access.Rules.Values |
-            Sort-Object -Property { $_.Priority } -Descending |
-            Select-Object -ExpandProperty Name
+        $PodeContext.Server.Limits.Access.RuleOrder = ($PodeContext.Server.Limits.Access.Rules.Values | Sort-Object -Property { $_.Priority } -Descending).Name
         $PodeContext.Server.Limits.Access.RulesAltered = $false
     }
 
     # loop through each access rule
-    foreach ($ruleName in $PodeContext.Server.Limits.Access.RulesOrder) {
+    foreach ($ruleName in $PodeContext.Server.Limits.Access.RuleOrder) {
         $rule = $PodeContext.Server.Limits.Access.Rules[$ruleName]
 
         # loop through each component of the rule, checking if the request matches
@@ -118,14 +116,12 @@ function Invoke-PodeLimitRateRuleRequest {
 
     # generate the rule order, if rules have been altered
     if ($PodeContext.Server.Limits.Rate.RulesAltered) {
-        $PodeContext.Server.Limits.Rate.RulesOrder = $PodeContext.Server.Limits.Rate.Rules.Values |
-            Sort-Object -Property { $_.Priority } -Descending |
-            Select-Object -ExpandProperty Name
+        $PodeContext.Server.Limits.Rate.RuleOrder = ($PodeContext.Server.Limits.Rate.Rules.Values | Sort-Object -Property { $_.Priority } -Descending).Name
         $PodeContext.Server.Limits.Rate.RulesAltered = $false
     }
 
     # loop through each rate rule
-    foreach ($ruleName in $PodeContext.Server.Limits.Rate.RulesOrder) {
+    foreach ($ruleName in $PodeContext.Server.Limits.Rate.RuleOrder) {
         $rule = $PodeContext.Server.Limits.Rate.Rules[$ruleName]
         $ruleKey = @()
         $now = [DateTime]::UtcNow
