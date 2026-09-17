@@ -153,17 +153,17 @@ function Invoke-PodeLimitRateRuleRequest {
         if (!$rule.Active.ContainsKey($ruleKey) -or ($rule.Active[$ruleKey].Timeout -le $now)) {
             $rule.Active[$ruleKey] = @{
                 Timeout = $now.AddMilliseconds($rule.Duration)
-                Counter = 0
+                Counter = [Pode.Utilities.Structures.PodeConcurrentCounter]::new()
             }
         }
 
         # increment the counter
-        $rule.Active[$ruleKey].Counter++
+        $null = $rule.Active[$ruleKey].Counter.Increment()
 
         # if the key is in the active dictionary, then check the timeout/counter and set the status code if needed
         if ($rule.Active.ContainsKey($ruleKey) -and
             ($rule.Active[$ruleKey].Timeout -gt $now) -and
-            ($rule.Active[$ruleKey].Counter -gt $rule.Limit)) {
+            ($rule.Active[$ruleKey].Counter.Value -gt $rule.Limit)) {
             return @{
                 RetryAfter = [int][System.Math]::Ceiling(($rule.Active[$ruleKey].Timeout - $now).TotalSeconds)
                 StatusCode = $rule.StatusCode
