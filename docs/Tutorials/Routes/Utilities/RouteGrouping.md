@@ -55,8 +55,12 @@ Add-PodeRouteGroup -Path '/api' -Authentication Basic -Middleware $mid -Routes {
             Write-PodeJsonResponse -Value @{ ID = 3 }
         }
     }
+
+    Add-PodeRouteGroup -Path '/special' -FilePath './routes/specialRoutes.ps1'
 }
 ```
+
+
 
 ## Static Routes
 
