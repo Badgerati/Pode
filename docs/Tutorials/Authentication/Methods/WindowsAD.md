@@ -26,6 +26,7 @@ The User object returned, and accessible on Routes, and other functions via `$We
 | ------------------ | ------------ | ----------------------------------------------------------------------------- |
 | UserType           | string       | Value is fixed to Domain                                                      |
 | AuthenticationType | string       | Value is fixed to LDAP                                                        |
+| AccountType        | string       | The AD object class of the account, see [Account Types](#account-types)       |
 | DistinguishedName  | string       | The distinguished name of the user                                            |
 | Username           | string       | The user's username (without domain)                                          |
 | Name               | string       | The user's fullname                                                           |
@@ -42,6 +43,23 @@ Add-PodeRoute -Method Get -Path '/info' -Authentication 'Login' -ScriptBlock {
     Write-Host $WebEvent.Auth.User.Username
 }
 ```
+
+## Account Types
+
+Any AD account that can authenticate is supported, not just user accounts. The `AccountType` property on the User object is the most specific AD object class of the account:
+
+| Account                                 | AccountType                           |
+| --------------------------------------- | ------------------------------------- |
+| User                                    | `user` / `inetOrgPerson`              |
+| Computer                                | `computer`                            |
+| Standalone Managed Service Account      | `msDS-ManagedServiceAccount`          |
+| Group Managed Service Account (gMSA)    | `msDS-GroupManagedServiceAccount`     |
+| Delegated Managed Service Account       | `msDS-DelegatedManagedServiceAccount` |
+
+Computer and managed service accounts must be supplied with their trailing `$`, ie: `DOMAIN\WEB01$` or `svc-app$`.
+
+!!! Note
+    The passwords of managed service accounts (sMSA/gMSA/dMSA) are generated and rotated by AD. To authenticate them with Basic or Form schemes, the caller must first retrieve the managed password. For these accounts, Kerberos via [`Add-PodeAuthWindowsAdIIS`](../../../../Functions/Authentication/Add-PodeAuthWindowsAdIIS) is usually the better choice.
 
 ## Providers
 

@@ -289,6 +289,7 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 | UserType           | string                                    | Specifies if the user is a Domain or Local user                 |
 | Identity           | System.Security.Principal.WindowsIdentity | Returns the WindowsIdentity which can be used for Impersonation |
 | AuthenticationType | string                                    | Value is fixed to LDAP                                          |
+| AccountType        | string                                    | The AD object class of the account (ie: user, computer)         |
 | DistinguishedName  | string                                    | The distinguished name of the user                              |
 | Username           | string                                    | The user's username (without domain)                            |
 | Name               | string                                    | The user's fullname                                             |
