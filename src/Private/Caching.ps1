@@ -97,7 +97,7 @@ function Start-PodeCacheHousekeeper {
     }
 
     Add-PodeTimer -Name '__pode_cache_housekeeper__' -Interval 10 -ScriptBlock {
-        $keys = $PodeContext.Server.Cache.Items.Keys
+        $keys = $PodeContext.Server.Cache.Items.Keys.Clone()
         if (Test-PodeIsEmpty $keys) {
             return
         }
