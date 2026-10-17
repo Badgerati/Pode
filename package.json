@@ -6,13 +6,13 @@
   "license": "MIT",
   "dependencies": {
     "@highlightjs/cdn-assets": "11.12.0",
-    "@stoplight/elements": "9.0.25",
+    "@stoplight/elements": "9.0.28",
     "bootstrap": "5.3.8",
     "openapi-explorer": "2.4.820",
-    "rapidoc": "9.3.8",
+    "rapidoc": "10.1.0",
     "rapipdf": "2.2.1",
     "redoc": "2.5.4",
     "swagger-editor-dist": "4.14.8",
-    "swagger-ui-dist": "5.33.0"
+    "swagger-ui-dist": "5.33.2"
   }
 }
