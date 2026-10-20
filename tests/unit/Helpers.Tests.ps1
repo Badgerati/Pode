@@ -1012,7 +1012,8 @@ InModuleScope -ModuleName 'Pode' {
 
             It 'Returns back a literal path' {
                 Get-PodeRelativePath -Path 'c:/path' | Should -Be 'c:/path'
-            } }
+            }
+        }
 
         It 'Returns path for literal path when resolving' {
             $PodeContext = @{
@@ -1038,10 +1039,19 @@ InModuleScope -ModuleName 'Pode' {
             Get-PodeRelativePath -Path '.\src' -Resolve -JoinRoot | Should -Be (Join-Path $pwd.Path 'src')
         }
 
+        It 'Returns path for a relative path when resolving raw name' {
+            $PodeContext = @{
+                Server = @{
+                    Root = $pwd.Path
+                }
+            }
+
+            Get-PodeRelativePath -Path 'src' -Resolve -JoinRoot | Should -Be (Join-Path $pwd.Path 'src')
+        }
+
         It 'Returns path for a relative path joined to default root' {
             Get-PodeRelativePath -Path './path' -JoinRoot | Should -Be 'c:/./path'
         }
-
 
         It 'Returns resolved path for a relative path joined to default root when resolving' {
             $PodeContext = @{
@@ -1050,13 +1060,12 @@ InModuleScope -ModuleName 'Pode' {
                 }
             }
 
-            Get-PodeRelativePath -Path './src' -JoinRoot -Resolve | Should -Be (Join-Path -Path $PWD  -ChildPath 'src')
+            Get-PodeRelativePath -Path './src' -JoinRoot -Resolve | Should -Be (Join-Path -Path $PWD.Path -ChildPath 'src')
         }
 
         It 'Returns path for a relative path joined to passed root' {
-            Get-PodeRelativePath -Path (Join-Path -Path '.' -ChildPath 'path')-JoinRoot -RootPath $PWD | Should -Be (Join-Path -Path $PWD  -ChildPath (Join-Path -Path '.' -ChildPath 'path'))
+            Get-PodeRelativePath -Path (Join-Path -Path '.' -ChildPath 'path') -JoinRoot -RootPath $PWD.Path | Should -Be (Join-Path -Path $PWD.Path -ChildPath (Join-Path -Path '.' -ChildPath 'path'))
         }
-
 
         It 'Throws error for path ot existing' {
             Mock Test-PodePath { return $false }

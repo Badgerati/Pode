@@ -2549,8 +2549,8 @@ function Get-PodeRelativePath {
         $TestPath
     )
 
-    # if the path is relative, join to root if flagged
-    if ($JoinRoot -and ($Path -match '^\.{1,2}([\\\/]|$)')) {
+    # if the path is relative (., .., or no separator), join to root if flagged
+    if ($JoinRoot -and (($Path -match '^\.{1,2}([\\\/]|$)') -or ($Path -match '^[^\\\/]+$'))) {
         if ([string]::IsNullOrWhiteSpace($RootPath)) {
             $RootPath = $PodeContext.Server.Root
         }
