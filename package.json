@@ -11,7 +11,7 @@
     "openapi-explorer": "2.4.820",
     "rapidoc": "10.1.0",
     "rapipdf": "2.2.1",
-    "redoc": "2.5.4",
+    "redoc": "3.0.1",
     "swagger-editor-dist": "4.14.8",
     "swagger-ui-dist": "5.33.3"
   }
