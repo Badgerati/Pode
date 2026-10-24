@@ -170,7 +170,6 @@ namespace Pode.Protocols.Common.Requests
                     }
                 }))
                 {
-
                     // Authenticate the SSL stream
                     await ssl.AuthenticateAsServerAsync(Certificate, AllowClientCertificate, Protocols, false)
                         .ConfigureAwait(false);

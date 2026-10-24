@@ -358,7 +358,7 @@ namespace Pode.Protocols.Common.Contexts
         /// </summary>
         public void Dispose()
         {
-            Dispose(Request?.Error != default(PodeRequestException));
+            Dispose(Request?.Error != default(PodeRequestException) || IsTimeout);
             GC.SuppressFinalize(this);
         }
 
@@ -376,7 +376,7 @@ namespace Pode.Protocols.Common.Contexts
             lock (Lockable)
             {
                 PodeHelpers.WriteErrorMessage($"Disposing Context", PodeLogLevel.Verbose, this);
-                Listener.RemoveProcessingContext(this);
+                Listener?.RemoveProcessingContext(this);
 
                 if (IsClosed)
                 {
@@ -451,7 +451,10 @@ namespace Pode.Protocols.Common.Contexts
                 }
                 catch (Exception ex)
                 {
-                    PodeHelpers.WriteException(ex);
+                    PodeHelpers.WriteException(ex, PodeLogLevel.Error, this);
+                    State = PodeContextState.Error;
+                    _awaitingContent = false;
+                    IsDisposed = true;
                 }
                 finally
                 {
