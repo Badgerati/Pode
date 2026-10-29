@@ -71,6 +71,21 @@ InModuleScope -ModuleName 'Pode' {
         }
     }
 
+    Describe 'Get-PodeAuthADQuery' {
+        It 'Matches user and machine accounts by sAMAccountName' {
+            Get-PodeAuthADQuery -Username 'jsnow' |
+                Should -Be '(&(|(sAMAccountType=805306368)(sAMAccountType=805306369))(sAMAccountName=jsnow))'
+        }
+
+        It 'Keeps the trailing $ of computer and managed service accounts' {
+            Get-PodeAuthADQuery -Username 'WEB01$' | Should -BeLike '*(sAMAccountName=WEB01$))'
+        }
+
+        It 'Escapes LDAP filter special characters' {
+            Get-PodeAuthADQuery -Username 'a*b(c)d\e' | Should -BeLike '*(sAMAccountName=a\2ab\28c\29d\5ce))'
+        }
+    }
+
     Describe 'Get-PodeAuthMiddlewareScript' {
         It 'Returns auth middleware' {
             $result = Get-PodeAuthMiddlewareScript
