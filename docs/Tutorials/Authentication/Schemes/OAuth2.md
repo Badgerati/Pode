@@ -4,17 +4,20 @@ The OAuth2 authentication lets you setup authentication with services that suppo
 
 To use this scheme, you'll need to supply an Authorise/Token URL, as well as setup a app registration to acquire a Client ID and Secret. There is also support for converting an OpenID Connect Discovery URL to a Pode OAuth2 scheme.
 
+!!! important
+    The `New-PodeAuthScheme` function is now deprecated, please use [`New-PodeAuthOAuth2Scheme`](../../../../Functions/Authentication/New-PodeAuthOAuth2Scheme) instead.
+
 ## Setup
 
 Before using the OAuth2 authentication in Pode, you first need to register a new app within your service of choice. This registration will supply you with the required Client ID and Secret (if you're using [PKCE](#pkce) then the Client Secret is optional).
 
-To setup and start using OAuth2 authentication in Pode you use `New-PodeAuthScheme -OAuth2`, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function.
+To setup and start using OAuth2 authentication in Pode you use [`New-PodeAuthOAuth2Scheme`](../../../../Functions/Authentication/New-PodeAuthOAuth2Scheme), and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function.
 
 ## Grant Types
 
 Pode supports the grant types of `authorization_code` and `password`. By default OAuth2 will use the `authorization_code` grant type, which will require an `-AuthoriseUrl` and `-RedirectUrl`.
 
-If you want to use the `password` grant type, and have users enter their credentials via a form or Basic authentication, then you'll need to supply an `-InnerScheme` type to `New-PodeAuthScheme -OAuth2`.
+If you want to use the `password` grant type, and have users enter their credentials via a form or Basic authentication, then you'll need to supply an `-InnerScheme` type to [`New-PodeAuthOAuth2Scheme`](../../../../Functions/Authentication/New-PodeAuthOAuth2Scheme).
 
 These types are described below.
 
@@ -22,12 +25,11 @@ These types are described below.
 
 This is the default grant type, and requires an `-AuthoriseUrl` to be supplied. A `-RedirectUrl` is also required, but if not supplied an default one will be setup internally.
 
-You will need to supply the service's Authorise and Token URLs to `New-PodeAuthScheme` as below:
+You will need to supply the service's Authorise and Token URLs to [`New-PodeAuthOAuth2Scheme`](../../../../Functions/Authentication/New-PodeAuthOAuth2Scheme) as below:
 
 ```powershell
 Start-PodeServer {
-    $scheme = New-PodeAuthScheme `
-        -OAuth2 `
+    $scheme = New-PodeAuthOAuth2Scheme `
         -ClientID '<clientId>' `
         -ClientSecret '<clientSecret>' `
         -AuthoriseUrl 'https://some-service.com/oauth2/authorize' `
@@ -68,14 +70,13 @@ Add-PodeRoute -Method Get -Path '/login' -Authentication Login
 
 Using this grant type allows you to support authentication in flows where redirecting is impossible - such as REST APIs using Basic authentication.
 
-To use this grant type, you need to define another Scheme - such as Basic or Form - and then supply that Scheme to the `-InnerScheme` parameter of `New-PodeAuthScheme -OAuth2`. Pode will automatically switch to the password grant type.
+To use this grant type, you need to define another Scheme - such as Basic or Form - and then supply that Scheme to the `-InnerScheme` parameter of [`New-PodeAuthOAuth2Scheme`](../../../../Functions/Authentication/New-PodeAuthOAuth2Scheme). Pode will automatically switch to the password grant type.
 
 ```powershell
 Start-PodeServer {
-    $form = New-PodeAuthScheme -Form
+    $form = New-PodeAuthFormScheme
 
-    $scheme = New-PodeAuthScheme `
-        -OAuth2 `
+    $scheme = New-PodeAuthOAuth2Scheme `
         -ClientID '<clientId>' `
         -ClientSecret '<clientSecret>' `
         -TokenUrl 'https://some-service.com/oauth2/token' `
@@ -112,8 +113,7 @@ If your app is setup as a "Single Page Application" then you'll be able to use P
 
 ```powershell
 Start-PodeServer {
-    $scheme = New-PodeAuthScheme `
-        -OAuth2 `
+    $scheme = New-PodeAuthOAuth2Scheme `
         -ClientID '<clientId>' `
         -AuthoriseUrl 'https://some-service.com/oauth2/authorize' `
         -TokenUrl 'https://some-service.com/oauth2/token' `
@@ -183,8 +183,7 @@ Start-PodeServer {
     Set-PodeViewEngine -Type Pode
 
     # setup authentication to validate a user
-    $scheme = New-PodeAuthScheme `
-        -OAuth2 `
+    $scheme = New-PodeAuthOAuth2Scheme `
         -ClientID '<clientId>' `
         -ClientSecret '<clientSecret>' `
         -AuthoriseUrl 'https://some-service.com/oauth2/authorize' `

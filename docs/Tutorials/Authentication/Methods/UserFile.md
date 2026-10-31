@@ -10,7 +10,7 @@ To use user file authentication you can use the [`Add-PodeAuthUserFile`](../../.
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login'
+    New-PodeAuthFormScheme | Add-PodeAuthUserFile -Name 'Login'
 }
 ```
 
@@ -55,7 +55,7 @@ The password is normally a standard SHA256 hash, but Pode does support HMAC SHA2
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -HmacSecret '<some-secret>'
+    New-PodeAuthFormScheme | Add-PodeAuthUserFile -Name 'Login' -HmacSecret '<some-secret>'
 }
 ```
 
@@ -111,7 +111,7 @@ You can supply a list of group names to validate that users are a member of them
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -Groups @('admins', 'devops')
+    New-PodeAuthFormScheme | Add-PodeAuthUserFile -Name 'Login' -Groups @('admins', 'devops')
 }
 ```
 
@@ -123,7 +123,7 @@ You can supply a list of authorised usernames to validate a user's access, after
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -Users @('jsnow', 'rsanchez')
+    New-PodeAuthFormScheme | Add-PodeAuthUserFile -Name 'Login' -Users @('jsnow', 'rsanchez')
 }
 ```
 
@@ -138,7 +138,7 @@ The ScriptBlock has the same return rules as [`Add-PodeAuth`](../../../../Functi
 For example, to return the user back:
 
 ```powershell
-New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -ScriptBlock {
+New-PodeAuthFormScheme | Add-PodeAuthUserFile -Name 'Login' -ScriptBlock {
     param($user)
 
     # check or load extra data
@@ -150,7 +150,7 @@ New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -ScriptBlock {
 Or to fail authentication with an error message:
 
 ```powershell
-New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -ScriptBlock {
+New-PodeAuthFormScheme | Add-PodeAuthUserFile -Name 'Login' -ScriptBlock {
     param($user)
     return @{ Message = 'Authorisation failed' }
 }

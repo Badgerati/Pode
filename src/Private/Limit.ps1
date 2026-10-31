@@ -57,14 +57,12 @@ function Invoke-PodeLimitAccessRuleRequest {
 
     # generate the rule order, if rules have been altered
     if ($PodeContext.Server.Limits.Access.RulesAltered) {
-        $PodeContext.Server.Limits.Access.RulesOrder = $PodeContext.Server.Limits.Access.Rules.Values |
-            Sort-Object -Property { $_.Priority } -Descending |
-            Select-Object -ExpandProperty Name
+        $PodeContext.Server.Limits.Access.RuleOrder = ($PodeContext.Server.Limits.Access.Rules.Values | Sort-Object -Property { $_.Priority } -Descending).Name
         $PodeContext.Server.Limits.Access.RulesAltered = $false
     }
 
     # loop through each access rule
-    foreach ($ruleName in $PodeContext.Server.Limits.Access.RulesOrder) {
+    foreach ($ruleName in $PodeContext.Server.Limits.Access.RuleOrder) {
         $rule = $PodeContext.Server.Limits.Access.Rules[$ruleName]
 
         # loop through each component of the rule, checking if the request matches
@@ -118,14 +116,12 @@ function Invoke-PodeLimitRateRuleRequest {
 
     # generate the rule order, if rules have been altered
     if ($PodeContext.Server.Limits.Rate.RulesAltered) {
-        $PodeContext.Server.Limits.Rate.RulesOrder = $PodeContext.Server.Limits.Rate.Rules.Values |
-            Sort-Object -Property { $_.Priority } -Descending |
-            Select-Object -ExpandProperty Name
+        $PodeContext.Server.Limits.Rate.RuleOrder = ($PodeContext.Server.Limits.Rate.Rules.Values | Sort-Object -Property { $_.Priority } -Descending).Name
         $PodeContext.Server.Limits.Rate.RulesAltered = $false
     }
 
     # loop through each rate rule
-    foreach ($ruleName in $PodeContext.Server.Limits.Rate.RulesOrder) {
+    foreach ($ruleName in $PodeContext.Server.Limits.Rate.RuleOrder) {
         $rule = $PodeContext.Server.Limits.Rate.Rules[$ruleName]
         $ruleKey = @()
         $now = [DateTime]::UtcNow
@@ -157,17 +153,17 @@ function Invoke-PodeLimitRateRuleRequest {
         if (!$rule.Active.ContainsKey($ruleKey) -or ($rule.Active[$ruleKey].Timeout -le $now)) {
             $rule.Active[$ruleKey] = @{
                 Timeout = $now.AddMilliseconds($rule.Duration)
-                Counter = 0
+                Counter = [Pode.Utilities.Structures.PodeConcurrentCounter]::new()
             }
         }
 
         # increment the counter
-        $rule.Active[$ruleKey].Counter++
+        $null = $rule.Active[$ruleKey].Counter.Increment()
 
         # if the key is in the active dictionary, then check the timeout/counter and set the status code if needed
         if ($rule.Active.ContainsKey($ruleKey) -and
             ($rule.Active[$ruleKey].Timeout -gt $now) -and
-            ($rule.Active[$ruleKey].Counter -gt $rule.Limit)) {
+            ($rule.Active[$ruleKey].Counter.Value -gt $rule.Limit)) {
             return @{
                 RetryAfter = [int][System.Math]::Ceiling(($rule.Active[$ruleKey].Timeout - $now).TotalSeconds)
                 StatusCode = $rule.StatusCode

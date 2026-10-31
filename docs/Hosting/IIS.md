@@ -289,6 +289,7 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 | UserType           | string                                    | Specifies if the user is a Domain or Local user                 |
 | Identity           | System.Security.Principal.WindowsIdentity | Returns the WindowsIdentity which can be used for Impersonation |
 | AuthenticationType | string                                    | Value is fixed to LDAP                                          |
+| AccountType        | string                                    | The AD object class of the account (ie: user, computer)         |
 | DistinguishedName  | string                                    | The distinguished name of the user                              |
 | Username           | string                                    | The user's username (without domain)                            |
 | Name               | string                                    | The user's fullname                                             |
@@ -318,7 +319,7 @@ Add-PodeAuthIIS -Name 'IISAuth' -NoGroups
 
 You can enable Pode to get client certificates from IIS by passing `-AllowClientCertificate` to your [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint). Pode will check for either the `MS-ASPNETCORE-CLIENTCERT` or `X-ARR-ClientCert` headers, and if either is present they'll be used to set the certificate against `$WebEvent.Request.Handler.ClientCertificate`.
 
-This also allows for using [Client Certificate](../../Tutorials/Authentication/Methods/ClientCertificate) authentication in Pode, even when behind IIS.
+This also allows for using [Client Certificate](../../Tutorials/Authentication/Schemes/ClientCertificate) authentication in Pode, even when behind IIS.
 
 ### Additional Validation
 

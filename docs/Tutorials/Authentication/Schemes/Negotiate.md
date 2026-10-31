@@ -5,6 +5,9 @@ Negotiate authentication lets you use Kerberos or NTLM authentication with an Ac
 !!! important
     To use the Negotiate authentication you will require a valid keytab file, which can be generated using the [ktpass](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ktpass) command-line tool.
 
+!!! important
+    The `New-PodeAuthScheme` function is now deprecated, please use [`New-PodeAuthNegotiateScheme`](../../../../Functions/Authentication/New-PodeAuthNegotiateScheme) instead.
+
 ## KeyTab
 
 To generate the required keytab file, ensure that the `ktpass` command-line tool is available. Additionally, you must have a user account in the Active Directory (AD) your are configuring for Negotiate authentication
@@ -42,11 +45,11 @@ setspn -A HTTP/pode.example.com example\pode-user
 
 ## Setup
 
-To use Negotiate authentication in Pode, after you've created a keytab file, you can use [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) and the pipe the result into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The scriptblock for `Add-PodeAuth` will be supplied the [ClaimsPrincipal](https://learn.microsoft.com/en-us/dotnet/api/system.security.claims.claimsprincipal?view=net-9.0) object for the authenticated AD user:
+To use Negotiate authentication in Pode, after you've created a keytab file, you can use [`New-PodeAuthNegotiateScheme`](../../../../Functions/Authentication/New-PodeAuthNegotiateScheme) and the pipe the result into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The scriptblock for `Add-PodeAuth` will be supplied the [ClaimsPrincipal](https://learn.microsoft.com/en-us/dotnet/api/system.security.claims.claimsprincipal?view=net-9.0) object for the authenticated AD user:
 
 ```powershell
 $keytab = '.\pode.keytab'
-New-PodeAuthScheme -Negotiate -KeytabPath $keytab | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+New-PodeAuthNegotiateScheme -KeytabPath $keytab | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
     param($claim)
 
     # perform any optional additional validation on the claim
@@ -88,7 +91,7 @@ Start-PodeServer -Threads 2 {
 
     # setup negotiate authentication
     $keytab = '.\pode.keytab'
-    New-PodeAuthScheme -Negotiate -KeytabPath $keytab | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthNegotiateScheme -KeytabPath $keytab | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($claim)
         return @{ User = $claim }
     }

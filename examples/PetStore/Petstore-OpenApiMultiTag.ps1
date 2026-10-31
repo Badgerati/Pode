@@ -168,7 +168,7 @@ Some useful links:
     $clientId = '123123123'
     $clientSecret = '<mysecret>'
 
-    New-PodeAuthScheme  -OAuth2  -ClientId $ClientId -ClientSecret $ClientSecret `
+    New-PodeAuthOAuth2Scheme -ClientId $clientId -ClientSecret $clientSecret `
         -AuthoriseUrl 'https://petstore3.swagger.io/oauth/authorize' `
         -TokenUrl 'https://petstore3.swagger.io/oauth/token' `
         -Scope 'read:pets', 'write:pets' |
@@ -177,7 +177,7 @@ Some useful links:
             return @{ User = $user }
         }
 
-    New-PodeAuthScheme -ApiKey -LocationName 'api_key' | Add-PodeAuth -Name 'api_key' -Sessionless -ScriptBlock {
+    New-PodeAuthApiKeyScheme -LocationName 'api_key' | Add-PodeAuth -Name 'api_key' -Sessionless -ScriptBlock {
         param($key)
         if ($key) {
             # here you'd check a real storage, this is just for example
@@ -206,7 +206,7 @@ Some useful links:
         }
     }
 
-    New-PodeAuthScheme -Basic -Realm 'PetStore' | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme -Realm 'PetStore' | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

@@ -45,7 +45,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLogFileMethod -Name 'requests' | Enable-PodeLogRequestType
 
     # setup bearer auth
-    New-PodeAuthScheme -Bearer -Scope write | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme -Scope write | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($token)
 
         # here you'd check a real user storage, this is just for example

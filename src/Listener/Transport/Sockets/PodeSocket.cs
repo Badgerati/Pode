@@ -140,7 +140,7 @@ namespace Pode.Transport.Sockets
         private void StartEndpoint(PodeEndpoint endpoint)
         {
             // Exit if the endpoint is disposed or if cancellation is requested.
-            if (endpoint.IsDisposed || Listener.CancellationToken.IsCancellationRequested)
+            if (endpoint == default || endpoint.IsDisposed || Listener.CancellationToken.IsCancellationRequested)
             {
                 return;
             }
@@ -181,23 +181,40 @@ namespace Pode.Transport.Sockets
         /// <returns>A Task representing the async operation.</returns>
         private async Task StartReceive(Socket acceptedSocket)
         {
-            // Add the socket to pending sockets.
-            AddPendingSocket(acceptedSocket);
+            var context = default(IPodeContext);
 
-            // Create the context for the connection.
-            var context = PodeContextFactory.Create(Type, acceptedSocket, this, Listener);
-            PodeHelpers.WriteErrorMessage($"Opening Receive", PodeLogLevel.Verbose, context);
-
-            // Initialize the context.
-            await context.Initialise().ConfigureAwait(false);
-            if (context.IsErrored)
+            try
             {
-                context.Dispose(true);
-                return;
-            }
+                // Add the socket to pending sockets.
+                AddPendingSocket(acceptedSocket);
 
-            // Start receiving data.
-            StartReceive(context);
+                // Create the context for the connection.
+                context = PodeContextFactory.Create(Type, acceptedSocket, this, Listener);
+                PodeHelpers.WriteErrorMessage($"Opening Receive", PodeLogLevel.Verbose, context);
+
+                // Initialize the context.
+                await context.Initialise().ConfigureAwait(false);
+                if (context.IsErrored)
+                {
+                    context.Dispose(true);
+                    return;
+                }
+
+                // Start receiving data.
+                StartReceive(context);
+            }
+            catch (Exception ex)
+            {
+                PodeHelpers.WriteException(ex, PodeLogLevel.Error, context);
+                if (context != default(IPodeContext))
+                {
+                    context.Dispose(true);
+                }
+                else
+                {
+                    RemovePendingSocket(acceptedSocket);
+                }
+            }
         }
 
         /// <summary>
@@ -206,6 +223,11 @@ namespace Pode.Transport.Sockets
         /// <param name="context">The context to start receiving for.</param>
         public void StartReceive(IPodeContext context)
         {
+            if (context == default(IPodeContext))
+            {
+                return;
+            }
+
             PodeHelpers.WriteErrorMessage($"Starting Receive", PodeLogLevel.Verbose, context);
 
             try
@@ -217,23 +239,25 @@ namespace Pode.Transport.Sockets
             {
                 // Handle cancellation.
                 PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
+                context.Dispose(true);
             }
             catch (IOException ex)
             {
                 // Handle I/O exceptions.
                 PodeHelpers.WriteException(ex, PodeLogLevel.Verbose);
+                context.Dispose(true);
             }
             catch (AggregateException aex)
             {
                 // Handle aggregated exceptions.
                 PodeHelpers.HandleAggregateException(aex, handled: true);
-                context.Socket.Close();
+                context.Dispose(true);
             }
             catch (Exception ex)
             {
                 // Handle any other exceptions.
                 PodeHelpers.WriteException(ex);
-                context.Socket.Close();
+                context.Dispose(true);
             }
         }
 
@@ -245,14 +269,13 @@ namespace Pode.Transport.Sockets
         {
             // Get details about the accepted connection.
             var accepted = args.AcceptSocket;
-            var endpoint = (PodeEndpoint)args.UserToken;
             var error = args.SocketError;
 
             // Start accepting new connections for the endpoint.
-            StartEndpoint(endpoint);
+            StartEndpoint(args.UserToken as PodeEndpoint);
 
             // If the connection was not successful or the listener is stopped, close the socket.
-            if ((accepted == default(Socket)) || (error != SocketError.Success) || (!Listener.IsConnected))
+            if (accepted == default(Socket) || error != SocketError.Success || !Listener.IsConnected)
             {
                 if (error != SocketError.Success)
                 {
@@ -329,6 +352,11 @@ namespace Pode.Transport.Sockets
         /// <param name="socket">The socket to add.</param>
         private void AddPendingSocket(Socket socket)
         {
+            if (socket == default(Socket))
+            {
+                return;
+            }
+
             lock (PendingSockets)
             {
                 var socketId = socket.GetHashCode().ToString();
@@ -349,8 +377,14 @@ namespace Pode.Transport.Sockets
         /// <param name="socket">The socket to remove.</param>
         public void RemovePendingSocket(Socket socket)
         {
+            if (socket == default(Socket))
+            {
+                return;
+            }
+
             lock (PendingSockets)
             {
+                CloseSocket(socket);
                 PendingSockets.Remove(socket.GetHashCode().ToString());
             }
         }

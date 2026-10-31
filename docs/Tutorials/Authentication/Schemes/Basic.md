@@ -6,13 +6,16 @@ Basic authentication is when you pass an encoded `username:password` value in th
 Authorization: Basic <base64 encoded username:password>
 ```
 
+!!! important
+    The `New-PodeAuthScheme` function is now deprecated, please use [`New-PodeAuthBasicScheme`](../../../../Functions/Authentication/New-PodeAuthBasicScheme) instead.
+
 ## Setup
 
-To start using Basic authentication in Pode you can use `New-PodeAuthScheme -Basic`, and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the Authorization header:
+To start using Basic authentication in Pode you can use [`New-PodeAuthBasicScheme`](../../../../Functions/Authentication/New-PodeAuthBasicScheme), and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the Authorization header:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # check if the user is valid
@@ -22,21 +25,21 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the request's headers contains an `Authorization` key, and whether the value of that key starts with `Basic` tag. The `New-PodeAuthScheme -Basic` function can be supplied parameters to customise the tag using `-HeaderTag`, as well as the `-Encoding`.
+By default, Pode will check if the request's headers contains an `Authorization` key, and whether the value of that key starts with `Basic` tag. The [`New-PodeAuthBasicScheme`](../../../../Functions/Authentication/New-PodeAuthBasicScheme) function can be supplied parameters to customise the tag using `-HeaderTag`, as well as the `-Encoding`.
 
 For example, to use `ASCII` encoding rather than the default `ISO-8859-1` you could do:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Basic -Encoding 'ASCII' | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {}
+    New-PodeAuthBasicScheme -Encoding 'ASCII' | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {}
 }
 ```
 
-The credentials supplied to [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)'s scriptblock are, by default, the username and password. This can be changed to a pscredential object instead by supplying `-AsCredential` on [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme):
+The credentials supplied to [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)'s scriptblock are, by default, the username and password. This can be changed to a pscredential object instead by supplying `-AsCredential` on [`New-PodeAuthBasicScheme`](../../../../Functions/Authentication/New-PodeAuthBasicScheme):
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Basic -AsCredential | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme -AsCredential | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($creds)
 
         # check if the user is valid
@@ -77,7 +80,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # setup basic authentication to validate a user
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

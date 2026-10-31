@@ -7,6 +7,9 @@
 
   <ItemGroup>
     <PackageReference Include="Kerberos.NET" Version="4.6.168" />
+
+    <!-- transitive dependency of Kerberos.NET, pinned to a patched version (CVE-2026-84008, CVE-2026-70162) -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(NETCoreSdkVersion)' >= '8.0'">

@@ -57,7 +57,7 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
     # setup form auth against windows AD (<form> in HTML)
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @() -Users @() -FailureUrl '/login' -SuccessUrl '/'
+    New-PodeAuthFormScheme | Add-PodeAuthWindowsAd -Name 'Login' -Groups @() -Users @() -FailureUrl '/login' -SuccessUrl '/'
 
 
     # home page:

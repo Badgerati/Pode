@@ -43,14 +43,14 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # setup digest auth
-    New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthDigestScheme | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $params)
 
         # here you'd check a real user storage, this is just for example
         if ($username -ieq 'morty') {
             return @{
-                User = @{
-                    ID ='M0R7Y302'
+                User     = @{
+                    ID   = 'M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'
                 }
@@ -67,11 +67,11 @@ Start-PodeServer -Threads 2 {
             Users = @(
                 @{
                     Name = 'Deep Thought'
-                    Age = 42
+                    Age  = 42
                 },
                 @{
                     Name = 'Leeroy Jenkins'
-                    Age = 1337
+                    Age  = 1337
                 }
             )
         }
