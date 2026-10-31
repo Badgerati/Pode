@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Net.Http; // needed for netstandard2.0
 using System.Text;
 using System.Web;
@@ -200,9 +201,94 @@ namespace Pode.Protocols.Http
                 }
             }
 
+            // if the body is chunked, wait until the last chunk has been received
+            if (IsChunked(bytes, index) && !IsChunkedBodyComplete(bytes, index + 1))
+            {
+                return false;
+            }
+
             // we're valid!
             IsRequestLineValid = false;
             return true;
+        }
+
+        private static bool IsChunked(byte[] bytes, int headersEnd)
+        {
+            var headers = PodeHelpers.Encoding.GetString(bytes, 0, headersEnd);
+
+            foreach (var line in headers.Split('\n'))
+            {
+                var h_index = line.IndexOf(":");
+                if (h_index > 0
+                    && line.Substring(0, h_index).Trim().Equals("Transfer-Encoding", StringComparison.InvariantCultureIgnoreCase)
+                    && line.Substring(h_index + 1).Contains("chunked"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsChunkedBodyComplete(byte[] bytes, int start)
+        {
+            while (start < bytes.Length)
+            {
+                // get the chunk size line
+                var index = Array.IndexOf(bytes, PodeHelpers.NEW_LINE_BYTE, start);
+                if (index == -1)
+                {
+                    return false;
+                }
+
+                var c_hex = PodeHelpers.Encoding.GetString(bytes, start, index - start).Trim();
+                start = index + 1;
+
+                // leave invalid chunk sizes for ParseBody to reject
+                if (!int.TryParse(c_hex, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var c_length) || c_length < 0)
+                {
+                    return true;
+                }
+
+                // the last chunk, wait for the empty line that ends the body (after any trailers)
+                if (c_length == 0)
+                {
+                    while (start < bytes.Length)
+                    {
+                        index = Array.IndexOf(bytes, PodeHelpers.NEW_LINE_BYTE, start);
+                        if (index == -1)
+                        {
+                            return false;
+                        }
+
+                        if (index == start || (index == start + 1 && bytes[start] == PodeHelpers.CARRIAGE_RETURN_BYTE))
+                        {
+                            return true;
+                        }
+
+                        start = index + 1;
+                    }
+
+                    return false;
+                }
+
+                // skip the chunk data, and the newline after it
+                var dataEnd = (long)start + c_length;
+                if (dataEnd >= bytes.Length)
+                {
+                    return false;
+                }
+
+                index = Array.IndexOf(bytes, PodeHelpers.NEW_LINE_BYTE, (int)dataEnd);
+                if (index == -1)
+                {
+                    return false;
+                }
+
+                start = index + 1;
+            }
+
+            return false;
         }
 
         public override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)

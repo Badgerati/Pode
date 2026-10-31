@@ -162,6 +162,72 @@ Describe 'REST API Requests' {
         $body.AcceptEncoding | Should -Be 'gzip, deflate, UTF-8'
     }
 
+    Context 'chunked transfer encoding' {
+        BeforeAll {
+            function Send-RawHttpRequest {
+                param(
+                    [Parameter(Mandatory = $true)]
+                    [string[]]
+                    $Parts
+                )
+
+                $client = [System.Net.Sockets.TcpClient]::new('127.0.0.1', $Port)
+                try {
+                    $client.NoDelay = $true
+                    $stream = $client.GetStream()
+
+                    for ($i = 0; $i -lt $Parts.Length; $i++) {
+                        # pause between writes so the server receives each part in a separate read
+                        if ($i -gt 0) {
+                            Start-Sleep -Milliseconds 500
+                        }
+
+                        $bytes = [System.Text.Encoding]::ASCII.GetBytes($Parts[$i])
+                        $stream.Write($bytes, 0, $bytes.Length)
+                        $stream.Flush()
+                    }
+
+                    $reader = [System.IO.StreamReader]::new($stream)
+                    return $reader.ReadToEnd()
+                }
+                finally {
+                    $client.Dispose()
+                }
+            }
+
+            $headers = @(
+                'POST /data/payload HTTP/1.1'
+                "Host: localhost:$($Port)"
+                'Content-Type: application/json'
+                'Transfer-Encoding: chunked'
+                'Connection: close'
+                ''
+                ''
+            ) -join "`r`n"
+        }
+
+        It 'parses a chunked payload sent in a single write' {
+            $response = Send-RawHttpRequest -Parts @("$($headers)13`r`n{`"username`":`"rick`"}`r`n0`r`n`r`n")
+
+            $responseParts = $response -split "`r`n`r`n", 2
+            $responseParts[0] | Should -Match '^HTTP/1.1 200'
+            ($responseParts[1] | ConvertFrom-Json).Username | Should -Be 'rick'
+        }
+
+        It 'parses a chunked payload when the chunks arrive after the headers' {
+            $response = Send-RawHttpRequest -Parts @(
+                $headers
+                "13`r`n{`"user"
+                "name`":`"rick`"}`r`n"
+                "0`r`n`r`n"
+            )
+
+            $responseParts = $response -split "`r`n`r`n", 2
+            $responseParts[0] | Should -Match '^HTTP/1.1 200'
+            ($responseParts[1] | ConvertFrom-Json).Username | Should -Be 'rick'
+        }
+    }
+
     It 'responds back with 404 for invalid route' {
         { Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop } | Should -Throw -ExpectedMessage '*404*'
     }
