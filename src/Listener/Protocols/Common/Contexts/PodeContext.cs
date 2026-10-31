@@ -92,6 +92,7 @@ namespace Pode.Protocols.Common.Contexts
 
         // Token and timer for managing request timeouts.
         public CancellationTokenSource ContextTimeoutToken { get; private set; }
+        private CancellationTokenSource SslHandshakeTimeoutToken;
 
         private Timer TimeoutTimer = null;
 
@@ -203,7 +204,17 @@ namespace Pode.Protocols.Common.Contexts
 
         private async Task OpenRequest()
         {
-            await Request.Open(CancellationToken.None).ConfigureAwait(false);
+            if (Request.IsSsl)
+            {
+                SslHandshakeTimeoutToken = new CancellationTokenSource();
+                SslHandshakeTimeoutToken.CancelAfter(Listener.RequestTimeout * 1000);
+            }
+
+            await Request.Open(SslHandshakeTimeoutToken?.Token ?? CancellationToken.None).ConfigureAwait(false);
+
+            SslHandshakeTimeoutToken?.Dispose();
+            SslHandshakeTimeoutToken = null;
+
             State = Request.State == PodeStreamState.Open
                 ? PodeContextState.Open
                 : PodeContextState.Error;
@@ -481,6 +492,9 @@ namespace Pode.Protocols.Common.Contexts
         /// </summary>
         private void DisposeTimeoutResources()
         {
+            SslHandshakeTimeoutToken?.Dispose();
+            SslHandshakeTimeoutToken = null;
+
             ContextTimeoutToken?.Dispose();
             ContextTimeoutToken = null;
 
