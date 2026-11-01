@@ -73,7 +73,7 @@ Start-PodeServer -Threads 2 -Verbose {
     # )
 
     # limit
-    # Add-PodeLimitRule -Type IP -Values all -Limit 100 -Seconds 5
+    # Add-PodeLimitRule -Type IP -Values all -Limit 10 -Seconds 60
     # Add-PodeLimitRateRule -Name 'Main' -Limit 5 -Duration 10000 -Component @(
     #     New-PodeLimitIPComponent #-IP '127.0.0.2'
     #     New-PodeLimitRouteComponent -Path '/'

@@ -57,7 +57,7 @@ Start-PodeServer {
     Enable-PodeOAViewer -Editor -Path '/docs/editor'
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
 
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         return @{
             User = @{
                 ID ='M0R7Y302'

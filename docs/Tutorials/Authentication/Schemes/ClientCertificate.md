@@ -4,9 +4,12 @@ Client Certificate authentication is when the server requires the client to supp
 
 If at any point to you need to access the client's certificate outside of this validator, then it can be found on the [web event](../../../WebEvent) object at `Request.Handler.ClientCertificate`.
 
+!!! important
+    The `New-PodeAuthScheme` function is now deprecated, please use [`New-PodeAuthClientCertificateScheme`](../../../../Functions/Authentication/New-PodeAuthClientCertificateScheme) instead.
+
 ## Setup
 
-To setup and start using Client Certificate authentication in Pode you use the `New-PodeAuthScheme -ClientCertificate` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the client's certificate, and any SSL errors that may have occurred (like chain issues, etc).
+To setup and start using Client Certificate authentication in Pode you use the [`New-PodeAuthClientCertificateScheme`](../../../../Functions/Authentication/New-PodeAuthClientCertificateScheme) function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the client's certificate, and any SSL errors that may have occurred (like chain issues, etc).
 
 You will also need to supply `-AllowClientCertificate` to [`Add-PodeEndpoint`](../../../../Functions/Core/Add-PodeEndpoint), and ensure the `-Protocol` is HTTPS:
 
@@ -14,7 +17,7 @@ You will also need to supply `-AllowClientCertificate` to [`Add-PodeEndpoint`](.
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned -AllowClientCertificate
 
-    New-PodeAuthScheme -ClientCertificate | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthClientCertificateScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($cert, $errors)
 
         # check if the client's cert is valid
@@ -57,7 +60,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned -AllowClientCertificate
 
     # setup client cert authentication to validate a user
-    New-PodeAuthScheme -ClientCertificate | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthClientCertificateScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($cert, $errors)
 
         # validate the thumbprint - here you would check a real cert store, or database

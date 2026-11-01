@@ -162,6 +162,17 @@ namespace Pode.Protocols.Common.Requests
             // Authenticate the SSL stream, handling cancellation and exceptions
             try
             {
+#if NETCOREAPP2_1_OR_GREATER
+                var options = new SslServerAuthenticationOptions
+                {
+                    ServerCertificate = Certificate,
+                    ClientCertificateRequired = AllowClientCertificate,
+                    EnabledSslProtocols = Protocols,
+                    CertificateRevocationCheckMode = X509RevocationMode.NoCheck
+                };
+
+                await ssl.AuthenticateAsServerAsync(options, cancellationToken).ConfigureAwait(false);
+#else
                 using (cancellationToken.Register(() =>
                 {
                     if (!IsDisposed)
@@ -170,11 +181,9 @@ namespace Pode.Protocols.Common.Requests
                     }
                 }))
                 {
-
-                    // Authenticate the SSL stream
-                    await ssl.AuthenticateAsServerAsync(Certificate, AllowClientCertificate, Protocols, false)
-                        .ConfigureAwait(false);
+                    await ssl.AuthenticateAsServerAsync(Certificate, AllowClientCertificate, Protocols, false).ConfigureAwait(false);
                 }
+#endif
 
                 // Set InputStream to the upgraded SSL stream
                 InputStream = ssl;

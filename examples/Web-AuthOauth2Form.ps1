@@ -57,7 +57,7 @@ Start-PodeServer -Threads 2 {
     $clientSecret = '<client-secret-from-portal>'
     $tenantId = '<tenant-from-portal>'
 
-    $form = New-PodeAuthScheme -Form
+    $form = New-PodeAuthFormScheme
     $scheme = New-PodeAuthAzureADScheme -Tenant $tenantId -ClientId $clientId -ClientSecret $clientSecret -InnerScheme $form
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($user, $accessToken, $refreshToken)

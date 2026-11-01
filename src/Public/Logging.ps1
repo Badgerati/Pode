@@ -5,7 +5,9 @@ using namespace Pode.Utilities.Logging
 Create a new method of outputting logs.
 
 .DESCRIPTION
-This function has been deprecated and will be removed in future versions. It creates various Log Methods for outputting logs.
+It creates various Log Methods for outputting logs.
+
+This function has been deprecated and will be removed in future versions.
 Please use the appropriate new functions for each Log Method:
 - New-PodeLogTerminalMethod
 - New-PodeLogFileMethod
@@ -155,28 +157,28 @@ function New-PodeLoggingMethod {
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'terminal' {
             # WARNING: Function `New-PodeLoggingMethod` is deprecated.
-            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogTerminalMethod')  -ForegroundColor Yellow
+            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogTerminalMethod') -ForegroundColor Yellow
 
             return New-PodeLogTerminalMethod -Id $Id -BatchInfo $batchInfo
         }
 
         'file' {
             # WARNING: Function `New-PodeLoggingMethod` is deprecated.
-            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogFileMethod')  -ForegroundColor Yellow
+            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogFileMethod') -ForegroundColor Yellow
 
             return New-PodeLogFileMethod -Id $Id -Name $Name -Path $Path -MaxDays $MaxDays -MaxSize $MaxSize -BatchInfo $batchInfo
         }
 
         'eventviewer' {
             # WARNING: Function `New-PodeLoggingMethod` is deprecated.
-            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogEventViewerMethod')  -ForegroundColor Yellow
+            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogEventViewerMethod') -ForegroundColor Yellow
 
             return New-PodeLogEventViewerMethod -Id $Id -EventLogName $EventLogName -Source $Source -EventID $EventID -BatchInfo $batchInfo
         }
 
         'custom' {
             # WARNING: Function `New-PodeLoggingMethod` is deprecated.
-            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogCustomMethod')  -ForegroundColor Yellow
+            Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeLogCustomMethod') -ForegroundColor Yellow
 
             return New-PodeLogCustomMethod -Id $Id -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -BatchInfo $batchInfo
         }

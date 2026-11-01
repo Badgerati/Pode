@@ -998,6 +998,7 @@ function Get-PodeAuthWindowsADIISMethod {
                     AccessToken = $winIdentity.AccessToken
                 }
                 AuthenticationType = $winIdentity.AuthenticationType
+                AccountType        = [string]::Empty
                 DistinguishedName  = [string]::Empty
                 Username           = $username
                 Name               = [string]::Empty
@@ -1023,6 +1024,7 @@ function Get-PodeAuthWindowsADIISMethod {
                     $user.DistinguishedName = @($ad.Properties.distinguishedname)[0]
                     $user.Name = @($ad.Properties.name)[0]
                     $user.Email = @($ad.Properties.mail)[0]
+                    $user.AccountType = @($ad.Properties.objectclass)[-1]
                     $user.Fqdn = (Get-PodeADServerFromDistinguishedName -DistinguishedName $user.DistinguishedName)
                 }
                 finally {
@@ -1853,6 +1855,7 @@ function Get-PodeAuthADResult {
             User = @{
                 UserType           = 'Domain'
                 AuthenticationType = 'LDAP'
+                AccountType        = $user.AccountType
                 DistinguishedName  = $user.DistinguishedName
                 Username           = ($Username -split '\\')[-1]
                 Name               = $user.Name
@@ -1956,7 +1959,7 @@ function Open-PodeAuthADConnection {
         'activedirectory' {
             try {
                 $creds = [pscredential]::new($Username, (ConvertTo-SecureString -String $Password -AsPlainText -Force))
-                $null = Get-ADUser -Identity $Username -Credential $creds -ErrorAction Stop
+                $null = Get-ADObject -LDAPFilter (Get-PodeAuthADQuery -Username $Username) -Credential $creds -ResultSetSize 1 -ErrorAction Stop
                 $connection = @{
                     Credential = $creds
                 }
@@ -1998,7 +2001,26 @@ function Get-PodeAuthADQuery {
         $Username
     )
 
-    return "(&(objectCategory=person)(samaccountname=$($Username)))"
+    # match any account that can authenticate:
+    #   805306368 = SAM_NORMAL_USER_ACCOUNT (users, inetOrgPerson)
+    #   805306369 = SAM_MACHINE_ACCOUNT (computers, sMSA, gMSA, dMSA)
+    $name = (ConvertTo-PodeLdapFilterValue -Value $Username)
+    return "(&(|(sAMAccountType=805306368)(sAMAccountType=805306369))(sAMAccountName=$($name)))"
+}
+
+function ConvertTo-PodeLdapFilterValue {
+    param(
+        [Parameter()]
+        [string]
+        $Value
+    )
+
+    if ([string]::IsNullOrEmpty($Value)) {
+        return $Value
+    }
+
+    # escape special characters for LDAP filters (RFC 4515) - backslash must be first
+    return ($Value.Replace('\', '\5c').Replace('*', '\2a').Replace('(', '\28').Replace(')', '\29').Replace("`0", '\00'))
 }
 
 function Get-PodeAuthADUser {
@@ -2022,24 +2044,36 @@ function Get-PodeAuthADUser {
     # generate query to find user
     switch ($Provider.ToLowerInvariant()) {
         'openldap' {
-            $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.BaseDN)" -o ldif-wrap=no "$($query)" name mail)
+            $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.BaseDN)" -o ldif-wrap=no "$($query)" name mail objectClass)
             if (!$? -or ($LASTEXITCODE -ne 0)) {
                 return $null
             }
 
+            $dn = (Get-PodeOpenLdapValue -Lines $result -Property 'dn')
+            if ([string]::IsNullOrWhiteSpace($dn)) {
+                return $null
+            }
+
             $user = @{
-                DistinguishedName = (Get-PodeOpenLdapValue -Lines $result -Property 'dn')
+                DistinguishedName = $dn
                 Name              = (Get-PodeOpenLdapValue -Lines $result -Property 'name')
                 Email             = (Get-PodeOpenLdapValue -Lines $result -Property 'mail')
+                AccountType       = @(Get-PodeOpenLdapValue -Lines $result -Property 'objectClass' -All)[-1]
             }
         }
 
         'activedirectory' {
-            $result = Get-ADUser -LDAPFilter $query -Credential $Connection.Credential -Properties mail
+            $result = Get-ADObject -LDAPFilter $query -Credential $Connection.Credential -Properties mail, objectClass |
+                Select-Object -First 1
+            if ($null -eq $result) {
+                return $null
+            }
+
             $user = @{
                 DistinguishedName = $result.DistinguishedName
                 Name              = $result.Name
                 Email             = $result.mail
+                AccountType       = @($result.ObjectClass)[-1]
             }
         }
 
@@ -2056,6 +2090,7 @@ function Get-PodeAuthADUser {
                 DistinguishedName = @($result.distinguishedname)[0]
                 Name              = @($result.name)[0]
                 Email             = @($result.mail)[0]
+                AccountType       = @($result.objectclass)[-1]
             }
         }
     }
@@ -2168,7 +2203,7 @@ function Get-PodeAuthADGroupDirect {
     )
 
     # create the query
-    $query = "(&(objectCategory=person)(samaccountname=$($Username)))"
+    $query = (Get-PodeAuthADQuery -Username $Username)
     $groups = @()
 
     # get the groups

@@ -155,7 +155,7 @@ Start-PodeServer {
     New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'RoleExample'
 
     # setup Basic authentication
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'AuthExample' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'AuthExample' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -216,7 +216,7 @@ Start-PodeServer {
     Merge-PodeAccess -Name 'MergedExample' -Access 'RoleExample', 'GroupExample' -Valid All
 
     # setup Basic authentication
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'AuthExample' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'AuthExample' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -265,7 +265,7 @@ Start-PodeServer {
     }
 
     # setup Basic authentication
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'AuthExample' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'AuthExample' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

@@ -34,7 +34,7 @@ Enable-PodeSessionMiddleware -Duration 120 -Extend -UseHeaders
 Once we have the Sessions enabled, we need to setup Basic authentication - the username/password here are hard-coded, but normally you would validate against some database:
 
 ```powershell
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Login' -ScriptBlock {
     param($username, $password)
 
     # here you'd check a real user storage, this is just for example

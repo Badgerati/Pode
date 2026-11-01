@@ -64,7 +64,7 @@ function ConvertTo-PodeCookieString {
             }
 
             $null = $builder.Append('; Max-Age=')
-            $null = $builder.Append($secs)
+            $null = $builder.Append([int]$secs)
         }
 
         if ($builder.Length -le 1) {

@@ -1,5 +1,35 @@
 # Release Notes
 
+# v2.14.2
+
+Date: 31st October 2026
+
+```plain
+### Enhancements
+* #1790: Split New-PodeAuthScheme into multiple Scheme specific functions
+* #1807: Support computer and managed service accounts in Windows AD auth (thanks @schnyders!)
+* #1823: Adds a timeout during the SSL handshake
+
+### Bugs
+* #1795: Fixes how the Limit Rule Name is retrieved on PS5.1
+* #1797: Fixes the Rate Limiting counter to be thread-safe
+* #1811: Fixes collection modified error on Lockables, Semaphores, Mutexes, Sessions, and Cached items
+* #1812: Fix cookie max-age to be an integer
+* #1813: Fixes single-component relative file paths, with no relative decorators
+* #1820: Add further error handling and clean-up around failed sockets during open and close
+
+### Documentation
+* #1793: Fix 404 First App link in README (thanks @cnYui!)
+
+### Packaging
+* #1815: Bump rapidoc from 9.3.8 to 11.0.1
+* #1816: Bump redoc from 2.5.3 to 3.0.1
+* #1818: Bump swagger-ui-dist from 5.32.14 to 5.34.0
+* #1819: Bump @stoplight/elements from 9.0.24 to 9.0.29
+* #1822: Bump github/codeql-action from 4.37.8 to 4.39.1
+* #1824: Bump System.Security.Cryptography.Pkcs from 8.0.1 to 8.0.2
+```
+
 # v2.14.1
 
 Date: 29th August 2026

@@ -60,7 +60,7 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
     # setup form auth against user file (<form> in HTML)
-    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './users/users.json' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+    New-PodeAuthFormScheme | Add-PodeAuthUserFile -Name 'Login' -FilePath './users/users.json' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($user)
         return @{ User = $user }
     }

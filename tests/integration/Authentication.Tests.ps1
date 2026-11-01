@@ -24,7 +24,7 @@ Describe 'Authentication Requests' {
                 }
 
                 # BASIC
-                New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'BasicAuth' -Sessionless -ScriptBlock {
+                New-PodeAuthBasicScheme | Add-PodeAuth -Name 'BasicAuth' -Sessionless -ScriptBlock {
                     param($username, $password)
 
                     if (($username -eq 'morty') -and ($password -eq 'pickle')) {
@@ -39,7 +39,7 @@ Describe 'Authentication Requests' {
                 }
 
                 # BEARER
-                New-PodeAuthScheme -Bearer -Scope write | Add-PodeAuth -Name 'BearerAuth' -Sessionless -ScriptBlock {
+                New-PodeAuthBearerScheme -Scope write | Add-PodeAuth -Name 'BearerAuth' -Sessionless -ScriptBlock {
                     param($token)
 
                     if ($token -ieq 'test-token') {
@@ -57,7 +57,7 @@ Describe 'Authentication Requests' {
                 }
 
                 # API KEY
-                New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'ApiKeyAuth' -Sessionless -ScriptBlock {
+                New-PodeAuthApiKeyScheme | Add-PodeAuth -Name 'ApiKeyAuth' -Sessionless -ScriptBlock {
                     param($key)
 
                     if ($key -ieq 'test-key') {
@@ -74,7 +74,7 @@ Describe 'Authentication Requests' {
                 }
 
                 # API KEY - JWT (not signed)
-                New-PodeAuthScheme -ApiKey -AsJWT | Add-PodeAuth -Name 'ApiKeyNotSignedJwtAuth' -Sessionless -ScriptBlock {
+                New-PodeAuthApiKeyScheme -AsJWT | Add-PodeAuth -Name 'ApiKeyNotSignedJwtAuth' -Sessionless -ScriptBlock {
                     param($jwt)
 
                     if ($jwt.username -ieq 'morty') {
@@ -91,7 +91,7 @@ Describe 'Authentication Requests' {
                 }
 
                 # API KEY - JWT (signed)
-                New-PodeAuthScheme -ApiKey -AsJWT -Secret 'secret' | Add-PodeAuth -Name 'ApiKeySignedJwtAuth' -Sessionless -ScriptBlock {
+                New-PodeAuthApiKeyScheme -AsJWT -Secret 'secret' | Add-PodeAuth -Name 'ApiKeySignedJwtAuth' -Sessionless -ScriptBlock {
                     param($jwt)
 
                     if ($jwt.username -ieq 'morty') {

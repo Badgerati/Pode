@@ -60,7 +60,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLogTerminalMethod | Enable-PodeLogErrorType
 
     # setup bearer auth
-    New-PodeAuthScheme -ApiKey -Location $Location | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthApiKeyScheme -Location $Location | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($key)
 
         # here you'd check a real user storage, this is just for example

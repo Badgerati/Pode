@@ -10,13 +10,16 @@ Depending on the location, Pode looks for an API key in the default location nam
 
 Pode looks for the Header by default, and these can be changed as shown below.
 
+!!! important
+    The `New-PodeAuthScheme` function is now deprecated, please use [`New-PodeAuthApiKeyScheme`](../../../../Functions/Authentication/New-PodeAuthApiKeyScheme) instead.
+
 ## Setup
 
-To setup and start using API key authentication in Pode you can use `New-PodeAuthScheme -ApiKey`, and then pipe the returned object into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$key` that Pode found in either the header, cookie or query string:
+To setup and start using API key authentication in Pode you can use [`New-PodeAuthApiKeyScheme`](../../../../Functions/Authentication/New-PodeAuthApiKeyScheme), and then pipe the returned object into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$key` that Pode found in either the header, cookie or query string:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthApiKeyScheme | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($key)
 
         # check if the key is valid, and get user
@@ -32,7 +35,7 @@ For example, to look for an `appId` query value:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -ApiKey -Location Query -LocationName 'appId' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthApiKeyScheme -Location Query -LocationName 'appId' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($key)
 
         # check if the key is valid, and get user
@@ -79,7 +82,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # setup apikey authentication to validate a user
-    New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
+    New-PodeAuthApiKeyScheme | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($key)
 
         # here you'd check a real storage, this is just for example

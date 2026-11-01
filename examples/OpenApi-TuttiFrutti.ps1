@@ -332,7 +332,7 @@ Some useful links:
 
 
     # setup apikey authentication to validate a user
-    New-PodeAuthScheme -ApiKey -LocationName 'api_key' | Add-PodeAuth -Name 'api_key' -Sessionless -ScriptBlock {
+    New-PodeAuthApiKeyScheme -LocationName 'api_key' | Add-PodeAuth -Name 'api_key' -Sessionless -ScriptBlock {
         param($key)
         if ($key) {
             # here you'd check a real storage, this is just for example
@@ -360,18 +360,18 @@ Some useful links:
 
         }
     }
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthBasicScheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($username, $password)
         # check if the user is valid
         return @{ User = $user }
     }
-    New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'LoginApiKey' -Sessionless -ScriptBlock {
+    New-PodeAuthApiKeyScheme | Add-PodeAuth -Name 'LoginApiKey' -Sessionless -ScriptBlock {
         param($username, $password)
         # check if the user is valid
         return @{ User = $user }
     }
     # jwt with no signature:
-    New-PodeAuthScheme -Bearer -AsJWT | Add-PodeAuth -Name 'Jwt' -Sessionless -ScriptBlock {
+    New-PodeAuthBearerScheme -AsJWT | Add-PodeAuth -Name 'Jwt' -Sessionless -ScriptBlock {
         param($payload)
 
         return ConvertFrom-PodeJwt -Token $payload
@@ -387,11 +387,10 @@ Some useful links:
     $clientId = '123123123'
     $clientSecret = 'acascascasca>zzzcz'
 
-    <#     $InnerScheme = New-PodeAuthScheme -Form
-    $scheme = New-PodeAuthScheme `
-        -OAuth2 `
-        -ClientId $ClientId `
-        -ClientSecret $ClientSecret `
+    <#     $InnerScheme = New-PodeAuthFormScheme
+    $scheme = New-PodeAuthOAuth2Scheme `
+        -ClientId $clientId `
+        -ClientSecret $clientSecret `
         -AuthoriseUrl "https://login.microsoftonline.com/$($tenantId)/oauth2/v2.0/authorize" `
         -TokenUrl "https://login.microsoftonline.com/$($tenantId)/oauth2/v2.0/token" `
         -UserUrl 'https://graph.microsoft.com/oidc/userinfo' `
@@ -403,10 +402,9 @@ Some useful links:
         param($user, $accessToken, $refreshToken)
         return @{ User = $user }
     }#>
-    New-PodeAuthScheme `
-        -OAuth2 `
-        -ClientId $ClientId `
-        -ClientSecret $ClientSecret `
+    New-PodeAuthOAuth2Scheme `
+        -ClientId $clientId `
+        -ClientSecret $clientSecret `
         -AuthoriseUrl 'http://example.org/api/oauth/dialog' `
         -TokenUrl 'http://example.org/api/oauth/token' `
         -Scope 'read', 'write' | Add-PodeAuth -Name 'Login-OAuth2' -FailureUrl '/LoginOAuth2' -SuccessUrl '/' -ScriptBlock {

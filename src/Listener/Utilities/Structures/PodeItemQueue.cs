@@ -76,7 +76,7 @@ namespace Pode.Utilities.Structures
 
         public void RemoveProcessing(T item)
         {
-            if (!TrackProcessing || IsDisposed)
+            if (!TrackProcessing || IsDisposed || item == null)
             {
                 return;
             }
