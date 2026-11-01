@@ -226,6 +226,29 @@ Describe 'REST API Requests' {
             $responseParts[0] | Should -Match '^HTTP/1.1 200'
             ($responseParts[1] | ConvertFrom-Json).Username | Should -Be 'rick'
         }
+
+        It 'parses a chunked payload with a lower case header name and other "Tra" headers' {
+            $lowerHeaders = @(
+                'POST /data/payload HTTP/1.1'
+                "Host: localhost:$($Port)"
+                'Content-Type: application/json'
+                'Trailer: Expires'
+                'transfer-encoding: chunked'
+                'Connection: close'
+                ''
+                ''
+            ) -join "`r`n"
+
+            $response = Send-RawHttpRequest -Parts @(
+                $lowerHeaders
+                "13`r`n{`"username`":`"rick`"}`r`n"
+                "0`r`n`r`n"
+            )
+
+            $responseParts = $response -split "`r`n`r`n", 2
+            $responseParts[0] | Should -Match '^HTTP/1.1 200'
+            ($responseParts[1] | ConvertFrom-Json).Username | Should -Be 'rick'
+        }
     }
 
     It 'responds back with 404 for invalid route' {

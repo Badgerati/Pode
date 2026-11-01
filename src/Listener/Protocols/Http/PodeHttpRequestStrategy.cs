@@ -182,6 +182,8 @@ namespace Pode.Protocols.Http
             }
 
             // check if we have all the headers
+            var isChunked = false;
+
             while (true)
             {
                 previousIndex = index;
@@ -199,10 +201,26 @@ namespace Pode.Protocols.Http
                 {
                     return false;
                 }
+
+                // is this a chunked Transfer-Encoding header? only decode lines starting with "Tra"
+                var h_start = previousIndex + 1;
+                if (!isChunked
+                    && index - h_start > 3
+                    && (bytes[h_start] | 0x20) == 't'
+                    && (bytes[h_start + 1] | 0x20) == 'r'
+                    && (bytes[h_start + 2] | 0x20) == 'a')
+                {
+                    var h_line = PodeHelpers.Encoding.GetString(bytes, h_start, index - h_start);
+                    var h_index = h_line.IndexOf(":");
+
+                    isChunked = h_index > 0
+                        && h_line.Substring(0, h_index).Trim().Equals("Transfer-Encoding", StringComparison.InvariantCultureIgnoreCase)
+                        && h_line.Substring(h_index + 1).Contains("chunked");
+                }
             }
 
             // if the body is chunked, wait until the last chunk has been received
-            if (IsChunked(bytes, index) && !IsChunkedBodyComplete(bytes, index + 1))
+            if (isChunked && !IsChunkedBodyComplete(bytes, index + 1))
             {
                 return false;
             }
@@ -210,24 +228,6 @@ namespace Pode.Protocols.Http
             // we're valid!
             IsRequestLineValid = false;
             return true;
-        }
-
-        private static bool IsChunked(byte[] bytes, int headersEnd)
-        {
-            var headers = PodeHelpers.Encoding.GetString(bytes, 0, headersEnd);
-
-            foreach (var line in headers.Split('\n'))
-            {
-                var h_index = line.IndexOf(":");
-                if (h_index > 0
-                    && line.Substring(0, h_index).Trim().Equals("Transfer-Encoding", StringComparison.InvariantCultureIgnoreCase)
-                    && line.Substring(h_index + 1).Contains("chunked"))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static bool IsChunkedBodyComplete(byte[] bytes, int start)
