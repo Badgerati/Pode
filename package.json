@@ -9,7 +9,7 @@
     "@stoplight/elements": "9.0.29",
     "bootstrap": "5.3.9",
     "openapi-explorer": "2.4.837",
-    "rapidoc": "13.1.0",
+    "rapidoc": "14.1.0",
     "rapipdf": "2.2.1",
     "redoc": "3.1.0",
     "swagger-editor-dist": "4.14.8",
